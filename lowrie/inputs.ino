@@ -80,11 +80,23 @@ unsigned char getDistanceLevel(unsigned short input)
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getTaskByInputs(void) {
+unsigned char getTaskByInputs(bool deceleration, bool vertical, bool batteryLow) {
   // check sensors enabled
   if (! m_sensorsEnabled) {
     return m_defaultTask;
   }
+  if (batteryLow) {
+    return DOWNTASK;
+  }
+  if (!vertical) {
+    // disabled for now
+    //return STANDTASK;
+  }
+  if (deceleration) {
+    // disabled for now
+    //return WALKBACKTASK;
+  }
+
   // calculate obstacle code
   switch ((unsigned char)(getDistanceLevel(_analogInputs.right) * 4 + getDistanceLevel(_analogInputs.left))) {
     //         left rignt

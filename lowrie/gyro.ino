@@ -31,6 +31,10 @@ float floatBufferZ;
 int intBuffer;
 // shift forward balance value
 char forwardShift = 0;
+// deceleration minimal value
+float decelerationMin = 0;
+// deceleration maximal value
+float decelerationMax = 0;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -112,24 +116,34 @@ void updateGyroData(unsigned char sequenceCount) {
     // negative - nose up
     pitchData = (int)(0.96 * gyroAngleY + 0.04 * floatBufferY);
   }
+  intBuffer = (int)(0.96 * gyroAngleX + 0.04 * floatBufferX);
   // robot side roll value
   // positive - rotated right
   // negative - rotated left
   if (sequenceCount == 0) {
-    rollMin = 1000;
-    rollMax = -1000;
+    rollMin = intBuffer;
+    rollMax = intBuffer;
     rollMinTime = 0;
     rollMaxTime = 0;
-  }
-  // find max and min roll
-  intBuffer = (int)(0.96 * gyroAngleX + 0.04 * floatBufferX);
-  if (intBuffer > rollMax) {
-    rollMax = intBuffer;
-    rollMaxTime = sequenceCount;
-  }
-  if (intBuffer < rollMin) {
-    rollMin = intBuffer;
-    rollMinTime = sequenceCount;
+    decelerationMin = floatBufferY;
+    decelerationMax = floatBufferY;
+  } else {
+    // find min and max deceleration
+    if (decelerationMin > floatBufferY) {
+      decelerationMin = floatBufferY;
+    }
+    if (decelerationMax < floatBufferY) {
+      decelerationMax = floatBufferY;
+    }
+    // find max and min roll
+    if (intBuffer > rollMax) {
+      rollMax = intBuffer;
+      rollMaxTime = sequenceCount;
+    }
+    if (intBuffer < rollMin) {
+      rollMin = intBuffer;
+      rollMinTime = sequenceCount;
+    }
   }
 }
 
@@ -140,6 +154,15 @@ void resetGyro(void) {
   yaw = 0;
   yawData = 0;
   pitchData = 0;
+}
+
+// get deceleration event
+bool getDecelerationGyro(void) {
+  // make value 60 
+  if ((decelerationMax - decelerationMin) > 60) {
+    return true;
+  }
+  return false;
 }
 
 // get walking direction
@@ -202,7 +225,8 @@ unsigned char getRollRightTimeGyro(void) {
 
 // check if robot is in vertical position
 bool checkVerticalPositionGyro(void) {
-  if (rollMax - rollMin > 90) {
+  // set angle as 60
+  if (rollMax - rollMin > 60) {
     return false;
   }
   return true;
@@ -210,14 +234,6 @@ bool checkVerticalPositionGyro(void) {
 
 // fix balance using gyro
 int fixBalanceGyro(int center) {
-  //Serial.print(" Gyro ");
-  //Serial.print((int)rollMin);
-  //Serial.print(" ");
-  //Serial.print((int)rollMax);
-  //Serial.print(" ");
-  //Serial.print((int)rollMinTime);
-  //Serial.print(" ");
-  //Serial.println((int)rollMaxTime);
   // balance
   if (rollMax - rollMin > 2) {
     // body rolls
@@ -226,13 +242,13 @@ int fixBalanceGyro(int center) {
       // increase weight on rear
       if (forwardShift < 4) {
         forwardShift += 2;
-        Serial.println(" increase weight on rear");
+        //Serial.println(" increase weight on rear");
       } else {
         if(center > 9) {
           center -= 1;
           forwardShift = -4;
-        } else {
-          Serial.println(" limit weight on rear");
+        //} else {
+        //  Serial.println(" limit weight on rear");
         }
       }
     }
@@ -241,13 +257,13 @@ int fixBalanceGyro(int center) {
       //increase wight on front
       if (forwardShift > -4) {
         forwardShift -= 2;
-        Serial.println(" increase weight on front");
+        //Serial.println(" increase weight on front");
       } else {
         if(center < 13) {
           center += 1;
           forwardShift = 4;
-        } else {
-          Serial.println(" limit weight on front");
+        //} else {
+        //  Serial.println(" limit weight on front");
         }
       }
     }
@@ -260,9 +276,9 @@ int fixBalanceGyro(int center) {
     m_bodyBalance.rl.motor2 = forwardShift;
     m_bodyBalance.rr.motor1 = -forwardShift;
     m_bodyBalance.rr.motor2 = forwardShift;
-    Serial.println((int)center);
+    //Serial.println((int)center);
   } else {
-    Serial.println(" balanced");
+    //Serial.println(" balanced");
     // reset to fix drift
     gyroAngleX = 0;
   }

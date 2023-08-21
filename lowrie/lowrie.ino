@@ -363,14 +363,8 @@ void exploreModeCall(unsigned char patternStatus) {
     case DONE:
     {     
       // get next task
-      // proximity sensors input sets next task. 
-      if (! checkVerticalPositionGyro()) {
-        applyTask(STANDTASK);
-      } else if (! checkBatteryLowInputs()) {
-        applyTask(getTaskByInputs());
-      } else {
-        applyTask(DOWNTASK);
-      }
+      // proximity sensors input set next task. 
+      applyTask(getTaskByInputs(getDecelerationGyro(), checkVerticalPositionGyro(), checkBatteryLowInputs()));
     }
     break;
     case STANDWALK:
