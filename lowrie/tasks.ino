@@ -169,7 +169,7 @@ void _setStandWalkTask(void) {
 // set stand task
 void _setStandTask(void) {
   m_currentTask[0] = DOSTAND;
-  m_currentTask[1] = DONE;
+  m_currentTask[1] = DOREPEAT;
 }
 
 // set task by name

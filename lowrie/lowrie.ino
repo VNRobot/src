@@ -314,7 +314,7 @@ void loop() {
   // read proximity sensors
   updateInputs(_sequenceCount.fl);
   // update gyro readings
-  updateGyroData(_sequenceCount.fl);
+  updateGyro(_sequenceCount.fl);
   // update sequence shift 
   if (_sequenceCount.fl < 15) {
     _sequenceCount.fl ++;

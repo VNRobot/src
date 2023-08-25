@@ -6,43 +6,66 @@ use MPU6050 to read gyroscope and accelerometer
 */
 
 #include <Wire.h>
-
+// acceleration
+float accAngleX;
+float accAngleY;
+float accAngleYold = 0;
+// acceleration errors
 float AccErrorX = 0;
 float AccErrorY = 0;
+// gyro
 float GyroErrorX = 0;
 float GyroErrorY = 0;
 float GyroErrorZ = 0;
+// time parameters
+float timeInterval;
 unsigned long currentTime = 0;
+unsigned long oldTime;
+// Rotation angles
 float gyroAngleX = 0;
 float gyroAngleY = 0;
 float yaw = 0;
-int yawData = 0;
-int pitchData = 0;
+int rollAngle;
+int directionAngle;
+// gyro data at the end of walk cycle
+int yawLast = 0;
+int pitchLast = 0;
+// roll data inside walk cycle
 int rollMin = 0;
 int rollMax = 0;
 unsigned char rollMinTime = 0;
 unsigned char rollMaxTime = 0;
-unsigned long ulongBuffer;
+// buffers to read register into
 float floatBuffer[3];
-float floatBufferX;
-float floatBufferY;
-float floatBufferZ;
-// variable for temporary use
-int intBuffer;
-// shift forward balance value
+// shift forward walking balance value
 char forwardShift = 0;
-// deceleration minimal value
-float decelerationMin = 0;
-// deceleration maximal value
-float decelerationMax = 0;
+// deceleration value
+float deceleration = 0;
 
 // init gyroscope wire
 void _initWire(void) {
   Wire.begin();                      
+  delay(100);
   Wire.beginTransmission(0x68);
   Wire.write(0x6B);
-  Wire.write(0x00);
-  Wire.endTransmission(true);
+  Wire.write(0b10001000); // DEVICE_RESET, TEMP_DIS.
+  Wire.endTransmission();
+  delay(100);
+  Wire.beginTransmission(0x68);
+  Wire.write(0x68);
+  Wire.write(0b00000111); // GYRO_RESET, ACCEL_RESET, TEMP_RESET.
+  Wire.endTransmission();
+  delay(100);
+  Wire.beginTransmission(0x68);
+  Wire.write(0x6B);
+  Wire.write(0b00001000); // SLEEP = 0, TEMP_DIS = 1.
+  Wire.endTransmission();
+  delay(100);
+  Wire.beginTransmission(0x68);
+  Wire.write(0x1B);
+  Wire.write(0b00001000); // +/-500 deg/s.
+  Wire.endTransmission();
+  delay(100);
 }
 
 // read gyroscope wire
@@ -59,7 +82,6 @@ void _readWire(float * regData, unsigned char code) {
 // init gyroscope and accelerometer MPU6050 using I2C
 void initGyro() {
   _initWire();
-  delay(100);
   // calculate gyro errors
   for (i = 0; i < 200; i++) {
     _readWire(floatBuffer, 0x3B);
@@ -86,63 +108,67 @@ void initGyro() {
 }
 
 // read gyroscope and accelerometer data
-void updateGyroData(unsigned char sequenceCount) {
+void updateGyro(unsigned char sequenceCount) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
   floatBuffer[1] /= 16384.0;
   floatBuffer[2] /= 16384.0;
-  floatBufferX = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorX;
-  floatBufferY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorY;
+  accAngleX = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorX;
+  accAngleY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorY;
   // gyroscope
-  ulongBuffer = currentTime;
+  oldTime = currentTime;
   currentTime = millis();
-  floatBufferZ = (currentTime - ulongBuffer) / 1000.0;
+  timeInterval = (currentTime - oldTime) / 1000.0;
   _readWire(floatBuffer, 0x43);
   floatBuffer[0] = floatBuffer[0] / 131.0 - GyroErrorX;
   floatBuffer[1] = floatBuffer[1] / 131.0 - GyroErrorY;
   floatBuffer[2] = floatBuffer[2] / 131.0 - GyroErrorZ;
-  gyroAngleX += floatBuffer[0] * floatBufferZ;
-  gyroAngleY += floatBuffer[1] * floatBufferZ;
-  yaw        += floatBuffer[2] * floatBufferZ;
-  // if end of sycle
-  if (sequenceCount == 15) {
-    // robot walking direction value
-    // positive - turned left
-    // negative - turned right
-    yawData = (int)yaw;
-    // robot pitch value
-    // positive - nose down
-    // negative - nose up
-    pitchData = (int)(0.96 * gyroAngleY + 0.04 * floatBufferY);
-  }
-  intBuffer = (int)(0.96 * gyroAngleX + 0.04 * floatBufferX);
-  // robot side roll value
-  // positive - rotated right
-  // negative - rotated left
+  gyroAngleX += floatBuffer[0] * timeInterval;
+  gyroAngleY += floatBuffer[1] * timeInterval;
+  yaw        += floatBuffer[2] * timeInterval;
+  rollAngle = (int)(0.96 * gyroAngleX + 0.04 * accAngleX);
+  // walk cycle related operations
   if (sequenceCount == 0) {
-    rollMin = intBuffer;
-    rollMax = intBuffer;
+    // start of walk cycle
+    rollMin = rollAngle;
+    rollMax = rollAngle;
     rollMinTime = 0;
     rollMaxTime = 0;
-    decelerationMin = floatBufferY;
-    decelerationMax = floatBufferY;
+    deceleration = 0;
   } else {
-    // find min and max deceleration
-    if (decelerationMin > floatBufferY) {
-      decelerationMin = floatBufferY;
-    }
-    if (decelerationMax < floatBufferY) {
-      decelerationMax = floatBufferY;
+    // find deceleration
+    accAngleYold -= accAngleY;
+    if (accAngleYold > 0) {
+      deceleration += accAngleYold;
+    } else if (accAngleYold < 0) {
+      deceleration -= accAngleYold;
     }
     // find max and min roll
-    if (intBuffer > rollMax) {
-      rollMax = intBuffer;
+    if (rollAngle > rollMax) {
+      rollMax = rollAngle;
       rollMaxTime = sequenceCount;
     }
-    if (intBuffer < rollMin) {
-      rollMin = intBuffer;
+    if (rollAngle < rollMin) {
+      rollMin = rollAngle;
       rollMinTime = sequenceCount;
+    }
+  }
+  accAngleYold = accAngleY;
+  // if end of sycle
+  if (sequenceCount == 15) {
+    yawLast = (int)yaw;
+    pitchLast = (int)(0.96 * gyroAngleY + 0.04 * accAngleY);
+    // fix slow drift
+    if (gyroAngleX > 0) {
+      gyroAngleX --;
+    } else if (gyroAngleX < 0) {
+      gyroAngleX ++;
+    }
+    if (gyroAngleY > 0) {
+      gyroAngleY --;
+    } else if (gyroAngleY < 0) {
+      gyroAngleY ++;
     }
   }
 }
@@ -152,14 +178,14 @@ void resetGyro(void) {
   gyroAngleX = 0;
   gyroAngleY = 0;
   yaw = 0;
-  yawData = 0;
-  pitchData = 0;
+  yawLast = 0;
+  pitchLast = 0;
 }
 
 // get deceleration event
 bool getDecelerationGyro(void) {
-  // make value 60 
-  if ((decelerationMax - decelerationMin) > 60) {
+  // make border value 100 
+  if ((int)deceleration > 100) {
     return true;
   }
   return false;
@@ -169,7 +195,7 @@ bool getDecelerationGyro(void) {
 int getWalkingDirectionGyro(void) {
   // positive - turned left
   // negative - turned right
-  return yawData;
+  return yawLast;
 }
 
 // correct walking direction
@@ -182,21 +208,21 @@ void updateWalkingDirectionGyro(int directionData) {
 // get walking direction correction from gyroscope
 char getDirectionCorrectionGyro(void) {
   // maximal direction correction is 10
-  intBuffer = yawData / 2;
-  if (intBuffer > 10) {
-    intBuffer = 10;
+  directionAngle = yawLast / 2;
+  if (directionAngle > 10) {
+    directionAngle = 10;
   }
-  if (intBuffer < -10) {
-    intBuffer = -10;
+  if (directionAngle < -10) {
+    directionAngle = -10;
   }
-  return (char)intBuffer;
+  return (char)directionAngle;
 }
 
 // get nose dive value
 int getNoseDiveGyro(void) {
   // positive - nose down
   // negative - nose up
-  return pitchData;
+  return pitchLast;
 }
 
 // get roll left
@@ -226,7 +252,7 @@ unsigned char getRollRightTimeGyro(void) {
 // check if robot is in vertical position
 bool checkVerticalPositionGyro(void) {
   // set angle as 60
-  if (rollMax - rollMin > 60) {
+  if ((rollMax > 45) || (rollMin < -45)) {
     return false;
   }
   return true;
@@ -242,13 +268,10 @@ int fixBalanceGyro(int center) {
       // increase weight on rear
       if (forwardShift < 4) {
         forwardShift += 2;
-        //Serial.println(" increase weight on rear");
       } else {
         if(center > 9) {
           center -= 1;
           forwardShift = -4;
-        //} else {
-        //  Serial.println(" limit weight on rear");
         }
       }
     }
@@ -257,13 +280,10 @@ int fixBalanceGyro(int center) {
       //increase wight on front
       if (forwardShift > -4) {
         forwardShift -= 2;
-        //Serial.println(" increase weight on front");
       } else {
         if(center < 13) {
           center += 1;
           forwardShift = 4;
-        //} else {
-        //  Serial.println(" limit weight on front");
         }
       }
     }
@@ -276,11 +296,6 @@ int fixBalanceGyro(int center) {
     m_bodyBalance.rl.motor2 = forwardShift;
     m_bodyBalance.rr.motor1 = -forwardShift;
     m_bodyBalance.rr.motor2 = forwardShift;
-    //Serial.println((int)center);
-  } else {
-    //Serial.println(" balanced");
-    // reset to fix drift
-    gyroAngleX = 0;
   }
   return center;
 }

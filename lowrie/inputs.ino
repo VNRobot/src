@@ -89,12 +89,12 @@ unsigned char getTaskByInputs(bool deceleration, bool vertical, bool batteryLow)
     return DOWNTASK;
   }
   if (!vertical) {
-    // disabled for now
-    //return STANDTASK;
+    // stop moving
+    return STANDTASK;
   }
   if (deceleration) {
-    // disabled for now
-    //return WALKBACKTASK;
+    // probably obstacle
+    return WALKBACKTASK;
   }
 
   // calculate obstacle code
