@@ -163,7 +163,7 @@ bool m_gyroEnabled = true;
 // default task
 unsigned char m_defaultTask = WALKTASK; // STANDWALKTASK;
 // center position in the pattern array + - 6
-int m_center = 11; // bigger the number more weight on front
+int m_center = 10; // bigger the number more weight on front
 // device mode
 unsigned char _deviceMode = EXPLORE;
 // points to m_currentSequence for every leg
@@ -176,6 +176,8 @@ unsigned char _calibrationCounter = 0;
 unsigned char _calibrationStage = 0;
 // main time delay in the loop in msec
 unsigned char _timeDelay = 35;
+// new task
+ unsigned char _newTask;
 //----------------------------------------------------------
 // variables for temporary use
 unsigned char i;
@@ -346,7 +348,9 @@ void loop() {
     if (_deviceMode == EXPLORE) {
       // explore mode
       // gyro based balance fix
-      m_center = fixBalanceGyro(m_center);
+      if (m_gyroEnabled) {
+        m_center = fixBalanceGyro(m_center);
+      }
       // update pattern for the next sequence
       exploreModeCall(setNextPattern(m_currentTask[m_patternCounter]));
     } else {
@@ -364,7 +368,7 @@ void exploreModeCall(unsigned char patternStatus) {
     {     
       // get next task
       // proximity sensors input set next task. 
-      applyTask(getTaskByInputs(getDecelerationGyro(), checkVerticalPositionGyro(), checkBatteryLowInputs()));
+      applyTask(getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs()));
     }
     break;
     case STANDWALK:
@@ -377,11 +381,17 @@ void exploreModeCall(unsigned char patternStatus) {
     }        
     break;
     case WALKFORWARD:
-    {      
-      if (m_gyroEnabled) {
-        updateTurnPattern(getDirectionCorrectionGyro());
+    {
+      // assume WALKFORWARD is deault task
+      _newTask = getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs());
+      if (m_defaultTask == _newTask) {
+        if (m_gyroEnabled) {
+          updateTurnPattern(getDirectionCorrectionGyro());
+        } else {
+          updateTurnPattern(0);
+        }
       } else {
-        updateTurnPattern(0);
+        applyTask(_newTask);
       }
     }
     break;

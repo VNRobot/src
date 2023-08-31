@@ -38,9 +38,7 @@ unsigned char rollMaxTime = 0;
 // buffers to read register into
 float floatBuffer[3];
 // shift forward walking balance value
-char forwardShift = 0;
-// deceleration value
-float deceleration = 0;
+char forwardShift = -6;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -135,15 +133,7 @@ void updateGyro(unsigned char sequenceCount) {
     rollMax = rollAngle;
     rollMinTime = 0;
     rollMaxTime = 0;
-    deceleration = 0;
   } else {
-    // find deceleration
-    accAngleYold -= accAngleY;
-    if (accAngleYold > 0) {
-      deceleration += accAngleYold;
-    } else if (accAngleYold < 0) {
-      deceleration -= accAngleYold;
-    }
     // find max and min roll
     if (rollAngle > rollMax) {
       rollMax = rollAngle;
@@ -180,15 +170,6 @@ void resetGyro(void) {
   yaw = 0;
   yawLast = 0;
   pitchLast = 0;
-}
-
-// get deceleration event
-bool getDecelerationGyro(void) {
-  // make border value 100 
-  if ((int)deceleration > 100) {
-    return true;
-  }
-  return false;
 }
 
 // get walking direction
@@ -251,7 +232,7 @@ unsigned char getRollRightTimeGyro(void) {
 
 // check if robot is in vertical position
 bool checkVerticalPositionGyro(void) {
-  // set angle as 60
+  // set angle as 45
   if ((rollMax > 45) || (rollMin < -45)) {
     return false;
   }
@@ -266,24 +247,24 @@ int fixBalanceGyro(int center) {
     if ((rollMinTime < 8) && (rollMaxTime > 7)) {
       // front is too heavy
       // increase weight on rear
-      if (forwardShift < 4) {
+      if (forwardShift < 6) {
         forwardShift += 2;
       } else {
         if(center > 9) {
           center -= 1;
-          forwardShift = -4;
+          forwardShift = -6;
         }
       }
     }
     if ((rollMinTime > 7) && (rollMaxTime < 8)) {
       // rear is too heavy
       //increase wight on front
-      if (forwardShift > -4) {
+      if (forwardShift > -6) {
         forwardShift -= 2;
       } else {
         if(center < 13) {
           center += 1;
-          forwardShift = 4;
+          forwardShift = 6;
         }
       }
     }
