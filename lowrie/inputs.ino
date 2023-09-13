@@ -1,6 +1,6 @@
 /*
 Wlking Robot Lowrie
-Licended GNU GPLv3 2023
+Licended GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Process analog inputs
 left turned sensor A0
@@ -81,10 +81,6 @@ unsigned char getDistanceLevel(unsigned short input)
 // process sensors return next task name
 // could be more complex if remembers previos states
 unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
-  // check sensors enabled
-  if (! m_sensorsEnabled) {
-    return m_defaultTask;
-  }
   if (batteryLow) {
     return DOWNTASK;
   }
@@ -92,7 +88,10 @@ unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
     // stop moving
     return STANDTASK;
   }
-
+  // check sensors enabled
+  if (! m_sensorsEnabled) {
+    return m_defaultTask;
+  }
   // calculate obstacle code
   switch ((unsigned char)(getDistanceLevel(_analogInputs.right) * 4 + getDistanceLevel(_analogInputs.left))) {
     //         left rignt
@@ -106,7 +105,7 @@ unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
       return WALKTURNRIGHTTASK;
     break;
     case 3: //    3    0
-      return STANDTURNLEFTTASK;
+      return STANDTURNRIGHTTASK;
     break;
     case 4: //    0    1
       return WALKSHIFTLEFTTASK;
@@ -124,7 +123,7 @@ unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
       return STANDTURNRIGHTTASK;
     break;
     case 7: //    3    1
-      return STANDTURNLEFTTASK;
+      return STANDTURNRIGHTTASK;
     break;
     case 8: //    0    2
       return WALKTURNLEFTTASK;
@@ -136,16 +135,16 @@ unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
       return TURNAROUNDTASK;
     break;
     case 11: //    3    2
-      return STANDTURNLEFT2TASK;
+      return STANDTURNRIGHT2TASK;
     break;
     case 12: //    0    3
-      return STANDTURNRIGHTTASK;
+      return STANDTURNLEFTTASK;
     break;
     case 13: //    1    3
-      return STANDTURNRIGHTTASK;
+      return STANDTURNLEFTTASK;
     break;
     case 14: //    2    3
-      return STANDTURNRIGHT2TASK;
+      return STANDTURNLEFT2TASK;
     break;
     case 15: //    3    3
       return WALKBACKTASK;

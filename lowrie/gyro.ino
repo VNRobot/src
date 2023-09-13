@@ -1,6 +1,6 @@
 /*
 Wlking Robot Lowrie
-Licended GNU GPLv3 2023
+Licended GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 use MPU6050 to read gyroscope and accelerometer
 */
@@ -10,6 +10,7 @@ use MPU6050 to read gyroscope and accelerometer
 float accAngleX;
 float accAngleY;
 float accAngleYold = 0;
+float accAngleXold = 0;
 // acceleration errors
 float AccErrorX = 0;
 float AccErrorY = 0;
@@ -37,8 +38,8 @@ unsigned char rollMinTime = 0;
 unsigned char rollMaxTime = 0;
 // buffers to read register into
 float floatBuffer[3];
-// shift forward walking balance value
-char forwardShift = -6;
+// shift forward ballance
+int ballanceShift = 0;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -133,6 +134,8 @@ void updateGyro(unsigned char sequenceCount) {
     rollMax = rollAngle;
     rollMinTime = 0;
     rollMaxTime = 0;
+    accAngleYold = accAngleY;
+    accAngleXold = accAngleX;
   } else {
     // find max and min roll
     if (rollAngle > rollMax) {
@@ -143,10 +146,13 @@ void updateGyro(unsigned char sequenceCount) {
       rollMin = rollAngle;
       rollMinTime = sequenceCount;
     }
+    accAngleYold += accAngleY;
+    accAngleXold += accAngleX;
   }
-  accAngleYold = accAngleY;
   // if end of sycle
   if (sequenceCount == 15) {
+    accAngleYold /= 16;
+    accAngleXold /= 16;
     yawLast = (int)yaw;
     pitchLast = (int)(0.96 * gyroAngleY + 0.04 * accAngleY);
     // fix slow drift
@@ -188,13 +194,13 @@ void updateWalkingDirectionGyro(int directionData) {
 
 // get walking direction correction from gyroscope
 char getDirectionCorrectionGyro(void) {
-  // maximal direction correction is 10
+  // maximal direction correction is 5
   directionAngle = yawLast / 2;
-  if (directionAngle > 10) {
-    directionAngle = 10;
+  if (directionAngle > 5) {
+    directionAngle = 5;
   }
-  if (directionAngle < -10) {
-    directionAngle = -10;
+  if (directionAngle < -5) {
+    directionAngle = -5;
   }
   return (char)directionAngle;
 }
@@ -218,65 +224,51 @@ int getRollRightGyro(void) {
   return rollMax;
 }
 
-// get roll left time
-unsigned char getRollLeftTimeGyro(void) {
-  // time 0 - 7 front is too heavy
-  return rollMinTime;
-}
-
-// get roll right time
-unsigned char getRollRightTimeGyro(void) {
-  // time 8 - 15 front is too heavy
-  return rollMaxTime;
-}
-
 // check if robot is in vertical position
 bool checkVerticalPositionGyro(void) {
-  // set angle as 45
-  if ((rollMax > 45) || (rollMin < -45)) {
+  // set angle as 60
+  if ((accAngleXold > 60) || (accAngleXold < -60)) {
     return false;
   }
   return true;
 }
 
 // fix balance using gyro
-int fixBalanceGyro(int center) {
-  // balance
+int fixBalanceGyro(void) {
+  // nose down increase waight on rear
+  // nose up increase waight on front
   if (rollMax - rollMin > 2) {
     // body rolls
     if ((rollMinTime < 8) && (rollMaxTime > 7)) {
       // front is too heavy
       // increase weight on rear
-      if (forwardShift < 6) {
-        forwardShift += 2;
-      } else {
-        if(center > 9) {
-          center -= 1;
-          forwardShift = -6;
-        }
-      }
+      ballanceShift -= 1;
     }
     if ((rollMinTime > 7) && (rollMaxTime < 8)) {
       // rear is too heavy
       //increase wight on front
-      if (forwardShift > -6) {
-        forwardShift -= 2;
-      } else {
-        if(center < 13) {
-          center += 1;
-          forwardShift = 6;
-        }
-      }
+      ballanceShift += 1;
     }
-    // update body balance
-    m_bodyBalance.fl.motor1 = -forwardShift;
-    m_bodyBalance.fl.motor2 = forwardShift;
-    m_bodyBalance.fr.motor1 = -forwardShift;
-    m_bodyBalance.fr.motor2 = forwardShift;
-    m_bodyBalance.rl.motor1 = -forwardShift;
-    m_bodyBalance.rl.motor2 = forwardShift;
-    m_bodyBalance.rr.motor1 = -forwardShift;
-    m_bodyBalance.rr.motor2 = forwardShift;
+  }
+  int center = m_centerAbsolute + ballanceShift - accAngleYold / 2;
+  if (center < 6) {
+    center = 6;
+  } else if (center > 17) {
+    center = 17;
   }
   return center;
+}
+
+// fix side balance using gyro
+char fixSideBalanceGyro(char sideBallance) {
+  if (accAngleXold > 1) {
+    if (sideBallance < 4) {
+      sideBallance ++;
+    }
+  } else if (accAngleXold < -1) {
+    if (sideBallance > -4) {
+      sideBallance --;
+    }
+  }
+  return sideBallance;
 }

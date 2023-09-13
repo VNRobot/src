@@ -1,6 +1,6 @@
 /*
 Wlking Robot Lowrie
-Licended GNU GPLv3 2023
+Licended GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Main file
 */
@@ -148,8 +148,6 @@ sequence m_currentSequence[16] = {
   0,  0,  30, 30,
   0,  0,  30, 30
 };
-// dynamic body balance for 8 motors
-legMotors m_bodyBalance = {0, 0, 0, 0, 0, 0, 0, 0};
 // motors calibration values for 10 motors
 allMotors m_calibration = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // pattern counter points to m_currentTask
@@ -162,8 +160,14 @@ bool m_sensorsEnabled = true;
 bool m_gyroEnabled = true;
 // default task
 unsigned char m_defaultTask = WALKTASK; // STANDWALKTASK;
-// center position in the pattern array + - 6
-int m_center = 10; // bigger the number more weight on front
+// center position in the pattern array
+int m_centerAbsolute = 13; // (range 6 to 17) bigger the number more weight on front
+// dynamic ballance
+int m_center = m_centerAbsolute;
+// side dynamic ballance
+char m_sideBallance = 0;
+char m_sideUpLeft = 0;
+char m_sideUpRight = 0;
 // device mode
 unsigned char _deviceMode = EXPLORE;
 // points to m_currentSequence for every leg
@@ -175,7 +179,7 @@ unsigned char _calibrationCounter = 0;
 // calibration stage
 unsigned char _calibrationStage = 0;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 35;
+unsigned char _timeDelay = 25;
 // new task
  unsigned char _newTask;
 //----------------------------------------------------------
@@ -303,16 +307,16 @@ void loop() {
   // set motors angle values
   servo_frnt.write(90 - (m_currentSequence[_sequenceCount.fl].front          + m_calibration.front));
   servo_rear.write(90 - (m_currentSequence[_sequenceCount.fl].rear           + m_calibration.rear));
-  servo_fl_1.write(90 + (m_currentSequence[_sequenceCount.fl].m.motor1  - 30 + m_calibration.m.fl.motor1 + m_bodyBalance.fl.motor1));
-  servo_fl_2.write(90 - (m_currentSequence[_sequenceCount.fl].m.motor2  - 30 + m_calibration.m.fl.motor2 + m_bodyBalance.fl.motor2));
-  servo_fr_1.write(90 - (m_currentSequence[_sequenceCount.fr].m.motor1  - 30 + m_calibration.m.fr.motor1 + m_bodyBalance.fr.motor1));
-  servo_fr_2.write(90 + (m_currentSequence[_sequenceCount.fr].m.motor2  - 30 + m_calibration.m.fr.motor2 + m_bodyBalance.fr.motor2));
-  servo_rl_1.write(90 + (m_currentSequence[_sequenceCount.rl].m.motor1  - 30 + m_calibration.m.rl.motor1 + m_bodyBalance.rl.motor1));
-  servo_rl_2.write(90 - (m_currentSequence[_sequenceCount.rl].m.motor2  - 30 + m_calibration.m.rl.motor2 + m_bodyBalance.rl.motor2));
-  servo_rr_1.write(90 - (m_currentSequence[_sequenceCount.rr].m.motor1  - 30 + m_calibration.m.rr.motor1 + m_bodyBalance.rr.motor1));
-  servo_rr_2.write(90 + (m_currentSequence[_sequenceCount.rr].m.motor2  - 30 + m_calibration.m.rr.motor2 + m_bodyBalance.rr.motor2));
+  servo_fl_1.write(90 + (m_currentSequence[_sequenceCount.fl].m.motor1  - 30 + m_calibration.m.fl.motor1 - m_sideUpLeft));
+  servo_fl_2.write(90 - (m_currentSequence[_sequenceCount.fl].m.motor2  - 30 + m_calibration.m.fl.motor2 - m_sideUpLeft));
+  servo_fr_1.write(90 - (m_currentSequence[_sequenceCount.fr].m.motor1  - 30 + m_calibration.m.fr.motor1 + m_sideUpRight));
+  servo_fr_2.write(90 + (m_currentSequence[_sequenceCount.fr].m.motor2  - 30 + m_calibration.m.fr.motor2 + m_sideUpRight));
+  servo_rl_1.write(90 + (m_currentSequence[_sequenceCount.rl].m.motor1  - 30 + m_calibration.m.rl.motor1 - m_sideUpLeft));
+  servo_rl_2.write(90 - (m_currentSequence[_sequenceCount.rl].m.motor2  - 30 + m_calibration.m.rl.motor2 - m_sideUpLeft));
+  servo_rr_1.write(90 - (m_currentSequence[_sequenceCount.rr].m.motor1  - 30 + m_calibration.m.rr.motor1 + m_sideUpRight));
+  servo_rr_2.write(90 + (m_currentSequence[_sequenceCount.rr].m.motor2  - 30 + m_calibration.m.rr.motor2 + m_sideUpRight));
   // walking speed depends of the delay
-  delay(_timeDelay); // best value 35
+  delay(_timeDelay);
   // read proximity sensors
   updateInputs(_sequenceCount.fl);
   // update gyro readings
@@ -349,7 +353,15 @@ void loop() {
       // explore mode
       // gyro based balance fix
       if (m_gyroEnabled) {
-        m_center = fixBalanceGyro(m_center);
+        m_center = fixBalanceGyro();
+        m_sideBallance = fixSideBalanceGyro(m_sideBallance);
+        if (m_sideBallance > 0) {
+          m_sideUpLeft = m_sideBallance;
+          m_sideUpRight = 0;
+        } else {
+          m_sideUpLeft = 0;
+          m_sideUpRight = m_sideBallance;
+        }
       }
       // update pattern for the next sequence
       exploreModeCall(setNextPattern(m_currentTask[m_patternCounter]));
