@@ -18,32 +18,37 @@ void _setCalibrationTask(void) {
 // set demo task
 void _setDemoTask(void) {
   m_currentTask[0] = DOSTAND; 
-  m_currentTask[1] = DOSTAND;
-  m_currentTask[2] = STANDTOWALK;
-  m_currentTask[3] = STANDWALK; 
-  m_currentTask[4] = STANDWALKLEFT;
-  m_currentTask[5] = STANDWALK; 
-  m_currentTask[6] = STANDWALKRIGHT; 
-  m_currentTask[7] = STANDWALK; 
-  m_currentTask[8] = STANDWALKSHIFTLEFT; 
-  m_currentTask[9] = STANDWALK; 
-  m_currentTask[10] = STANDWALKSHIFTRIGHT; 
-  m_currentTask[11] = STANDWALK;
-  m_currentTask[12] = WALKFORWARD; 
-  m_currentTask[13] = WALKLEFT;
-  m_currentTask[14] = WALKFORWARD; 
-  m_currentTask[15] = WALKRIGHT;
-  m_currentTask[16] = WALKFORWARD; 
-  m_currentTask[17] = WALKSHIFTLEFT;
-  m_currentTask[18] = WALKFORWARD; 
-  m_currentTask[19] = WALKSHIFTRIGHT;
-  m_currentTask[20] = WALKFORWARD; 
-  m_currentTask[21] = STANDWALK;
-  m_currentTask[22] = WALKBACK;
-  m_currentTask[23] = STANDWALK;
-  m_currentTask[24] = WALKTOSTAND;
-  m_currentTask[25] = DOSTAND; 
-  m_currentTask[26] = RESET;
+  m_currentTask[1] = STANDTOWALK;
+  m_currentTask[2] = STANDWALK;
+  m_currentTask[3] = DOREPEAT; 
+  // demo dance not in use for now
+  //m_currentTask[0] = DOSTAND; 
+  //m_currentTask[1] = DOSTAND;
+  //m_currentTask[2] = STANDTOWALK;
+  //m_currentTask[3] = STANDWALK; 
+  //m_currentTask[4] = STANDWALKLEFT;
+  //m_currentTask[5] = STANDWALK; 
+  //m_currentTask[6] = STANDWALKRIGHT; 
+  //m_currentTask[7] = STANDWALK; 
+  //m_currentTask[8] = STANDWALKSHIFTLEFT; 
+  //m_currentTask[9] = STANDWALK; 
+  //m_currentTask[10] = STANDWALKSHIFTRIGHT; 
+  //m_currentTask[11] = STANDWALK;
+  //m_currentTask[12] = WALKFORWARD; 
+  //m_currentTask[13] = WALKLEFT;
+  //m_currentTask[14] = WALKFORWARD; 
+  //m_currentTask[15] = WALKRIGHT;
+  //m_currentTask[16] = WALKFORWARD; 
+  //m_currentTask[17] = WALKSHIFTLEFT;
+  //m_currentTask[18] = WALKFORWARD; 
+  //m_currentTask[19] = WALKSHIFTRIGHT;
+  //m_currentTask[20] = WALKFORWARD; 
+  //m_currentTask[21] = STANDWALK;
+  //m_currentTask[22] = WALKBACK;
+  //m_currentTask[23] = STANDWALK;
+  //m_currentTask[24] = WALKTOSTAND;
+  //m_currentTask[25] = DOSTAND; 
+  //m_currentTask[26] = RESET;
 }
 
 // set begin task

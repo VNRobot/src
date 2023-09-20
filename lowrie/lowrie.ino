@@ -64,7 +64,7 @@ enum m_tasks {
   STANDWALKTASK,
   STANDTASK
 };
-// buttons
+// pin numbers
 enum m_dPins {
   MODE_BTN = 2,
   FRONT_MOTOR = 3,
@@ -159,12 +159,12 @@ bool m_sensorsEnabled = true;
 // enable gyro flag
 bool m_gyroEnabled = true;
 // default task
-unsigned char m_defaultTask = WALKTASK; // STANDWALKTASK;
+unsigned char m_defaultTask = WALKTASK;
 // center position in the pattern array
 int m_centerAbsolute = 13; // (range 6 to 17) bigger the number more weight on front
-// dynamic ballance
+// dynamic forward ballance
 int m_center = m_centerAbsolute;
-// side dynamic ballance
+// dynamic side ballance
 char m_sideBallance = 0;
 char m_sideUpLeft = 0;
 char m_sideUpRight = 0;
@@ -179,7 +179,7 @@ unsigned char _calibrationCounter = 0;
 // calibration stage
 unsigned char _calibrationStage = 0;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 25;
+unsigned char _timeDelay = 22;
 // new task
  unsigned char _newTask;
 //----------------------------------------------------------
@@ -213,10 +213,6 @@ void setup() {
     // set calibration mode
     _deviceMode = CALIBRATION_INFO;
   }
-  // init gyro MPU6050 using I2C
-  delay(500);
-  initGyro();
-  delay(100);
   // init motor pins
   // motor connection pins
   //   f,  r, fl1, fl2, fr1, fr2, rl1, rl2, rr1, rr2
@@ -293,11 +289,17 @@ void setup() {
       // demo mode
       Serial.println("Entering demo mode");
       applyTask(DEMOTASK);
+      // disable sensors in demo mmode
+      m_sensorsEnabled = false;
     } else {
       Serial.println("Entering explore mode");
       applyTask(BEGINTASK);
     }
   }
+  // init gyro MPU6050 using I2C
+  delay(500);
+  initGyro();
+  delay(200);
   // reset gyro
   resetGyro();
 }
@@ -307,13 +309,13 @@ void loop() {
   // set motors angle values
   servo_frnt.write(90 - (m_currentSequence[_sequenceCount.fl].front          + m_calibration.front));
   servo_rear.write(90 - (m_currentSequence[_sequenceCount.fl].rear           + m_calibration.rear));
-  servo_fl_1.write(90 + (m_currentSequence[_sequenceCount.fl].m.motor1  - 30 + m_calibration.m.fl.motor1 - m_sideUpLeft));
+  servo_fl_1.write(90 + (m_currentSequence[_sequenceCount.fl].m.motor1  - 30 + m_calibration.m.fl.motor1 - m_sideUpLeft / 3));
   servo_fl_2.write(90 - (m_currentSequence[_sequenceCount.fl].m.motor2  - 30 + m_calibration.m.fl.motor2 - m_sideUpLeft));
-  servo_fr_1.write(90 - (m_currentSequence[_sequenceCount.fr].m.motor1  - 30 + m_calibration.m.fr.motor1 + m_sideUpRight));
+  servo_fr_1.write(90 - (m_currentSequence[_sequenceCount.fr].m.motor1  - 30 + m_calibration.m.fr.motor1 + m_sideUpRight / 3));
   servo_fr_2.write(90 + (m_currentSequence[_sequenceCount.fr].m.motor2  - 30 + m_calibration.m.fr.motor2 + m_sideUpRight));
-  servo_rl_1.write(90 + (m_currentSequence[_sequenceCount.rl].m.motor1  - 30 + m_calibration.m.rl.motor1 - m_sideUpLeft));
+  servo_rl_1.write(90 + (m_currentSequence[_sequenceCount.rl].m.motor1  - 30 + m_calibration.m.rl.motor1 - m_sideUpLeft / 3));
   servo_rl_2.write(90 - (m_currentSequence[_sequenceCount.rl].m.motor2  - 30 + m_calibration.m.rl.motor2 - m_sideUpLeft));
-  servo_rr_1.write(90 - (m_currentSequence[_sequenceCount.rr].m.motor1  - 30 + m_calibration.m.rr.motor1 + m_sideUpRight));
+  servo_rr_1.write(90 - (m_currentSequence[_sequenceCount.rr].m.motor1  - 30 + m_calibration.m.rr.motor1 + m_sideUpRight / 3));
   servo_rr_2.write(90 + (m_currentSequence[_sequenceCount.rr].m.motor2  - 30 + m_calibration.m.rr.motor2 + m_sideUpRight));
   // walking speed depends of the delay
   delay(_timeDelay);

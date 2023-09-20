@@ -32,7 +32,7 @@ bool checkBatteryLowInputs(void) {
 // check for calibration mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
-    if (_analogInputs.left > 500 && _analogInputs.right > 500) {
+    if (_analogInputs.left > 400 || _analogInputs.right > 400) {
         return true;
     }
     return false;
