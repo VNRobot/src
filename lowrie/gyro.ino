@@ -38,8 +38,6 @@ unsigned char rollMinTime = 0;
 unsigned char rollMaxTime = 0;
 // buffers to read register into
 float floatBuffer[3];
-// shift forward ballance
-int ballanceShift = 0;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -242,15 +240,26 @@ int fixBalanceGyro(void) {
     if ((rollMinTime < 8) && (rollMaxTime > 7)) {
       // front is too heavy
       // increase weight on rear
-      ballanceShift -= 1;
+      m_ballanceShift -= 1;
     }
     if ((rollMinTime > 7) && (rollMaxTime < 8)) {
       // rear is too heavy
       //increase wight on front
-      ballanceShift += 1;
+      m_ballanceShift += 1;
     }
   }
-  int center = m_centerAbsolute + ballanceShift - accAngleYold / 2;
+  int center = m_centerAbsolute + m_ballanceShift;
+  if (center < 6) {
+    center = 6;
+  } else if (center > 17) {
+    center = 17;
+  }
+  return center;
+}
+
+// compensate nose dive ballance
+int compensateBallanceGyro(void) {
+  int center = m_centerAbsolute + m_ballanceShift - accAngleYold / 2;
   if (center < 6) {
     center = 6;
   } else if (center > 17) {
@@ -262,11 +271,11 @@ int fixBalanceGyro(void) {
 // fix side balance using gyro
 char fixSideBalanceGyro(char sideBallance) {
   if (accAngleXold > 1) {
-    if (sideBallance < 4) {
+    if (sideBallance < 2) {
       sideBallance ++;
     }
   } else if (accAngleXold < -1) {
-    if (sideBallance > -4) {
+    if (sideBallance > -2) {
       sideBallance --;
     }
   }

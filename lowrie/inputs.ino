@@ -5,20 +5,30 @@ Arduino nano
 Process analog inputs
 left turned sensor A0
 right turned sensor A1
+battery sensor A6
+current sensors:
+center A7
+front A3
+rear A2
 */
 // sensors structure
 struct sensors {
   unsigned short left;
   unsigned short right;
+  unsigned short center;
+  unsigned short front;
+  unsigned short rear;
+  unsigned short battery;
 };
 // analog input values left sensor, right sensor
-sensors _analogInputs = {0, 0};
+sensors _analogInputs = {0, 0, 0, 0, 0, 0};
 // battery low measurement counter
 unsigned char _batteryLow = 0;
 
 // check battery low state
 bool checkBatteryLowInputs(void) {
-  if (digitalRead(BATTERY_LOW) == HIGH) {
+  // battery low level is 6.2v - 750
+  if ((_analogInputs.battery > 500) && (_analogInputs.battery < 750)) {
     _batteryLow ++;
   } else {
     _batteryLow = 0;
@@ -42,12 +52,27 @@ bool checkForDemoModeInputs(void) {
 void updateInputs(unsigned char sequenceCount) {
   if (sequenceCount == 0) {
     // read proximity sensors
-    _analogInputs.left = (unsigned short)analogRead(A0);
-    _analogInputs.right = (unsigned short)analogRead(A1);
+    _analogInputs.left = (unsigned short)analogRead(A1);
+    _analogInputs.right = (unsigned short)analogRead(A0);
+    _analogInputs.center = (unsigned short)analogRead(A7);
+    _analogInputs.front = (unsigned short)analogRead(A3);
+    _analogInputs.rear = (unsigned short)analogRead(A2);
+    _analogInputs.battery = (unsigned short)analogRead(A6);
   } else {
     // read proximity sensors to find average value
-    _analogInputs.left = (_analogInputs.left * 3 + (unsigned short)analogRead(A0)) / 4;
-    _analogInputs.right = (_analogInputs.right * 3 + (unsigned short)analogRead(A1)) / 4;
+    _analogInputs.left = (_analogInputs.left * 3 + (unsigned short)analogRead(A1)) / 4;
+    _analogInputs.right = (_analogInputs.right * 3 + (unsigned short)analogRead(A0)) / 4;
+    _analogInputs.center += (unsigned short)analogRead(A7);
+    _analogInputs.front += (unsigned short)analogRead(A3);
+    _analogInputs.rear += (unsigned short)analogRead(A2);
+    _analogInputs.battery += (unsigned short)analogRead(A6);
+  }
+  if (sequenceCount == 15) {
+    // find average value
+    _analogInputs.center /= 16;
+    _analogInputs.front /= 16;
+    _analogInputs.rear /= 16;
+    _analogInputs.battery /= 16;
   }
 }
 
@@ -154,4 +179,51 @@ unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
     break;
   }
   return m_defaultTask;
+}
+
+// get current of center motors
+unsigned short getCenterCurrentInputs(void) {
+  if ((_analogInputs.battery < _analogInputs.center) || (! m_currentEnabled)) {
+    return 0;
+  }
+  return _analogInputs.battery - _analogInputs.center;
+}
+
+// get current of front motors
+unsigned short getFrontCurrentInputs(void) {
+  if ((_analogInputs.battery < _analogInputs.front) || (! m_currentEnabled)) {
+    return 0;
+  }
+  return _analogInputs.battery - _analogInputs.front;
+}
+
+// get current of rear motors
+unsigned short getRearCurrentInputs(void) {
+  if ((_analogInputs.battery < _analogInputs.rear) || (! m_currentEnabled)) {
+    return 0;
+  }
+  return _analogInputs.battery - _analogInputs.rear;
+}
+
+// fix balance using current sensors
+int fixBalanceCurrentInputs(void) {
+  // nose down increase waight on rear
+  // nose up increase waight on front
+  if (_analogInputs.rear - _analogInputs.front > 2) {
+    // front is too heavy
+    // increase weight on rear
+    m_ballanceShift -= 1;
+  }
+  if (_analogInputs.front - _analogInputs.rear > 2) {
+    // rear is too heavy
+    //increase wight on front
+    m_ballanceShift += 1;
+  }
+  int center = m_centerAbsolute + m_ballanceShift;
+  if (center < 6) {
+    center = 6;
+  } else if (center > 17) {
+    center = 17;
+  }
+  return center;
 }

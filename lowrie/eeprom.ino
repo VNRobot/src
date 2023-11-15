@@ -10,7 +10,7 @@ Read and write eeprom for software version and calibration data
 // software version hardcoded
 // should be changed manually
 unsigned char getSoftwareVersionEeprom(void) {
-  return 41;
+  return 50;
 }
 
 // write software version to eeprom

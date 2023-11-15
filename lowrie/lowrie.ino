@@ -76,16 +76,15 @@ enum m_dPins {
   RL1_MOTOR = 9,
   RL2_MOTOR = 10,
   RR1_MOTOR = 11,
-  RR2_MOTOR = 12,
-  BATTERY_LOW = 13
+  RR2_MOTOR = 12
 };
 // device mode enumerator
 enum m_mode {
   EXPLORE,
   CALIBRATION_INFO,
+  CALIBRATION_START,
   CALIBRATION_FRONT,
   CALIBRATION_REAR,
-  CALIBRATION_START,
   CALIBRATION_AUTO_1,
   CALIBRATION_AUTO_2,
   CALIBRATION_SAVE,
@@ -124,7 +123,7 @@ struct allMotors {
 };
 // Array to store currently executed task
 // contains list of patterns
-unsigned char m_currentTask[28];
+unsigned char m_currentTask[28] = {DOCALIBRATION, DOREPEAT};
 // 16 positions per sequence
 // all legs using the same sequence with different pozition shift
 sequence m_currentSequence[16] = {
@@ -158,12 +157,16 @@ unsigned char m_leftRightShift = 0;
 bool m_sensorsEnabled = true;
 // enable gyro flag
 bool m_gyroEnabled = true;
+// enable current reading
+bool m_currentEnabled = true;
 // default task
 unsigned char m_defaultTask = WALKTASK;
 // center position in the pattern array
 int m_centerAbsolute = 13; // (range 6 to 17) bigger the number more weight on front
 // dynamic forward ballance
 int m_center = m_centerAbsolute;
+// shift forward ballance
+int m_ballanceShift = 0;
 // dynamic side ballance
 char m_sideBallance = 0;
 char m_sideUpLeft = 0;
@@ -179,7 +182,7 @@ unsigned char _calibrationCounter = 0;
 // calibration stage
 unsigned char _calibrationStage = 0;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 22;
+unsigned char _timeDelay = 35;
 // new task
  unsigned char _newTask;
 //----------------------------------------------------------
@@ -200,18 +203,27 @@ bool readButtonPress(int pin) {
 
 // runs once on boot or reset
 void setup() {
+  int calM1 = 0;
+  int calM2 = 0;
   // Start serial for debugging
   Serial.begin(9600);
   Serial.println("Device started");
   // init digital inputs
   // mode button is active on LOW
   pinMode(MODE_BTN, INPUT_PULLUP); // button "mode"
-  // battery voltage sensor is active on HIGH
-  pinMode(BATTERY_LOW, INPUT);
   // check for Mode button press and for stored calibration
-  if (readButtonPress(MODE_BTN) || (getSoftwareVersionEeprom() != readSoftwareVersionEeprom())) {
+  if (readButtonPress(MODE_BTN)) {
+    // disable current sensors
+    m_currentEnabled = false;
     // set calibration mode
     _deviceMode = CALIBRATION_INFO;
+    calM1 = -60;
+    calM2 = 60;
+  } else if (getSoftwareVersionEeprom() != readSoftwareVersionEeprom()) {
+    // set calibration mode
+    _deviceMode = CALIBRATION_INFO;
+    calM1 = -60;
+    calM2 = 60;
   }
   // init motor pins
   // motor connection pins
@@ -226,28 +238,28 @@ void setup() {
   servo_rear.write(90);
   delay(100);
   servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  servo_fl_1.write(90);
+  servo_fl_1.write(90 - calM1);
   delay(100);
   servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  servo_fl_2.write(90);
+  servo_fl_2.write(90 - calM2);
   delay(100);
   servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  servo_fr_1.write(90);
+  servo_fr_1.write(90 + calM1);
   delay(100);
   servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  servo_fr_2.write(90);
+  servo_fr_2.write(90 + calM2);
   delay(100);
   servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  servo_rl_1.write(90);
+  servo_rl_1.write(90 - calM1);
   delay(100);
   servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  servo_rl_2.write(90);
+  servo_rl_2.write(90 - calM2);
   delay(100);
   servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  servo_rr_1.write(90);
+  servo_rr_1.write(90 + calM1);
   delay(100);
   servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  servo_rr_2.write(90);
+  servo_rr_2.write(90 + calM2);
   delay(100);
   // clear proximity sensors
   updateInputs(0);
@@ -256,7 +268,6 @@ void setup() {
   if (_deviceMode == CALIBRATION_INFO) {
     // factory mode is used for legs calibration
     Serial.println("Entering factory mode");
-    applyTask(DOWNTASK);
   } else {
     // normal operation
     // load calibration if available
@@ -356,6 +367,8 @@ void loop() {
       // gyro based balance fix
       if (m_gyroEnabled) {
         m_center = fixBalanceGyro();
+        m_center = fixBalanceCurrentInputs();
+        //m_center = compensateBallanceGyro();
         m_sideBallance = fixSideBalanceGyro(m_sideBallance);
         if (m_sideBallance > 0) {
           m_sideUpLeft = m_sideBallance;
@@ -424,7 +437,7 @@ void factoryModeCall(unsigned char patternStatus) {
   // update factory stage
   if (readButtonPress(MODE_BTN)) {
     if (_deviceMode < CALIBRATION_START) {
-      _deviceMode ++;
+      _deviceMode = CALIBRATION_START;
     } else {
       _modePressed = true;
     }
@@ -448,34 +461,25 @@ void factoryModeCall(unsigned char patternStatus) {
       Serial.print((int)getRollLeftGyro());
       Serial.print(" Roll right ");
       Serial.println((int)getRollRightGyro());
-    break;
-    case CALIBRATION_FRONT: 
-    {
-      Serial.println("Press mode button when front is aligned");
-      // update front center motor
-      m_calibration.front -= 1;
-      if (m_calibration.front < -15) {
-        m_calibration.front = 10;
-      }
-    }
-    break;
-    case CALIBRATION_REAR:
-    {
-      Serial.println("Press mode button when rear is aligned");
-      // update rear center motor
-      m_calibration.rear -= 1;
-      if (m_calibration.rear < -15) {
-        m_calibration.rear = 10;
-      }
-    }
+      // motors current
+      Serial.print("Battery  ");
+      Serial.print((int)analogRead(A6));
+      Serial.print(" Current center ");
+      Serial.print((int)getCenterCurrentInputs());
+      Serial.print(" front ");
+      Serial.print((int)getFrontCurrentInputs());
+      Serial.print(" rear ");
+      Serial.println((int)getRearCurrentInputs());
     break;
     case CALIBRATION_START: 
     {
-      _deviceMode = CALIBRATION_AUTO_1;
+      _deviceMode = CALIBRATION_FRONT;
       Serial.println("Starting legs calibration");
       applyTask(CALIBRATIONTASK);
     } 
     break;
+    case CALIBRATION_FRONT: 
+    case CALIBRATION_REAR:
     case CALIBRATION_AUTO_1: 
     case CALIBRATION_AUTO_2: 
     {
@@ -529,7 +533,62 @@ bool _getButtonPressed(void) {
 // do legs calibration
 unsigned char calibrateLegs(unsigned char patternCounter) {
   //patternCounter = 0;
-  if (_deviceMode == CALIBRATION_AUTO_1) {
+  if (_deviceMode == CALIBRATION_FRONT) {
+    if (_calibrationStage == 0) {
+      if (_calibrationCounter == 0) {
+        // set initial leg calibration
+        m_calibration.front = 0;
+        m_calibration.rear = 0;
+        m_calibration.m.fl.motor1 = -20;
+        m_calibration.m.fl.motor2 = -20;
+        m_calibration.m.fr.motor1 = -20;
+        m_calibration.m.fr.motor2 = -20;
+        m_calibration.m.rl.motor1 = -20;
+        m_calibration.m.rl.motor2 = -20;
+        m_calibration.m.rr.motor1 = -20;
+        m_calibration.m.rr.motor2 = -20;
+        _calibrationCounter ++;
+      } else {
+        // read current or button
+        if (_getButtonPressed()  || (getCenterCurrentInputs() > 39)) {
+          if (getCenterCurrentInputs() > 39) {
+            m_calibration.front -= 25;
+          }
+          _calibrationCounter = 0;
+          _calibrationStage = 0;
+          _deviceMode = CALIBRATION_REAR;
+        } else {
+          m_calibration.front ++;
+          if (m_calibration.front > 40) {
+            m_calibration.front = -20;
+          }
+        }
+      }
+    }
+  } else if (_deviceMode == CALIBRATION_REAR) {
+    if (_calibrationStage == 0) {
+      if (_calibrationCounter == 0) {
+        // set initial leg calibration
+        m_calibration.rear = 0;
+        _calibrationCounter ++;
+      } else {
+        // read current or button
+        if (_getButtonPressed()  || (getCenterCurrentInputs() > 39)) {
+          if (getCenterCurrentInputs() > 39) {
+            m_calibration.rear -= 25;
+          }
+          _calibrationCounter = 0;
+          _calibrationStage = 0;
+          _deviceMode = CALIBRATION_AUTO_1;
+        } else {
+          m_calibration.rear ++;
+          if (m_calibration.rear > 40) {
+            m_calibration.rear = -20;
+          }
+        }
+      }
+    }
+  } else if (_deviceMode == CALIBRATION_AUTO_1) {
     // tune motor 1
     switch (_calibrationStage) {
       case 0:
@@ -537,25 +596,22 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
         // leg FL
         if (_calibrationCounter == 0) {
           // set initial leg calibration
-          m_calibration.m.fl.motor1 = -20;
-          m_calibration.m.fl.motor2 = 0;
-          m_calibration.m.fr.motor1 = -20;
-          m_calibration.m.fr.motor2 = 0;
-          m_calibration.m.rl.motor1 = -20;
-          m_calibration.m.rl.motor2 = 0;
-          m_calibration.m.rr.motor1 = -20;
-          m_calibration.m.rr.motor2 = 0;
+          m_calibration.m.fl.motor1 = -5;
           patternCounter ++;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.fl.motor1 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
+            if (getFrontCurrentInputs() > 39) {
+              m_calibration.m.fl.motor1 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.fl.motor1 ++;
             if (m_calibration.m.fl.motor1 > 20) {
               m_calibration.m.fl.motor1 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
@@ -564,16 +620,22 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg FR
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.fr.motor1 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.fr.motor1 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
+            if (getFrontCurrentInputs() > 39) {
+              m_calibration.m.fr.motor1 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.fr.motor1 ++;
             if (m_calibration.m.fr.motor1 > 20) {
               m_calibration.m.fr.motor1 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
@@ -582,16 +644,22 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg RL
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.rl.motor1 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.rl.motor1 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
+            if (getRearCurrentInputs() > 39) {
+              m_calibration.m.rl.motor1 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.rl.motor1 ++;
             if (m_calibration.m.rl.motor1 > 20) {
               m_calibration.m.rl.motor1 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
@@ -600,17 +668,23 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg RR
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.rr.motor1 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.rr.motor1 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
+            if (getRearCurrentInputs() > 39) {
+              m_calibration.m.rr.motor1 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage = 0;
+            _deviceMode = CALIBRATION_AUTO_2;
+          } else {
+            m_calibration.m.rr.motor1 ++;
             if (m_calibration.m.rr.motor1 > 20) {
               m_calibration.m.rr.motor1 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage = 0;
-            _deviceMode ++;
           }
         }
       }
@@ -625,16 +699,22 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg FL
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.fl.motor2 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.fl.motor2 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
+            if (getFrontCurrentInputs() > 39) {
+              m_calibration.m.fl.motor2 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.fl.motor2 ++;
             if (m_calibration.m.fl.motor2 > 20) {
               m_calibration.m.fl.motor2 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
@@ -643,22 +723,23 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg FR
         if (_calibrationCounter == 0) {
-          // set legs balance
-          m_calibration.m.fl.motor2 = -20;
-          m_calibration.m.fr.motor2 = -20;
-          m_calibration.m.rl.motor2 = -20;
-          m_calibration.m.rr.motor2 = -20;
+          // set initial leg calibration
+          m_calibration.m.fr.motor2 = -5;
           patternCounter ++;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.fr.motor2 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
+            if (getFrontCurrentInputs() > 39) {
+              m_calibration.m.fr.motor2 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.fr.motor2 ++;
             if (m_calibration.m.fr.motor2 > 20) {
               m_calibration.m.fr.motor2 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
@@ -667,19 +748,25 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg RL
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.rl.motor2 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.rl.motor2 += 1;
-            if (m_calibration.m.rl.motor2 > 20) {
-              m_calibration.m.rl.motor2 = -20;
+          // read current or button
+          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
+            if (getRearCurrentInputs() > 39) {
+              m_calibration.m.rl.motor2 -= 8;
             }
-          } else {
             _calibrationCounter = 0;
             _calibrationStage = 0;
             // end of calibration
             patternCounter ++;
-            _deviceMode ++;
+            _deviceMode = CALIBRATION_SAVE;
+          } else {
+            m_calibration.m.rl.motor2 ++;
+            if (m_calibration.m.rl.motor2 > 20) {
+              m_calibration.m.rl.motor2 = -20;
+            }
           }
         }
       }
@@ -688,16 +775,22 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
       {
         // leg RR
         if (_calibrationCounter == 0) {
+          // set initial leg calibration
+          m_calibration.m.rr.motor2 = -5;
           _calibrationCounter ++;
         } else {
-          if (! _getButtonPressed()) {
-            m_calibration.m.rr.motor2 += 1;
+          // read current or button
+          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
+            if (getRearCurrentInputs() > 39) {
+              m_calibration.m.rr.motor2 -= 8;
+            }
+            _calibrationCounter = 0;
+            _calibrationStage ++;
+          } else {
+            m_calibration.m.rr.motor2 ++;
             if (m_calibration.m.rr.motor2 > 20) {
               m_calibration.m.rr.motor2 = -20;
             }
-          } else {
-            _calibrationCounter = 0;
-            _calibrationStage ++;
           }
         }
       }
