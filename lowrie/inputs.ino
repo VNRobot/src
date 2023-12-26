@@ -67,12 +67,12 @@ void updateInputs(unsigned char sequenceCount) {
     _analogInputs.rear += (unsigned short)analogRead(A2);
     _analogInputs.battery += (unsigned short)analogRead(A6);
   }
-  if (sequenceCount == 15) {
+  if (sequenceCount == 19) {
     // find average value
-    _analogInputs.center /= 16;
-    _analogInputs.front /= 16;
-    _analogInputs.rear /= 16;
-    _analogInputs.battery /= 16;
+    _analogInputs.center /= 20;
+    _analogInputs.front /= 20;
+    _analogInputs.rear /= 20;
+    _analogInputs.battery /= 20;
   }
 }
 
@@ -105,9 +105,12 @@ unsigned char getDistanceLevel(unsigned short input)
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getTaskByInputs(bool vertical, bool batteryLow) {
+unsigned char getTaskByInputs(bool vertical, bool batteryLow, bool highCurrent) {
   if (batteryLow) {
     return DOWNTASK;
+  }
+  if (highCurrent) {
+    return STANDTASK;
   }
   if (!vertical) {
     // stop moving
@@ -206,24 +209,15 @@ unsigned short getRearCurrentInputs(void) {
 }
 
 // fix balance using current sensors
-int fixBalanceCurrentInputs(void) {
-  // nose down increase waight on rear
-  // nose up increase waight on front
-  if (_analogInputs.rear - _analogInputs.front > 2) {
-    // front is too heavy
-    // increase weight on rear
-    m_ballanceShift -= 1;
+bool checkHighCurrentInputs(void) {
+  if (getCenterCurrentInputs() > 120) {
+    return true;
   }
-  if (_analogInputs.front - _analogInputs.rear > 2) {
-    // rear is too heavy
-    //increase wight on front
-    m_ballanceShift += 1;
+  else if (getFrontCurrentInputs() > 120) {
+    return true;
   }
-  int center = m_centerAbsolute + m_ballanceShift;
-  if (center < 6) {
-    center = 6;
-  } else if (center > 17) {
-    center = 17;
+  else if (getRearCurrentInputs() > 120) {
+    return true;
   }
-  return center;
+  return false;
 }

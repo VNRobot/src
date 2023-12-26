@@ -148,9 +148,9 @@ void updateGyro(unsigned char sequenceCount) {
     accAngleXold += accAngleX;
   }
   // if end of sycle
-  if (sequenceCount == 15) {
-    accAngleYold /= 16;
-    accAngleXold /= 16;
+  if (sequenceCount == 19) {
+    accAngleYold /= 20;
+    accAngleXold /= 20;
     yawLast = (int)yaw;
     pitchLast = (int)(0.96 * gyroAngleY + 0.04 * accAngleY);
     // fix slow drift
@@ -232,38 +232,37 @@ bool checkVerticalPositionGyro(void) {
 }
 
 // fix balance using gyro
-int fixBalanceGyro(void) {
+char fixDynamicBalanceGyro(char center) {
   // nose down increase waight on rear
   // nose up increase waight on front
   if (rollMax - rollMin > 2) {
     // body rolls
-    if ((rollMinTime < 8) && (rollMaxTime > 7)) {
+    if ((rollMinTime < 10) && (rollMaxTime > 9)) {
       // front is too heavy
       // increase weight on rear
-      m_ballanceShift -= 1;
+      center -= 1;
     }
-    if ((rollMinTime > 7) && (rollMaxTime < 8)) {
+    if ((rollMinTime > 9) && (rollMaxTime < 10)) {
       // rear is too heavy
       //increase wight on front
-      m_ballanceShift += 1;
+      center += 1;
     }
   }
-  int center = m_centerAbsolute + m_ballanceShift;
-  if (center < 6) {
-    center = 6;
-  } else if (center > 17) {
-    center = 17;
+  if (center < -10) {
+    center = -10;
+  } else if (center > 10) {
+    center = 10;
   }
   return center;
 }
 
-// compensate nose dive ballance
-int compensateBallanceGyro(void) {
-  int center = m_centerAbsolute + m_ballanceShift - accAngleYold / 2;
-  if (center < 6) {
-    center = 6;
-  } else if (center > 17) {
-    center = 17;
+// compensate nose dive for static ballance
+int compensateStaticBallanceGyro(void) {
+  int center = m_centerAbsolute - accAngleYold / 2;
+  if (center < 8) {
+    center = 8;
+  } else if (center > 15) {
+    center = 15;
   }
   return center;
 }

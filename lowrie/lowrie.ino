@@ -124,9 +124,14 @@ struct allMotors {
 // Array to store currently executed task
 // contains list of patterns
 unsigned char m_currentTask[28] = {DOCALIBRATION, DOREPEAT};
-// 16 positions per sequence
+// 20 positions per sequence
 // all legs using the same sequence with different pozition shift
-sequence m_currentSequence[16] = {
+sequence m_currentSequence[20] = {
+  0,  0,  30, 30,
+  0,  0,  30, 30,
+  0,  0,  30, 30,
+  0,  0,  30, 30,
+
   0,  0,  30, 30,
   0,  0,  30, 30,
   0,  0,  30, 30,
@@ -162,11 +167,12 @@ bool m_currentEnabled = true;
 // default task
 unsigned char m_defaultTask = WALKTASK;
 // center position in the pattern array
-int m_centerAbsolute = 13; // (range 6 to 17) bigger the number more weight on front
-// dynamic forward ballance
-int m_center = m_centerAbsolute;
-// shift forward ballance
-int m_ballanceShift = 0;
+int m_centerAbsolute = 13; // (range 8 to 15) bigger the number more weight on front
+// static forward ballance
+int m_centerStatic = m_centerAbsolute;
+// center motor default position
+char m_centerF = 0; // positive more distance between legs
+char m_centerR = 0; // positive more distance between legs
 // dynamic side ballance
 char m_sideBallance = 0;
 char m_sideUpLeft = 0;
@@ -182,7 +188,7 @@ unsigned char _calibrationCounter = 0;
 // calibration stage
 unsigned char _calibrationStage = 0;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 35;
+unsigned char _timeDelay = 25;
 // new task
  unsigned char _newTask;
 //----------------------------------------------------------
@@ -335,10 +341,10 @@ void loop() {
   // update gyro readings
   updateGyro(_sequenceCount.fl);
   // update sequence shift 
-  if (_sequenceCount.fl < 15) {
+  if (_sequenceCount.fl < 19) {
     _sequenceCount.fl ++;
     _sequenceCount.rr = _sequenceCount.fl;
-    if (m_leftRightShift == 16) {
+    if (m_leftRightShift == 20) {
       // second pair of legs not moving
       // used for stand to walk and walk to stand transition
       _sequenceCount.fr = 0;
@@ -354,7 +360,7 @@ void loop() {
     // last sequence in the pattern. Get next pattern
     _sequenceCount.fl = 0;
     _sequenceCount.rr = 0;
-    if (m_leftRightShift == 16) {
+    if (m_leftRightShift == 20) {
       _sequenceCount.fr = 0;
       _sequenceCount.rl = 0;
     } else {
@@ -364,19 +370,16 @@ void loop() {
     // check device mode
     if (_deviceMode == EXPLORE) {
       // explore mode
-      // gyro based balance fix
-      if (m_gyroEnabled) {
-        m_center = fixBalanceGyro();
-        m_center = fixBalanceCurrentInputs();
-        //m_center = compensateBallanceGyro();
-        m_sideBallance = fixSideBalanceGyro(m_sideBallance);
-        if (m_sideBallance > 0) {
-          m_sideUpLeft = m_sideBallance;
-          m_sideUpRight = 0;
-        } else {
-          m_sideUpLeft = 0;
-          m_sideUpRight = m_sideBallance;
-        }
+      m_centerStatic = compensateStaticBallanceGyro();
+      m_centerF = fixDynamicBalanceGyro(m_centerF);
+      m_centerR = - m_centerF;
+      m_sideBallance = fixSideBalanceGyro(m_sideBallance);
+      if (m_sideBallance > 0) {
+        m_sideUpLeft = m_sideBallance;
+        m_sideUpRight = 0;
+      } else {
+        m_sideUpLeft = 0;
+        m_sideUpRight = m_sideBallance;
       }
       // update pattern for the next sequence
       exploreModeCall(setNextPattern(m_currentTask[m_patternCounter]));
@@ -395,7 +398,7 @@ void exploreModeCall(unsigned char patternStatus) {
     {     
       // get next task
       // proximity sensors input set next task. 
-      applyTask(getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs()));
+      applyTask(getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs(), checkHighCurrentInputs()));
     }
     break;
     case STANDWALK:
@@ -410,7 +413,7 @@ void exploreModeCall(unsigned char patternStatus) {
     case WALKFORWARD:
     {
       // assume WALKFORWARD is deault task
-      _newTask = getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs());
+      _newTask = getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs(), checkHighCurrentInputs());
       if (m_defaultTask == _newTask) {
         if (m_gyroEnabled) {
           updateTurnPattern(getDirectionCorrectionGyro());
@@ -532,7 +535,7 @@ bool _getButtonPressed(void) {
 
 // do legs calibration
 unsigned char calibrateLegs(unsigned char patternCounter) {
-  //patternCounter = 0;
+  unsigned short current = 0;
   if (_deviceMode == CALIBRATION_FRONT) {
     if (_calibrationStage == 0) {
       if (_calibrationCounter == 0) {
@@ -550,8 +553,9 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
         _calibrationCounter ++;
       } else {
         // read current or button
-        if (_getButtonPressed()  || (getCenterCurrentInputs() > 39)) {
-          if (getCenterCurrentInputs() > 39) {
+        current = getCenterCurrentInputs();
+        if (_getButtonPressed()  || (current > 39)) {
+          if (current > 39) {
             m_calibration.front -= 25;
           }
           _calibrationCounter = 0;
@@ -573,8 +577,9 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
         _calibrationCounter ++;
       } else {
         // read current or button
-        if (_getButtonPressed()  || (getCenterCurrentInputs() > 39)) {
-          if (getCenterCurrentInputs() > 39) {
+        current = getCenterCurrentInputs();
+        if (_getButtonPressed()  || (current > 39)) {
+          if (current > 39) {
             m_calibration.rear -= 25;
           }
           _calibrationCounter = 0;
@@ -601,15 +606,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
-            if (getFrontCurrentInputs() > 39) {
-              m_calibration.m.fl.motor1 -= 8;
+          current = getFrontCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.fl.motor1 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.fl.motor1 ++;
-            if (m_calibration.m.fl.motor1 > 20) {
+            if (m_calibration.m.fl.motor1 > 30) {
               m_calibration.m.fl.motor1 = -20;
             }
           }
@@ -625,15 +631,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
-            if (getFrontCurrentInputs() > 39) {
-              m_calibration.m.fr.motor1 -= 8;
+          current = getFrontCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.fr.motor1 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.fr.motor1 ++;
-            if (m_calibration.m.fr.motor1 > 20) {
+            if (m_calibration.m.fr.motor1 > 30) {
               m_calibration.m.fr.motor1 = -20;
             }
           }
@@ -649,15 +656,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
-            if (getRearCurrentInputs() > 39) {
-              m_calibration.m.rl.motor1 -= 8;
+          current = getRearCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.rl.motor1 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.rl.motor1 ++;
-            if (m_calibration.m.rl.motor1 > 20) {
+            if (m_calibration.m.rl.motor1 > 30) {
               m_calibration.m.rl.motor1 = -20;
             }
           }
@@ -673,16 +681,17 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
-            if (getRearCurrentInputs() > 39) {
-              m_calibration.m.rr.motor1 -= 8;
+          current = getRearCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.rr.motor1 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage = 0;
             _deviceMode = CALIBRATION_AUTO_2;
           } else {
             m_calibration.m.rr.motor1 ++;
-            if (m_calibration.m.rr.motor1 > 20) {
+            if (m_calibration.m.rr.motor1 > 30) {
               m_calibration.m.rr.motor1 = -20;
             }
           }
@@ -704,15 +713,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
-            if (getFrontCurrentInputs() > 39) {
-              m_calibration.m.fl.motor2 -= 8;
+          current = getFrontCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.fl.motor2 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.fl.motor2 ++;
-            if (m_calibration.m.fl.motor2 > 20) {
+            if (m_calibration.m.fl.motor2 > 30) {
               m_calibration.m.fl.motor2 = -20;
             }
           }
@@ -729,15 +739,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getFrontCurrentInputs() > 39)) {
-            if (getFrontCurrentInputs() > 39) {
-              m_calibration.m.fr.motor2 -= 8;
+          current = getFrontCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.fr.motor2 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.fr.motor2 ++;
-            if (m_calibration.m.fr.motor2 > 20) {
+            if (m_calibration.m.fr.motor2 > 30) {
               m_calibration.m.fr.motor2 = -20;
             }
           }
@@ -753,9 +764,10 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
-            if (getRearCurrentInputs() > 39) {
-              m_calibration.m.rl.motor2 -= 8;
+          current = getRearCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.rl.motor2 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage = 0;
@@ -764,7 +776,7 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
             _deviceMode = CALIBRATION_SAVE;
           } else {
             m_calibration.m.rl.motor2 ++;
-            if (m_calibration.m.rl.motor2 > 20) {
+            if (m_calibration.m.rl.motor2 > 30) {
               m_calibration.m.rl.motor2 = -20;
             }
           }
@@ -780,15 +792,16 @@ unsigned char calibrateLegs(unsigned char patternCounter) {
           _calibrationCounter ++;
         } else {
           // read current or button
-          if (_getButtonPressed()  || (getRearCurrentInputs() > 39)) {
-            if (getRearCurrentInputs() > 39) {
-              m_calibration.m.rr.motor2 -= 8;
+          current = getRearCurrentInputs();
+          if (_getButtonPressed()  || (current > 39)) {
+            if (current > 39) {
+              m_calibration.m.rr.motor2 -= 10;
             }
             _calibrationCounter = 0;
             _calibrationStage ++;
           } else {
             m_calibration.m.rr.motor2 ++;
-            if (m_calibration.m.rr.motor2 > 20) {
+            if (m_calibration.m.rr.motor2 > 30) {
               m_calibration.m.rr.motor2 = -20;
             }
           }
