@@ -371,15 +371,32 @@ void loop() {
     if (_deviceMode == EXPLORE) {
       // explore mode
       m_centerStatic = compensateStaticBallanceGyro();
+      m_sideBallance = fixSideBalanceGyro(m_sideBallance);
       m_centerF = fixDynamicBalanceGyro(m_centerF);
       m_centerR = - m_centerF;
-      m_sideBallance = fixSideBalanceGyro(m_sideBallance);
       if (m_sideBallance > 0) {
         m_sideUpLeft = m_sideBallance;
         m_sideUpRight = 0;
       } else {
         m_sideUpLeft = 0;
         m_sideUpRight = m_sideBallance;
+      }
+      // process cycling commands
+      switch (m_currentTask[m_patternCounter]) {
+        case RESET:
+        {
+          m_patternCounter = 0;
+        }
+        break;
+        case DOREPEAT:
+        {
+          if (m_patternCounter > 0) {
+            m_patternCounter --;
+          }
+        }
+        break;
+        default:
+        break;
       }
       // update pattern for the next sequence
       exploreModeCall(setNextPattern(m_currentTask[m_patternCounter]));

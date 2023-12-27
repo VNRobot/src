@@ -12,8 +12,8 @@ char _motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 
 // char buffer for temporary use
 char _cBuffer;
 // leg lift angles
-unsigned char liftm1 = 12;
-unsigned char liftm2 = 12;
+unsigned char liftm1 = 8;
+unsigned char liftm2 = 24;
 
 // set new values of center motors
 void _updateCenterMotor(char cAngleF, char cAngleR) {
@@ -267,8 +267,8 @@ void _updateSequenceStandWalk(char m1, char m2) {
   // motor 1
   m_currentSequence[0].m.motor1 = m1 - liftm1;
   m_currentSequence[1].m.motor1 = m1 - liftm1;
-  m_currentSequence[2].m.motor1 = m1 - liftm1 / 4;
-  m_currentSequence[3].m.motor1 = m1;
+  m_currentSequence[2].m.motor1 = m1 - liftm1;
+  m_currentSequence[3].m.motor1 = m1 - liftm1;
   m_currentSequence[4].m.motor1 = m1;
   m_currentSequence[5].m.motor1 = m1;
   m_currentSequence[6].m.motor1 = m1;
@@ -283,12 +283,12 @@ void _updateSequenceStandWalk(char m1, char m2) {
   m_currentSequence[15].m.motor1 = m1;
   m_currentSequence[16].m.motor1 = m1;
   m_currentSequence[17].m.motor1 = m1;
-  m_currentSequence[18].m.motor1 = m1 - liftm1 / 2;
+  m_currentSequence[18].m.motor1 = m1;
   m_currentSequence[19].m.motor1 = m1 - liftm1;
   // motor 2
   m_currentSequence[0].m.motor2 = m2 - liftm2;
   m_currentSequence[1].m.motor2 = m2 - liftm2;
-  m_currentSequence[2].m.motor2 = m2 - liftm2 / 4;
+  m_currentSequence[2].m.motor2 = m2 - liftm2;
   m_currentSequence[3].m.motor2 = m2;
   m_currentSequence[4].m.motor2 = m2;
   m_currentSequence[5].m.motor2 = m2;
@@ -304,7 +304,7 @@ void _updateSequenceStandWalk(char m1, char m2) {
   m_currentSequence[15].m.motor2 = m2;
   m_currentSequence[16].m.motor2 = m2;
   m_currentSequence[17].m.motor2 = m2;
-  m_currentSequence[18].m.motor2 = m2 - liftm2 / 2;
+  m_currentSequence[18].m.motor2 = m2 - liftm2;
   m_currentSequence[19].m.motor2 = m2 - liftm2;
 }
 
@@ -312,9 +312,9 @@ void _updateSequenceStandWalk(char m1, char m2) {
 void _updateSequenceWalk(char m1[], char m2[]) {
   // motor 1
   m_currentSequence[0].m.motor1 = m1[m_centerStatic] - liftm1;
-  m_currentSequence[1].m.motor1 = m1[m_centerStatic - 4] - liftm1;
+  m_currentSequence[1].m.motor1 = m1[m_centerStatic - 5] - liftm1;
   m_currentSequence[2].m.motor1 = m1[m_centerStatic - 8] - liftm1;
-  m_currentSequence[3].m.motor1 = m1[m_centerStatic - 7] - liftm1 / 4;
+  m_currentSequence[3].m.motor1 = m1[m_centerStatic - 7] - liftm1;
   m_currentSequence[4].m.motor1 = m1[m_centerStatic - 6];
   m_currentSequence[5].m.motor1 = m1[m_centerStatic - 5];
   m_currentSequence[6].m.motor1 = m1[m_centerStatic - 4];
@@ -328,14 +328,14 @@ void _updateSequenceWalk(char m1[], char m2[]) {
   m_currentSequence[14].m.motor1 = m1[m_centerStatic + 4];
   m_currentSequence[15].m.motor1 = m1[m_centerStatic + 5];
   m_currentSequence[16].m.motor1 = m1[m_centerStatic + 6];
-  m_currentSequence[17].m.motor1 = m1[m_centerStatic + 7] - liftm1 / 2;
-  m_currentSequence[18].m.motor1 = m1[m_centerStatic + 8] - liftm1;
-  m_currentSequence[19].m.motor1 = m1[m_centerStatic + 4] - liftm1;
+  m_currentSequence[17].m.motor1 = m1[m_centerStatic + 7];
+  m_currentSequence[18].m.motor1 = m1[m_centerStatic + 8];
+  m_currentSequence[19].m.motor1 = m1[m_centerStatic + 5] - liftm1;
   // motor 2
   m_currentSequence[0].m.motor2 = m2[m_centerStatic] - liftm2;
-  m_currentSequence[1].m.motor2 = m2[m_centerStatic - 4] - liftm2;
+  m_currentSequence[1].m.motor2 = m2[m_centerStatic - 5] - liftm2;
   m_currentSequence[2].m.motor2 = m2[m_centerStatic - 8] - liftm2;
-  m_currentSequence[3].m.motor2 = m2[m_centerStatic - 7] - liftm2 / 4;
+  m_currentSequence[3].m.motor2 = m2[m_centerStatic - 7];
   m_currentSequence[4].m.motor2 = m2[m_centerStatic - 6];
   m_currentSequence[5].m.motor2 = m2[m_centerStatic - 5];
   m_currentSequence[6].m.motor2 = m2[m_centerStatic - 4];
@@ -349,18 +349,18 @@ void _updateSequenceWalk(char m1[], char m2[]) {
   m_currentSequence[14].m.motor2 = m2[m_centerStatic + 4];
   m_currentSequence[15].m.motor2 = m2[m_centerStatic + 5];
   m_currentSequence[16].m.motor2 = m2[m_centerStatic + 6];
-  m_currentSequence[17].m.motor2 = m2[m_centerStatic + 7] - liftm2 / 2;
+  m_currentSequence[17].m.motor2 = m2[m_centerStatic + 7];
   m_currentSequence[18].m.motor2 = m2[m_centerStatic + 8] - liftm2;
-  m_currentSequence[19].m.motor2 = m2[m_centerStatic + 4] - liftm2;
+  m_currentSequence[19].m.motor2 = m2[m_centerStatic + 5] - liftm2;
 }
 
 // create walk back sequence
 void _updateSequenceWalkBack(char m1[], char m2[]) {
   // motor 1
   m_currentSequence[0].m.motor1 = m1[m_centerStatic] - liftm1;
-  m_currentSequence[19].m.motor1 = m1[m_centerStatic - 4] - liftm1;
-  m_currentSequence[18].m.motor1 = m1[m_centerStatic - 8] - liftm1;
-  m_currentSequence[17].m.motor1 = m1[m_centerStatic - 7] - liftm1 / 4;
+  m_currentSequence[19].m.motor1 = m1[m_centerStatic - 5] - liftm1;
+  m_currentSequence[18].m.motor1 = m1[m_centerStatic - 8];
+  m_currentSequence[17].m.motor1 = m1[m_centerStatic - 7];
   m_currentSequence[16].m.motor1 = m1[m_centerStatic - 6];
   m_currentSequence[15].m.motor1 = m1[m_centerStatic - 5];
   m_currentSequence[14].m.motor1 = m1[m_centerStatic - 4];
@@ -374,14 +374,14 @@ void _updateSequenceWalkBack(char m1[], char m2[]) {
   m_currentSequence[6].m.motor1 = m1[m_centerStatic + 4];
   m_currentSequence[5].m.motor1 = m1[m_centerStatic + 5];
   m_currentSequence[4].m.motor1 = m1[m_centerStatic + 6];
-  m_currentSequence[3].m.motor1 = m1[m_centerStatic + 7] - liftm1 / 2;
+  m_currentSequence[3].m.motor1 = m1[m_centerStatic + 7] - liftm1;
   m_currentSequence[2].m.motor1 = m1[m_centerStatic + 8] - liftm1;
-  m_currentSequence[1].m.motor1 = m1[m_centerStatic + 4] - liftm1;
+  m_currentSequence[1].m.motor1 = m1[m_centerStatic + 5] - liftm1;
   // motor 2
   m_currentSequence[0].m.motor2 = m2[m_centerStatic] - liftm2;
-  m_currentSequence[19].m.motor2 = m2[m_centerStatic - 4] - liftm2;
+  m_currentSequence[19].m.motor2 = m2[m_centerStatic - 5] - liftm2;
   m_currentSequence[18].m.motor2 = m2[m_centerStatic - 8] - liftm2;
-  m_currentSequence[17].m.motor2 = m2[m_centerStatic - 7] - liftm2 / 4;
+  m_currentSequence[17].m.motor2 = m2[m_centerStatic - 7];
   m_currentSequence[16].m.motor2 = m2[m_centerStatic - 6];
   m_currentSequence[15].m.motor2 = m2[m_centerStatic - 5];
   m_currentSequence[14].m.motor2 = m2[m_centerStatic - 4];
@@ -395,9 +395,9 @@ void _updateSequenceWalkBack(char m1[], char m2[]) {
   m_currentSequence[6].m.motor2 = m2[m_centerStatic + 4];
   m_currentSequence[5].m.motor2 = m2[m_centerStatic + 5];
   m_currentSequence[4].m.motor2 = m2[m_centerStatic + 6];
-  m_currentSequence[3].m.motor2 = m2[m_centerStatic + 7] - liftm2 / 2;
+  m_currentSequence[3].m.motor2 = m2[m_centerStatic + 7];
   m_currentSequence[2].m.motor2 = m2[m_centerStatic + 8] - liftm2;
-  m_currentSequence[1].m.motor2 = m2[m_centerStatic + 4] - liftm2;
+  m_currentSequence[1].m.motor2 = m2[m_centerStatic + 5] - liftm2;
 }
 
 
@@ -523,18 +523,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       m_leftRightShift = 10;
       _updateTurn(0);
       m_patternCounter ++;
-    }
-    break;
-    case RESET:
-    {
-      m_patternCounter = 0;
-    }
-    break;
-    case DOREPEAT:
-    {
-      if (m_patternCounter > 0) {
-        m_patternCounter --;
-      }
     }
     break;
     case DONE:

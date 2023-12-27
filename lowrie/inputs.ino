@@ -210,13 +210,14 @@ unsigned short getRearCurrentInputs(void) {
 
 // fix balance using current sensors
 bool checkHighCurrentInputs(void) {
-  if (getCenterCurrentInputs() > 120) {
+  // max current is 150
+  if (getCenterCurrentInputs() > 150) {
     return true;
   }
-  else if (getFrontCurrentInputs() > 120) {
+  else if (getFrontCurrentInputs() > 150) {
     return true;
   }
-  else if (getRearCurrentInputs() > 120) {
+  else if (getRearCurrentInputs() > 150) {
     return true;
   }
   return false;
