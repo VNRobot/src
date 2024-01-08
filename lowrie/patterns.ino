@@ -1,5 +1,5 @@
 /*
-Wlking Robot Lowrie
+Walking Robot Lowrie
 Licended GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
@@ -267,8 +267,8 @@ void _updateSequenceStandWalk(char m1, char m2) {
   // motor 1
   m_currentSequence[0].m.motor1 = m1 - liftm1;
   m_currentSequence[1].m.motor1 = m1 - liftm1;
-  m_currentSequence[2].m.motor1 = m1 - liftm1;
-  m_currentSequence[3].m.motor1 = m1 - liftm1;
+  m_currentSequence[2].m.motor1 = m1 - liftm1 / 2;
+  m_currentSequence[3].m.motor1 = m1 - liftm1 / 4;
   m_currentSequence[4].m.motor1 = m1;
   m_currentSequence[5].m.motor1 = m1;
   m_currentSequence[6].m.motor1 = m1;
@@ -284,11 +284,11 @@ void _updateSequenceStandWalk(char m1, char m2) {
   m_currentSequence[16].m.motor1 = m1;
   m_currentSequence[17].m.motor1 = m1;
   m_currentSequence[18].m.motor1 = m1;
-  m_currentSequence[19].m.motor1 = m1 - liftm1;
+  m_currentSequence[19].m.motor1 = m1 - liftm1 / 2;
   // motor 2
   m_currentSequence[0].m.motor2 = m2 - liftm2;
-  m_currentSequence[1].m.motor2 = m2 - liftm2;
-  m_currentSequence[2].m.motor2 = m2 - liftm2;
+  m_currentSequence[1].m.motor2 = m2 - liftm2 / 2;
+  m_currentSequence[2].m.motor2 = m2 - liftm2 / 4;
   m_currentSequence[3].m.motor2 = m2;
   m_currentSequence[4].m.motor2 = m2;
   m_currentSequence[5].m.motor2 = m2;
@@ -304,7 +304,7 @@ void _updateSequenceStandWalk(char m1, char m2) {
   m_currentSequence[15].m.motor2 = m2;
   m_currentSequence[16].m.motor2 = m2;
   m_currentSequence[17].m.motor2 = m2;
-  m_currentSequence[18].m.motor2 = m2 - liftm2;
+  m_currentSequence[18].m.motor2 = m2 - liftm2 / 2;
   m_currentSequence[19].m.motor2 = m2 - liftm2;
 }
 
