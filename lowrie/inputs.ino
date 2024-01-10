@@ -1,6 +1,6 @@
 /*
 Walking Robot Lowrie
-Licended GNU GPLv3 by VN ROBOT INC 2023
+Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Process analog inputs
 left turned sensor A0
