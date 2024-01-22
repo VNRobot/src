@@ -2,7 +2,10 @@
 Board Lowrie 1.1 demo code
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
-run servo motors
+Operates servo motors
+ - Connect servo motors to S2, S5 and S9 connectors
+ - Servo connected to S5 and S9 will move repetative
+ - Servo connected to S2 will move when electronic board is rotated horizontally
 */
 
 #include <Servo.h>
@@ -58,9 +61,9 @@ void initServo(void) {
 }
 
 // update servo motors values. move motors.
-void updateServo(void) {
+void updateServo(int direction) {
   // set motors angle values
-  S2.write(90 + motorAngle);
+  S2.write(90 + direction);
   S5.write(90 + motorAngle * 2);
   S9.write(90 + motorAngle * 3);
   motorAngle += 2;

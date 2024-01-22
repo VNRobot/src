@@ -2,7 +2,10 @@
 Board Lowrie 1.1 demo code
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
-use MPU6050 gyroscope and accelerometer
+Uses MPU6050 gyroscope and accelerometer
+ - Gets yaw value
+ - Gets pitch value
+ - Gets roll value
 */
 
 #include <Wire.h>
@@ -159,8 +162,15 @@ void updateDirectionGyro(int directionData) {
 }
 
 // get nose dive value
-int getNoseDiveGyro(void) {
+int getPitchGyro(void) {
   // positive - nose down
   // negative - nose up
   return pitchLast;
+}
+
+// get roll value
+int getRollGyro(void) {
+  // positive - roll right
+  // negative - roll left
+  return rollAngle;
 }

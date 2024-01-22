@@ -2,7 +2,13 @@
 Board Lowrie 1.1 demo code
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
-Get analog inputs
+Gets analog inputs
+ - Reads power input voltage im mV
+ - Reads power current from three independed channels in mA
+    channel 1: power current on connectors S1, S2, S3, S4
+    channel 2: power current on connectors S5, S6, S7, S8
+    channel 3: power current on connectors S9, S10, S11, S12
+ - Reads analog sensors raw values
 */
 
 // sensors structure
@@ -29,9 +35,10 @@ void readInputs(void) {
 
 // get battery voltage in mV or 0 if can't read
 unsigned short getBatteryInputs(void) {
-  // battery low level is 6.2v - 750
+  // battery highest level ~8.4v - 1023
+  // battery low level is ~6.2v - 750
   if (analogInputs.battery >= 400) {
-    return (unsigned short)((int)analogInputs.battery * 100) / 12;
+    return analogInputs.battery * 25 / 3;
   }
   // battery is not available
   return 0;
