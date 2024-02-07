@@ -8,7 +8,7 @@ Reads Infrared Remote Control Receiver
 */
 
 #define DECODE_NEC          // comment to enable all protocols
-#define IR_RECEIVE_PIN 2    // works only with pin 2
+#define IR_RECEIVE_PIN 2    // works only with pin 2 (connector S1)
 #include <IRremote.hpp>
 
 unsigned char irCode = 255; // received ir code

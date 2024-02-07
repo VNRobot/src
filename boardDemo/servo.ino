@@ -63,7 +63,7 @@ void initServo(void) {
 // update servo motors values. move motors.
 void updateServo(int direction) {
   // set motors angle values
-  S2.write(90 + direction);
+  S2.write(90 + direction * 2);
   S5.write(90 + motorAngle * 2);
   S9.write(90 + motorAngle * 3);
   motorAngle += 2;

@@ -16,7 +16,7 @@ Demonstrate Lowrie 1.1 board features
 */
 
 // data buffer
-unsigned char dataBuffer = 255;
+int dataBuffer = 0;
 
 // runs once on boot or reset
 void setup() {
@@ -26,22 +26,29 @@ void setup() {
   // init servo motors
   initServo();
   // init gyro board MPU6050
+  // Uncomment if you have hardware installed
   delay(500); // wait for vibrations to stop
   initGyro();
   delay(200);
   resetGyro();
   // init remote control on S1 connector
-  initRemote();
+  // Uncomment if you have hardware installed
+  // initRemote();
+  // init ultrasonic sensor HC-SR04
+  // Uncomment if you have hardware installed
+  // initUltrasonic();
 }
 
 // the loop function runs over and over again forever
 void loop() {
   // read gyro data
+  // Uncomment if you have hardware installed
   readGyro();
   Serial.print(" Direction: ");
-  Serial.print(getDirectionGyro());
+  dataBuffer = (int)getDirectionGyro();
+  Serial.print(dataBuffer);
   // move servo motors
-  updateServo(getDirectionGyro());
+  updateServo(dataBuffer);
   // read analog inputs
   readInputs();
   Serial.print(" Battery: ");
@@ -52,16 +59,21 @@ void loop() {
   Serial.print((int)getCurrent2Inputs());
   Serial.print(" Current 3: ");
   Serial.print((int)getCurrent3Inputs());
+  // Uncomment if you have hardware installed
+  //Serial.print(" Ultrasonic: ");
+  //Serial.print((int)readUltrasonic());
   Serial.print(" left Sensor: ");
   Serial.print((int)getLeftInputs());
   Serial.print(" Right Sensor: ");
-  Serial.println((int)getRightInputs());
+  Serial.print((int)getRightInputs());
   // read IR receiver data
-  dataBuffer = readRemote();
-  if (dataBuffer < 255) {
-    Serial.print(" Remote command: ");
-    Serial.println((int)dataBuffer);
-  }
+  // Uncomment if you have hardware installed
+  // dataBuffer = (int)readRemote();
+  // if (dataBuffer < 255) {
+  //   Serial.print(" Remote command: ");
+  //   Serial.print(dataBuffer);
+  // }
+  Serial.println("");
   // wait for 50 msec
   delay(50);
 }
