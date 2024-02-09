@@ -26,7 +26,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
       } else {
         // read current or button
         current = getCenterCurrentInputs();
-        if (_getButtonPressed()  || (current > 39)) {
+        if (_getButtonPressed() || (current > 39)) {
           if (current > 39) {
             m_calibration.front -= 25;
           }
@@ -50,7 +50,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
       } else {
         // read current or button
         current = getCenterCurrentInputs();
-        if (_getButtonPressed()  || (current > 39)) {
+        if (_getButtonPressed() || (current > 39)) {
           if (current > 39) {
             m_calibration.rear -= 25;
           }
@@ -79,7 +79,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getFrontCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.fl.motor1 -= 10;
             }
@@ -104,7 +104,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getFrontCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.fr.motor1 -= 10;
             }
@@ -129,7 +129,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getRearCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.rl.motor1 -= 10;
             }
@@ -154,7 +154,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getRearCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.rr.motor1 -= 10;
             }
@@ -186,7 +186,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getFrontCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.fl.motor2 -= 10;
             }
@@ -212,7 +212,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getFrontCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.fr.motor2 -= 10;
             }
@@ -237,7 +237,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getRearCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.rl.motor2 -= 10;
             }
@@ -265,7 +265,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         } else {
           // read current or button
           current = getRearCurrentInputs();
-          if (_getButtonPressed()  || (current > 39)) {
+          if (_getButtonPressed() || (current > 39)) {
             if (current > 39) {
               m_calibration.m.rr.motor2 -= 10;
             }

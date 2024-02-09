@@ -22,18 +22,11 @@ struct sensors {
 };
 // analog input values left sensor, right sensor
 sensors _analogInputs = {0, 0, 0, 0, 0, 0};
-// battery low measurement counter
-unsigned char _batteryLow = 0;
 
 // check battery low state
 bool checkBatteryLowInputs(void) {
   // battery low level is 6.2v - 750
-  if ((_analogInputs.battery > 500) && (_analogInputs.battery < 750)) {
-    _batteryLow ++;
-  } else {
-    _batteryLow = 0;
-  }
-  if (_batteryLow > 2) {
+  if ((_analogInputs.battery > 400) && (_analogInputs.battery < 750)) {
     return true;
   }
   return false;
@@ -218,6 +211,15 @@ bool checkHighCurrentInputs(void) {
     return true;
   }
   else if (getRearCurrentInputs() > 150) {
+    return true;
+  }
+  return false;
+}
+
+// check mode button pressed
+bool checkModeButtonPressedInputs(void) {
+  // button is pressed if lower than 400
+  if (analogRead(A6) < 400) {
     return true;
   }
   return false;

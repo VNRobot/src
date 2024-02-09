@@ -66,17 +66,16 @@ enum m_tasks {
 };
 // pin numbers
 enum m_dPins {
-  MODE_BTN = 2,
-  FRONT_MOTOR = 3,
-  REAR_MOTOR = 4,
-  FL1_MOTOR = 5,
-  FL2_MOTOR = 6,
-  FR1_MOTOR = 7,
-  FR2_MOTOR = 8,
-  RL1_MOTOR = 9,
-  RL2_MOTOR = 10,
-  RR1_MOTOR = 11,
-  RR2_MOTOR = 12
+  FRONT_MOTOR = 4,
+  REAR_MOTOR = 5,
+  FL1_MOTOR = 6,
+  FL2_MOTOR = 7,
+  FR1_MOTOR = 8,
+  FR2_MOTOR = 9,
+  RL1_MOTOR = 10,
+  RL2_MOTOR = 11,
+  RR1_MOTOR = 12,
+  RR2_MOTOR = 13
 };
 // device mode enumerator
 enum m_mode {
@@ -198,9 +197,9 @@ unsigned char i;
 
 // read button press in blocking mode
 // return true when pressed and released
-bool readButtonPress(int pin) {
+bool _readButtonPress(void) {
   bool buffer = false;
-  while (LOW == digitalRead(pin)) {
+  while (checkModeButtonPressedInputs()) {
     buffer = true;
     delay(100);
   }
@@ -212,13 +211,10 @@ void setup() {
   int calM1 = 0;
   int calM2 = 0;
   // Start serial for debugging
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Device started");
-  // init digital inputs
-  // mode button is active on LOW
-  pinMode(MODE_BTN, INPUT_PULLUP); // button "mode"
   // check for Mode button press and for stored calibration
-  if (readButtonPress(MODE_BTN)) {
+  if (_readButtonPress()) {
     // disable current sensors
     m_currentEnabled = false;
     // set calibration mode
@@ -455,7 +451,7 @@ void exploreModeCall(unsigned char patternStatus) {
 // factory mode call
 void factoryModeCall(unsigned char patternStatus) {
   // update factory stage
-  if (readButtonPress(MODE_BTN)) {
+  if (_readButtonPress()) {
     if (_deviceMode < CALIBRATION_START) {
       _deviceMode = CALIBRATION_START;
     } else {
