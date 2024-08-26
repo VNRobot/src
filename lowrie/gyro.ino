@@ -6,15 +6,55 @@ use MPU6050 to read gyroscope and accelerometer
 */
 
 #include <Wire.h>
-// acceleration
-float accAngleX;
-float accAngleY;
-float accAngleYold = 0;
-float accAngleXold = 0;
+
+enum gState {
+  GYRO_QUIET = 0,         // quiet
+  GYRO_NORM = 1,          // moving
+  GYRO_SHAKEN = 2,        // shaken
+  GYRO_UPSIDEDOWN = 3,    // upside down
+  GYRO_HIT_SIDE = 4,      // hit left or right
+  GYRO_HIT_FRONT = 5,     // hit front or back
+  GYRO_FELL_LEFT = 6,    // fell left
+  GYRO_FELL_RIGHT = 7,   // fell right
+  GYRO_FELL_FRONT = 8,   // fell front
+  GYRO_FELL_BACK = 9,     // fell back
+  GYRO_DOWN_HILL = 10,    // moving down hill
+  GYRO_UP_HILL = 11,      // moving up hill
+  GYRO_FOLLING_LEFT = 12,  // folling left
+  GYRO_FOLLING_RIGHT = 13, // folling right
+  GYRO_FOLLING_FRONT = 14, // folling front
+  GYRO_FOLLING_BACK = 15  // folling back
+};
+
+// gyro data structure
+typedef struct gyro {
+  float accAngleX;
+  float accAngleY;
+  float gyroAngleX;
+  float gyroAngleY;
+  float yaw;
+  int pitch;
+  int roll;
+} gyro;
+
+// accelerometer data structure
+typedef struct acc {
+  int accAngleX;
+  int accAngleY;
+} acc;
+
+// gyro data
+gyro gyroData = {0, 0, 0, 0, 0, 0, 0};
+acc accDataOld1 = {0, 0};
+acc accDataOld2 = {0, 0};
+acc accAverageValue = {0, 0};
+acc accError = {0, 0};
+acc accErrorAverage = {0, 0};
+
 // acceleration errors
 float AccErrorX = 0;
 float AccErrorY = 0;
-// gyro
+// gyro errors
 float GyroErrorX = 0;
 float GyroErrorY = 0;
 float GyroErrorZ = 0;
@@ -22,22 +62,16 @@ float GyroErrorZ = 0;
 float timeInterval;
 unsigned long currentTime = 0;
 unsigned long oldTime;
-// Rotation angles
-float gyroAngleX = 0;
-float gyroAngleY = 0;
-float yaw = 0;
-int rollAngle;
-int directionAngle;
-// gyro data at the end of walk cycle
-int yawLast = 0;
-int pitchLast = 0;
+// buffers to read register into
+float floatBuffer[3];
 // roll data inside walk cycle
 int rollMin = 0;
 int rollMax = 0;
 unsigned char rollMinTime = 0;
 unsigned char rollMaxTime = 0;
-// buffers to read register into
-float floatBuffer[3];
+
+unsigned char allStateGyro = GYRO_NORM;
+unsigned char allStateGyroOld = GYRO_NORM;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -78,6 +112,7 @@ void _readWire(float * regData, unsigned char code) {
 
 // init gyroscope and accelerometer MPU6050 using I2C
 void initGyro() {
+  int i;
   _initWire();
   // calculate gyro errors
   for (i = 0; i < 200; i++) {
@@ -105,14 +140,14 @@ void initGyro() {
 }
 
 // read gyroscope and accelerometer data
-void updateGyro(unsigned char sequenceCount) {
+unsigned char updateGyro(unsigned char sequenceCount) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
   floatBuffer[1] /= 16384.0;
   floatBuffer[2] /= 16384.0;
-  accAngleX = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorX;
-  accAngleY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorY;
+  gyroData.accAngleX = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorX;
+  gyroData.accAngleY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - AccErrorY;
   // gyroscope
   oldTime = currentTime;
   currentTime = millis();
@@ -121,93 +156,132 @@ void updateGyro(unsigned char sequenceCount) {
   floatBuffer[0] = floatBuffer[0] / 131.0 - GyroErrorX;
   floatBuffer[1] = floatBuffer[1] / 131.0 - GyroErrorY;
   floatBuffer[2] = floatBuffer[2] / 131.0 - GyroErrorZ;
-  gyroAngleX += floatBuffer[0] * timeInterval;
-  gyroAngleY += floatBuffer[1] * timeInterval;
-  yaw        += floatBuffer[2] * timeInterval;
-  rollAngle = (int)(0.96 * gyroAngleX + 0.04 * accAngleX);
+  gyroData.gyroAngleX += floatBuffer[0] * timeInterval;
+  gyroData.gyroAngleY += floatBuffer[1] * timeInterval;
+  gyroData.yaw        += floatBuffer[2] * timeInterval;
+  gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
+  gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
+  // fix slow drift
+  if (gyroData.gyroAngleX > 0) {
+    gyroData.gyroAngleX --;
+  } else if (gyroData.gyroAngleX < 0) {
+    gyroData.gyroAngleX ++;
+  }
+  if (gyroData.gyroAngleY > 0) {
+    gyroData.gyroAngleY --;
+  } else if (gyroData.gyroAngleY < 0) {
+    gyroData.gyroAngleY ++;
+  }
+  // end fix slow drift
+  if (accError.accAngleX > 0) {
+    accErrorAverage.accAngleX += accError.accAngleX;
+  } else {
+    accErrorAverage.accAngleX -= accError.accAngleX;
+  }
+  accErrorAverage.accAngleX -= accErrorAverage.accAngleX / 4;
+  if (accError.accAngleY > 0) {
+    accErrorAverage.accAngleY += accError.accAngleY;
+  } else {
+    accErrorAverage.accAngleY -= accError.accAngleY;
+  }
+  accErrorAverage.accAngleY -= accErrorAverage.accAngleY / 4;
+  //
+  accError.accAngleX = (int)gyroData.accAngleX - accAverageValue.accAngleX;
+  accError.accAngleY = (int)gyroData.accAngleY - accAverageValue.accAngleY;
+  // 
+  accAverageValue.accAngleX = ((int)gyroData.accAngleX + accDataOld1.accAngleX + accDataOld2.accAngleX + accAverageValue.accAngleX + 2) / 4;
+  accAverageValue.accAngleY = ((int)gyroData.accAngleY + accDataOld1.accAngleY + accDataOld2.accAngleY + accAverageValue.accAngleY + 2) / 4;
+  //
+  accDataOld2.accAngleX = accDataOld1.accAngleX;
+  accDataOld2.accAngleY = accDataOld1.accAngleY;
+  //
+  accDataOld1.accAngleX = (int)gyroData.accAngleX;
+  accDataOld1.accAngleY = (int)gyroData.accAngleY;
+  //
   // walk cycle related operations
   if (sequenceCount == 0) {
     // start of walk cycle
-    rollMin = rollAngle;
-    rollMax = rollAngle;
+    rollMin = gyroData.roll;
+    rollMax = gyroData.roll;
     rollMinTime = 0;
     rollMaxTime = 0;
-    accAngleYold = accAngleY;
-    accAngleXold = accAngleX;
   } else {
     // find max and min roll
-    if (rollAngle > rollMax) {
-      rollMax = rollAngle;
+    if (gyroData.roll > rollMax) {
+      rollMax = gyroData.roll;
       rollMaxTime = sequenceCount;
     }
-    if (rollAngle < rollMin) {
-      rollMin = rollAngle;
+    if (gyroData.roll < rollMin) {
+      rollMin = gyroData.roll;
       rollMinTime = sequenceCount;
     }
-    accAngleYold += accAngleY;
-    accAngleXold += accAngleX;
   }
-  // if end of sycle
-  if (sequenceCount == 19) {
-    accAngleYold /= 20;
-    accAngleXold /= 20;
-    yawLast = (int)yaw;
-    pitchLast = (int)(0.96 * gyroAngleY + 0.04 * accAngleY);
-    // fix slow drift
-    if (gyroAngleX > 0) {
-      gyroAngleX --;
-    } else if (gyroAngleX < 0) {
-      gyroAngleX ++;
-    }
-    if (gyroAngleY > 0) {
-      gyroAngleY --;
-    } else if (gyroAngleY < 0) {
-      gyroAngleY ++;
-    }
+  // end walk cycle related operations
+  allStateGyro = _statusGyro(accErrorAverage);
+  if (allStateGyroOld != allStateGyro) {
+    allStateGyroOld = allStateGyro;
+    // print raw data
+    //_printLineGyro(accErrorAverage);
+    _printGyro(allStateGyro);
   }
+  return allStateGyro;
 }
 
 // reset gyro data
 void resetGyro(void) {
-  gyroAngleX = 0;
-  gyroAngleY = 0;
-  yaw = 0;
-  yawLast = 0;
-  pitchLast = 0;
+  gyroData.gyroAngleX = 0;
+  gyroData.gyroAngleY = 0;
+  gyroData.yaw = 0;
+  gyroData.pitch = 0;
+  //
+  accDataOld1.accAngleX = (int)gyroData.accAngleX;
+  accDataOld1.accAngleY = (int)gyroData.accAngleY;
+  //
+  accDataOld2.accAngleX = accDataOld1.accAngleX;
+  accDataOld2.accAngleY = accDataOld1.accAngleY;
+  //
+  accAverageValue.accAngleX = accDataOld2.accAngleX;
+  accAverageValue.accAngleY = accDataOld2.accAngleY;
 }
 
-// get walking direction
+// get horizontal direction
 int getWalkingDirectionGyro(void) {
   // positive - turned left
   // negative - turned right
-  return yawLast;
+  return (int)gyroData.yaw;
 }
 
-// correct walking direction
+// correct horizontal direction
 void updateWalkingDirectionGyro(int directionData) {
   // positive - turned left
   // negative - turned right
-  yaw += directionData;
+  gyroData.yaw += directionData;
 }
 
 // get walking direction correction from gyroscope
 char getDirectionCorrectionGyro(void) {
   // maximal direction correction is 5
-  directionAngle = yawLast / 2;
-  if (directionAngle > 5) {
-    directionAngle = 5;
+  if (gyroData.yaw > 10) {
+    return 5;
   }
-  if (directionAngle < -5) {
-    directionAngle = -5;
+  if (gyroData.yaw < -10) {
+    return -5;
   }
-  return (char)directionAngle;
+  return (char)(gyroData.yaw / 2);
 }
 
 // get nose dive value
 int getNoseDiveGyro(void) {
   // positive - nose down
   // negative - nose up
-  return pitchLast;
+  return gyroData.pitch;
+}
+
+// get roll value
+int getRollGyro(void) {
+  // positive - roll right
+  // negative - roll left
+  return gyroData.roll;
 }
 
 // get roll left
@@ -225,11 +299,154 @@ int getRollRightGyro(void) {
 // check if robot is in vertical position
 bool checkVerticalPositionGyro(void) {
   // set angle as 60
-  if ((accAngleXold > 60) || (accAngleXold < -60)) {
+  if ((gyroData.roll > 60) || (gyroData.roll < -60)) {
     return false;
   }
   return true;
 }
+
+// print gyro values
+void _printLineGyro(struct acc data) {
+  Serial.print(" aX ");
+  Serial.print((int)data.accAngleX);
+  Serial.print(" aY ");
+  Serial.print((int)data.accAngleY);
+  Serial.print(" gX ");
+  Serial.print((int)gyroData.gyroAngleX);
+  Serial.print(" gY ");
+  Serial.print((int)gyroData.gyroAngleY);
+  Serial.print(" d ");
+  Serial.print((int)gyroData.yaw);
+  Serial.print(" p ");
+  Serial.print((int)gyroData.pitch);
+  Serial.print(" r ");
+  Serial.println((int)gyroData.roll);
+}
+
+// print gyro values
+void _printGyro(unsigned char state) {
+  // print gyro status
+  switch (state) {
+    case GYRO_QUIET:
+      Serial.println(" GYRO_QUIET ");
+    break;
+    case GYRO_NORM:
+      Serial.println(" GYRO_NORM ");
+    break;
+    case GYRO_SHAKEN:
+      Serial.println(" GYRO_SHAKEN ");
+    break;
+    case GYRO_UPSIDEDOWN:
+      Serial.println(" GYRO_UPSIDEDOWN ");
+    break;
+    case GYRO_HIT_SIDE:
+      Serial.println(" GYRO_HIT_SIDE ");
+    break;
+    case GYRO_HIT_FRONT:
+      Serial.println(" GYRO_HIT_FRONT ");
+    break;
+    case GYRO_FELL_LEFT:
+      Serial.println(" GYRO_FELL_LEFT ");
+    break;
+    case GYRO_FELL_RIGHT:
+      Serial.println(" GYRO_FELL_RIGHT ");
+    break;
+    case GYRO_FELL_FRONT:
+      Serial.println(" GYRO_FELL_FRONT ");
+    break;
+    case GYRO_FELL_BACK:
+      Serial.println(" GYRO_FELL_BACK ");
+    break;
+    case GYRO_DOWN_HILL:
+      Serial.println(" GYRO_DOWN_HILL ");
+    break;
+    case GYRO_UP_HILL:
+      Serial.println(" GYRO_UP_HILL ");
+    break;
+    case GYRO_FOLLING_LEFT:
+      Serial.println(" GYRO_FOLLING_LEFT ");
+    break;
+    case GYRO_FOLLING_RIGHT:
+      Serial.println(" GYRO_FOLLING_RIGHT ");
+    break;
+    case GYRO_FOLLING_FRONT:
+      Serial.println(" GYRO_FOLLING_FRONT ");
+    break;
+    case GYRO_FOLLING_BACK:
+      Serial.println(" GYRO_FOLLING_BACK ");
+    break;
+    default:
+      Serial.println(" Wrong gyro state ");
+  }
+}
+
+// status of gyro
+unsigned char _statusGyro(struct acc data) {
+  // upside down r > 70 or r < -70
+  if ((gyroData.roll > 70) || (gyroData.roll < -70)) {
+    return GYRO_UPSIDEDOWN;
+  }
+  // shaken aX > 100 or aY > 100
+  if ((data.accAngleX > 100) || (data.accAngleY > 100)) {
+    return GYRO_SHAKEN;
+  }
+  // quiet aX < 5 and aY < 5
+  if ((data.accAngleX < 5) && (data.accAngleY < 5)) {
+    return GYRO_QUIET;
+  }
+  // hit side aX > 50
+  if ((data.accAngleX > 50) && (data.accAngleX > data.accAngleY)) {
+    return GYRO_HIT_SIDE;
+  }
+  // hit front aY > 50
+  if ((data.accAngleY > 50) && (data.accAngleY > data.accAngleX)) {
+    return GYRO_HIT_FRONT;
+  }
+  // fell left r < -30
+  if (gyroData.roll < -30) {
+    return GYRO_FELL_LEFT;
+  }
+  // fell right r > 30
+  if (gyroData.roll > 30) {
+    return GYRO_FELL_RIGHT;
+  }
+  // fell front p > 20
+  if (gyroData.pitch > 20) {
+    return GYRO_FELL_FRONT;
+  }
+  // fell back p < -20
+  if (gyroData.pitch < -20) {
+    return GYRO_FELL_BACK;
+  }
+  // walk down p > 5
+  if (gyroData.pitch > 5) {
+    return GYRO_DOWN_HILL;
+  }
+  // walk up p < -5
+  if (gyroData.pitch < -5) {
+    return GYRO_UP_HILL;
+  }
+  // folling left r negative grows
+  if (gyroData.roll < -1) {
+    return GYRO_FOLLING_LEFT;
+  }
+  // folling right r grows
+  if (gyroData.roll > 1) {
+    return GYRO_FOLLING_RIGHT;
+  }
+  // folling front p grows
+  if (gyroData.pitch > 1) {
+    return GYRO_FOLLING_FRONT;
+  }
+  // folling back p negative grows
+  if (gyroData.pitch < -1) {
+    return GYRO_FOLLING_BACK;
+  }
+  // walking aX > 5 or aY > 5
+  return GYRO_NORM;
+}
+
+///////////////////////Project specific functions////////////////////////
 
 // fix balance using gyro
 char fixDynamicBalanceGyro(char center) {
@@ -258,7 +475,7 @@ char fixDynamicBalanceGyro(char center) {
 
 // compensate nose dive for static ballance
 int compensateStaticBallanceGyro(void) {
-  int center = m_centerAbsolute - accAngleYold / 2;
+  int center = m_centerAbsolute - accAverageValue.accAngleY / 2;
   if (center < 8) {
     center = 8;
   } else if (center > 15) {
@@ -269,11 +486,11 @@ int compensateStaticBallanceGyro(void) {
 
 // fix side balance using gyro
 char fixSideBalanceGyro(char sideBallance) {
-  if (accAngleXold > 1) {
+  if (accAverageValue.accAngleX > 1) {
     if (sideBallance < 2) {
       sideBallance ++;
     }
-  } else if (accAngleXold < -1) {
+  } else if (accAverageValue.accAngleX < -1) {
     if (sideBallance > -2) {
       sideBallance --;
     }
