@@ -162,6 +162,7 @@ unsigned char updateGyro(unsigned char sequenceCount) {
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
   // fix slow drift
+  /*
   if (gyroData.gyroAngleX > 0) {
     gyroData.gyroAngleX --;
   } else if (gyroData.gyroAngleX < 0) {
@@ -172,6 +173,7 @@ unsigned char updateGyro(unsigned char sequenceCount) {
   } else if (gyroData.gyroAngleY < 0) {
     gyroData.gyroAngleY ++;
   }
+  */
   // end fix slow drift
   if (accError.accAngleX > 0) {
     accErrorAverage.accAngleX += accError.accAngleX;
@@ -296,15 +298,6 @@ int getRollRightGyro(void) {
   return rollMax;
 }
 
-// check if robot is in vertical position
-bool checkVerticalPositionGyro(void) {
-  // set angle as 60
-  if ((gyroData.roll > 60) || (gyroData.roll < -60)) {
-    return false;
-  }
-  return true;
-}
-
 // print gyro values
 void _printLineGyro(struct acc data) {
   Serial.print(" aX ");
@@ -387,19 +380,19 @@ unsigned char _statusGyro(struct acc data) {
     return GYRO_UPSIDEDOWN;
   }
   // shaken aX > 100 or aY > 100
-  if ((data.accAngleX > 100) || (data.accAngleY > 100)) {
+  if ((data.accAngleX > 200) || (data.accAngleY > 200)) {
     return GYRO_SHAKEN;
   }
   // quiet aX < 5 and aY < 5
-  if ((data.accAngleX < 5) && (data.accAngleY < 5)) {
+  if ((data.accAngleX < 3) && (data.accAngleY < 3)) {
     return GYRO_QUIET;
   }
   // hit side aX > 50
-  if ((data.accAngleX > 50) && (data.accAngleX > data.accAngleY)) {
+  if ((data.accAngleX > 100) && (data.accAngleX > data.accAngleY)) {
     return GYRO_HIT_SIDE;
   }
   // hit front aY > 50
-  if ((data.accAngleY > 50) && (data.accAngleY > data.accAngleX)) {
+  if ((data.accAngleY > 100) && (data.accAngleY > data.accAngleX)) {
     return GYRO_HIT_FRONT;
   }
   // fell left r < -30
@@ -427,19 +420,19 @@ unsigned char _statusGyro(struct acc data) {
     return GYRO_UP_HILL;
   }
   // folling left r negative grows
-  if (gyroData.roll < -1) {
+  if (gyroData.roll < -5) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right r grows
-  if (gyroData.roll > 1) {
+  if (gyroData.roll > 5) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front p grows
-  if (gyroData.pitch > 1) {
+  if (gyroData.pitch > 5) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back p negative grows
-  if (gyroData.pitch < -1) {
+  if (gyroData.pitch < -5) {
     return GYRO_FOLLING_BACK;
   }
   // walking aX > 5 or aY > 5

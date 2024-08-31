@@ -190,6 +190,10 @@ unsigned char _calibrationStage = 0;
 unsigned char _timeDelay = 25;
 // new task
  unsigned char _newTask;
+// gyro state
+unsigned char _gyroState = 0;
+// inputs state
+unsigned char _inputState = 0;
 //----------------------------------------------------------
 // variables for temporary use
 unsigned char i;
@@ -211,7 +215,7 @@ void setup() {
   int calM1 = 0;
   int calM2 = 0;
   // Start serial for debugging
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("Device started");
   // check for Mode button press and for stored calibration
   if (_readButtonPress()) {
@@ -264,6 +268,7 @@ void setup() {
   servo_rr_2.write(90 + calM2);
   delay(100);
   // clear proximity sensors
+  initInputs();
   updateInputs(0);
   // check for factory mode
   // factory mode is activated when "mode" button is pressed during the boot
@@ -333,9 +338,9 @@ void loop() {
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors
-  updateInputs(_sequenceCount.fl);
+  _inputState = updateInputs(_sequenceCount.fl);
   // update gyro readings
-  updateGyro(_sequenceCount.fl);
+  _gyroState = updateGyro(_sequenceCount.fl);
   // update sequence shift 
   if (_sequenceCount.fl < 19) {
     _sequenceCount.fl ++;
@@ -411,7 +416,7 @@ void exploreModeCall(unsigned char patternStatus) {
     {     
       // get next task
       // proximity sensors input set next task. 
-      applyTask(getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs(), checkHighCurrentInputs()));
+      applyTask(getTaskByInputs(_gyroState, _inputState));
     }
     break;
     case STANDWALK:
@@ -426,7 +431,7 @@ void exploreModeCall(unsigned char patternStatus) {
     case WALKFORWARD:
     {
       // assume WALKFORWARD is deault task
-      _newTask = getTaskByInputs(checkVerticalPositionGyro(), checkBatteryLowInputs(), checkHighCurrentInputs());
+      _newTask = getTaskByInputs(_gyroState, _inputState);
       if (m_defaultTask == _newTask) {
         if (m_gyroEnabled) {
           updateTurnPattern(getDirectionCorrectionGyro());
