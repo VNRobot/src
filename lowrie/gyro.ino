@@ -5,6 +5,9 @@ Arduino nano
 use MPU6050 to read gyroscope and accelerometer
 */
 
+// Global variables
+// struct accRoll
+
 #include <Wire.h>
 
 enum gState {
@@ -47,9 +50,9 @@ typedef struct acc {
 gyro gyroData = {0, 0, 0, 0, 0, 0, 0};
 acc accDataOld1 = {0, 0};
 acc accDataOld2 = {0, 0};
-acc accAverageValue = {0, 0};
 acc accError = {0, 0};
 acc accErrorAverage = {0, 0};
+accRoll accAverageValue = {0, 0, 0, 0, 0, 0, GYRO_NORM};
 
 // acceleration errors
 float AccErrorX = 0;
@@ -64,14 +67,8 @@ unsigned long currentTime = 0;
 unsigned long oldTime;
 // buffers to read register into
 float floatBuffer[3];
-// roll data inside walk cycle
-int rollMin = 0;
-int rollMax = 0;
-unsigned char rollMinTime = 0;
-unsigned char rollMaxTime = 0;
 
-unsigned char allStateGyro = GYRO_NORM;
-unsigned char allStateGyroOld = GYRO_NORM;
+unsigned char stateGyroOld = GYRO_NORM;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -140,7 +137,7 @@ void initGyro() {
 }
 
 // read gyroscope and accelerometer data
-unsigned char updateGyro(unsigned char sequenceCount) {
+accRoll updateGyro(unsigned char sequenceCount) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
@@ -203,30 +200,30 @@ unsigned char updateGyro(unsigned char sequenceCount) {
   // walk cycle related operations
   if (sequenceCount == 0) {
     // start of walk cycle
-    rollMin = gyroData.roll;
-    rollMax = gyroData.roll;
-    rollMinTime = 0;
-    rollMaxTime = 0;
+    accAverageValue.rollMin = gyroData.roll;
+    accAverageValue.rollMax = gyroData.roll;
+    accAverageValue.rollMinTime = 0;
+    accAverageValue.rollMaxTime = 0;
   } else {
     // find max and min roll
-    if (gyroData.roll > rollMax) {
-      rollMax = gyroData.roll;
-      rollMaxTime = sequenceCount;
+    if (gyroData.roll > accAverageValue.rollMax) {
+      accAverageValue.rollMax = gyroData.roll;
+      accAverageValue.rollMaxTime = sequenceCount;
     }
-    if (gyroData.roll < rollMin) {
-      rollMin = gyroData.roll;
-      rollMinTime = sequenceCount;
+    if (gyroData.roll < accAverageValue.rollMin) {
+      accAverageValue.rollMin = gyroData.roll;
+      accAverageValue.rollMinTime = sequenceCount;
     }
   }
   // end walk cycle related operations
-  allStateGyro = _statusGyro(accErrorAverage);
-  if (allStateGyroOld != allStateGyro) {
-    allStateGyroOld = allStateGyro;
+  accAverageValue.stateGyro = _statusGyro(accErrorAverage);
+  if (stateGyroOld != accAverageValue.stateGyro) {
+    stateGyroOld = accAverageValue.stateGyro;
     // print raw data
     //_printLineGyro(accErrorAverage);
-    _printGyro(allStateGyro);
+    _printGyro(accAverageValue.stateGyro);
   }
-  return allStateGyro;
+  return accAverageValue;
 }
 
 // reset gyro data
@@ -244,20 +241,18 @@ void resetGyro(void) {
   //
   accAverageValue.accAngleX = accDataOld2.accAngleX;
   accAverageValue.accAngleY = accDataOld2.accAngleY;
-}
-
-// get horizontal direction
-int getWalkingDirectionGyro(void) {
-  // positive - turned left
-  // negative - turned right
-  return (int)gyroData.yaw;
+  accAverageValue.rollMin = 0;
+  accAverageValue.rollMax = 0;
+  accAverageValue.rollMinTime = 0;
+  accAverageValue.rollMaxTime = 0;
+  accAverageValue.stateGyro = GYRO_NORM;
 }
 
 // correct horizontal direction
-void updateWalkingDirectionGyro(int directionData) {
+void resetDirectionGyro(void) {
   // positive - turned left
   // negative - turned right
-  gyroData.yaw += directionData;
+  gyroData.yaw = 0;
 }
 
 // get walking direction correction from gyroscope
@@ -270,32 +265,6 @@ char getDirectionCorrectionGyro(void) {
     return -5;
   }
   return (char)(gyroData.yaw / 2);
-}
-
-// get nose dive value
-int getNoseDiveGyro(void) {
-  // positive - nose down
-  // negative - nose up
-  return gyroData.pitch;
-}
-
-// get roll value
-int getRollGyro(void) {
-  // positive - roll right
-  // negative - roll left
-  return gyroData.roll;
-}
-
-// get roll left
-int getRollLeftGyro(void) {
-  // negative - rotated left
-  return rollMin;
-}
-
-// get roll right
-int getRollRightGyro(void) {
-  // positive - rotated right
-  return rollMax;
 }
 
 // print gyro values
@@ -437,56 +406,4 @@ unsigned char _statusGyro(struct acc data) {
   }
   // walking aX > 5 or aY > 5
   return GYRO_NORM;
-}
-
-///////////////////////Project specific functions////////////////////////
-
-// fix balance using gyro
-char fixDynamicBalanceGyro(char center) {
-  // nose down increase waight on rear
-  // nose up increase waight on front
-  if (rollMax - rollMin > 2) {
-    // body rolls
-    if ((rollMinTime < 10) && (rollMaxTime > 9)) {
-      // front is too heavy
-      // increase weight on rear
-      center -= 1;
-    }
-    if ((rollMinTime > 9) && (rollMaxTime < 10)) {
-      // rear is too heavy
-      //increase wight on front
-      center += 1;
-    }
-  }
-  if (center < -10) {
-    center = -10;
-  } else if (center > 10) {
-    center = 10;
-  }
-  return center;
-}
-
-// compensate nose dive for static ballance
-int compensateStaticBallanceGyro(void) {
-  int center = m_centerAbsolute - accAverageValue.accAngleY / 2;
-  if (center < 8) {
-    center = 8;
-  } else if (center > 15) {
-    center = 15;
-  }
-  return center;
-}
-
-// fix side balance using gyro
-char fixSideBalanceGyro(char sideBallance) {
-  if (accAverageValue.accAngleX > 1) {
-    if (sideBallance < 2) {
-      sideBallance ++;
-    }
-  } else if (accAverageValue.accAngleX < -1) {
-    if (sideBallance > -2) {
-      sideBallance --;
-    }
-  }
-  return sideBallance;
 }

@@ -19,6 +19,10 @@ Gets analog inputs
 
 */
 
+// Global variables
+// m_sensorsEnabled
+// m_defaultTask
+
 // digital inputs pins
 enum dPinsInputs {
   F_SWITCH = 3

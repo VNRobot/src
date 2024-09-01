@@ -2,13 +2,23 @@
 Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
-calibration file
+motors calibration
 */
+
+// Global variables
+// m_deviceMode
+// m_calibration
+// m_modePressed
+
+// calibration counter
+unsigned char _calibrationCounter = 0;
+// calibration stage
+unsigned char _calibrationStage = 0;
 
 // do legs calibration
 unsigned char legsCalibration(unsigned char patternCounter) {
   unsigned short current = 0;
-  if (_deviceMode == CALIBRATION_FRONT) {
+  if (m_deviceMode == CALIBRATION_FRONT) {
     if (_calibrationStage == 0) {
       if (_calibrationCounter == 0) {
         // set initial leg calibration
@@ -32,7 +42,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
           }
           _calibrationCounter = 0;
           _calibrationStage = 0;
-          _deviceMode = CALIBRATION_REAR;
+          m_deviceMode = CALIBRATION_REAR;
         } else {
           m_calibration.front ++;
           if (m_calibration.front > 40) {
@@ -41,7 +51,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         }
       }
     }
-  } else if (_deviceMode == CALIBRATION_REAR) {
+  } else if (m_deviceMode == CALIBRATION_REAR) {
     if (_calibrationStage == 0) {
       if (_calibrationCounter == 0) {
         // set initial leg calibration
@@ -56,7 +66,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
           }
           _calibrationCounter = 0;
           _calibrationStage = 0;
-          _deviceMode = CALIBRATION_AUTO_1;
+          m_deviceMode = CALIBRATION_AUTO_1;
         } else {
           m_calibration.rear ++;
           if (m_calibration.rear > 40) {
@@ -65,7 +75,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
         }
       }
     }
-  } else if (_deviceMode == CALIBRATION_AUTO_1) {
+  } else if (m_deviceMode == CALIBRATION_AUTO_1) {
     // tune motor 1
     switch (_calibrationStage) {
       case 0:
@@ -160,7 +170,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
             }
             _calibrationCounter = 0;
             _calibrationStage = 0;
-            _deviceMode = CALIBRATION_AUTO_2;
+            m_deviceMode = CALIBRATION_AUTO_2;
           } else {
             m_calibration.m.rr.motor1 ++;
             if (m_calibration.m.rr.motor1 > 30) {
@@ -173,7 +183,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
       default:
       break;
     }
-  } else if (_deviceMode == CALIBRATION_AUTO_2) {
+  } else if (m_deviceMode == CALIBRATION_AUTO_2) {
     // tune motor 2
     switch (_calibrationStage) {
       case 2:
@@ -245,7 +255,7 @@ unsigned char legsCalibration(unsigned char patternCounter) {
             _calibrationStage = 0;
             // end of calibration
             patternCounter ++;
-            _deviceMode = CALIBRATION_SAVE;
+            m_deviceMode = CALIBRATION_SAVE;
           } else {
             m_calibration.m.rl.motor2 ++;
             if (m_calibration.m.rl.motor2 > 30) {

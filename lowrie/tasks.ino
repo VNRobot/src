@@ -5,6 +5,9 @@ Arduino nano
 List of tasks. Every task contains movement patterns.
 */
 
+// Global variables
+// m_currentTask
+
 // set calibration task
 void _setCalibrationTask(void) {
   m_currentTask[0] = DODOWN;
