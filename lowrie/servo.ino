@@ -5,14 +5,10 @@ Arduino nano
 Operates servo motors
 */
 
-// Global variables
-// m_calibration
-// m_motorValue
-
 #include <Servo.h>
 
 // pin numbers for servo motors
-enum dPins {
+enum dPinsServo {
   FRONT_MOTOR = 4,
   REAR_MOTOR = 5,
   FL1_MOTOR = 6,
@@ -78,41 +74,41 @@ void initServo(int calM1, int calM2) {
 }
 
 // set servo motors
-void setServo(void) {
+void setServo(allMotors calibration) {
   // set motors values after calibration
-  servo_frnt.write(90 - m_calibration.front);
+  servo_frnt.write(90 - calibration.front);
   delay(100);
-  servo_rear.write(90 - m_calibration.rear);
+  servo_rear.write(90 - calibration.rear);
   delay(100);
-  servo_fl_1.write(90 + m_calibration.m.fl.motor1);
+  servo_fl_1.write(90 + calibration.m.fl.motor1);
   delay(100);
-  servo_fl_2.write(90 - m_calibration.m.fl.motor2);
+  servo_fl_2.write(90 - calibration.m.fl.motor2);
   delay(100);
-  servo_fr_1.write(90 - m_calibration.m.fr.motor1);
+  servo_fr_1.write(90 - calibration.m.fr.motor1);
   delay(100);
-  servo_fr_2.write(90 + m_calibration.m.fr.motor2);
+  servo_fr_2.write(90 + calibration.m.fr.motor2);
   delay(100);
-  servo_rl_1.write(90 + m_calibration.m.rl.motor1);
+  servo_rl_1.write(90 + calibration.m.rl.motor1);
   delay(100);
-  servo_rl_2.write(90 - m_calibration.m.rl.motor2);
+  servo_rl_2.write(90 - calibration.m.rl.motor2);
   delay(100);
-  servo_rr_1.write(90 - m_calibration.m.rr.motor1);
+  servo_rr_1.write(90 - calibration.m.rr.motor1);
   delay(100);
-  servo_rr_2.write(90 + m_calibration.m.rr.motor2);
+  servo_rr_2.write(90 + calibration.m.rr.motor2);
   delay(500);
 }
 
 // move motors.
-void updateServo(void) {
-  servo_frnt.write(90 - m_motorValue.front);
-  servo_rear.write(90 - m_motorValue.rear);
-  servo_fl_1.write(90 + m_motorValue.m.fl.motor1);
-  servo_fl_2.write(90 - m_motorValue.m.fl.motor2);
-  servo_fr_1.write(90 - m_motorValue.m.fr.motor1);
-  servo_fr_2.write(90 + m_motorValue.m.fr.motor2);
-  servo_rl_1.write(90 + m_motorValue.m.rl.motor1);
-  servo_rl_2.write(90 - m_motorValue.m.rl.motor2);
-  servo_rr_1.write(90 - m_motorValue.m.rr.motor1);
-  servo_rr_2.write(90 + m_motorValue.m.rr.motor2);
+void updateServo(allMotors motorValue) {
+  servo_frnt.write(90 - motorValue.front);
+  servo_rear.write(90 - motorValue.rear);
+  servo_fl_1.write(90 + motorValue.m.fl.motor1);
+  servo_fl_2.write(90 - motorValue.m.fl.motor2);
+  servo_fr_1.write(90 - motorValue.m.fr.motor1);
+  servo_fr_2.write(90 + motorValue.m.fr.motor2);
+  servo_rl_1.write(90 + motorValue.m.rl.motor1);
+  servo_rl_2.write(90 - motorValue.m.rl.motor2);
+  servo_rr_1.write(90 - motorValue.m.rr.motor1);
+  servo_rr_2.write(90 + motorValue.m.rr.motor2);
 }
 

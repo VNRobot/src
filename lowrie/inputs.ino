@@ -19,10 +19,6 @@ Gets analog inputs
 
 */
 
-// Global variables
-// m_sensorsEnabled
-// m_defaultTask
-
 // digital inputs pins
 enum dPinsInputs {
   F_SWITCH = 3
@@ -166,7 +162,7 @@ unsigned char getSensorState(unsigned short input) {
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState) {
+unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState, unsigned char defaultTask, bool sensorsEnabled) {
   if (inputState == IN_LOW_BATTERY) {
     return DOWNTASK;
   }
@@ -184,8 +180,8 @@ unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState)
     return STANDTASK;
   }
   // check sensors enabled
-  if (! m_sensorsEnabled) {
-    return m_defaultTask;
+  if (! sensorsEnabled) {
+    return defaultTask;
   }
   // obstacle state
   switch (inputState) {
@@ -214,13 +210,13 @@ unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState)
       return WALKTURNLEFTTASK;
     break;
     case IN_NORMAL:
-      return m_defaultTask;
+      return defaultTask;
     break;
     default:
-      return m_defaultTask;
+      return defaultTask;
     break;
   }
-  return m_defaultTask;
+  return defaultTask;
 }
 
 // print raw data
@@ -338,8 +334,6 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   return IN_NORMAL;
 }
 
-///////////////////////Project specific functions////////////////////////
-
 // check for calibration mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
@@ -350,17 +344,17 @@ bool checkForDemoModeInputs(void) {
 }
 
 // get current of center motors
-unsigned short getCenterCurrentInputs(void) {
+unsigned short getCurrent1Inputs(void) {
   return analogValueInputs.current1;
 }
 
 // get current of front motors
-unsigned short getFrontCurrentInputs(void) {
+unsigned short getCurrent2Inputs(void) {
   return analogValueInputs.current2;
 }
 
 // get current of rear motors
-unsigned short getRearCurrentInputs(void) {
+unsigned short getCurrent3Inputs(void) {
   return analogValueInputs.current3;
 }
 

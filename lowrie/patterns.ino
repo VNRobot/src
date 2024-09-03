@@ -5,13 +5,6 @@ Arduino nano
 Robot legs motion patterns
 */
 
-// Global variables
-// m_patternCounter
-// m_motorValue
-// m_calibration
-// struct motors
-// struct accRoll
-
 // structure for four legs
 struct legs {
   unsigned char fl;
@@ -78,6 +71,8 @@ sequence _currentSequence[20] = {
 };
 // sequence shift between right and left legs
 unsigned char _leftRightShift = 0;
+// motors values for 10 motors
+allMotors _motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // set new values of center motors
 void _updateCenterMotor(char cAngleF, char cAngleR) {
@@ -466,7 +461,7 @@ void _updateSequenceWalkBack(char m1[], char m2[]) {
 
 
 // get next sequence
-unsigned char setNextPattern(unsigned char currentTaskItem) {
+unsigned char setPattern(unsigned char currentTaskItem) {
   // get new sequence array
   switch (currentTaskItem) {
     case DOSTAND:
@@ -474,7 +469,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceLinear(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 0;
       _updateTurn(0);
-      m_patternCounter ++;
     }
     break;
     case STANDTOWALK:
@@ -482,7 +476,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceLinearEnd(_motor1Walk[_centerStatic] - _liftm1, _motor2Walk[_centerStatic] - _liftm2);
       _leftRightShift = 20;
       _updateTurn(0);
-      m_patternCounter ++;
     }
     break;
     case WALKTOSTAND:
@@ -490,14 +483,12 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceLinearStart(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 20;
       _updateTurn(0);
-      m_patternCounter ++;
     }
     break;
     case STANDWALK:
     {
       _updateSequenceStandWalk(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 10;
-      m_patternCounter ++;
       return STANDWALK; // used to set direction
     }
     break;
@@ -506,7 +497,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceStandWalk(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 10;
       _updateTurn(-10);
-      m_patternCounter ++;
     }
     break;
     case STANDWALKRIGHT:
@@ -514,7 +504,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceStandWalk(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 10;
       _updateTurn(10);
-      m_patternCounter ++;
     }
     break;
     case STANDWALKSHIFTLEFT:
@@ -522,7 +511,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceStandWalk(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 10;
       _updateShift(-10);
-      m_patternCounter ++;
     }
     break;
     case STANDWALKSHIFTRIGHT:
@@ -530,14 +518,12 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceStandWalk(_motor1Walk[_centerStatic], _motor2Walk[_centerStatic]);
       _leftRightShift = 10;
       _updateShift(10);
-      m_patternCounter ++;
     }
     break;
     case WALKFORWARD:
     {
       _updateSequenceWalk(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
-      m_patternCounter ++;
       return WALKFORWARD; // used to set direction
     }
     break;
@@ -546,7 +532,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceWalk(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
       _updateTurn(-10);
-      m_patternCounter ++;
     }
     break;
     case WALKRIGHT:
@@ -554,7 +539,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceWalk(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
       _updateTurn(10);
-      m_patternCounter ++;
     }
     break;
     case WALKSHIFTLEFT:
@@ -562,7 +546,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceWalk(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
       _updateShift(-10);
-      m_patternCounter ++;
     }
     break;
     case WALKSHIFTRIGHT:
@@ -570,7 +553,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceWalk(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
       _updateShift(10);
-      m_patternCounter ++;
     }
     break;
     case WALKBACK:
@@ -578,7 +560,6 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceWalkBack(_motor1Walk, _motor2Walk);
       _leftRightShift = 10;
       _updateTurn(0);
-      m_patternCounter ++;
     }
     break;
     case DODOWN:
@@ -586,11 +567,9 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       _updateSequenceLinear(30, 30);
       _leftRightShift = 10;
       _updateTurn(0);
-      m_patternCounter ++;
     }
     break;
     case DONE:
-      m_patternCounter = 0;
       return DONE;
     break;
     case DOCALIBRATION:
@@ -609,11 +588,9 @@ unsigned char setNextPattern(unsigned char currentTaskItem) {
       return DOCALIBRATION;
     break;
     case RESETDIRECTION:
-      m_patternCounter ++;
       return RESETDIRECTION;
     break;
     default:
-      m_patternCounter = 0;
       return currentTaskItem;
     break;
   }
@@ -630,18 +607,23 @@ void updateTurnPattern(char cAngle) {
 }
 
 // update servo motors values
-unsigned char updatePatterns(accRoll gyroState) {
+allMotors updateMotorsPatterns(allMotors calibration) {
   // set motors angle values
-  m_motorValue.front       = (_currentSequence[_sequenceCount.fl].front          + m_calibration.front);
-  m_motorValue.rear        = (_currentSequence[_sequenceCount.fl].rear           + m_calibration.rear);
-  m_motorValue.m.fl.motor1 = (_currentSequence[_sequenceCount.fl].m.motor1  - 30 + m_calibration.m.fl.motor1 - _sideUpLeft / 3);
-  m_motorValue.m.fl.motor2 = (_currentSequence[_sequenceCount.fl].m.motor2  - 30 + m_calibration.m.fl.motor2 - _sideUpLeft);
-  m_motorValue.m.fr.motor1 = (_currentSequence[_sequenceCount.fr].m.motor1  - 30 + m_calibration.m.fr.motor1 + _sideUpRight / 3);
-  m_motorValue.m.fr.motor2 = (_currentSequence[_sequenceCount.fr].m.motor2  - 30 + m_calibration.m.fr.motor2 + _sideUpRight);
-  m_motorValue.m.rl.motor1 = (_currentSequence[_sequenceCount.rl].m.motor1  - 30 + m_calibration.m.rl.motor1 - _sideUpLeft / 3);
-  m_motorValue.m.rl.motor2 = (_currentSequence[_sequenceCount.rl].m.motor2  - 30 + m_calibration.m.rl.motor2 - _sideUpLeft);
-  m_motorValue.m.rr.motor1 = (_currentSequence[_sequenceCount.rr].m.motor1  - 30 + m_calibration.m.rr.motor1 + _sideUpRight / 3);
-  m_motorValue.m.rr.motor2 = (_currentSequence[_sequenceCount.rr].m.motor2  - 30 + m_calibration.m.rr.motor2 + _sideUpRight);
+  _motorValue.front       = (_currentSequence[_sequenceCount.fl].front          + calibration.front);
+  _motorValue.rear        = (_currentSequence[_sequenceCount.fl].rear           + calibration.rear);
+  _motorValue.m.fl.motor1 = (_currentSequence[_sequenceCount.fl].m.motor1  - 30 + calibration.m.fl.motor1 - _sideUpLeft / 3);
+  _motorValue.m.fl.motor2 = (_currentSequence[_sequenceCount.fl].m.motor2  - 30 + calibration.m.fl.motor2 - _sideUpLeft);
+  _motorValue.m.fr.motor1 = (_currentSequence[_sequenceCount.fr].m.motor1  - 30 + calibration.m.fr.motor1 + _sideUpRight / 3);
+  _motorValue.m.fr.motor2 = (_currentSequence[_sequenceCount.fr].m.motor2  - 30 + calibration.m.fr.motor2 + _sideUpRight);
+  _motorValue.m.rl.motor1 = (_currentSequence[_sequenceCount.rl].m.motor1  - 30 + calibration.m.rl.motor1 - _sideUpLeft / 3);
+  _motorValue.m.rl.motor2 = (_currentSequence[_sequenceCount.rl].m.motor2  - 30 + calibration.m.rl.motor2 - _sideUpLeft);
+  _motorValue.m.rr.motor1 = (_currentSequence[_sequenceCount.rr].m.motor1  - 30 + calibration.m.rr.motor1 + _sideUpRight / 3);
+  _motorValue.m.rr.motor2 = (_currentSequence[_sequenceCount.rr].m.motor2  - 30 + calibration.m.rr.motor2 + _sideUpRight);
+  return _motorValue;
+}
+
+// update servo motors values
+unsigned char updatePointPatterns(accRoll gyroState, unsigned char deviceMode) {
   // update sequence shift 
   if (_sequenceCount.fl < 19) {
     _sequenceCount.fl ++;
@@ -670,7 +652,7 @@ unsigned char updatePatterns(accRoll gyroState) {
       _sequenceCount.rl = _leftRightShift;
     }
     // check explore mode
-    if (m_deviceMode == EXPLORE) {
+    if (deviceMode == EXPLORE) {
       // explore mode
       _centerStatic = _compensateStaticBallance(gyroState);
       _sideBallance = _fixSideBalance(_sideBallance, gyroState);

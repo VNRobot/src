@@ -5,29 +5,7 @@ Arduino nano
 use MPU6050 to read gyroscope and accelerometer
 */
 
-// Global variables
-// struct accRoll
-
 #include <Wire.h>
-
-enum gState {
-  GYRO_QUIET = 0,         // quiet
-  GYRO_NORM = 1,          // moving
-  GYRO_SHAKEN = 2,        // shaken
-  GYRO_UPSIDEDOWN = 3,    // upside down
-  GYRO_HIT_SIDE = 4,      // hit left or right
-  GYRO_HIT_FRONT = 5,     // hit front or back
-  GYRO_FELL_LEFT = 6,    // fell left
-  GYRO_FELL_RIGHT = 7,   // fell right
-  GYRO_FELL_FRONT = 8,   // fell front
-  GYRO_FELL_BACK = 9,     // fell back
-  GYRO_DOWN_HILL = 10,    // moving down hill
-  GYRO_UP_HILL = 11,      // moving up hill
-  GYRO_FOLLING_LEFT = 12,  // folling left
-  GYRO_FOLLING_RIGHT = 13, // folling right
-  GYRO_FOLLING_FRONT = 14, // folling front
-  GYRO_FOLLING_BACK = 15  // folling back
-};
 
 // gyro data structure
 typedef struct gyro {
@@ -289,9 +267,6 @@ void _printLineGyro(struct acc data) {
 void _printGyro(unsigned char state) {
   // print gyro status
   switch (state) {
-    case GYRO_QUIET:
-      Serial.println(" GYRO_QUIET ");
-    break;
     case GYRO_NORM:
       Serial.println(" GYRO_NORM ");
     break;
@@ -351,10 +326,6 @@ unsigned char _statusGyro(struct acc data) {
   // shaken aX > 100 or aY > 100
   if ((data.accAngleX > 200) || (data.accAngleY > 200)) {
     return GYRO_SHAKEN;
-  }
-  // quiet aX < 5 and aY < 5
-  if ((data.accAngleX < 3) && (data.accAngleY < 3)) {
-    return GYRO_QUIET;
   }
   // hit side aX > 50
   if ((data.accAngleX > 100) && (data.accAngleX > data.accAngleY)) {

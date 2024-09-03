@@ -6,7 +6,7 @@ Main file
 */
 
 // patterns enumerator
-enum m_patterns {
+enum rPatterns {
   DOSTAND,
   STANDTOWALK,
   WALKTOSTAND,
@@ -32,7 +32,7 @@ enum m_patterns {
   INPROGRESS
 };
 // tasks enumerator
-enum m_tasks {
+enum rTasks {
   CALIBRATIONTASK,
   DEMOTASK,
   BEGINTASK,
@@ -52,7 +52,7 @@ enum m_tasks {
   STANDTASK
 };
 // device mode enumerator
-enum m_mode {
+enum rMode {
   EXPLORE,
   CALIBRATION_INFO,
   CALIBRATION_START,
@@ -62,6 +62,24 @@ enum m_mode {
   CALIBRATION_AUTO_2,
   CALIBRATION_SAVE,
   CALIBRATION_DONE
+};
+
+enum gState {
+  GYRO_NORM,          // moving
+  GYRO_SHAKEN,        // shaken
+  GYRO_UPSIDEDOWN,    // upside down
+  GYRO_HIT_SIDE,      // hit left or right
+  GYRO_HIT_FRONT,     // hit front or back
+  GYRO_FELL_LEFT,    // fell left
+  GYRO_FELL_RIGHT,   // fell right
+  GYRO_FELL_FRONT,   // fell front
+  GYRO_FELL_BACK,     // fell back
+  GYRO_DOWN_HILL,    // moving down hill
+  GYRO_UP_HILL,      // moving up hill
+  GYRO_FOLLING_LEFT,  // folling left
+  GYRO_FOLLING_RIGHT, // folling right
+  GYRO_FOLLING_FRONT, // folling front
+  GYRO_FOLLING_BACK  // folling back
 };
 
 // structure for one leg motors
@@ -96,23 +114,13 @@ typedef struct accRoll {
 
 // motors calibration values for 10 motors
 allMotors m_calibration = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// motors values for 10 motors
-allMotors m_motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // gyro state
 accRoll _gyroState;
-// Array to store currently executed task. contains list of patterns
-unsigned char m_currentTask[28] = {DOCALIBRATION, DOREPEAT};
-// pattern counter points to m_currentTask
-unsigned char m_patternCounter = 0;
 
 // enable sensors flag
-bool m_sensorsEnabled = true;
+bool _sensorsEnabled = true;
 // default task
-unsigned char m_defaultTask = WALKTASK;
-// device mode
-unsigned char m_deviceMode = EXPLORE;
-// mode button press flag
-bool m_modePressed = false;
+unsigned char _defaultTask = WALKTASK;
 // main time delay in the loop in msec
 unsigned char _timeDelay = 25;
 // new task
@@ -148,12 +156,12 @@ void setup() {
   // check for Mode button press and for stored calibration
   if (_readButtonPress()) {
     // set calibration mode
-    m_deviceMode = CALIBRATION_INFO;
+    setModeCalibration(CALIBRATION_INFO);
     calM1 = -60;
     calM2 = 60;
   } else if (getSoftwareVersionEeprom() != readSoftwareVersionEeprom()) {
     // set calibration mode
-    m_deviceMode = CALIBRATION_INFO;
+    setModeCalibration(CALIBRATION_INFO);
     calM1 = -60;
     calM2 = 60;
   }
@@ -164,16 +172,17 @@ void setup() {
   updateInputs(0);
   // check for factory mode
   // factory mode is activated when "mode" button is pressed during the boot
-  if (m_deviceMode == CALIBRATION_INFO) {
+  if (getModeCalibration() == CALIBRATION_INFO) {
     // factory mode is used for legs calibration
     Serial.println("Entering factory mode");
   } else {
     // normal operation
     // load calibration if available
     if (getSoftwareVersionEeprom() == readSoftwareVersionEeprom()) {
-      readCalibrationEeprom();
+      // read values by using pointer to struct
+      readCalibrationEeprom(& m_calibration);
       // set motors values after calibration
-      setServo();
+      setServo(m_calibration);
     }
     // demo mode activated when hand is placed 5cm from sensors during the boot
     if (checkForDemoModeInputs()) {
@@ -181,7 +190,7 @@ void setup() {
       Serial.println("Entering demo mode");
       applyTask(DEMOTASK);
       // disable sensors in demo mmode
-      m_sensorsEnabled = false;
+      _sensorsEnabled = false;
     } else {
       Serial.println("Entering explore mode");
       applyTask(BEGINTASK);
@@ -201,39 +210,21 @@ void loop() {
   _inputState = updateInputs(_sequenceCounter);
   // update gyro readings
   _gyroState = updateGyro(_sequenceCounter);
-  // update servo motors values. 
-  _sequenceCounter = updatePatterns(_gyroState);
-  // move motors.
-  updateServo();
+  // update servo motors values.move motors
+  updateServo(updateMotorsPatterns(m_calibration));
+  // update motor pattern point
+  _sequenceCounter = updatePointPatterns(_gyroState, getModeCalibration());
   // walking speed depends of the delay
   delay(_timeDelay);
   // check sequence start
   if (_sequenceCounter == 0) {
     // check device mode
-    if (m_deviceMode == EXPLORE) {
+    if (getModeCalibration() == EXPLORE) {
       // explore mode
-      // process cycling commands
-      switch (m_currentTask[m_patternCounter]) {
-        case RESET:
-        {
-          m_patternCounter = 0;
-        }
-        break;
-        case DOREPEAT:
-        {
-          if (m_patternCounter > 0) {
-            m_patternCounter --;
-          }
-        }
-        break;
-        default:
-        break;
-      }
-      // update pattern for the next sequence
-      exploreModeCall(setNextPattern(m_currentTask[m_patternCounter]));
+      exploreModeCall(setPattern(getPatternInTask()));
     } else {
       // factory mode
-      factoryModeCall(setNextPattern(m_currentTask[m_patternCounter]));
+      factoryModeCall(setPattern(getPatternInTask()));
     }
   }
 }
@@ -246,7 +237,7 @@ void exploreModeCall(unsigned char patternStatus) {
     {     
       // get next task
       // proximity sensors input set next task. 
-      applyTask(getTaskByInputs(_gyroState.stateGyro, _inputState));
+      applyTask(getTaskByInputs(_gyroState.stateGyro, _inputState, _defaultTask, _sensorsEnabled));
     }
     break;
     case STANDWALK:
@@ -257,8 +248,8 @@ void exploreModeCall(unsigned char patternStatus) {
     case WALKFORWARD:
     {
       // assume WALKFORWARD is deault task
-      _newTask = getTaskByInputs(_gyroState.stateGyro, _inputState);
-      if (m_defaultTask == _newTask) {
+      _newTask = getTaskByInputs(_gyroState.stateGyro, _inputState, _defaultTask, _sensorsEnabled);
+      if (_defaultTask == _newTask) {
         updateTurnPattern(getDirectionCorrectionGyro());
       } else {
         applyTask(_newTask);
@@ -279,16 +270,16 @@ void exploreModeCall(unsigned char patternStatus) {
 void factoryModeCall(unsigned char patternStatus) {
   // update factory stage
   if (_readButtonPress()) {
-    if (m_deviceMode < CALIBRATION_START) {
-      m_deviceMode = CALIBRATION_START;
+    if (getModeCalibration() < CALIBRATION_START) {
+      setModeCalibration(CALIBRATION_START);
     } else {
-      m_modePressed = true;
+      setButtonCalibration();
     }
     Serial.print("Factory stage set to ");
-    Serial.println((int)m_deviceMode);
+    Serial.println((int)getModeCalibration());
   }
   // factory mode stages
-  switch (m_deviceMode) {
+  switch (getModeCalibration()) {
     case CALIBRATION_INFO: 
       // print proximity sensors
       Serial.print("Left eye ");
@@ -302,15 +293,15 @@ void factoryModeCall(unsigned char patternStatus) {
       Serial.print("Battery  ");
       Serial.print((int)analogRead(A6));
       Serial.print(" Current center ");
-      Serial.print((int)getCenterCurrentInputs());
+      Serial.print((int)getCurrent1Inputs());
       Serial.print(" front ");
-      Serial.print((int)getFrontCurrentInputs());
+      Serial.print((int)getCurrent2Inputs());
       Serial.print(" rear ");
-      Serial.println((int)getRearCurrentInputs());
+      Serial.println((int)getCurrent3Inputs());
     break;
     case CALIBRATION_START: 
     {
-      m_deviceMode = CALIBRATION_FRONT;
+      setModeCalibration(CALIBRATION_FRONT);
       Serial.println("Starting legs calibration");
       applyTask(CALIBRATIONTASK);
     } 
@@ -321,16 +312,16 @@ void factoryModeCall(unsigned char patternStatus) {
     case CALIBRATION_AUTO_2: 
     {
       if (patternStatus == DOCALIBRATION) {
-        m_patternCounter = legsCalibration(m_patternCounter);
+        setPointerInTask(legsCalibration(getPointerInTask(), & m_calibration));
       }
     } 
     break;
     case CALIBRATION_SAVE:
     {
-      m_deviceMode = CALIBRATION_DONE;
+      setModeCalibration(CALIBRATION_DONE);
       Serial.println("Saving calibration data");
-      writeCalibrationEeprom();
-      writeSoftwareVersionEeprom(getSoftwareVersionEeprom());
+      writeCalibrationEeprom(m_calibration);
+      writeSoftwareVersionEeprom();
       Serial.print("Motors FL1: ");
       Serial.print((int)m_calibration.m.fl.motor1);
       Serial.print(" FL2: ");
