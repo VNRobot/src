@@ -96,10 +96,10 @@ void _updateSequenceLinearStart(char endPosition1, char endPosition2) {
 }
 
 // create stand walk sequence
-void _updateSequenceConst(char m1, char m2) {
+void _updateSequenceRelative(char m1, char m2) {
   // motor 1
-  currentSequence[0].left += m1;
-  currentSequence[1].left += m1;
+  currentSequence[0].left += m1 / 4;
+  currentSequence[1].left += m1 / 2;
   currentSequence[2].left += m1;
   currentSequence[3].left += m1;
   currentSequence[4].left += m1;
@@ -119,8 +119,8 @@ void _updateSequenceConst(char m1, char m2) {
   currentSequence[18].left += m1;
   currentSequence[19].left += m1;
   // motor 2
-  currentSequence[0].right += m2;
-  currentSequence[1].right += m2;
+  currentSequence[0].right += m2 / 4;
+  currentSequence[1].right += m2 / 2;
   currentSequence[2].right += m2;
   currentSequence[3].right += m2;
   currentSequence[4].right += m2;
@@ -184,12 +184,12 @@ void setPattern(unsigned char currentTaskItem) {
     break;
     case P_GOLEFT:
     {
-      _updateSequenceLinearStart(10, 14);
+      _updateSequenceLinearStart(8, 14);
     }
     break;
     case P_GORIGHT:
     {
-      _updateSequenceLinearStart(14, 10);
+      _updateSequenceLinearStart(14, 8);
     }
     break;
     case P_GOBACK:
@@ -214,16 +214,16 @@ void setPattern(unsigned char currentTaskItem) {
 
 // update turning
 void updateTurnPattern(char cAngle) {
-  _updateSequenceConst(cAngle, -cAngle);
+  _updateSequenceRelative(cAngle, -cAngle);
 }
 
 // update servo motors values
 allMotors updateMotorsPatterns(void) {
-  // set motors angle values
+  // set motors speed values
   if (iterrupted) {
-    // just stop if interrupted
-    motorValue.left  = 0;
-    motorValue.right = 0;
+    // just slowdown if interrupted
+    motorValue.left  = (currentSequence[sequenceCount].left) / 3;
+    motorValue.right = (currentSequence[sequenceCount].right) / 3;
   } else {
     // normal operation
     motorValue.left  = (currentSequence[sequenceCount].left);

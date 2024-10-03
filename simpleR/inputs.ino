@@ -55,6 +55,8 @@ enum inState {
 unsigned char normalDistance = 20; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
+// turn left or right decision
+bool turnLeft = true;
 
 // analog sensors structure
 struct aSensors {
@@ -128,10 +130,10 @@ unsigned char updateInputs(unsigned char sequenceCount) {
   } else {
     analogValueInputs.battery += 10;
   }
-  //analogValueInputs.battery = (analogValueInputs.battery * 7 + analogInputs.battery * 25 / 3) / 8;
   // proximity sensors in cm
-  analogValueInputs.left = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
-  analogValueInputs.right = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
+  // crossconnection left senor is facing right and right sensor is facing left
+  analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
+  analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
   allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
   //
@@ -341,10 +343,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   }
   // touch
   if (digitalInputs.f == 0) {
-    if (analogValueInputs.right > analogValueInputs.left) {
-      return IN_TOUCH_FRONTLEFT;
+    if (analogValueInputs.left > analogValueInputs.right) {
+      turnLeft = true;
     } else {
+      turnLeft = false;
+    } 
+    if (turnLeft) {
       return IN_TOUCH_FRONTRIGHT;
+    } else {
+      return IN_TOUCH_FRONTLEFT;
     }
   }
   // check sensors
@@ -352,32 +359,35 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_NORMAL;
   }
   if (sRight == SEN_NORMAL) {
-    // only right sensor obstacle
+    // only left side obstacle
+    turnLeft = false;
     if (sLeft == SEN_BLOCK) {
-      return IN_WALL_LEFT;
+      turnLeft = true;
+      return IN_WALL_RIGHT;
     }
     if (sLeft == SEN_WALL) {
-      return IN_WALL_RIGHT;
+      return IN_WALL_LEFT;
     } else {
-      return IN_OBSTACLE_RIGHT;
+      return IN_OBSTACLE_LEFT;
     }
   }
   if (sLeft == SEN_NORMAL) {
-    // only left sensor obstacle
+    // only right side obstacle
+    turnLeft = true;
     if (sRight == SEN_BLOCK) {
-      return IN_WALL_RIGHT;
+      turnLeft = false;
+      return IN_WALL_LEFT;
     }
     if (sRight == SEN_WALL) {
-      return IN_WALL_LEFT;
+      return IN_WALL_RIGHT;
     } else {
       //SEN_OBSTACLE
-      return IN_OBSTACLE_LEFT;
+      return IN_OBSTACLE_RIGHT;
     }
   }
   // both sensors obstacle or cliff
   if ((sLeft == SEN_CLIFF) || (sRight == SEN_CLIFF)) {
-    // opposite distance logic
-    if (analogValueInputs.right > analogValueInputs.left) {
+    if (turnLeft) {
       return IN_WALL_FRONTRIGHT;
     } else {
       return IN_WALL_FRONTLEFT;
@@ -385,25 +395,29 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   }
   // both sensors obstacle and blocked
   if ((sLeft == SEN_BLOCK) || (sRight == SEN_BLOCK)) {
-    // opposite distance logic
-    if (analogValueInputs.right > analogValueInputs.left) {
+    if (turnLeft) {
       return IN_WALL_FRONTRIGHT;
     } else {
       return IN_WALL_FRONTLEFT;
     }
   }
   // both sensors wall or obstacle
+  if (analogValueInputs.left > analogValueInputs.right) {
+    turnLeft = true;
+  } else {
+    turnLeft = false;
+  } 
   if ((sLeft == SEN_WALL) || (sRight == SEN_WALL)) {
-    if (analogValueInputs.right > analogValueInputs.left) {
-      return IN_WALL_FRONTLEFT;
-    } else {
+    if (turnLeft) {
       return IN_WALL_FRONTRIGHT;
+    } else {
+      return IN_WALL_FRONTLEFT;
     }
   } else {
-    if (analogValueInputs.right > analogValueInputs.left) {
-      return IN_OBSTACLE_FRONTLEFT;
-    } else {
+    if (turnLeft) {
       return IN_OBSTACLE_FRONTRIGHT;
+    } else {
+      return IN_OBSTACLE_FRONTLEFT;
     }
   }
   // normal

@@ -18,7 +18,7 @@ Servo servo_left;
 Servo servo_right;
 
 // motors calibration value
-allMotors motorCalibration = {2, -2};
+allMotors motorCalibration = {-2, 2};
 
 // init servo motors
 void initServo(void) {
