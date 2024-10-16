@@ -74,27 +74,27 @@ void initServo(int calM1, int calM2) {
 }
 
 // set servo motors
-void setServo(allMotors calibration) {
+void setServo(allMotors calibration, int calM1, int calM2) {
   // set motors values after calibration
   servo_frnt.write(90 - calibration.front);
   delay(100);
   servo_rear.write(90 - calibration.rear);
   delay(100);
-  servo_fl_1.write(90 + calibration.m.fl.motor1);
+  servo_fl_1.write(90 + calibration.m.fl.motor1 - calM1);
   delay(100);
-  servo_fl_2.write(90 - calibration.m.fl.motor2);
+  servo_fl_2.write(90 - calibration.m.fl.motor2 - calM2);
   delay(100);
-  servo_fr_1.write(90 - calibration.m.fr.motor1);
+  servo_fr_1.write(90 - calibration.m.fr.motor1 + calM1);
   delay(100);
-  servo_fr_2.write(90 + calibration.m.fr.motor2);
+  servo_fr_2.write(90 + calibration.m.fr.motor2 + calM2);
   delay(100);
-  servo_rl_1.write(90 + calibration.m.rl.motor1);
+  servo_rl_1.write(90 + calibration.m.rl.motor1 - calM1);
   delay(100);
-  servo_rl_2.write(90 - calibration.m.rl.motor2);
+  servo_rl_2.write(90 - calibration.m.rl.motor2 - calM2);
   delay(100);
-  servo_rr_1.write(90 - calibration.m.rr.motor1);
+  servo_rr_1.write(90 - calibration.m.rr.motor1 + calM1);
   delay(100);
-  servo_rr_2.write(90 + calibration.m.rr.motor2);
+  servo_rr_2.write(90 + calibration.m.rr.motor2 + calM2);
   delay(500);
 }
 

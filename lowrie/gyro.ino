@@ -45,7 +45,7 @@ unsigned long currentTime = 0;
 unsigned long oldTime;
 // buffers to read register into
 float floatBuffer[3];
-
+float directionOld = 0;
 unsigned char stateGyroOld = GYRO_NORM;
 
 // init gyroscope wire
@@ -197,10 +197,13 @@ accRoll updateGyro(unsigned char sequenceCount) {
   accAverageValue.stateGyro = _statusGyro(accErrorAverage);
   if (stateGyroOld != accAverageValue.stateGyro) {
     stateGyroOld = accAverageValue.stateGyro;
-    // print raw data
-    //_printLineGyro(accErrorAverage);
-    _printGyro(accAverageValue.stateGyro);
+    // debug print
+    //_printGyro(accAverageValue.stateGyro);
   }
+  // debug print
+  //if (sequenceCount == 0) {
+    //_printLineGyro(accErrorAverage);
+  //}
   return accAverageValue;
 }
 
@@ -230,7 +233,13 @@ void resetGyro(void) {
 void resetDirectionGyro(void) {
   // positive - turned left
   // negative - turned right
+  directionOld = gyroData.yaw;
   gyroData.yaw = 0;
+}
+
+// return to old horizontal direction
+void restoreDirectionGyro(void) {
+  gyroData.yaw += directionOld;
 }
 
 // get walking direction correction from gyroscope
@@ -244,7 +253,7 @@ char getDirectionCorrectionGyro(void) {
   }
   return (char)(gyroData.yaw / 2);
 }
-
+/*
 // print gyro values
 void _printLineGyro(struct acc data) {
   Serial.print(" aX ");
@@ -316,22 +325,22 @@ void _printGyro(unsigned char state) {
       Serial.println(" Wrong gyro state ");
   }
 }
-
+*/
 // status of gyro
 unsigned char _statusGyro(struct acc data) {
   // upside down r > 70 or r < -70
   if ((gyroData.roll > 70) || (gyroData.roll < -70)) {
     return GYRO_UPSIDEDOWN;
   }
-  // shaken aX > 100 or aY > 100
+  // shaken aX > 200 or aY > 200
   if ((data.accAngleX > 200) || (data.accAngleY > 200)) {
     return GYRO_SHAKEN;
   }
-  // hit side aX > 50
+  // hit side aX > 100
   if ((data.accAngleX > 100) && (data.accAngleX > data.accAngleY)) {
     return GYRO_HIT_SIDE;
   }
-  // hit front aY > 50
+  // hit front aY > 100
   if ((data.accAngleY > 100) && (data.accAngleY > data.accAngleX)) {
     return GYRO_HIT_FRONT;
   }

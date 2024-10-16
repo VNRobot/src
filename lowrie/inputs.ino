@@ -26,7 +26,7 @@ enum dPinsInputs {
 
 // sensor state
 enum senState {
-  SEN_CLIF = 0,
+  SEN_CLIFF = 0,
   SEN_OBSTACLE = 1,
   SEN_WALL = 2,
   SEN_BLOCK = 3,
@@ -35,22 +35,28 @@ enum senState {
 
 // input state
 enum inState {
-  IN_LOW_BATTERY = 0,        // battery low
-  IN_HIGH_CURRENT_1 = 1,     // A7 center motor current too high
-  IN_HIGH_CURRENT_2 = 2,     // A3 front motor current too high
-  IN_HIGH_CURRENT_3 = 3,     // A2 rear motor current too high
-  IN_TOUCH_FRONT = 4,        // touch front
-  IN_WALL_FRONT = 5,
-  IN_WALL_LEFT = 6,
-  IN_WALL_RIGHT = 7,
-  IN_OBSTACLE_FRONT = 8,
-  IN_OBSTACLE_LEFT = 9,
-  IN_OBSTACLE_RIGHT = 10,
-  IN_NORMAL = 11             // normal
+  IN_LOW_BATTERY,
+  IN_HIGH_CURRENT_1,
+  IN_HIGH_CURRENT_2,
+  IN_HIGH_CURRENT_3,
+  IN_TOUCH_FRONTLEFT,
+  IN_TOUCH_FRONTRIGHT,
+  IN_WALL_FRONTLEFT,
+  IN_WALL_FRONTRIGHT,
+  IN_WALL_LEFT,
+  IN_WALL_RIGHT,
+  IN_OBSTACLE_FRONTLEFT,
+  IN_OBSTACLE_FRONTRIGHT,
+  IN_OBSTACLE_LEFT,
+  IN_OBSTACLE_RIGHT,
+  IN_NORMAL             
 };
 
+unsigned char normalDistance = 30; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
+// turn left or right decision
+bool turnLeft = true;
 
 // analog sensors structure
 struct aSensors {
@@ -90,36 +96,53 @@ unsigned char updateInputs(unsigned char sequenceCount) {
   analogInputs.right = (unsigned short)analogRead(A1);
   // read digital inputs
   digitalInputs.f = (unsigned char)digitalRead(F_SWITCH);
-  // calculate analog input current in values in mA
+  // calculate sensor current in mA
   // 1
   if (analogInputs.current1 > analogInputs.battery) {
     analogInputs.current1 = analogInputs.battery;
   }
-  analogValueInputs.current1 = (analogValueInputs.current1 * 7 + (analogInputs.battery - analogInputs.current1) * 8) / 8;
+  if (analogValueInputs.current1 > (analogInputs.battery - analogInputs.current1) * 8) {
+    analogValueInputs.current1 -= 50;
+  } else {
+    analogValueInputs.current1 += 50;
+  }
   // 2
   if (analogInputs.current2 > analogInputs.battery) {
     analogInputs.current2 = analogInputs.battery;
   }
-  analogValueInputs.current2 = (analogValueInputs.current2 * 7 + (analogInputs.battery - analogInputs.current2) * 8) / 8;
+  if (analogValueInputs.current2 > (analogInputs.battery - analogInputs.current2) * 8) {
+    analogValueInputs.current2 -= 50;
+  } else {
+    analogValueInputs.current2 += 50;
+  }
   // 3
   if (analogInputs.current3 > analogInputs.battery) {
     analogInputs.current3 = analogInputs.battery;
   }
-  analogValueInputs.current3 = (analogValueInputs.current3 * 7 + (analogInputs.battery - analogInputs.current3) * 8) / 8;
+  if (analogValueInputs.current3 > (analogInputs.battery - analogInputs.current3) * 8) {
+    analogValueInputs.current3 -= 50;
+  } else {
+    analogValueInputs.current3 += 50;
+  }
   // battery in mV
-  analogValueInputs.battery = (analogValueInputs.battery * 7 + analogInputs.battery * 25 / 3) / 8;
+  if (analogValueInputs.battery > analogInputs.battery * 25 / 3) {
+    analogValueInputs.battery -= 10;
+  } else {
+    analogValueInputs.battery += 10;
+  }
   // proximity sensors in cm
-  analogValueInputs.left = (analogValueInputs.left * 3 + (unsigned short)((1600000 / analogInputs.left) / analogInputs.left)) / 4;
-  analogValueInputs.right = (analogValueInputs.right * 3 + (unsigned short)((1600000 / analogInputs.right) / analogInputs.right)) / 4;
+  // crossconnection left senor is facing right and right sensor is facing left
+  analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
+  analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
   allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
   //
   if (allStateInputsOld != allStateInputs) {
     allStateInputsOld = allStateInputs;
-    // print raw data
-    // _printLineInputs();
+    // debug print
     _printInputs(allStateInputs);
   }
+  // debug print
   if (sequenceCount == 0) {
     _printLineInputs();
   }
@@ -136,11 +159,10 @@ bool checkBatteryLowInputs(void) {
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < 100) { // 60
-    if (input > 5) {
-      if (input > 15) {
-        if (input > 30) { // 20
-          // normal 30 - 70
+  if (input < (normalDistance * 3)) { // no cliff
+    if (input > (normalDistance / 6)) { // not blocked
+      if (input > (normalDistance / 3)) { // no wall
+        if (input > (normalDistance / 2)) { // no obstacle
           return SEN_NORMAL;
         } else {
           // obstacle
@@ -151,33 +173,33 @@ unsigned char getSensorState(unsigned short input) {
         return SEN_WALL;
       }
     } else {
-      // block
+      // blocked
       return SEN_BLOCK;
     }
   } else {
-    // clif
-    return SEN_CLIF;
+    // cliff
+    return SEN_CLIFF;
   }
 }
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState, unsigned char defaultTask, bool sensorsEnabled) {
+unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsigned char defaultTask, bool sensorsEnabled) {
   if (inputState == IN_LOW_BATTERY) {
-    return DOWNTASK;
+    return DOWN_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_1) {
-    return STANDTASK;
+    return STAND_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_2) {
-    return STANDTASK;
+    return STAND_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_3) {
-    return STANDTASK;
+    return STAND_TASK;
   }
-  if ((gyroState == GYRO_UPSIDEDOWN) || (gyroState == GYRO_FELL_LEFT) || (gyroState == GYRO_FELL_RIGHT) || (gyroState == GYRO_FELL_FRONT) || (gyroState == GYRO_FELL_BACK)) {
+  if ((gyroState.stateGyro == GYRO_UPSIDEDOWN) || (gyroState.stateGyro == GYRO_FELL_LEFT) || (gyroState.stateGyro == GYRO_FELL_RIGHT) || (gyroState.stateGyro == GYRO_FELL_FRONT) || (gyroState.stateGyro == GYRO_FELL_BACK)) {
     // stop moving
-    return STANDTASK;
+    return STAND_TASK;
   }
   // check sensors enabled
   if (! sensorsEnabled) {
@@ -185,29 +207,35 @@ unsigned char getTaskByInputs(unsigned char gyroState, unsigned char inputState,
   }
   // obstacle state
   switch (inputState) {
-    case IN_WALL_FRONT:
-      return WALKBACKTASK; //TURNAROUNDTASK;
+    case IN_TOUCH_FRONTLEFT:
+      return GOBACKRIGHT_TASK;
+    break;
+    case IN_TOUCH_FRONTRIGHT:
+      return GOBACKLEFT_TASK;
+    break;
+    case IN_WALL_FRONTLEFT:
+      return GOBACKRIGHT_TASK;
+    break;
+    case IN_WALL_FRONTRIGHT:
+      return GOBACKLEFT_TASK;
     break;
     case IN_WALL_LEFT:
-      return STANDTURNRIGHT2TASK;
+      return STANDTURNRIGHT2_TASK;
     break;
     case IN_WALL_RIGHT:
-      return STANDTURNLEFT2TASK;
+      return STANDTURNLEFT2_TASK;
     break;
-    case IN_OBSTACLE_FRONT:
-      {
-        if (analogValueInputs.right > analogValueInputs.left) {
-          return STANDTURNLEFTTASK;
-        } else {
-          return STANDTURNRIGHTTASK;
-        }
-      }
+    case IN_OBSTACLE_FRONTLEFT:
+      return STANDTURNRIGHT_TASK;
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      return STANDTURNLEFT_TASK;
     break;
     case IN_OBSTACLE_LEFT:
-      return WALKTURNRIGHTTASK;
+      return GOTURNRIGHT_TASK;
     break;
     case IN_OBSTACLE_RIGHT:
-      return WALKTURNLEFTTASK;
+      return GOTURNLEFT_TASK;
     break;
     case IN_NORMAL:
       return defaultTask;
@@ -253,11 +281,17 @@ void _printInputs(int state) {
     case IN_HIGH_CURRENT_3:
       Serial.println(" IN_HIGH_CURRENT_3 ");
     break;
-    case IN_TOUCH_FRONT:
-      Serial.println(" IN_TOUCH_FRONT ");
+    case IN_TOUCH_FRONTLEFT:
+      Serial.println(" IN_TOUCH_FRONTLEFT ");
     break;
-    case IN_WALL_FRONT:
-      Serial.println(" IN_WALL_FRONT ");
+    case IN_TOUCH_FRONTRIGHT:
+      Serial.println(" IN_TOUCH_FRONTRIGHT ");
+    break;
+    case IN_WALL_FRONTLEFT:
+      Serial.println(" IN_WALL_FRONTLEFT ");
+    break;
+    case IN_WALL_FRONTRIGHT:
+      Serial.println(" IN_WALL_FRONTRIGHT ");
     break;
     case IN_WALL_LEFT:
       Serial.println(" IN_WALL_LEFT ");
@@ -265,8 +299,11 @@ void _printInputs(int state) {
     case IN_WALL_RIGHT:
       Serial.println(" IN_WALL_RIGHT ");
     break;
-    case IN_OBSTACLE_FRONT:
-      Serial.println(" IN_OBSTACLE_FRONT ");
+    case IN_OBSTACLE_FRONTLEFT:
+      Serial.println(" IN_OBSTACLE_FRONTLEFT ");
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      Serial.println(" IN_OBSTACLE_FRONTRIGHT ");
     break;
     case IN_OBSTACLE_LEFT:
       Serial.println(" IN_OBSTACLE_LEFT ");
@@ -302,39 +339,88 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   }
   // touch
   if (digitalInputs.f == 0) {
-    return IN_TOUCH_FRONT;
+    if (analogValueInputs.left > analogValueInputs.right) {
+      turnLeft = true;
+    } else {
+      turnLeft = false;
+    } 
+    if (turnLeft) {
+      return IN_TOUCH_FRONTRIGHT;
+    } else {
+      return IN_TOUCH_FRONTLEFT;
+    }
   }
   // check sensors
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
     return IN_NORMAL;
   }
   if (sRight == SEN_NORMAL) {
-    // only right sensor obstacle
-    if ((sLeft == SEN_BLOCK) || (sLeft == SEN_WALL)) {
+    // only left side obstacle
+    turnLeft = false;
+    if (sLeft == SEN_BLOCK) {
+      turnLeft = true;
       return IN_WALL_RIGHT;
-    } else {
-      return IN_OBSTACLE_RIGHT;
     }
-  }
-  if (sLeft == SEN_NORMAL) {
-    // only left sensor obstacle
-    if ((sRight == SEN_BLOCK) || (sRight == SEN_WALL)) {
+    if (sLeft == SEN_WALL) {
       return IN_WALL_LEFT;
     } else {
       return IN_OBSTACLE_LEFT;
     }
   }
-  // both sensors obstacle
-  if ((sLeft == SEN_BLOCK) || (sLeft == SEN_WALL) || (sRight == SEN_BLOCK) || (sRight == SEN_WALL)) {
-    return IN_WALL_FRONT;
+  if (sLeft == SEN_NORMAL) {
+    // only right side obstacle
+    turnLeft = true;
+    if (sRight == SEN_BLOCK) {
+      turnLeft = false;
+      return IN_WALL_LEFT;
+    }
+    if (sRight == SEN_WALL) {
+      return IN_WALL_RIGHT;
+    } else {
+      //SEN_OBSTACLE
+      return IN_OBSTACLE_RIGHT;
+    }
+  }
+  // both sensors obstacle or cliff
+  if ((sLeft == SEN_CLIFF) || (sRight == SEN_CLIFF)) {
+    if (turnLeft) {
+      return IN_WALL_FRONTRIGHT;
+    } else {
+      return IN_WALL_FRONTLEFT;
+    }
+  }
+  // both sensors obstacle and blocked
+  if ((sLeft == SEN_BLOCK) || (sRight == SEN_BLOCK)) {
+    if (turnLeft) {
+      return IN_WALL_FRONTRIGHT;
+    } else {
+      return IN_WALL_FRONTLEFT;
+    }
+  }
+  // both sensors wall or obstacle
+  if (analogValueInputs.left > analogValueInputs.right) {
+    turnLeft = true;
   } else {
-    return IN_OBSTACLE_FRONT;
+    turnLeft = false;
+  } 
+  if ((sLeft == SEN_WALL) || (sRight == SEN_WALL)) {
+    if (turnLeft) {
+      return IN_WALL_FRONTRIGHT;
+    } else {
+      return IN_WALL_FRONTLEFT;
+    }
+  } else {
+    if (turnLeft) {
+      return IN_OBSTACLE_FRONTRIGHT;
+    } else {
+      return IN_OBSTACLE_FRONTLEFT;
+    }
   }
   // normal
   return IN_NORMAL;
 }
 
-// check for calibration mode
+// check for demo mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
     if (analogInputs.left > 400 || analogInputs.right > 400) {

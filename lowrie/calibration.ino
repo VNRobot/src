@@ -5,6 +5,18 @@ Arduino nano
 motors calibration
 */
 
+// device mode enumerator
+enum rMode {
+  CALIBRATION_INFO,
+  CALIBRATION_START,
+  CALIBRATION_FRONT,
+  CALIBRATION_REAR,
+  CALIBRATION_AUTO_1,
+  CALIBRATION_AUTO_2,
+  CALIBRATION_SAVE,
+  CALIBRATION_DONE
+};
+
 // calibration counter
 unsigned char _calibrationCounter = 0;
 // calibration stage
@@ -12,7 +24,24 @@ unsigned char _calibrationStage = 0;
 // mode button press flag
 bool _modePressed = false;
 // device mode
-unsigned char _deviceMode = EXPLORE;
+unsigned char _deviceMode = CALIBRATION_INFO;
+
+// calibration process starts here
+bool doCalibration(allMotors * calibration) {
+  // set calibration mode
+  setModeCalibration(CALIBRATION_INFO);
+  // factory mode is used for legs calibration
+  Serial.println("Entering factory mode");
+  // init servo motors
+  initServo(-60, 60);
+  // set motors values after calibration
+  setServo(m_calibration, -60, 60);
+
+  while (true) {
+    delay(200);
+  }
+  return true;
+}
 
 // set device mode
 void setModeCalibration(unsigned char mode) {
@@ -23,7 +52,7 @@ void setModeCalibration(unsigned char mode) {
 unsigned char getModeCalibration(void) {
   return _deviceMode;
 }
-
+/*
 // do legs calibration
 unsigned char legsCalibration(unsigned char patternCounter, allMotors * calibrationData) {
   unsigned short current = 0;
@@ -319,3 +348,87 @@ bool _getButtonPressed(void) {
 void setButtonCalibration(void) {
   _modePressed = true;
 }
+
+// factory mode call
+void factoryModeCall(void) {
+  // get next pattern
+  patternNow = getNextPatternInTask();
+  setPattern(patternNow);
+  // update factory stage
+  if (_readButtonPress()) {
+    if (getModeCalibration() < CALIBRATION_START) {
+      setModeCalibration(CALIBRATION_START);
+    } else {
+      setButtonCalibration();
+    }
+    Serial.print("Factory stage set to ");
+    Serial.println((int)getModeCalibration());
+  }
+  // factory mode stages
+  switch (getModeCalibration()) {
+    case CALIBRATION_INFO: 
+      // print proximity sensors
+      Serial.print("Left eye ");
+      Serial.print((int)analogRead(A0));
+      Serial.print(" Right eye ");
+      Serial.println((int)analogRead(A1));
+      // print gyro data
+      Serial.print("Direction ");
+      Serial.println((int)getDirectionCorrectionGyro());
+      // motors current
+      Serial.print("Battery  ");
+      Serial.print((int)analogRead(A6));
+      Serial.print(" Current center ");
+      Serial.print((int)getCurrent1Inputs());
+      Serial.print(" front ");
+      Serial.print((int)getCurrent2Inputs());
+      Serial.print(" rear ");
+      Serial.println((int)getCurrent3Inputs());
+    break;
+    case CALIBRATION_START: 
+    {
+      setModeCalibration(CALIBRATION_FRONT);
+      Serial.println("Starting legs calibration");
+    } 
+    break;
+    case CALIBRATION_FRONT: 
+    case CALIBRATION_REAR:
+    case CALIBRATION_AUTO_1: 
+    case CALIBRATION_AUTO_2: 
+    {
+      setPointerInTask(legsCalibration(getPointerInTask(), & m_calibration));
+    } 
+    break;
+    case CALIBRATION_SAVE:
+    {
+      setModeCalibration(CALIBRATION_DONE);
+      Serial.println("Saving calibration data");
+      writeCalibrationEeprom(m_calibration);
+      writeSoftwareVersionEeprom();
+      Serial.print("Motors FL1: ");
+      Serial.print((int)m_calibration.m.fl.motor1);
+      Serial.print(" FL2: ");
+      Serial.print((int)m_calibration.m.fl.motor2);
+      Serial.print(" FR1: ");
+      Serial.print((int)m_calibration.m.fr.motor1);
+      Serial.print(" FR2: ");
+      Serial.print((int)m_calibration.m.fr.motor2);
+      Serial.print(" RL1: ");
+      Serial.print((int)m_calibration.m.rl.motor1);
+      Serial.print(" RL2: ");
+      Serial.print((int)m_calibration.m.rl.motor2);
+      Serial.print(" RR1: ");
+      Serial.print((int)m_calibration.m.rr.motor1);
+      Serial.print(" RR2: ");
+      Serial.println((int)m_calibration.m.rr.motor2);
+    } 
+    break;
+    case CALIBRATION_DONE: 
+      Serial.println("Done. Please reset or restart.");
+    break;
+    default:
+      Serial.println("Unknown factory stage");
+    break;
+  }
+}
+*/

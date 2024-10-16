@@ -424,7 +424,7 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   return IN_NORMAL;
 }
 
-// check for calibration mode
+// check for demo mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
     if (analogInputs.left > 400 || analogInputs.right > 400) {
