@@ -140,12 +140,12 @@ unsigned char updateInputs(unsigned char sequenceCount) {
   if (allStateInputsOld != allStateInputs) {
     allStateInputsOld = allStateInputs;
     // debug print
-    _printInputs(allStateInputs);
+    //_printInputs(allStateInputs);
   }
   // debug print
-  if (sequenceCount == 0) {
-    _printLineInputs();
-  }
+  //if (sequenceCount == 0) {
+  //  _printLineInputs();
+  //}
   return allStateInputs;
 }
 
@@ -246,7 +246,7 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
   }
   return defaultTask;
 }
-
+/*
 // print raw data
 void _printLineInputs(void) {
   Serial.print(" battery ");
@@ -318,7 +318,7 @@ void _printInputs(int state) {
       Serial.println(" Wrong inputs state ");
   }
 }
-
+*/
 // status of inputs
 unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   // battery low 6500
@@ -326,15 +326,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 800) {
+  if (analogValueInputs.current1 > 900) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 800) {
+  if (analogValueInputs.current2 > 900) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 800) {
+  if (analogValueInputs.current3 > 900) {
     return IN_HIGH_CURRENT_3;
   }
   // touch
@@ -427,21 +427,6 @@ bool checkForDemoModeInputs(void) {
         return true;
     }
     return false;
-}
-
-// get current of center motors
-unsigned short getCurrent1Inputs(void) {
-  return analogValueInputs.current1;
-}
-
-// get current of front motors
-unsigned short getCurrent2Inputs(void) {
-  return analogValueInputs.current2;
-}
-
-// get current of rear motors
-unsigned short getCurrent3Inputs(void) {
-  return analogValueInputs.current3;
 }
 
 // check mode button pressed

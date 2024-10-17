@@ -137,7 +137,6 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
   // fix slow drift
-  /*
   if (gyroData.gyroAngleX > 0) {
     gyroData.gyroAngleX --;
   } else if (gyroData.gyroAngleX < 0) {
@@ -148,7 +147,6 @@ accRoll updateGyro(unsigned char sequenceCount) {
   } else if (gyroData.gyroAngleY < 0) {
     gyroData.gyroAngleY ++;
   }
-  */
   // end fix slow drift
   if (accError.accAngleX > 0) {
     accErrorAverage.accAngleX += accError.accAngleX;
@@ -202,7 +200,7 @@ accRoll updateGyro(unsigned char sequenceCount) {
   }
   // debug print
   //if (sequenceCount == 0) {
-    //_printLineGyro(accErrorAverage);
+  //  _printLineGyro(accErrorAverage);
   //}
   return accAverageValue;
 }

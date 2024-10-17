@@ -82,7 +82,8 @@ void _setDownTask(void) {
   currentTask[2] = P_GOTOSTAND;
   currentTask[3] = P_DOSTAND;
   currentTask[4] = P_DODOWN;
-  currentTask[5] = P_END;
+  currentTask[5] = P_DODOWN;
+  currentTask[6] = P_END;
 }
 
 // set walk back left task
@@ -199,14 +200,16 @@ void _setStandTurnLeft2Task(void) {
 
 // set walk task
 void _setWalkTask(void) {
-  currentTask[0] = P_GOFORWARD;
-  currentTask[1] = P_DONE;
+  currentTask[0] = P_ENABLEINPUTS;
+  currentTask[1] = P_GOFORWARD;
+  currentTask[2] = P_DONE;
 }
 
 // set standwalk task
 void _setStandWalkTask(void) {
-  currentTask[0] = P_STANDGO;
-  currentTask[1] = P_DONE;
+  currentTask[0] = P_ENABLEINPUTS;
+  currentTask[1] = P_STANDGO;
+  currentTask[2] = P_DONE;
 }
 
 // set stand task
@@ -215,7 +218,7 @@ void _setStandTask(void) {
   currentTask[1] = P_STANDGO;
   currentTask[2] = P_GOTOSTAND;
   currentTask[3] = P_DOSTAND;
-  currentTask[4] = P_DONE;
+  currentTask[4] = P_END;
 }
 
 // set task by name

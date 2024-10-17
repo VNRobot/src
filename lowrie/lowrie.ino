@@ -139,17 +139,30 @@ bool _readButtonPress(void) {
 void setup() {
   // Start serial for debugging
   Serial.begin(9600);
-  Serial.println("Device started");
+  Serial.println(F("Device started"));
   // init proximity sensors
   initInputs();
   updateInputs(0);
+  // init gyro MPU6050 using I2C
+  delay(500);
+  initGyro();
   // check for Mode button press or not calibrated
   if (_readButtonPress() || (getSoftwareVersionEeprom() != readSoftwareVersionEeprom())) {
+    // factory mode is used for legs calibration
+    Serial.println(F("Entering factory mode"));
+    // init servo motors for calibration
+    initServo(-60, 60);
+    // set motors values
+    setServo(& m_calibration, -60, 60);
     // do calibration
     if (doCalibration(& m_calibration)) {
       writeCalibrationEeprom(m_calibration);
+      writeSoftwareVersionEeprom();
     }
     delay(500);
+  } else {
+    // init servo motors for normal operation
+    initServo(0, 0);
   }
   // normal operation
   // load calibration if available
@@ -160,20 +173,15 @@ void setup() {
   // demo mode activated when hand is placed 5cm from sensors during the boot
   if (checkForDemoModeInputs()) {
     // demo mode
-    Serial.println("Entering demo mode");
+    Serial.println(F("Entering demo mode"));
     applyTask(DEMO_TASK);
     // disable sensors in demo mmode
   } else {
-    Serial.println("Entering explore mode");
+    Serial.println(F("Entering explore mode"));
     applyTask(BEGIN_TASK);
   }
-  // init servo motors
-  initServo(0, 0);
   // set motors values after calibration
-  setServo(m_calibration, 0, 0);
-  // init gyro MPU6050 using I2C
-  delay(500);
-  initGyro();
+  setServo(& m_calibration, 0, 0);
   delay(200);
   // reset gyro
   resetGyro();
