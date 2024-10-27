@@ -52,7 +52,7 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned char normalDistance = 30; //cm
+unsigned char normalDistance = 40; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -86,7 +86,7 @@ void initInputs(void) {
 }
 
 // read and remember analog sensors readings
-unsigned char updateInputs(unsigned char sequenceCount) {
+unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   // read analog inputs
   analogInputs.battery = (unsigned short)analogRead(A6);
   analogInputs.current1 = (unsigned short)analogRead(A7);
@@ -135,26 +135,22 @@ unsigned char updateInputs(unsigned char sequenceCount) {
   analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
   analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
-  allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
-  //
-  if (allStateInputsOld != allStateInputs) {
-    allStateInputsOld = allStateInputs;
+  if ((sequenceCount == 0) || (sequenceCount == 10)) {
+    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
+    //
+    if (sensorsEnabled) {
+      if (allStateInputsOld != allStateInputs) {
+        allStateInputsOld = allStateInputs;
+        // debug print
+        _printInputs(allStateInputs);
+      }
+    }
     // debug print
-    //_printInputs(allStateInputs);
+    //if (sequenceCount == 0) {
+    //  _printLineInputs();
+    //}
   }
-  // debug print
-  //if (sequenceCount == 0) {
-  //  _printLineInputs();
-  //}
   return allStateInputs;
-}
-
-// check battery low state
-bool checkBatteryLowInputs(void) {
-  if (allStateInputs == IN_LOW_BATTERY) {
-    return true;
-  }
-  return false;
 }
 
 // process distances
@@ -197,10 +193,38 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
   if (inputState == IN_HIGH_CURRENT_3) {
     return STAND_TASK;
   }
-  if ((gyroState.stateGyro == GYRO_UPSIDEDOWN) || (gyroState.stateGyro == GYRO_FELL_LEFT) || (gyroState.stateGyro == GYRO_FELL_RIGHT) || (gyroState.stateGyro == GYRO_FELL_FRONT) || (gyroState.stateGyro == GYRO_FELL_BACK)) {
-    // stop moving
-    return STAND_TASK;
+  switch (gyroState.stateGyro) {
+    case GYRO_UPSIDEDOWN:
+      return STAND_TASK;
+    break;
+    case GYRO_FELL_LEFT:
+      return BEND_LEFT_TASK;
+    break;
+    case GYRO_FELL_RIGHT:
+      return BEND_RIGHT_TASK;
+    break;
+    case GYRO_FELL_FRONT:
+      return BEND_FRONT_TASK;
+    break;
+    case GYRO_FELL_BACK:
+      return BEND_REAR_TASK;
+    break;
+    case GYRO_FOLLING_LEFT:
+      return BEND_LEFT_TASK;
+    break;
+    case GYRO_FOLLING_RIGHT:
+      return BEND_RIGHT_TASK;
+    break;
+    case GYRO_FOLLING_FRONT:
+      return BEND_FRONT_TASK;
+    break;
+    case GYRO_FOLLING_BACK:
+      return BEND_REAR_TASK;
+    break;
+    default:
+    break;
   }
+
   // check sensors enabled
   if (! sensorsEnabled) {
     return defaultTask;
@@ -249,76 +273,76 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
 /*
 // print raw data
 void _printLineInputs(void) {
-  Serial.print(" battery ");
+  Serial.print(F(" battery "));
   Serial.print((int)analogValueInputs.battery);
-  Serial.print(" C ");
+  Serial.print(F(" C "));
   Serial.print((int)analogValueInputs.current1);
-  Serial.print(" F ");
+  Serial.print(F(" F "));
   Serial.print((int)analogValueInputs.current2);
-  Serial.print(" R ");
+  Serial.print(F(" R "));
   Serial.print((int)analogValueInputs.current3);
-  Serial.print(" left ");
+  Serial.print(F(" left "));
   Serial.print((int)analogValueInputs.left);
-  Serial.print(" right ");
+  Serial.print(F(" right "));
   Serial.print((int)analogValueInputs.right);
-  Serial.print(" touch ");
+  Serial.print(F(" touch "));
   Serial.println((int)digitalInputs.f);
 }
-
+*/
 // print inputs
 void _printInputs(int state) {
   // print input state
   switch (state) {
     case IN_LOW_BATTERY:
-      Serial.println(" IN_LOW_BATTERY ");
+      Serial.print(F(" IN_LOW_BATTERY "));
     break;
     case IN_HIGH_CURRENT_1:
-      Serial.println(" IN_HIGH_CURRENT_1 ");
+      Serial.print(F(" IN_HIGH_CURRENT_1 "));
     break;
     case IN_HIGH_CURRENT_2:
-      Serial.println(" IN_HIGH_CURRENT_2 ");
+      Serial.print(F(" IN_HIGH_CURRENT_2 "));
     break;
     case IN_HIGH_CURRENT_3:
-      Serial.println(" IN_HIGH_CURRENT_3 ");
+      Serial.print(F(" IN_HIGH_CURRENT_3 "));
     break;
     case IN_TOUCH_FRONTLEFT:
-      Serial.println(" IN_TOUCH_FRONTLEFT ");
+      Serial.print(F(" IN_TOUCH_FRONTLEFT "));
     break;
     case IN_TOUCH_FRONTRIGHT:
-      Serial.println(" IN_TOUCH_FRONTRIGHT ");
+      Serial.print(F(" IN_TOUCH_FRONTRIGHT "));
     break;
     case IN_WALL_FRONTLEFT:
-      Serial.println(" IN_WALL_FRONTLEFT ");
+      Serial.print(F(" IN_WALL_FRONTLEFT "));
     break;
     case IN_WALL_FRONTRIGHT:
-      Serial.println(" IN_WALL_FRONTRIGHT ");
+      Serial.print(F(" IN_WALL_FRONTRIGHT "));
     break;
     case IN_WALL_LEFT:
-      Serial.println(" IN_WALL_LEFT ");
+      Serial.print(F(" IN_WALL_LEFT "));
     break;
     case IN_WALL_RIGHT:
-      Serial.println(" IN_WALL_RIGHT ");
+      Serial.print(F(" IN_WALL_RIGHT "));
     break;
     case IN_OBSTACLE_FRONTLEFT:
-      Serial.println(" IN_OBSTACLE_FRONTLEFT ");
+      Serial.print(F(" IN_OBSTACLE_FRONTLEFT "));
     break;
     case IN_OBSTACLE_FRONTRIGHT:
-      Serial.println(" IN_OBSTACLE_FRONTRIGHT ");
+      Serial.print(F(" IN_OBSTACLE_FRONTRIGHT "));
     break;
     case IN_OBSTACLE_LEFT:
-      Serial.println(" IN_OBSTACLE_LEFT ");
+      Serial.print(F(" IN_OBSTACLE_LEFT "));
     break;
     case IN_OBSTACLE_RIGHT:
-      Serial.println(" IN_OBSTACLE_RIGHT ");
+      Serial.print(F(" IN_OBSTACLE_RIGHT "));
     break;
     case IN_NORMAL:
-      Serial.println(" IN_NORMAL ");
+      Serial.print(F(" IN_NORMAL "));
     break;
     default:
-      Serial.println(" Wrong inputs state ");
+      Serial.println(F(" Wrong inputs state "));
   }
 }
-*/
+
 // status of inputs
 unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   // battery low 6500
@@ -326,15 +350,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 900) {
+  if (analogValueInputs.current1 > 1200) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 900) {
+  if (analogValueInputs.current2 > 1200) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 900) {
+  if (analogValueInputs.current3 > 1200) {
     return IN_HIGH_CURRENT_3;
   }
   // touch
@@ -438,3 +462,10 @@ bool checkModeButtonPressedInputs(void) {
   return false;
 }
 
+// check for walk interruption
+bool checkInterruptionInputs(unsigned char taskNow, unsigned char patternNow) {
+  if ((taskNow == GO_TASK) && (patternNow == P_GOFORWARD) && (allStateInputs != IN_NORMAL)) {
+    return true;
+  }
+  return false;
+}

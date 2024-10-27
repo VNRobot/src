@@ -22,6 +22,7 @@ enum rPatterns {
   P_DONE,
   P_RESETDIRECTION,
   P_RESTOREDIRECTION,
+  P_RESETGIRO,
   P_ENABLEINPUTS,
   P_DISABLEINPUTS,
   P_STANDGOSHIFTLEFT,
@@ -29,6 +30,10 @@ enum rPatterns {
   P_GOSHIFTLEFT,
   P_GOSHIFTRIGHT,
   P_DODOWN,
+  P_DODOWNLEFT,
+  P_DODOWNRIGHT,
+  P_DODOWNFRONT,
+  P_DODOWNREAR,
   P_END
 };
 // tasks
@@ -48,7 +53,11 @@ enum rTasks {
   GOSHIFTRIGHT_TASK,
   GOSHIFTLEFT_TASK,
   DEMO_TASK,
-  DOWN_TASK
+  DOWN_TASK,
+  BEND_LEFT_TASK,
+  BEND_RIGHT_TASK,
+  BEND_FRONT_TASK,
+  BEND_REAR_TASK
 };
 // gyro state
 enum gState {
@@ -113,8 +122,6 @@ bool sensorsEnabled = false;
 unsigned char defaultTask = GO_TASK;
 // current task
 unsigned char taskNow = STAND_TASK;
-// next task
-unsigned char taskNext = STAND_TASK;
 // main time delay in the loop in msec
 unsigned char _timeDelay = 25;
 // new task
@@ -142,7 +149,7 @@ void setup() {
   Serial.println(F("Device started"));
   // init proximity sensors
   initInputs();
-  updateInputs(0);
+  updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
   delay(500);
   initGyro();
@@ -203,7 +210,7 @@ void loop() {
       // apply new task
       applyTask(taskNow);
       // debug print
-      // printTaskname(taskNow);
+      printTaskname(taskNow);
       // get new task pattern
       patternNow = getPatternInTask();
     } else {
@@ -234,6 +241,11 @@ void loop() {
         resetDirectionGyro();
       }
       break;
+      case P_RESETGIRO:
+      {
+        resetGyro();
+      }
+      break;
       case P_RESTOREDIRECTION:
       {
         restoreDirectionGyro();
@@ -258,16 +270,13 @@ void loop() {
         doCycle();
       break;
     }
-  } else {
+  } else if (sequenceCounter == 10) {
     // check for task interruption
-    if (((patternNow == P_STANDGO) || (patternNow == P_GOFORWARD)) && (sensorsEnabled)) {
-      // get next task
-      taskNext = getTaskByInputs(gyroState, inputState, defaultTask, sensorsEnabled);
-      if (taskNext != taskNow) {
-        // should interrupt
-        setInterruptedPattern();
-      }
+    if (checkInterruptionInputs(taskNow, patternNow)) {
+      setPattern(P_STANDGO);
     }
+    doCycle();
+  } else {
     doCycle();
   }
 }
@@ -283,7 +292,7 @@ void doCycle(void) {
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors
-  inputState = updateInputs(sequenceCounter);
+  inputState = updateInputs(sequenceCounter, sensorsEnabled);
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
 }

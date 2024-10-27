@@ -21,21 +21,27 @@ struct sequence {
 
 // servos angles for forward shift 
 // forward shift(mm)          -40,           -30,           -20,           -10,          0,         10,         20,         30
-char motor1Walk[24] =  { 46,  47,  48,  50,  52,  54,  56,  58,  60,  62,  64, 66, 69, 72, 75, 78, 81, 84, 87, 90, 94, 98,102,106};
-char motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 51, 48, 45, 42, 40, 38, 36, 34, 33, 32, 31, 30, 29};
+//char motor1Walk[24] =  { 46,  47,  48,  50,  52,  54,  56,  58,  60,  62,  64, 66, 69, 72, 75, 78, 81, 84, 87, 90, 94, 98,102,106};
+//char motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 51, 48, 45, 42, 40, 38, 36, 34, 33, 32, 31, 30, 29};
+// forward shift(mm)               -40       -30       -20       -10         0        10        20        30        40
+char motor1Walk[21] =  {  24,  22,  22,  23,  25,  27,  30,  33,  37,  41,  45,  51,  57,  63,  70,  77,  84,  91, 101, 111, 126};
+char motor2Walk[21] =  { 126, 111, 101,  91,  84,  77,  70,  63,  57,  51,  45,  41,  37,  33,  30,  27,  25,  23,  22,  22,  24};
+
+
 // center position in the pattern array
-int _centerAbsolute = 13; // (range 8 to 15) bigger the number more weight on front
+int _centerAbsolute = 10; // (range 8 to 12) bigger the number more weight on front
 // static forward ballance
 int _centerStatic = _centerAbsolute;
 // char buffer for temporary use
 char cBuffer;
 // leg lift angles
-unsigned char _liftm1 = 8;
-unsigned char _liftm2 = 24;
+unsigned char _liftm1 = 16;
+unsigned char _liftm2 = 16;
 // center motor default position
 char _centerF = 0; // positive more distance between legs
 char _centerR = 0; // positive more distance between legs
 // points to currentSequence for every leg
+unsigned char mainCounter = 0;
 legs sequenceCount = { 0, 0, 0, 0};
 // dynamic side ballance
 char _sideBallance = 0;
@@ -71,8 +77,6 @@ sequence currentSequence[20] = {
 };
 // motors values for 10 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// interruption flag
-bool iterrupted = false;
 
 // set new values of center motors
 void _updateCenterMotor(char cAngleF, char cAngleR) {
@@ -325,9 +329,9 @@ void _updateSequenceLinearStart(char endPosition1, char endPosition2) {
 void _updateSequenceStandWalk(char m1, char m2) {
   // motor 1
   currentSequence[0].m.motor1 = m1 - _liftm1;
-  currentSequence[1].m.motor1 = m1 - _liftm1;
-  currentSequence[2].m.motor1 = m1 - _liftm1 / 2;
-  currentSequence[3].m.motor1 = m1 - _liftm1 / 4;
+  currentSequence[1].m.motor1 = m1 - _liftm1 / 2;
+  currentSequence[2].m.motor1 = m1 - _liftm1 / 4;
+  currentSequence[3].m.motor1 = m1;
   currentSequence[4].m.motor1 = m1;
   currentSequence[5].m.motor1 = m1;
   currentSequence[6].m.motor1 = m1;
@@ -342,8 +346,8 @@ void _updateSequenceStandWalk(char m1, char m2) {
   currentSequence[15].m.motor1 = m1;
   currentSequence[16].m.motor1 = m1;
   currentSequence[17].m.motor1 = m1;
-  currentSequence[18].m.motor1 = m1;
-  currentSequence[19].m.motor1 = m1 - _liftm1 / 2;
+  currentSequence[18].m.motor1 = m1 - _liftm1 / 2;
+  currentSequence[19].m.motor1 = m1 - _liftm1;
   // motor 2
   currentSequence[0].m.motor2 = m2 - _liftm2;
   currentSequence[1].m.motor2 = m2 - _liftm2 / 2;
@@ -461,8 +465,6 @@ void _updateSequenceWalkBack(char m1[], char m2[]) {
 
 // get next sequence
 void setPattern(unsigned char currentTaskItem) {
-  // reset interruption
-  iterrupted = false;
   // get new sequence array
   switch (currentTaskItem) {
     case P_DOSTAND:
@@ -565,6 +567,30 @@ void setPattern(unsigned char currentTaskItem) {
       _updateTurn(0);
     }
     break;
+    case P_DODOWNLEFT:
+    {
+      _updateSequenceLinear(30, 30);
+      _updateTurn(0);
+    }
+    break;
+    case P_DODOWNRIGHT:
+    {
+      _updateSequenceLinear(30, 30);
+      _updateTurn(0);
+    }
+    break;
+    case P_DODOWNFRONT:
+    {
+      _updateSequenceLinear(30, 30);
+      _updateTurn(0);
+    }
+    break;
+    case P_DODOWNREAR:
+    {
+      _updateSequenceLinear(30, 30);
+      _updateTurn(0);
+    }
+    break;
     default:
     break;
   }
@@ -581,21 +607,6 @@ void updateTurnPattern(char cAngle) {
 
 // update servo motors values
 allMotors updateMotorsPatterns(allMotors calibration) {
-  /*
-  if (iterrupted) {
-    // TODO
-    motorValue.front       = (currentSequence[sequenceCount.fl].front          + calibration.front);
-    motorValue.rear        = (currentSequence[sequenceCount.fl].rear           + calibration.rear);
-    motorValue.m.fl.motor1 = (currentSequence[sequenceCount.fl].m.motor1  - 30 + calibration.m.fl.motor1 - _sideUpLeft / 3);
-    motorValue.m.fl.motor2 = (currentSequence[sequenceCount.fl].m.motor2  - 30 + calibration.m.fl.motor2 - _sideUpLeft);
-    motorValue.m.fr.motor1 = (currentSequence[sequenceCount.fr].m.motor1  - 30 + calibration.m.fr.motor1 + _sideUpRight / 3);
-    motorValue.m.fr.motor2 = (currentSequence[sequenceCount.fr].m.motor2  - 30 + calibration.m.fr.motor2 + _sideUpRight);
-    motorValue.m.rl.motor1 = (currentSequence[sequenceCount.rl].m.motor1  - 30 + calibration.m.rl.motor1 - _sideUpLeft / 3);
-    motorValue.m.rl.motor2 = (currentSequence[sequenceCount.rl].m.motor2  - 30 + calibration.m.rl.motor2 - _sideUpLeft);
-    motorValue.m.rr.motor1 = (currentSequence[sequenceCount.rr].m.motor1  - 30 + calibration.m.rr.motor1 + _sideUpRight / 3);
-    motorValue.m.rr.motor2 = (currentSequence[sequenceCount.rr].m.motor2  - 30 + calibration.m.rr.motor2 + _sideUpRight);
-  } else {
-  */
   // set motors angle values
   motorValue.front       = (currentSequence[sequenceCount.fl].front          + calibration.front);
   motorValue.rear        = (currentSequence[sequenceCount.fl].rear           + calibration.rear);
@@ -607,49 +618,79 @@ allMotors updateMotorsPatterns(allMotors calibration) {
   motorValue.m.rl.motor2 = (currentSequence[sequenceCount.rl].m.motor2  - 30 + calibration.m.rl.motor2 - _sideUpLeft);
   motorValue.m.rr.motor1 = (currentSequence[sequenceCount.rr].m.motor1  - 30 + calibration.m.rr.motor1 + _sideUpRight / 3);
   motorValue.m.rr.motor2 = (currentSequence[sequenceCount.rr].m.motor2  - 30 + calibration.m.rr.motor2 + _sideUpRight);
-  // }
   return motorValue;
 }
 
 // update servo motors values
 unsigned char updateCountPatterns(unsigned char currentTaskItem) {
   // update sequence shift 
-  sequenceCount.fl ++;
-  if (sequenceCount.fl > 19) {
-    sequenceCount.fl = 0;
+  mainCounter ++;
+  if (mainCounter > 19) {
+    mainCounter = 0;
   }
+   // normal operation
+    sequenceCount.fl = mainCounter;
     sequenceCount.rr = sequenceCount.fl;
     // normal leg pattern shift
-    if (sequenceCount.fl >= 10) {
+    if (mainCounter >= 10) {
       sequenceCount.fr = sequenceCount.fl - 10;
     } else {
       sequenceCount.fr = sequenceCount.fl + 10;
     }
+    sequenceCount.rl = sequenceCount.fr;
     // special cases
     switch (currentTaskItem) {
       case P_DOSTAND:
       case P_DODOWN:
       {
-        sequenceCount.fr = sequenceCount.fl;
+        sequenceCount.fl = mainCounter;
+        sequenceCount.fr = mainCounter;
+        sequenceCount.rl = mainCounter;
+        sequenceCount.rr = mainCounter;
       }
       break;
       case P_STANDTOGO:
       {
         // fr rl pair not moving
         sequenceCount.fr = 0;
+        sequenceCount.rl = 0;
       }
       break;
       case P_GOTOSTAND:
       {
         // fr rl pair not moving
         sequenceCount.fr = 19;
+        sequenceCount.rl = 19;
+      }
+      break;
+      case P_DODOWNLEFT:
+      {
+        sequenceCount.fl = 19;
+        sequenceCount.rl = 19;
+      }
+      break;
+      case P_DODOWNRIGHT:
+      {
+        sequenceCount.fr = 19;
+        sequenceCount.rr = 19;
+      }
+      break;
+      case P_DODOWNFRONT:
+      {
+        sequenceCount.fl = 19;
+        sequenceCount.fr = 19;
+      }
+      break;
+      case P_DODOWNREAR:
+      {
+        sequenceCount.rl = 19;
+        sequenceCount.rr = 19;
       }
       break;
       default:
       break;
     }
-    sequenceCount.rl = sequenceCount.fr;
-  return sequenceCount.fl;
+  return mainCounter;
 }
 
 // update ballance 
@@ -697,8 +738,8 @@ int _compensateStaticBallance(accRoll gyroState) {
   int center = _centerAbsolute - gyroState.accAngleY / 2;
   if (center < 8) {
     center = 8;
-  } else if (center > 15) {
-    center = 15;
+  } else if (center > 12) {
+    center = 12;
   }
   return center;
 }
@@ -717,10 +758,6 @@ char _fixSideBalance(char sideBallance, accRoll gyroState) {
   return sideBallance;
 }
 
-// set interruped flag
-void setInterruptedPattern(void) {
-  iterrupted = true;
-}
 /*
 // print sequence name
 void printPatternName(unsigned char currentTaskItem) {
@@ -800,6 +837,10 @@ void printPatternName(unsigned char currentTaskItem) {
     {
       Serial.println(" P_RESETDIRECTION ");
     }
+    case P_RESETGIRO:
+    {
+      Serial.println(" P_RESETGIRO ");
+    }
     break;
     case P_RESTOREDIRECTION:
     {
@@ -839,6 +880,26 @@ void printPatternName(unsigned char currentTaskItem) {
     case P_DODOWN:
     {
       Serial.println(" P_DODOWN ");
+    }
+    break;
+    case P_DODOWNLEFT:
+    {
+      Serial.println(" P_DODOWNLEFT ");
+    }
+    break;
+    case P_DODOWNRIGHT:
+    {
+      Serial.println(" P_DODOWNRIGHT ");
+    }
+    break;
+    case P_DODOWNFRONT:
+    {
+      Serial.println(" P_DODOWNFRONT ");
+    }
+    break;
+    case P_DODOWNREAR:
+    {
+      Serial.println(" P_DODOWNREAR ");
     }
     break;
     default:
