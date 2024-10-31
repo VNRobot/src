@@ -93,12 +93,10 @@ void _setWalkBackLeftTask(void) {
   currentTask[6] = P_STANDGOLEFT; 
   currentTask[7] = P_STANDGOLEFT;
   currentTask[8] = P_STANDGOLEFT; 
-  currentTask[9] = P_STANDGOLEFT;
-  currentTask[10] = P_STANDGOLEFT; 
-  currentTask[11] = P_RESETDIRECTION;
-  currentTask[12] = P_STANDGO;
-  currentTask[13] = P_ENABLEINPUTS;
-  currentTask[14] = P_DONE;
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_ENABLEINPUTS;
+  currentTask[11] = P_STANDGO;
+  currentTask[12] = P_DONE;
 }
 
 // set walk back right task
@@ -112,12 +110,10 @@ void _setWalkBackRightTask(void) {
   currentTask[6] = P_STANDGORIGHT; 
   currentTask[7] = P_STANDGORIGHT;
   currentTask[8] = P_STANDGORIGHT; 
-  currentTask[9] = P_STANDGORIGHT;
-  currentTask[10] = P_STANDGORIGHT; 
-  currentTask[11] = P_RESETDIRECTION;
-  currentTask[12] = P_STANDGO;
-  currentTask[13] = P_ENABLEINPUTS;
-  currentTask[14] = P_DONE;
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_ENABLEINPUTS;
+  currentTask[11] = P_STANDGO;
+  currentTask[12] = P_DONE;
 }
 
 // set shift right task
@@ -161,7 +157,8 @@ void _setStandTurnRightTask(void) {
   currentTask[4] = P_STANDGORIGHT;
   currentTask[5] = P_RESETDIRECTION;
   currentTask[6] = P_ENABLEINPUTS;
-  currentTask[7] = P_DONE;
+  currentTask[7] = P_STANDGO;
+  currentTask[8] = P_DONE;
 }
 
 // set stand Turn left task
@@ -173,7 +170,8 @@ void _setStandTurnLeftTask(void) {
   currentTask[4] = P_STANDGOLEFT;
   currentTask[5] = P_RESETDIRECTION;
   currentTask[6] = P_ENABLEINPUTS;
-  currentTask[7] = P_DONE;
+  currentTask[7] = P_STANDGO;
+  currentTask[8] = P_DONE;
 }
 
 // set stand Turn right sharp task
@@ -188,7 +186,8 @@ void _setStandTurnRight2Task(void) {
   currentTask[7] = P_STANDGORIGHT;
   currentTask[8] = P_RESETDIRECTION;
   currentTask[9] = P_ENABLEINPUTS;
-  currentTask[10] = P_DONE;
+  currentTask[10] = P_STANDGO;
+  currentTask[11] = P_DONE;
 }
 
 // set stand Turn left sharp task
@@ -203,7 +202,8 @@ void _setStandTurnLeft2Task(void) {
   currentTask[7] = P_STANDGOLEFT;
   currentTask[8] = P_RESETDIRECTION;
   currentTask[9] = P_ENABLEINPUTS;
-  currentTask[10] = P_DONE;
+  currentTask[10] = P_STANDGO;
+  currentTask[11] = P_DONE;
 }
 
 // set walk task
@@ -238,6 +238,7 @@ void _setBendLeftTask(void) {
   currentTask[4] = P_ENABLEINPUTS;
   currentTask[5] = P_DONE;
 }
+
 // set bend right task
 void _setBendRightTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
@@ -247,6 +248,7 @@ void _setBendRightTask(void) {
   currentTask[4] = P_ENABLEINPUTS;
   currentTask[5] = P_DONE;
 }
+
 // set bend front task
 void _setBendFrontTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
@@ -256,6 +258,7 @@ void _setBendFrontTask(void) {
   currentTask[4] = P_ENABLEINPUTS;
   currentTask[5] = P_DONE;
 }
+
 // set bend rear task
 void _setBendRearTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
@@ -264,6 +267,35 @@ void _setBendRearTask(void) {
   currentTask[3] = P_STANDTOGO;
   currentTask[4] = P_ENABLEINPUTS;
   currentTask[5] = P_DONE;
+}
+
+// set bend left task
+void _setRecoverLeftTask(void) {
+  currentTask[0] = P_DISABLEINPUTS;
+  currentTask[1] = P_DODOWN;
+  currentTask[2] = P_DODOWN;
+  currentTask[3] = P_RECOVERLEFT;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_DOSTAND;
+  currentTask[6] = P_RESETGIRO;
+  currentTask[7] = P_STANDTOGO;
+  currentTask[8] = P_ENABLEINPUTS;
+  currentTask[9] = P_STANDGO;
+  currentTask[10] = P_DONE;
+}
+// set bend right task
+void _setRecoverRightTask(void) {
+  currentTask[0] = P_DISABLEINPUTS;
+  currentTask[1] = P_DODOWN;
+  currentTask[2] = P_DODOWN;
+  currentTask[3] = P_RECOVERRIGHT;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_DOSTAND;
+  currentTask[6] = P_RESETGIRO;
+  currentTask[7] = P_STANDTOGO;
+  currentTask[8] = P_ENABLEINPUTS;
+  currentTask[9] = P_STANDGO;
+  currentTask[10] = P_DONE;
 }
 
 // set task by name
@@ -328,6 +360,12 @@ void applyTask(unsigned char task) {
     break;
     case BEND_REAR_TASK:
       _setBendRearTask();
+    break;
+    case RECOVER_LEFT_TASK:
+      _setRecoverLeftTask();
+    break;
+    case RECOVER_RIGHT_TASK:
+      _setRecoverRightTask();
     break;
     default:
     break;
@@ -421,6 +459,12 @@ void printTaskname(unsigned char task) {
     break;
     case BEND_REAR_TASK:
       Serial.println(F(" BEND_REAR_TASK "));
+    break;
+    case RECOVER_LEFT_TASK:
+      Serial.println(F(" RECOVER_LEFT_TASK "));
+    break;
+    case RECOVER_RIGHT_TASK:
+      Serial.println(F(" RECOVER_RIGHT_TASK "));
     break;
     default:
       Serial.println(F(" unknown task "));

@@ -34,6 +34,8 @@ enum rPatterns {
   P_DODOWNRIGHT,
   P_DODOWNFRONT,
   P_DODOWNREAR,
+  P_RECOVERLEFT,
+  P_RECOVERRIGHT,
   P_END
 };
 // tasks
@@ -57,7 +59,10 @@ enum rTasks {
   BEND_LEFT_TASK,
   BEND_RIGHT_TASK,
   BEND_FRONT_TASK,
-  BEND_REAR_TASK
+  BEND_REAR_TASK,
+  RECOVER_LEFT_TASK,
+  RECOVER_RIGHT_TASK,
+  DEFAULT_TASK
 };
 // gyro state
 enum gState {
@@ -122,6 +127,8 @@ bool sensorsEnabled = false;
 unsigned char defaultTask = GO_TASK;
 // current task
 unsigned char taskNow = STAND_TASK;
+// next task
+unsigned char taskNext = STAND_TASK;
 // main time delay in the loop in msec
 unsigned char _timeDelay = 25;
 // new task
@@ -197,16 +204,16 @@ void setup() {
   gyroState = updateGyro(sequenceCounter);
   // load task and pattern
   setPattern(patternNow);
-  sequenceCounter = updateCountPatterns(patternNow);
+  sequenceCounter = updateCountPatterns();
 }
 
 // the loop function runs over and over again forever
 void loop() {
   if (sequenceCounter == 0) {
-    // check for task end
-    if ((patternNow == P_DONE) || (((patternNow == P_STANDGO) || (patternNow == P_GOFORWARD)) && (sensorsEnabled))) {
-      // get next task
-      taskNow = getTaskByInputs(gyroState, inputState, defaultTask, sensorsEnabled);
+    // check emergency task
+    taskNext = getHighPriorityTaskByInputs(gyroState, inputState);
+    if ((taskNext != DEFAULT_TASK) && (taskNow != taskNext)) {
+      taskNow = taskNext;
       // apply new task
       applyTask(taskNow);
       // debug print
@@ -214,9 +221,21 @@ void loop() {
       // get new task pattern
       patternNow = getPatternInTask();
     } else {
-      if (patternNow != P_END) {
-        // get next pattern
-        patternNow = getNextPatternInTask();
+      // check for normal task end
+      if ((patternNow == P_DONE) || (((patternNow == P_STANDGO) || (patternNow == P_GOFORWARD)) && (sensorsEnabled))) {
+        // get next task
+        taskNow = getNormalTaskByInputs(inputState, defaultTask);
+        // apply new task
+        applyTask(taskNow);
+        // debug print
+        printTaskname(taskNow);
+        // get new task pattern
+        patternNow = getPatternInTask();
+      } else {
+        if (patternNow != P_END) {
+          // get next pattern
+          patternNow = getNextPatternInTask();
+        }
       }
     }
     // debug print
@@ -286,7 +305,7 @@ void doCycle(void) {
   // update servo motors values, move motors
   updateServo(updateMotorsPatterns(m_calibration));
   // update motor pattern point
-  sequenceCounter = updateCountPatterns(patternNow);
+  sequenceCounter = updateCountPatterns();
   // update robot ballance
   // updateBallancePattern();
   // walking speed depends of the delay

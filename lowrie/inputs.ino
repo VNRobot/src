@@ -178,9 +178,7 @@ unsigned char getSensorState(unsigned short input) {
   }
 }
 
-// process sensors return next task name
-// could be more complex if remembers previos states
-unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsigned char defaultTask, bool sensorsEnabled) {
+unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char inputState) {
   if (inputState == IN_LOW_BATTERY) {
     return DOWN_TASK;
   }
@@ -198,10 +196,10 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
       return STAND_TASK;
     break;
     case GYRO_FELL_LEFT:
-      return BEND_LEFT_TASK;
+      return RECOVER_LEFT_TASK;
     break;
     case GYRO_FELL_RIGHT:
-      return BEND_RIGHT_TASK;
+      return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FELL_FRONT:
       return BEND_FRONT_TASK;
@@ -210,10 +208,10 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
       return BEND_REAR_TASK;
     break;
     case GYRO_FOLLING_LEFT:
-      return BEND_LEFT_TASK;
+      return RECOVER_LEFT_TASK;
     break;
     case GYRO_FOLLING_RIGHT:
-      return BEND_RIGHT_TASK;
+      return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FOLLING_FRONT:
       return BEND_FRONT_TASK;
@@ -224,11 +222,12 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
     default:
     break;
   }
+  return DEFAULT_TASK;
+}
 
-  // check sensors enabled
-  if (! sensorsEnabled) {
-    return defaultTask;
-  }
+// process sensors return next task name
+// could be more complex if remembers previos states
+unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defaultTask) {
   // obstacle state
   switch (inputState) {
     case IN_TOUCH_FRONTLEFT:
