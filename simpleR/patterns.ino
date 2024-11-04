@@ -255,91 +255,91 @@ void printPatternName(unsigned char currentTaskItem) {
   switch (currentTaskItem) {
     case P_DOSTAND:
     {
-      Serial.println(" P_DOSTAND ");
+      Serial.println(F(" P_DOSTAND "));
     }
     break;
     case P_STANDTOGO:
     {
-      Serial.println(" P_STANDTOGO ");
+      Serial.println(F(" P_STANDTOGO "));
     }
     break;
     case P_GOTOSTAND:
     {
-      Serial.println(" P_GOTOSTAND ");
+      Serial.println(F(" P_GOTOSTAND "));
     }
     break;
     case P_STANDGO:
     {
-      Serial.println(" P_STANDGO ");
+      Serial.println(F(" P_STANDGO "));
     }
     break;
     case P_STANDGOLEFT:
     {
-      Serial.println(" P_STANDGOLEFT ");
+      Serial.println(F(" P_STANDGOLEFT "));
     }
     break;
     case P_STANDGORIGHT:
     {
-      Serial.println(" P_STANDGORIGHT ");
+      Serial.println(F(" P_STANDGORIGHT "));
     }
     break;
     case P_GOFORWARD:
     {
-      Serial.println(" P_GOFORWARD ");
+      Serial.println(F(" P_GOFORWARD "));
     }
     break;
     case P_GOLEFT:
     {
-      Serial.println(" P_GOLEFT ");
+      Serial.println(F(" P_GOLEFT "));
     }
     break;
     case P_GORIGHT:
     {
-      Serial.println(" P_GORIGHT ");
+      Serial.println(F(" P_GORIGHT "));
     }
     break;
     case P_GOBACK:
     {
-      Serial.println(" P_GOBACK ");
+      Serial.println(F(" P_GOBACK "));
     }
     break;
     case P_GOBACKLEFT:
     {
-      Serial.println(" P_GOBACKLEFT ");
+      Serial.println(F(" P_GOBACKLEFT "));
     }
     break;
     case P_GOBACKRIGHT:
     {
-      Serial.println(" P_GOBACKRIGHT ");
+      Serial.println(F(" P_GOBACKRIGHT "));
     }
     break;
     case P_DONE:
     {
-      Serial.println(" P_DONE ");
+      Serial.println(F(" P_DONE "));
     }
     break;
     case P_RESETDIRECTION:
     {
-      Serial.println(" P_RESETDIRECTION ");
+      Serial.println(F(" P_RESETDIRECTION "));
     }
     break;
     case P_RESTOREDIRECTION:
     {
-      Serial.println(" P_RESTOREDIRECTION ");
+      Serial.println(F(" P_RESTOREDIRECTION "));
     }
     break;
     case P_ENABLEINPUTS:
     {
-      Serial.println(" P_ENABLEINPUTS ");
+      Serial.println(F(" P_ENABLEINPUTS "));
     }
     break;
     case P_DISABLEINPUTS:
     {
-      Serial.println(" P_DISABLEINPUTS ");
+      Serial.println(F(" P_DISABLEINPUTS "));
     }
     break;
     default:
-      Serial.println(" unknown pattern ");
+      Serial.println(F(" unknown pattern "));
     break;
   }
 }

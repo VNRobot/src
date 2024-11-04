@@ -253,19 +253,19 @@ unsigned char getTaskByInputs(accRoll gyroState, unsigned char inputState, unsig
 
 // print raw data
 void _printLineInputs(void) {
-  Serial.print(" battery ");
+  Serial.print(F(" battery "));
   Serial.print((int)analogValueInputs.battery);
-  Serial.print(" C ");
+  Serial.print(F(" C "));
   Serial.print((int)analogValueInputs.current1);
-  Serial.print(" F ");
+  Serial.print(F(" F "));
   Serial.print((int)analogValueInputs.current2);
-  Serial.print(" R ");
+  Serial.print(F(" R "));
   Serial.print((int)analogValueInputs.current3);
-  Serial.print(" left ");
+  Serial.print(F(" left "));
   Serial.print((int)analogValueInputs.left);
-  Serial.print(" right ");
+  Serial.print(F(" right "));
   Serial.print((int)analogValueInputs.right);
-  Serial.print(" touch ");
+  Serial.print(F(" touch "));
   Serial.println((int)digitalInputs.f);
 }
 
@@ -274,52 +274,52 @@ void _printInputs(int state) {
   // print input state
   switch (state) {
     case IN_LOW_BATTERY:
-      Serial.println(" IN_LOW_BATTERY ");
+      Serial.println(F(" IN_LOW_BATTERY "));
     break;
     case IN_HIGH_CURRENT_1:
-      Serial.println(" IN_HIGH_CURRENT_1 ");
+      Serial.println(F(" IN_HIGH_CURRENT_1 "));
     break;
     case IN_HIGH_CURRENT_2:
-      Serial.println(" IN_HIGH_CURRENT_2 ");
+      Serial.println(F(" IN_HIGH_CURRENT_2 "));
     break;
     case IN_HIGH_CURRENT_3:
-      Serial.println(" IN_HIGH_CURRENT_3 ");
+      Serial.println(F(" IN_HIGH_CURRENT_3 "));
     break;
     case IN_TOUCH_FRONTLEFT:
-      Serial.println(" IN_TOUCH_FRONTLEFT ");
+      Serial.println(F(" IN_TOUCH_FRONTLEFT "));
     break;
     case IN_TOUCH_FRONTRIGHT:
-      Serial.println(" IN_TOUCH_FRONTRIGHT ");
+      Serial.println(F(" IN_TOUCH_FRONTRIGHT "));
     break;
     case IN_WALL_FRONTLEFT:
-      Serial.println(" IN_WALL_FRONTLEFT ");
+      Serial.println(F(" IN_WALL_FRONTLEFT "));
     break;
     case IN_WALL_FRONTRIGHT:
-      Serial.println(" IN_WALL_FRONTRIGHT ");
+      Serial.println(F(" IN_WALL_FRONTRIGHT "));
     break;
     case IN_WALL_LEFT:
-      Serial.println(" IN_WALL_LEFT ");
+      Serial.println(F(" IN_WALL_LEFT "));
     break;
     case IN_WALL_RIGHT:
-      Serial.println(" IN_WALL_RIGHT ");
+      Serial.println(F(" IN_WALL_RIGHT "));
     break;
     case IN_OBSTACLE_FRONTLEFT:
-      Serial.println(" IN_OBSTACLE_FRONTLEFT ");
+      Serial.println(F(" IN_OBSTACLE_FRONTLEFT "));
     break;
     case IN_OBSTACLE_FRONTRIGHT:
-      Serial.println(" IN_OBSTACLE_FRONTRIGHT ");
+      Serial.println(F(" IN_OBSTACLE_FRONTRIGHT "));
     break;
     case IN_OBSTACLE_LEFT:
-      Serial.println(" IN_OBSTACLE_LEFT ");
+      Serial.println(F(" IN_OBSTACLE_LEFT "));
     break;
     case IN_OBSTACLE_RIGHT:
-      Serial.println(" IN_OBSTACLE_RIGHT ");
+      Serial.println(F(" IN_OBSTACLE_RIGHT "));
     break;
     case IN_NORMAL:
-      Serial.println(" IN_NORMAL ");
+      Serial.println(F(" IN_NORMAL "));
     break;
     default:
-      Serial.println(" Wrong inputs state ");
+      Serial.println(F(" Wrong inputs state "));
   }
 }
 

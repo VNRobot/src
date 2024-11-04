@@ -142,18 +142,18 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
   // fix slow drift
-  /*
-  if (gyroData.gyroAngleX > 0) {
-    gyroData.gyroAngleX --;
-  } else if (gyroData.gyroAngleX < 0) {
-    gyroData.gyroAngleX ++;
+  if (sequenceCount == 0) {
+    if (gyroData.gyroAngleX > 0) {
+      gyroData.gyroAngleX --;
+    } else if (gyroData.gyroAngleX < 0) {
+      gyroData.gyroAngleX ++;
+    }
+    if (gyroData.gyroAngleY > 0) {
+      gyroData.gyroAngleY --;
+    } else if (gyroData.gyroAngleY < 0) {
+      gyroData.gyroAngleY ++;
+    }
   }
-  if (gyroData.gyroAngleY > 0) {
-    gyroData.gyroAngleY --;
-  } else if (gyroData.gyroAngleY < 0) {
-    gyroData.gyroAngleY ++;
-  }
-  */
   // end fix slow drift
   if (accError.accAngleX > 0) {
     accErrorAverage.accAngleX += accError.accAngleX;
@@ -265,19 +265,19 @@ char getDirectionCorrectionGyro(void) {
 
 // print gyro values
 void _printLineGyro(struct acc data) {
-  Serial.print(" aX ");
+  Serial.print(F(" aX "));
   Serial.print((int)data.accAngleX);
-  Serial.print(" aY ");
+  Serial.print(F(" aY "));
   Serial.print((int)data.accAngleY);
-  Serial.print(" gX ");
+  Serial.print(F(" gX "));
   Serial.print((int)gyroData.gyroAngleX);
-  Serial.print(" gY ");
+  Serial.print(F(" gY "));
   Serial.print((int)gyroData.gyroAngleY);
-  Serial.print(" d ");
+  Serial.print(F(" d "));
   Serial.print((int)gyroData.yaw);
-  Serial.print(" p ");
+  Serial.print(F(" p "));
   Serial.print((int)gyroData.pitch);
-  Serial.print(" r ");
+  Serial.print(F(" r "));
   Serial.println((int)gyroData.roll);
 }
 
@@ -286,52 +286,52 @@ void _printGyro(unsigned char state) {
   // print gyro status
   switch (state) {
     case GYRO_NORM:
-      Serial.println(" GYRO_NORM ");
+      Serial.println(F(" GYRO_NORM "));
     break;
     case GYRO_SHAKEN:
-      Serial.println(" GYRO_SHAKEN ");
+      Serial.println(F(" GYRO_SHAKEN "));
     break;
     case GYRO_UPSIDEDOWN:
-      Serial.println(" GYRO_UPSIDEDOWN ");
+      Serial.println(F(" GYRO_UPSIDEDOWN "));
     break;
     case GYRO_HIT_SIDE:
-      Serial.println(" GYRO_HIT_SIDE ");
+      Serial.println(F(" GYRO_HIT_SIDE "));
     break;
     case GYRO_HIT_FRONT:
-      Serial.println(" GYRO_HIT_FRONT ");
+      Serial.println(F(" GYRO_HIT_FRONT "));
     break;
     case GYRO_FELL_LEFT:
-      Serial.println(" GYRO_FELL_LEFT ");
+      Serial.println(F(" GYRO_FELL_LEFT "));
     break;
     case GYRO_FELL_RIGHT:
-      Serial.println(" GYRO_FELL_RIGHT ");
+      Serial.println(F(" GYRO_FELL_RIGHT "));
     break;
     case GYRO_FELL_FRONT:
-      Serial.println(" GYRO_FELL_FRONT ");
+      Serial.println(F(" GYRO_FELL_FRONT "));
     break;
     case GYRO_FELL_BACK:
-      Serial.println(" GYRO_FELL_BACK ");
+      Serial.println(F(" GYRO_FELL_BACK "));
     break;
     case GYRO_DOWN_HILL:
-      Serial.println(" GYRO_DOWN_HILL ");
+      Serial.println(F(" GYRO_DOWN_HILL "));
     break;
     case GYRO_UP_HILL:
-      Serial.println(" GYRO_UP_HILL ");
+      Serial.println(F(" GYRO_UP_HILL "));
     break;
     case GYRO_FOLLING_LEFT:
-      Serial.println(" GYRO_FOLLING_LEFT ");
+      Serial.println(F(" GYRO_FOLLING_LEFT "));
     break;
     case GYRO_FOLLING_RIGHT:
-      Serial.println(" GYRO_FOLLING_RIGHT ");
+      Serial.println(F(" GYRO_FOLLING_RIGHT "));
     break;
     case GYRO_FOLLING_FRONT:
-      Serial.println(" GYRO_FOLLING_FRONT ");
+      Serial.println(F(" GYRO_FOLLING_FRONT "));
     break;
     case GYRO_FOLLING_BACK:
-      Serial.println(" GYRO_FOLLING_BACK ");
+      Serial.println(F(" GYRO_FOLLING_BACK "));
     break;
     default:
-      Serial.println(" Wrong gyro state ");
+      Serial.println(F(" Wrong gyro state "));
   }
 }
 

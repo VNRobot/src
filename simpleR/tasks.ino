@@ -184,43 +184,43 @@ unsigned char getPatternInTask(void) {
 void printTaskname(unsigned char task) {
   switch (task) {
     case BEGIN_TASK:
-      Serial.println(" BEGIN_TASK ");
+      Serial.println(F(" BEGIN_TASK "));
     break;
     case GOBACKLEFT_TASK:
-      Serial.println(" GOBACKLEFT_TASK ");
+      Serial.println(F(" GOBACKLEFT_TASK "));
     break;
     case GOBACKRIGHT_TASK:
-      Serial.println(" GOBACKRIGHT_TASK ");
+      Serial.println(F(" GOBACKRIGHT_TASK "));
     break;
     case GOTURNRIGHT_TASK:
-      Serial.println(" GOTURNRIGHT_TASK ");
+      Serial.println(F(" GOTURNRIGHT_TASK "));
     break;
     case GOTURNLEFT_TASK:
-      Serial.println(" GOTURNLEFT_TASK ");
+      Serial.println(F(" GOTURNLEFT_TASK "));
     break;
     case STANDTURNRIGHT_TASK:
-      Serial.println(" STANDTURNRIGHT_TASK ");
+      Serial.println(F(" STANDTURNRIGHT_TASK "));
     break;
     case STANDTURNLEFT_TASK:
-      Serial.println(" STANDTURNLEFT_TASK ");
+      Serial.println(F(" STANDTURNLEFT_TASK "));
     break;
     case STANDTURNRIGHT2_TASK:
-      Serial.println(" STANDTURNRIGHT2_TASK ");
+      Serial.println(F(" STANDTURNRIGHT2_TASK "));
     break;
     case STANDTURNLEFT2_TASK:
-      Serial.println(" STANDTURNLEFT2_TASK ");
+      Serial.println(F(" STANDTURNLEFT2_TASK "));
     break;
     case GO_TASK:
-      Serial.println(" GO_TASK ");
+      Serial.println(F(" GO_TASK "));
     break;
     case STANDGO_TASK:
-      Serial.println(" STANDGO_TASK ");
+      Serial.println(F(" STANDGO_TASK "));
     break;
     case STAND_TASK:
-      Serial.println(" STAND_TASK ");
+      Serial.println(F(" STAND_TASK "));
     break;
     default:
-      Serial.println(" unknown task ");
+      Serial.println(F(" unknown task "));
     break;
   }
   currentTaskPoint = 0;
