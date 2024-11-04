@@ -52,7 +52,7 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned char normalDistance = 20; //cm
+unsigned char normalDistance = 24; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -163,7 +163,7 @@ bool checkBatteryLowInputs(void) {
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (normalDistance * 2)) { // no cliff
+  if (input < (normalDistance * 3)) { // no cliff
     if (input > (normalDistance / 6)) { // not blocked
       if (input > (normalDistance / 3)) { // no wall
         if (input > (normalDistance / 2)) { // no obstacle

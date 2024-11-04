@@ -72,6 +72,11 @@ void _initWire(void) {
   Wire.write(0b00001000); // +/-500 deg/s.
   Wire.endTransmission();
   delay(100);
+  Wire.beginTransmission(0x68);
+  Wire.write(0x1A);
+  Wire.write(0b00000010); // LPF
+  Wire.endTransmission();
+  delay(100);
 }
 
 // read gyroscope wire
