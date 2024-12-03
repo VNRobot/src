@@ -14,6 +14,7 @@ enum rPatterns {
   P_STANDGOLEFT,
   P_STANDGORIGHT,
   P_GOFORWARD,
+  P_GOFORWARDSLOW,
   P_GOLEFT,
   P_GORIGHT,
   P_GOBACK,
@@ -172,6 +173,7 @@ void setup() {
     if (doCalibration(& m_calibration)) {
       writeCalibrationEeprom(m_calibration);
       writeSoftwareVersionEeprom();
+      delay(10000);
     }
     delay(500);
   } else {

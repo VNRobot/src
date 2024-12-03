@@ -128,9 +128,9 @@ bool doCalibration(allMotors * calibrationData) {
             current = _getCurrent1Inputs();
             Serial.print(F(" current "));
             Serial.println((int)current);
-            if (modePressed || (current > 139)) {
+            if (modePressed || (current > 102)) {
               modePressed = false;
-              if (current > 139) {
+              if (current > 102) {
                 calibrationData->front -= 25;
               }
               calibrationCounter = 0;
@@ -157,9 +157,9 @@ bool doCalibration(allMotors * calibrationData) {
           } else {
             // read current or button
             current = _getCurrent1Inputs();
-            if (modePressed || (current > 139)) {
+            if (modePressed || (current > 102)) {
               modePressed = false;
-              if (current > 139) {
+              if (current > 102) {
                 calibrationData->rear -= 25;
               }
               calibrationCounter = 0;
@@ -190,10 +190,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent2Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.fl.motor1 -= 10;
+                if (current > 102) {
+                  calibrationData->m.fl.motor1 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;
@@ -216,10 +216,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent2Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.fr.motor1 -= 10;
+                if (current > 102) {
+                  calibrationData->m.fr.motor1 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;
@@ -242,10 +242,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent3Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.rl.motor1 -= 10;
+                if (current > 102) {
+                  calibrationData->m.rl.motor1 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;
@@ -268,10 +268,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent3Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.rr.motor1 -= 10;
+                if (current > 102) {
+                  calibrationData->m.rr.motor1 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage = 0;
@@ -305,10 +305,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent2Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.fl.motor2 -= 10;
+                if (current > 102) {
+                  calibrationData->m.fl.motor2 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;
@@ -331,10 +331,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent2Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.fr.motor2 -= 10;
+                if (current > 102) {
+                  calibrationData->m.fr.motor2 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;
@@ -357,10 +357,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent3Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.rl.motor2 -= 10;
+                if (current > 102) {
+                  calibrationData->m.rl.motor2 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage = 0;
@@ -385,10 +385,10 @@ bool doCalibration(allMotors * calibrationData) {
             } else {
               // read current or button
               current = _getCurrent3Inputs();
-              if (modePressed || (current > 139)) {
+              if (modePressed || (current > 102)) {
                 modePressed = false;
-                if (current > 139) {
-                  calibrationData->m.rr.motor2 -= 10;
+                if (current > 102) {
+                  calibrationData->m.rr.motor2 -= 15;
                 }
                 calibrationCounter = 0;
                 calibrationStage ++;

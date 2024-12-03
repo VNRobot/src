@@ -12,12 +12,17 @@ Robot legs motion patterns
 //char motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 51, 48, 45, 42, 40, 38, 36, 34, 33, 32, 31, 30, 29};
 // legs2.0
 // forward shift(mm)               -40       -30       -20       -10         0        10        20        30        40
-char motor1Walk[21] =  {  24,  22,  22,  23,  25,  27,  30,  33,  37,  41,  45,  51,  57,  63,  70,  77,  84,  91, 101, 111, 126};
-char motor2Walk[21] =  { 126, 111, 101,  91,  84,  77,  70,  63,  57,  51,  45,  41,  37,  33,  30,  27,  25,  23,  22,  22,  24};
+//char motor1Walk[21] =  {  24,  22,  22,  23,  25,  27,  30,  33,  37,  41,  45,  51,  57,  63,  70,  77,  84,  91, 101, 111, 126};
+//char motor2Walk[21] =  { 126, 111, 101,  91,  84,  77,  70,  63,  57,  51,  45,  41,  37,  33,  30,  27,  25,  23,  22,  22,  24};
+// legs1.1
+char motor1Walk[41] =  {  24, 23, 22, 22, 22,23,  23,24,  25,26,  27,28,  30,31,  33,35,  37,39,  41,43,  45,48,
+                                        51,54,  57,60,  63,66,  70,73,  77,80,  84,87,  91,96,101,106,111,118,126};
+char motor2Walk[41] =  { 126,118,111,106,101,96,  91,87,  84,80,  77,73,  70,66,  63,60,  57,54,  51,48,  45,43,
+                                        41,39,  37,35,  33,31,  30,28,  27,26,  25,24,  23,23, 22, 22, 22, 23, 24};
 
 
 // center position in the pattern array
-int _centerAbsolute = 10; // (range 8 to 12) bigger the number more weight on front
+int _centerAbsolute = 20; // (range 16 to 24) bigger the number more weight on front
 // static forward ballance
 int _centerStatic = _centerAbsolute;
 // char buffer for temporary use
@@ -171,8 +176,56 @@ void _updateSequenceStandWalk(char m1, char m2, motors * sequence1, motors * seq
 void _updateSequenceWalk(char m1[], char m2[], motors * sequence1, motors * sequence2) {
   // motor 1
   sequence1[0].motor1 = m1[_centerStatic] - _liftm1;
-  sequence1[1].motor1 = m1[_centerStatic - 5] - _liftm1;
-  sequence1[2].motor1 = m1[_centerStatic - 8] - _liftm1;
+  sequence1[1].motor1 = m1[_centerStatic - 10] - _liftm1 * 2;
+  sequence1[2].motor1 = m1[_centerStatic - 16] - _liftm1 * 2;
+  sequence1[3].motor1 = m1[_centerStatic - 14] - _liftm1;
+  sequence1[4].motor1 = m1[_centerStatic - 12];
+  sequence1[5].motor1 = m1[_centerStatic - 10];
+  sequence1[6].motor1 = m1[_centerStatic - 8];
+  sequence1[7].motor1 = m1[_centerStatic - 6];
+  sequence1[8].motor1 = m1[_centerStatic - 4];
+  sequence1[9].motor1 = m1[_centerStatic - 2];
+  //
+  sequence2[0].motor1 = m1[_centerStatic];
+  sequence2[1].motor1 = m1[_centerStatic + 2];
+  sequence2[2].motor1 = m1[_centerStatic + 4];
+  sequence2[3].motor1 = m1[_centerStatic + 6];
+  sequence2[4].motor1 = m1[_centerStatic + 8];
+  sequence2[5].motor1 = m1[_centerStatic + 10];
+  sequence2[6].motor1 = m1[_centerStatic + 12];
+  sequence2[7].motor1 = m1[_centerStatic + 14];
+  sequence2[8].motor1 = m1[_centerStatic + 16];
+  sequence2[9].motor1 = m1[_centerStatic + 10] - _liftm1;
+  // motor 2
+  sequence1[0].motor2 = m2[_centerStatic] - _liftm2;
+  sequence1[1].motor2 = m2[_centerStatic - 10] - _liftm2;
+  sequence1[2].motor2 = m2[_centerStatic - 16] - _liftm2;
+  sequence1[3].motor2 = m2[_centerStatic - 14];
+  sequence1[4].motor2 = m2[_centerStatic - 12];
+  sequence1[5].motor2 = m2[_centerStatic - 10];
+  sequence1[6].motor2 = m2[_centerStatic - 8];
+  sequence1[7].motor2 = m2[_centerStatic - 6];
+  sequence1[8].motor2 = m2[_centerStatic - 4];
+  sequence1[9].motor2 = m2[_centerStatic - 2];
+  //
+  sequence2[0].motor2 = m2[_centerStatic];
+  sequence2[1].motor2 = m2[_centerStatic + 2];
+  sequence2[2].motor2 = m2[_centerStatic + 4];
+  sequence2[3].motor2 = m2[_centerStatic + 6];
+  sequence2[4].motor2 = m2[_centerStatic + 8];
+  sequence2[5].motor2 = m2[_centerStatic + 10];
+  sequence2[6].motor2 = m2[_centerStatic + 12];
+  sequence2[7].motor2 = m2[_centerStatic + 14];
+  sequence2[8].motor2 = m2[_centerStatic + 16] - _liftm2;
+  sequence2[9].motor2 = m2[_centerStatic + 10] - _liftm2;
+}
+
+// create slow walk sequence
+void _updateSequenceWalkSlow(char m1[], char m2[], motors * sequence1, motors * sequence2) {
+  // motor 1
+  sequence1[0].motor1 = m1[_centerStatic] - _liftm1;
+  sequence1[1].motor1 = m1[_centerStatic - 5] - _liftm1 * 2;
+  sequence1[2].motor1 = m1[_centerStatic - 8] - _liftm1 * 2;
   sequence1[3].motor1 = m1[_centerStatic - 7] - _liftm1;
   sequence1[4].motor1 = m1[_centerStatic - 6];
   sequence1[5].motor1 = m1[_centerStatic - 5];
@@ -282,7 +335,7 @@ void _setSequenceRecover(motors * sequence1, motors * sequence2) {
   sequence1[0].motor1 = 30; sequence1[0].motor2 = 30;
   sequence1[1].motor1 = 0; sequence1[1].motor2 = 0;
   for (i = 2; i < 18; i++) {
-    sequence1[i].motor1 = -30; sequence1[i].motor2 = -30;
+    sequence1[i].motor1 = -40; sequence1[i].motor2 = -40;
   }
   sequence1[18].motor1 = 0; sequence1[18].motor2 = 0;
   sequence1[19].motor1 = 30; sequence1[19].motor2 = 30;
@@ -381,6 +434,14 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequenceWalk(motor1Walk, motor2Walk, & sequenceFR[10], & sequenceFR[0]);
       _updateSequenceWalk(motor1Walk, motor2Walk, & sequenceRL[10], & sequenceRL[0]);
       _updateSequenceWalk(motor1Walk, motor2Walk, & sequenceRR[0], & sequenceRR[10]);
+    }
+    break;
+    case P_GOFORWARDSLOW:
+    {
+      _updateSequenceWalkSlow(motor1Walk, motor2Walk, & sequenceFL[0], & sequenceFL[10]);
+      _updateSequenceWalkSlow(motor1Walk, motor2Walk, & sequenceFR[10], & sequenceFR[0]);
+      _updateSequenceWalkSlow(motor1Walk, motor2Walk, & sequenceRL[10], & sequenceRL[0]);
+      _updateSequenceWalkSlow(motor1Walk, motor2Walk, & sequenceRR[0], & sequenceRR[10]);
     }
     break;
     case P_GOLEFT:
@@ -588,10 +649,10 @@ char _fixDynamicBalance(char center, accRoll gyroState) {
 // compensate nose dive for static ballance
 int _compensateStaticBallance(accRoll gyroState) {
   int center = _centerAbsolute - gyroState.accAngleY / 2;
-  if (center < 8) {
-    center = 8;
-  } else if (center > 12) {
-    center = 12;
+  if (center < 16) {
+    center = 16;
+  } else if (center > 24) {
+    center = 24;
   }
   return center;
 }
@@ -648,6 +709,11 @@ void printPatternName(unsigned char currentTaskItem) {
     case P_GOFORWARD:
     {
       Serial.println(" P_GOFORWARD ");
+    }
+    break;
+    case P_GOFORWARDSLOW:
+    {
+      Serial.println(" P_GOFORWARDSLOW ");
     }
     break;
     case P_GOLEFT:

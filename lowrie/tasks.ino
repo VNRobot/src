@@ -30,29 +30,30 @@ void _setDemoTask(void) {
   currentTask[13] = P_STANDGOSHIFTRIGHT;
   currentTask[14] = P_STANDGO;
   currentTask[15] = P_GOFORWARD;
-  currentTask[16] = P_GOLEFT;
-  currentTask[17] = P_RESETDIRECTION;
-  currentTask[18] = P_GOFORWARD;
-  currentTask[19] = P_GORIGHT;
-  currentTask[20] = P_RESETDIRECTION;
-  currentTask[21] = P_GOFORWARD;
-  currentTask[22] = P_GOSHIFTLEFT;
-  currentTask[23] = P_GOFORWARD;
-  currentTask[24] = P_GOSHIFTRIGHT;
-  currentTask[25] = P_GOFORWARD;
-  currentTask[26] = P_STANDGO;
-  currentTask[27] = P_GOBACK;
-  currentTask[28] = P_GOBACKLEFT;
-  currentTask[29] = P_GOBACKRIGHT;
-  currentTask[30] = P_RESTOREDIRECTION;
-  currentTask[31] = P_STANDGO;
+  currentTask[16] = P_GOFORWARDSLOW;
+  currentTask[17] = P_GOLEFT;
+  currentTask[18] = P_RESETDIRECTION;
+  currentTask[19] = P_GOFORWARD;
+  currentTask[20] = P_GORIGHT;
+  currentTask[21] = P_RESETDIRECTION;
+  currentTask[22] = P_GOFORWARD;
+  currentTask[23] = P_GOSHIFTLEFT;
+  currentTask[24] = P_GOFORWARD;
+  currentTask[25] = P_GOSHIFTRIGHT;
+  currentTask[26] = P_GOFORWARD;
+  currentTask[27] = P_STANDGO;
+  currentTask[28] = P_GOBACK;
+  currentTask[29] = P_GOBACKLEFT;
+  currentTask[30] = P_GOBACKRIGHT;
+  currentTask[31] = P_RESTOREDIRECTION;
   currentTask[32] = P_STANDGO;
-  currentTask[33] = P_GOTOSTAND;
-  currentTask[34] = P_DOSTAND;
+  currentTask[33] = P_STANDGO;
+  currentTask[34] = P_GOTOSTAND;
   currentTask[35] = P_DOSTAND;
-  currentTask[36] = P_DODOWN;
+  currentTask[36] = P_DOSTAND;
   currentTask[37] = P_DODOWN;
-  currentTask[38] = P_END;
+  currentTask[38] = P_DODOWN;
+  currentTask[39] = P_END;
 }
 
 // set begin task
@@ -68,7 +69,8 @@ void _setBeginTask(void) {
   currentTask[8] = P_STANDGO;
   currentTask[9] = P_STANDGO;
   currentTask[10] = P_ENABLEINPUTS;
-  currentTask[11] = P_DONE;
+  currentTask[11] = P_GOFORWARDSLOW;
+  currentTask[12] = P_DONE;
 }
 
 // set down task
