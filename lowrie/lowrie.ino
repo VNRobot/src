@@ -309,7 +309,7 @@ void doCycle(void) {
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
   // update robot ballance
-  // updateBallancePattern();
+  updateBallancePatterns();
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors
