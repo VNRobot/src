@@ -9,7 +9,7 @@ Read and write eeprom for software version and calibration data
 
 // software version hardcoded
 // should be changed manually
-unsigned char _version = 50;
+unsigned char _version = 51;
 
 // get software version
 unsigned char getSoftwareVersionEeprom(void) {

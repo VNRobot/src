@@ -349,15 +349,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 1200) {
+  if (analogValueInputs.current1 > 1500) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 1200) {
+  if (analogValueInputs.current2 > 1500) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 1200) {
+  if (analogValueInputs.current3 > 1500) {
     return IN_HIGH_CURRENT_3;
   }
   // touch
