@@ -9,19 +9,20 @@ Operates servo motors
 
 // pin numbers for servo motors
 enum dPinsServo {
-  LEFT_MOTOR = 2,
-  RIGHT_MOTOR = 6,
+  LEFT_MOTOR = 4,
+  RIGHT_MOTOR = 5,
+  WL_MOTOR = 6,
+  WR_MOTOR = 7
 };
 
 // init servo library
 Servo servo_left;
 Servo servo_right;
-
-// motors calibration value
-allMotors motorCalibration = {-2, 2};
+Servo servo_wl;
+Servo servo_wr;
 
 // init servo motors
-void initServo(void) {
+void initServo(int calM1, int calM2) {
   // init motors one by one
   servo_left.attach(LEFT_MOTOR, 500, 2500);
   servo_left.write(90);
@@ -29,19 +30,28 @@ void initServo(void) {
   servo_right.attach(RIGHT_MOTOR, 500, 2500);
   servo_right.write(90);
   delay(100);
+  servo_wl.attach(WL_MOTOR, 500, 2500);
+  servo_wl.write(90 - calM1);
+  delay(100);
+  servo_wr.attach(WR_MOTOR, 500, 2500);
+  servo_wr.write(90 - calM2);
+  delay(100);
 }
 
 // set servo motors
-void setServo(void) {
+void setServo(allMotors * calibration, int calM1, int calM2) {
   // set motors values after calibration
-  servo_left.write(90 + motorCalibration.left);
-  delay(100);
-  servo_right.write(90 - motorCalibration.right);
-  delay(500);
+  servo_left.write(90 - calibration->left);
+  servo_right.write(90 - calibration->right);
+  servo_wl.write(90 + calibration->m.wheel.motorL - calM1);
+  servo_wr.write(90 - calibration->m.wheel.motorR - calM2);
 }
 
 // move motors.
 void updateServo(allMotors motorValue) {
-  servo_left.write(90 + motorValue.left + motorCalibration.left);
-  servo_right.write(90 - motorValue.right - motorCalibration.right);
+  servo_left.write(90 - motorValue.left);
+  servo_right.write(90 - motorValue.right);
+  servo_wl.write(90 + motorValue.m.wheel.motorL);
+  servo_wr.write(90 - motorValue.m.wheel.motorR);
 }
+

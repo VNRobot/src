@@ -5,206 +5,226 @@ Arduino nano
 Robot legs motion patterns
 */
 
-// left motor, right motor
-struct sequence {
-  char left;
-  char right;
-};
-// points to currentSequence 
-unsigned char sequenceCount = 0;
-// 20 positions per sequence
-sequence currentSequence[20] = {
-  0,  0,
-  0,  0,
-  0,  0,
-  0,  0,
-
-  0,  0,
-  0,  0,
-  0,  0,
-  0,  0,
-
-  0,  0,
-  0,  0,
-  0,  0,
-  0,  0,
-
-  0,  0,
-  0,  0,
-  0,  0,
-  0,  0,
-
-  0,  0,
-  0,  0,
-  0,  0,
-  0,  0
-};
-
+// servos speed
+char motorLWalk[5] =  {70, 80, 90, 100, 110};
+char motorRWalk[5] =  {70, 80, 90, 100, 110};
+// static motor point
+int _centerStatic = 2;
 // char buffer for temporary use
-char cBuffer;
-// motors values for 10 motors
-allMotors motorValue = {0, 0};
-// interruption flag
-bool iterrupted = false;
+char cBuffer1;
+char cBuffer2;
+// points to currentSequence for every leg
+unsigned char mainCounter = 0;
+// 20 positions per sequence
+motors sequenceCenter[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+motors sequenceWheel[20] = {90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90};
+// motors values for 4 motors
+allMotors motorValue = {0, 0, 0, 0};
 
 // linear motor movement from point to point at the start of sequence
-void _updateSequenceLinearStart(char endPosition1, char endPosition2) {
-  // motor 1
-  cBuffer = currentSequence[19].left;
-  currentSequence[0].left = cBuffer;
-  currentSequence[1].left = cBuffer + (endPosition1 - cBuffer) / 4;
-  currentSequence[2].left = cBuffer + ((endPosition1 - cBuffer) * 2) / 4;
-  currentSequence[3].left = cBuffer + ((endPosition1 - cBuffer) * 3) / 4;
-  currentSequence[4].left = endPosition1;
-  currentSequence[5].left = endPosition1;
-  currentSequence[6].left = endPosition1;
-  currentSequence[7].left = endPosition1;
-  currentSequence[8].left = endPosition1;
-  currentSequence[9].left = endPosition1;
-  currentSequence[10].left = endPosition1;
-  currentSequence[11].left = endPosition1;
-  currentSequence[12].left = endPosition1;
-  currentSequence[13].left = endPosition1;
-  currentSequence[14].left = endPosition1;
-  currentSequence[15].left = endPosition1;
-  currentSequence[16].left = endPosition1;
-  currentSequence[17].left = endPosition1;
-  currentSequence[18].left = endPosition1;
-  currentSequence[19].left = endPosition1;
-  // motor 2
-  cBuffer = currentSequence[19].right;
-  currentSequence[0].right = cBuffer;
-  currentSequence[1].right = cBuffer + (endPosition2 - cBuffer) / 4;
-  currentSequence[2].right = cBuffer + ((endPosition2 - cBuffer) * 2) / 4;
-  currentSequence[3].right = cBuffer + ((endPosition2 - cBuffer) * 3) / 4;
-  currentSequence[4].right = endPosition2;
-  currentSequence[5].right = endPosition2;
-  currentSequence[6].right = endPosition2;
-  currentSequence[7].right = endPosition2;
-  currentSequence[8].right = endPosition2;
-  currentSequence[9].right = endPosition2;
-  currentSequence[10].right = endPosition2;
-  currentSequence[11].right = endPosition2;
-  currentSequence[12].right = endPosition2;
-  currentSequence[13].right = endPosition2;
-  currentSequence[14].right = endPosition2;
-  currentSequence[15].right = endPosition2;
-  currentSequence[16].right = endPosition2;
-  currentSequence[17].right = endPosition2;
-  currentSequence[18].right = endPosition2;
-  currentSequence[19].right = endPosition2;
+void _updateSequencePart1(char endPosition1, char endPosition2, motors * sequence) {
+  cBuffer1 = sequence[19].motorL;
+  cBuffer2 = sequence[19].motorR;
+  sequence[0].motorL = cBuffer1;
+  sequence[1].motorL = cBuffer1 + (endPosition1 - cBuffer1) / 4;
+  sequence[2].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 2) / 4;
+  sequence[3].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 3) / 4;
+  sequence[4].motorL = endPosition1;
+  sequence[0].motorR = cBuffer2;
+  sequence[1].motorR = cBuffer2 + (endPosition2 - cBuffer2) / 4;
+  sequence[2].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 2) / 4;
+  sequence[3].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 3) / 4;
+  sequence[4].motorR = endPosition2;
 }
 
-// create stand walk sequence
-void _updateSequenceRelative(char m1, char m2) {
-  // motor 1
-  currentSequence[0].left += m1 / 4;
-  currentSequence[1].left += m1 / 2;
-  currentSequence[2].left += m1;
-  currentSequence[3].left += m1;
-  currentSequence[4].left += m1;
-  currentSequence[5].left += m1;
-  currentSequence[6].left += m1;
-  currentSequence[7].left += m1;
-  currentSequence[8].left += m1;
-  currentSequence[9].left += m1;
-  currentSequence[10].left += m1;
-  currentSequence[11].left += m1;
-  currentSequence[12].left += m1;
-  currentSequence[13].left += m1;
-  currentSequence[14].left += m1;
-  currentSequence[15].left += m1;
-  currentSequence[16].left += m1;
-  currentSequence[17].left += m1;
-  currentSequence[18].left += m1;
-  currentSequence[19].left += m1;
-  // motor 2
-  currentSequence[0].right += m2 / 4;
-  currentSequence[1].right += m2 / 2;
-  currentSequence[2].right += m2;
-  currentSequence[3].right += m2;
-  currentSequence[4].right += m2;
-  currentSequence[5].right += m2;
-  currentSequence[6].right += m2;
-  currentSequence[7].right += m2;
-  currentSequence[8].right += m2;
-  currentSequence[9].right += m2;
-  currentSequence[10].right += m2;
-  currentSequence[11].right += m2;
-  currentSequence[12].right += m2;
-  currentSequence[13].right += m2;
-  currentSequence[14].right += m2;
-  currentSequence[15].right += m2;
-  currentSequence[16].right += m2;
-  currentSequence[17].right += m2;
-  currentSequence[18].right += m2;
-  currentSequence[19].right += m2;
+// linear motor movement from point to point at the start of sequence
+void _updateSequencePart2(char endPosition1, char endPosition2, motors * sequence) {
+  cBuffer1 = sequence[4].motorL;
+  cBuffer2 = sequence[4].motorR;
+  sequence[5].motorL = cBuffer1;
+  sequence[6].motorL = cBuffer1 + (endPosition1 - cBuffer1) / 4;
+  sequence[7].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 2) / 4;
+  sequence[8].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 3) / 4;
+  sequence[9].motorL = endPosition1;
+  sequence[5].motorR = cBuffer2;
+  sequence[6].motorR = cBuffer2 + (endPosition2 - cBuffer2) / 4;
+  sequence[7].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 2) / 4;
+  sequence[8].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 3) / 4;
+  sequence[9].motorR = endPosition2;
+}
+
+// linear motor movement from point to point at the start of sequence
+void _updateSequencePart3(char endPosition1, char endPosition2, motors * sequence) {
+  cBuffer1 = sequence[9].motorL;
+  cBuffer2 = sequence[9].motorR;
+  sequence[10].motorL = cBuffer1;
+  sequence[11].motorL = cBuffer1 + (endPosition1 - cBuffer1) / 4;
+  sequence[12].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 2) / 4;
+  sequence[13].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 3) / 4;
+  sequence[14].motorL = endPosition1;
+  sequence[10].motorR = cBuffer2;
+  sequence[11].motorR = cBuffer2 + (endPosition2 - cBuffer2) / 4;
+  sequence[12].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 2) / 4;
+  sequence[13].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 3) / 4;
+  sequence[14].motorR = endPosition2;
+}
+
+// linear motor movement from point to point at the start of sequence
+void _updateSequencePart4(char endPosition1, char endPosition2, motors * sequence) {
+  cBuffer1 = sequence[14].motorL;
+  cBuffer2 = sequence[14].motorR;
+  sequence[15].motorL = cBuffer1;
+  sequence[16].motorL = cBuffer1 + (endPosition1 - cBuffer1) / 4;
+  sequence[17].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 2) / 4;
+  sequence[18].motorL = cBuffer1 + ((endPosition1 - cBuffer1) * 3) / 4;
+  sequence[19].motorL = endPosition1;
+  sequence[15].motorR = cBuffer2;
+  sequence[16].motorR = cBuffer2 + (endPosition2 - cBuffer2) / 4;
+  sequence[17].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 2) / 4;
+  sequence[18].motorR = cBuffer2 + ((endPosition2 - cBuffer2) * 3) / 4;
+  sequence[19].motorR = endPosition2;
+}
+
+// create recover sequence
+void _setSequenceRecoverCenterL(void) {
+}
+
+// create recover sequence
+void _setSequenceRecoverCenterR(void) {
 }
 
 // get next sequence
 void setPattern(unsigned char currentTaskItem) {
-  // reset interruption
-  iterrupted = false;
   // get new sequence array
   switch (currentTaskItem) {
-    case P_DOSTAND:
-    {
-      _updateSequenceLinearStart(0, 0);
-    }
-    break;
-    case P_STANDTOGO:
-    {
-      _updateSequenceLinearStart(0, 0);
-    }
-    break;
     case P_GOTOSTAND:
-    {
-      _updateSequenceLinearStart(0, 0);
-    }
-    break;
+    case P_DOSTAND:
+    case P_STANDTOGO:
     case P_STANDGO:
+    case P_DODOWN:
+    case P_DODOWNLEFT:
+    case P_DODOWNRIGHT:
+    case P_DODOWNFRONT:
+    case P_DODOWNREAR:
     {
-      _updateSequenceLinearStart(0, 0);
+      _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
     }
     break;
     case P_STANDGOLEFT:
     {
-      _updateSequenceLinearStart(-8, 8);
+      _updateSequencePart1(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
     }
     break;
     case P_STANDGORIGHT:
     {
-      _updateSequenceLinearStart(8, -8);
+      _updateSequencePart1(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+    }
+    break;
+    case P_STANDGOSHIFTLEFT:
+    {
+      _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+    }
+    break;
+    case P_STANDGOSHIFTRIGHT:
+    {
+      _updateSequencePart1(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
     }
     break;
     case P_GOFORWARD:
     {
-      _updateSequenceLinearStart(14, 14);
+      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+    }
+    break;
+    case P_GOFORWARDSLOW:
+    {
+      _updateSequencePart1(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
     }
     break;
     case P_GOLEFT:
     {
-      _updateSequenceLinearStart(8, 14);
+      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
     }
     break;
     case P_GORIGHT:
     {
-      _updateSequenceLinearStart(14, 8);
+      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+    }
+    break;
+    case P_GOSHIFTLEFT:
+    {
+      _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+    }
+    break;
+    case P_GOSHIFTRIGHT:
+    {
+      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
     }
     break;
     case P_GOBACK:
     {
-      _updateSequenceLinearStart(-8, -8);
+      _updateSequencePart1(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
     }
     break;
     case P_GOBACKLEFT:
     {
-      _updateSequenceLinearStart(-10, -8);
+      _updateSequencePart1(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
     }
     break;
     case P_GOBACKRIGHT:
     {
-      _updateSequenceLinearStart(-8, -10);
+      _updateSequencePart1(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+    }
+    break;
+    case P_RECOVERLEFT:
+    {
+      _setSequenceRecoverCenterL();
+    }
+    break;
+    case P_RECOVERRIGHT:
+    {
+      _setSequenceRecoverCenterR();
     }
     break;
     default:
@@ -212,136 +232,198 @@ void setPattern(unsigned char currentTaskItem) {
   }
 }
 
-// update turning
+// update turning by gyro
 void updateTurnPattern(char cAngle) {
-  _updateSequenceRelative(cAngle, -cAngle);
+  if (cAngle != 0) {
+    for (i = 1; i < 18; i ++) {
+      sequenceWheel[i].motorL += cAngle;
+      sequenceWheel[i].motorR -= cAngle;
+    }
+  }
 }
 
 // update servo motors values
-allMotors updateMotorsPatterns(void) {
-  // set motors speed values
-  if (iterrupted) {
-    // just slowdown if interrupted
-    motorValue.left  = (currentSequence[sequenceCount].left) / 3;
-    motorValue.right = (currentSequence[sequenceCount].right) / 3;
-  } else {
-    // normal operation
-    motorValue.left  = (currentSequence[sequenceCount].left);
-    motorValue.right = (currentSequence[sequenceCount].right);
-  }
+allMotors updateMotorsPatterns(allMotors calibration) {
+  // set motors angle values
+  motorValue.left = (sequenceCenter[mainCounter].motorL + calibration.left);
+  motorValue.right = (sequenceCenter[mainCounter].motorR + calibration.right);
+  motorValue.m.wheel.motorL = (sequenceWheel[mainCounter].motorL - 30 + calibration.m.wheel.motorL);
+  motorValue.m.wheel.motorR = (sequenceWheel[mainCounter].motorR - 30 + calibration.m.wheel.motorR);
   return motorValue;
 }
 
 // update servo motors values
 unsigned char updateCountPatterns(void) {
   // update sequence shift 
-  if (sequenceCount < 19) {
-    sequenceCount ++;
-  } else {
-    // last sequence in the pattern. Get next pattern
-    sequenceCount = 0;
+  mainCounter ++;
+  if (mainCounter > 19) {
+    mainCounter = 0;
   }
-  return sequenceCount;
+  return mainCounter;
 }
 
-// set interruped flag
-void setInterruptedPattern(void) {
-  iterrupted = true;
-}
-
+/*
 // print sequence name
 void printPatternName(unsigned char currentTaskItem) {
   // get new sequence array
   switch (currentTaskItem) {
     case P_DOSTAND:
     {
-      Serial.println(F(" P_DOSTAND "));
+      Serial.println(" P_DOSTAND ");
     }
     break;
     case P_STANDTOGO:
     {
-      Serial.println(F(" P_STANDTOGO "));
+      Serial.println(" P_STANDTOGO ");
     }
     break;
     case P_GOTOSTAND:
     {
-      Serial.println(F(" P_GOTOSTAND "));
+      Serial.println(" P_GOTOSTAND ");
     }
     break;
     case P_STANDGO:
     {
-      Serial.println(F(" P_STANDGO "));
+      Serial.println(" P_STANDGO ");
     }
     break;
     case P_STANDGOLEFT:
     {
-      Serial.println(F(" P_STANDGOLEFT "));
+      Serial.println(" P_STANDGOLEFT ");
     }
     break;
     case P_STANDGORIGHT:
     {
-      Serial.println(F(" P_STANDGORIGHT "));
+      Serial.println(" P_STANDGORIGHT ");
     }
     break;
     case P_GOFORWARD:
     {
-      Serial.println(F(" P_GOFORWARD "));
+      Serial.println(" P_GOFORWARD ");
+    }
+    break;
+    case P_GOFORWARDSLOW:
+    {
+      Serial.println(" P_GOFORWARDSLOW ");
     }
     break;
     case P_GOLEFT:
     {
-      Serial.println(F(" P_GOLEFT "));
+      Serial.println(" P_GOLEFT ");
     }
     break;
     case P_GORIGHT:
     {
-      Serial.println(F(" P_GORIGHT "));
+      Serial.println(" P_GORIGHT ");
     }
     break;
     case P_GOBACK:
     {
-      Serial.println(F(" P_GOBACK "));
+      Serial.println(" P_GOBACK ");
     }
     break;
     case P_GOBACKLEFT:
     {
-      Serial.println(F(" P_GOBACKLEFT "));
+      Serial.println(" P_GOBACKLEFT ");
     }
     break;
     case P_GOBACKRIGHT:
     {
-      Serial.println(F(" P_GOBACKRIGHT "));
+      Serial.println(" P_GOBACKRIGHT ");
     }
     break;
     case P_DONE:
     {
-      Serial.println(F(" P_DONE "));
+      Serial.println(" P_DONE ");
+    }
+    break;
+    case P_END:
+    {
+      Serial.println(" P_END ");
     }
     break;
     case P_RESETDIRECTION:
     {
-      Serial.println(F(" P_RESETDIRECTION "));
+      Serial.println(" P_RESETDIRECTION ");
+    }
+    case P_RESETGIRO:
+    {
+      Serial.println(" P_RESETGIRO ");
     }
     break;
     case P_RESTOREDIRECTION:
     {
-      Serial.println(F(" P_RESTOREDIRECTION "));
+      Serial.println(" P_RESTOREDIRECTION ");
     }
     break;
     case P_ENABLEINPUTS:
     {
-      Serial.println(F(" P_ENABLEINPUTS "));
+      Serial.println(" P_ENABLEINPUTS ");
     }
     break;
     case P_DISABLEINPUTS:
     {
-      Serial.println(F(" P_DISABLEINPUTS "));
+      Serial.println(" P_DISABLEINPUTS ");
+    }
+    break;
+    case P_STANDGOSHIFTLEFT:
+    {
+      Serial.println(" P_STANDGOSHIFTLEFT ");
+    }
+    break;
+    case P_STANDGOSHIFTRIGHT:
+    {
+      Serial.println(" P_STANDGOSHIFTRIGHT ");
+    }
+    break;
+    case P_GOSHIFTLEFT:
+    {
+      Serial.println(" P_GOSHIFTLEFT ");
+    }
+    break;
+    case P_GOSHIFTRIGHT:
+    {
+      Serial.println(" P_GOSHIFTRIGHT ");
+    }
+    break;
+    case P_DODOWN:
+    {
+      Serial.println(" P_DODOWN ");
+    }
+    break;
+    case P_DODOWNLEFT:
+    {
+      Serial.println(" P_DODOWNLEFT ");
+    }
+    break;
+    case P_DODOWNRIGHT:
+    {
+      Serial.println(" P_DODOWNRIGHT ");
+    }
+    break;
+    case P_DODOWNFRONT:
+    {
+      Serial.println(" P_DODOWNFRONT ");
+    }
+    break;
+    case P_DODOWNREAR:
+    {
+      Serial.println(" P_DODOWNREAR ");
+    }
+    break;
+    case P_RECOVERLEFT:
+    {
+      Serial.println(" P_RECOVERLEFT ");
+    }
+    break;
+    case P_RECOVERRIGHT:
+    {
+      Serial.println(" P_RECOVERRIGHT ");
     }
     break;
     default:
-      Serial.println(F(" unknown pattern "));
+      Serial.println(" unknown pattern ");
     break;
   }
 }
-  
-
+*/

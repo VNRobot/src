@@ -202,17 +202,13 @@ accRoll updateGyro(unsigned char sequenceCount) {
   accAverageValue.stateGyro = _statusGyro(accErrorAverage);
   if (stateGyroOld != accAverageValue.stateGyro) {
     stateGyroOld = accAverageValue.stateGyro;
-    if (m_debugMode) {
-      // print state
-      _printGyro(accAverageValue.stateGyro);
-    }
+    // debug print
+    _printGyro(accAverageValue.stateGyro);
   }
-  if (sequenceCount == 0) {
-    if (m_debugMode) {
-    // print raw data
-    _printLineGyro(accErrorAverage);
-    }
-  }
+  // debug print
+  //if (sequenceCount == 0) {
+  //  _printLineGyro(accErrorAverage);
+  //}
   return accAverageValue;
 }
 
@@ -262,73 +258,73 @@ char getDirectionCorrectionGyro(void) {
   }
   return (char)(gyroData.yaw / 2);
 }
-
+/*
 // print gyro values
 void _printLineGyro(struct acc data) {
-  Serial.print(F(" aX "));
+  Serial.print(" aX ");
   Serial.print((int)data.accAngleX);
-  Serial.print(F(" aY "));
+  Serial.print(" aY ");
   Serial.print((int)data.accAngleY);
-  Serial.print(F(" gX "));
+  Serial.print(" gX ");
   Serial.print((int)gyroData.gyroAngleX);
-  Serial.print(F(" gY "));
+  Serial.print(" gY ");
   Serial.print((int)gyroData.gyroAngleY);
-  Serial.print(F(" d "));
+  Serial.print(" d ");
   Serial.print((int)gyroData.yaw);
-  Serial.print(F(" p "));
+  Serial.print(" p ");
   Serial.print((int)gyroData.pitch);
-  Serial.print(F(" r "));
+  Serial.print(" r ");
   Serial.println((int)gyroData.roll);
 }
-
+*/
 // print gyro values
 void _printGyro(unsigned char state) {
   // print gyro status
   switch (state) {
     case GYRO_NORM:
-      Serial.println(F(" GYRO_NORM "));
+      Serial.print(F(" GYRO_NORM "));
     break;
     case GYRO_SHAKEN:
-      Serial.println(F(" GYRO_SHAKEN "));
+      Serial.print(F(" GYRO_SHAKEN "));
     break;
     case GYRO_UPSIDEDOWN:
-      Serial.println(F(" GYRO_UPSIDEDOWN "));
+      Serial.print(F(" GYRO_UPSIDEDOWN "));
     break;
     case GYRO_HIT_SIDE:
-      Serial.println(F(" GYRO_HIT_SIDE "));
+      Serial.print(F(" GYRO_HIT_SIDE "));
     break;
     case GYRO_HIT_FRONT:
-      Serial.println(F(" GYRO_HIT_FRONT "));
+      Serial.print(F(" GYRO_HIT_FRONT "));
     break;
     case GYRO_FELL_LEFT:
-      Serial.println(F(" GYRO_FELL_LEFT "));
+      Serial.print(F(" GYRO_FELL_LEFT "));
     break;
     case GYRO_FELL_RIGHT:
-      Serial.println(F(" GYRO_FELL_RIGHT "));
+      Serial.print(F(" GYRO_FELL_RIGHT "));
     break;
     case GYRO_FELL_FRONT:
-      Serial.println(F(" GYRO_FELL_FRONT "));
+      Serial.print(F(" GYRO_FELL_FRONT "));
     break;
     case GYRO_FELL_BACK:
-      Serial.println(F(" GYRO_FELL_BACK "));
+      Serial.print(F(" GYRO_FELL_BACK "));
     break;
     case GYRO_DOWN_HILL:
-      Serial.println(F(" GYRO_DOWN_HILL "));
+      Serial.print(F(" GYRO_DOWN_HILL "));
     break;
     case GYRO_UP_HILL:
-      Serial.println(F(" GYRO_UP_HILL "));
+      Serial.print(F(" GYRO_UP_HILL "));
     break;
     case GYRO_FOLLING_LEFT:
-      Serial.println(F(" GYRO_FOLLING_LEFT "));
+      Serial.print(F(" GYRO_FOLLING_LEFT "));
     break;
     case GYRO_FOLLING_RIGHT:
-      Serial.println(F(" GYRO_FOLLING_RIGHT "));
+      Serial.print(F(" GYRO_FOLLING_RIGHT "));
     break;
     case GYRO_FOLLING_FRONT:
-      Serial.println(F(" GYRO_FOLLING_FRONT "));
+      Serial.print(F(" GYRO_FOLLING_FRONT "));
     break;
     case GYRO_FOLLING_BACK:
-      Serial.println(F(" GYRO_FOLLING_BACK "));
+      Serial.print(F(" GYRO_FOLLING_BACK "));
     break;
     default:
       Serial.println(F(" Wrong gyro state "));
@@ -354,19 +350,19 @@ unsigned char _statusGyro(struct acc data) {
     return GYRO_HIT_FRONT;
   }
   // fell left r < -30
-  if (gyroData.roll < -30) {
+  if (gyroData.roll < -40) {
     return GYRO_FELL_LEFT;
   }
   // fell right r > 30
-  if (gyroData.roll > 30) {
+  if (gyroData.roll > 40) {
     return GYRO_FELL_RIGHT;
   }
   // fell front p > 20
-  if (gyroData.pitch > 20) {
+  if (gyroData.pitch > 40) {
     return GYRO_FELL_FRONT;
   }
   // fell back p < -20
-  if (gyroData.pitch < -20) {
+  if (gyroData.pitch < -40) {
     return GYRO_FELL_BACK;
   }
   // walk down p > 5
@@ -378,19 +374,19 @@ unsigned char _statusGyro(struct acc data) {
     return GYRO_UP_HILL;
   }
   // folling left r negative grows
-  if (gyroData.roll < -5) {
+  if (gyroData.roll < -30) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right r grows
-  if (gyroData.roll > 5) {
+  if (gyroData.roll > 30) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front p grows
-  if (gyroData.pitch > 5) {
+  if (gyroData.pitch > 20) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back p negative grows
-  if (gyroData.pitch < -5) {
+  if (gyroData.pitch < -20) {
     return GYRO_FOLLING_BACK;
   }
   // walking aX > 5 or aY > 5
