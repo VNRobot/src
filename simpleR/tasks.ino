@@ -299,6 +299,22 @@ void _setRecoverRightTask(void) {
   currentTask[9] = P_STANDGO;
   currentTask[10] = P_DONE;
 }
+// set turn task
+void _setRecoverTask(void) {
+  currentTask[0] = P_DISABLEINPUTS;
+  currentTask[1] = P_DODOWN;
+  currentTask[2] = P_DODOWN;
+  currentTask[3] = P_RECOVERLEFT;
+  currentTask[4] = P_RECOVERRIGHT;
+  currentTask[5] = P_RECOVER;
+  currentTask[6] = P_DOSTAND;
+  currentTask[7] = P_DOSTAND;
+  currentTask[8] = P_RESETGIRO;
+  currentTask[9] = P_STANDTOGO;
+  currentTask[10] = P_ENABLEINPUTS;
+  currentTask[11] = P_STANDGO;
+  currentTask[12] = P_DONE;
+}
 
 // set task by name
 void applyTask(unsigned char task) {
@@ -368,6 +384,9 @@ void applyTask(unsigned char task) {
     break;
     case RECOVER_RIGHT_TASK:
       _setRecoverRightTask();
+    break;
+    case RECOVER_TASK:
+      _setRecoverTask();
     break;
     default:
     break;
@@ -462,8 +481,8 @@ void printTaskname(unsigned char task) {
     case BEND_REAR_TASK:
       Serial.println(F(" BEND_REAR_TASK "));
     break;
-    case RECOVER_LEFT_TASK:
-      Serial.println(F(" RECOVER_LEFT_TASK "));
+    case RECOVER_TASK:
+      Serial.println(F(" RECOVER_TASK "));
     break;
     case RECOVER_RIGHT_TASK:
       Serial.println(F(" RECOVER_RIGHT_TASK "));

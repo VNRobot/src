@@ -6,8 +6,8 @@ Robot legs motion patterns
 */
 
 // servos speed
-char motorLWalk[5] =  {70, 80, 90, 100, 110};
-char motorRWalk[5] =  {70, 80, 90, 100, 110};
+char motorLWalk[5] =  {-20, -10, 0, 10, 20};
+char motorRWalk[5] =  {-20, -10, 0, 10, 20};
 // static motor point
 int _centerStatic = 2;
 // char buffer for temporary use
@@ -16,8 +16,8 @@ char cBuffer2;
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
 // 20 positions per sequence
-motors sequenceCenter[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-motors sequenceWheel[20] = {90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90, 90};
+motors sequenceWing[20] = {50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50};
+motors sequenceWheel[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // motors values for 4 motors
 allMotors motorValue = {0, 0, 0, 0};
 
@@ -87,10 +87,40 @@ void _updateSequencePart4(char endPosition1, char endPosition2, motors * sequenc
 
 // create recover sequence
 void _setSequenceRecoverCenterL(void) {
+  sequenceWing[0].motorL = 50;
+  sequenceWing[1].motorL = 30;
+  sequenceWing[2].motorL = 0;
+  sequenceWing[3].motorL = -30;
+    for (i = 4; i < 16; i ++) {
+      sequenceWing[i].motorL = -40;
+    }
+  sequenceWing[16].motorL = -30;
+  sequenceWing[17].motorL = 0;
+  sequenceWing[18].motorL = 30;
+  sequenceWing[19].motorL = 50;
 }
 
 // create recover sequence
 void _setSequenceRecoverCenterR(void) {
+  sequenceWing[0].motorR = 50;
+  sequenceWing[1].motorR = 30;
+  sequenceWing[2].motorR = 0;
+  sequenceWing[3].motorR = -30;
+    for (i = 4; i < 16; i ++) {
+      sequenceWing[i].motorR = -40;
+    }
+  sequenceWing[16].motorR = -30;
+  sequenceWing[17].motorR = 0;
+  sequenceWing[18].motorR = 30;
+  sequenceWing[19].motorR = 50;
+}
+
+// create recover sequence
+void _setSequenceWingsDown(void) {
+    for (i = 0; i < 19; i ++) {
+      sequenceWing[i].motorL = 50;
+      sequenceWing[i].motorR = 50;
+    }
 }
 
 // get next sequence
@@ -111,6 +141,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_STANDGOLEFT:
@@ -119,6 +150,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_STANDGORIGHT:
@@ -127,6 +159,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_STANDGOSHIFTLEFT:
@@ -135,6 +168,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_STANDGOSHIFTRIGHT:
@@ -143,6 +177,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOFORWARD:
@@ -151,6 +186,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOFORWARDSLOW:
@@ -159,6 +195,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOLEFT:
@@ -167,6 +204,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GORIGHT:
@@ -175,6 +213,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOSHIFTLEFT:
@@ -183,6 +222,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOSHIFTRIGHT:
@@ -191,6 +231,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOBACK:
@@ -199,6 +240,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOBACKLEFT:
@@ -207,6 +249,7 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_GOBACKRIGHT:
@@ -215,15 +258,25 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic - 1], motorRWalk[_centerStatic - 1], & sequenceWheel[0]);
+      _setSequenceWingsDown();
     }
     break;
     case P_RECOVERLEFT:
     {
+      _setSequenceWingsDown();
       _setSequenceRecoverCenterL();
     }
     break;
     case P_RECOVERRIGHT:
     {
+      _setSequenceWingsDown();
+      _setSequenceRecoverCenterR();
+    }
+    break;
+    case P_RECOVER:
+    {
+      _setSequenceWingsDown();
+      _setSequenceRecoverCenterL();
       _setSequenceRecoverCenterR();
     }
     break;
@@ -245,10 +298,10 @@ void updateTurnPattern(char cAngle) {
 // update servo motors values
 allMotors updateMotorsPatterns(allMotors calibration) {
   // set motors angle values
-  motorValue.left = (sequenceCenter[mainCounter].motorL + calibration.left);
-  motorValue.right = (sequenceCenter[mainCounter].motorR + calibration.right);
-  motorValue.m.wheel.motorL = (sequenceWheel[mainCounter].motorL - 30 + calibration.m.wheel.motorL);
-  motorValue.m.wheel.motorR = (sequenceWheel[mainCounter].motorR - 30 + calibration.m.wheel.motorR);
+  motorValue.left = (sequenceWing[mainCounter].motorL + calibration.left);
+  motorValue.right = (sequenceWing[mainCounter].motorR + calibration.right);
+  motorValue.m.wheel.motorL = (sequenceWheel[mainCounter].motorL + calibration.m.wheel.motorL);
+  motorValue.m.wheel.motorR = (sequenceWheel[mainCounter].motorR + calibration.m.wheel.motorR);
   return motorValue;
 }
 
@@ -419,6 +472,11 @@ void printPatternName(unsigned char currentTaskItem) {
     case P_RECOVERRIGHT:
     {
       Serial.println(" P_RECOVERRIGHT ");
+    }
+    break;
+    case P_RECOVER:
+    {
+      Serial.println(" P_RECOVER ");
     }
     break;
     default:

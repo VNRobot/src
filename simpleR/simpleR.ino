@@ -37,6 +37,7 @@ enum rPatterns {
   P_DODOWNREAR,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
+  P_RECOVER,
   P_END
 };
 // tasks
@@ -63,6 +64,7 @@ enum rTasks {
   BEND_REAR_TASK,
   RECOVER_LEFT_TASK,
   RECOVER_RIGHT_TASK,
+  RECOVER_TASK,
   DEFAULT_TASK
 };
 // gyro state
@@ -129,8 +131,6 @@ unsigned char taskNow = STAND_TASK;
 unsigned char taskNext = STAND_TASK;
 // main time delay in the loop in msec
 unsigned char _timeDelay = 20;
-// new task
- unsigned char _newTask = BEGIN_TASK;
 //----------------------------------------------------------
 // variables for temporary use
 unsigned char i;
@@ -163,9 +163,10 @@ void setup() {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // init servo motors for calibration
-    initServo(-60, 60);
-    // set motors values
-    setServo(& m_calibration, -60, 60);
+    initServo(40, 40); // center arm
+    delay(1000);
+    // set motors values positive closes wings. 50 closed, -30 open
+    setServo(& m_calibration, 50, 50);
     // do calibration
     if (doCalibration(& m_calibration)) {
       writeCalibrationEeprom(m_calibration);
@@ -175,7 +176,7 @@ void setup() {
     delay(500);
   } else {
     // init servo motors for normal operation
-    initServo(0, 0);
+    initServo(50, 50);
   }
   // normal operation
   // load calibration if available
@@ -188,13 +189,12 @@ void setup() {
     // demo mode
     Serial.println(F("Entering demo mode"));
     applyTask(DEMO_TASK);
-    // disable sensors in demo mmode
   } else {
     Serial.println(F("Entering explore mode"));
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(& m_calibration, 0, 0);
+  setServo(& m_calibration, 50, 50);
   delay(200);
   // reset gyro
   resetGyro();

@@ -25,6 +25,8 @@ bool modePressed = false;
 unsigned char deviceMode = CALIBRATION_INFO;
 // current buffer
 short current = 0;
+// wing angle
+int wingAngle = 0;
 
 // get current of center motors
 short _getCurrent1Inputs(void) {
@@ -87,7 +89,7 @@ bool doCalibration(allMotors * calibrationData) {
   deviceMode = CALIBRATION_INFO;
   // do loop
   while (true) {
-    setServo(calibrationData, -60, 60);
+    setServo(calibrationData, wingAngle, wingAngle);
     delay(100);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
@@ -116,11 +118,11 @@ bool doCalibration(allMotors * calibrationData) {
         // motors current
         Serial.print(F(" Battery  "));
         Serial.print((int)analogRead(A6));
-        Serial.print(F(" Current center "));
+        Serial.print(F(" Current1 "));
         Serial.print((int)_getCurrent1Inputs());
-        Serial.print(F(" front "));
+        Serial.print(F(" Current2 "));
         Serial.print((int)_getCurrent2Inputs());
-        Serial.print(F(" rear "));
+        Serial.print(F(" Current3 "));
         Serial.println((int)_getCurrent3Inputs());
         delay(500);
       }
@@ -136,25 +138,26 @@ bool doCalibration(allMotors * calibrationData) {
         Serial.println(F("CALIBRATION_LEFT"));
         if (calibrationCounter == 0) {
           // set initial leg calibration
+          wingAngle = 50;
           calibrationData->left = -20;
           calibrationData->right = -20;
-          calibrationData->m.wheel.motorL = -30;
-          calibrationData->m.wheel.motorR = -30;
+          calibrationData->m.wheel.motorL = -20;
+          calibrationData->m.wheel.motorR = -20;
           calibrationCounter ++;
         } else {
           // read current or button
-          current = _getCurrent1Inputs();
+          current = _getCurrent2Inputs();
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
-              calibrationData->left -= 25;
+              calibrationData->left -= 20;
             }
             calibrationCounter = 0;
             deviceMode = CALIBRATION_RIGHT;
           } else {
             calibrationData->left ++;
-            if (calibrationData->left > 20) {
-              calibrationData->left = -30;
+            if (calibrationData->left > 40) {
+              calibrationData->left = -20;
             }
           }
         }
@@ -169,18 +172,18 @@ bool doCalibration(allMotors * calibrationData) {
           calibrationCounter ++;
         } else {
           // read current or button
-          current = _getCurrent1Inputs();
+          current = _getCurrent3Inputs();
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
-              calibrationData->right -= 25;
+              calibrationData->right -= 20;
             }
             calibrationCounter = 0;
             deviceMode = CALIBRATION_AUTO_1;
           } else {
             calibrationData->right ++;
-            if (calibrationData->right > 20) {
-              calibrationData->right = -30;
+            if (calibrationData->right > 40) {
+              calibrationData->right = -20;
             }
           }
         }
@@ -193,11 +196,12 @@ bool doCalibration(allMotors * calibrationData) {
         // leg FL
         if (calibrationCounter == 0) {
           // set initial leg calibration
-          calibrationData->m.wheel.motorL = -30;
+          wingAngle = 0;
+          calibrationData->m.wheel.motorL = -20;
           calibrationCounter ++;
         } else {
           // read current or button
-          current = _getCurrent2Inputs();
+          current = _getCurrent1Inputs();
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
@@ -207,8 +211,8 @@ bool doCalibration(allMotors * calibrationData) {
             deviceMode = CALIBRATION_AUTO_2;
           } else {
             calibrationData->m.wheel.motorL ++;
-            if (calibrationData->m.wheel.motorL > 30) {
-              calibrationData->m.wheel.motorL = -30;
+            if (calibrationData->m.wheel.motorL > 20) {
+              calibrationData->m.wheel.motorL = -20;
             }
           }
         }
@@ -221,11 +225,11 @@ bool doCalibration(allMotors * calibrationData) {
         // leg FL
         if (calibrationCounter == 0) {
           // set initial leg calibration
-          calibrationData->m.wheel.motorR = -30;
+          calibrationData->m.wheel.motorR = -20;
           calibrationCounter ++;
         } else {
           // read current or button
-          current = _getCurrent2Inputs();
+          current = _getCurrent1Inputs();
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
@@ -235,8 +239,8 @@ bool doCalibration(allMotors * calibrationData) {
             deviceMode = CALIBRATION_SAVE;
           } else {
             calibrationData->m.wheel.motorR ++;
-            if (calibrationData->m.wheel.motorR > 30) {
-              calibrationData->m.wheel.motorR = -30;
+            if (calibrationData->m.wheel.motorR > 20) {
+              calibrationData->m.wheel.motorR = -20;
             }
           }
         }

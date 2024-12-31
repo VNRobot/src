@@ -52,7 +52,7 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned char normalDistance = 50; //cm
+unsigned char normalDistance = 20; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -193,7 +193,7 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
   }
   switch (gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
-      return STAND_TASK;
+      return RECOVER_TASK;
     break;
     case GYRO_FELL_LEFT:
       return RECOVER_LEFT_TASK;
@@ -202,10 +202,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FELL_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return RECOVER_TASK; 
     break;
     case GYRO_FELL_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return RECOVER_TASK; 
     break;
     case GYRO_FOLLING_LEFT:
       return RECOVER_LEFT_TASK;
@@ -214,10 +214,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FOLLING_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return RECOVER_TASK; 
     break;
     case GYRO_FOLLING_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return RECOVER_TASK; 
     break;
     default:
     break;
