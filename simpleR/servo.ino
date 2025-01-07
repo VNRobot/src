@@ -21,6 +21,8 @@ Servo servo_right;
 Servo servo_wl;
 Servo servo_wr;
 
+bool wingAttached = false;
+
 // init servo motors
 void initServo(int calM1, int calM2) {
   // init motors one by one
@@ -30,6 +32,7 @@ void initServo(int calM1, int calM2) {
   servo_right.attach(RIGHT_MOTOR, 500, 2500);
   servo_right.write(90 + calM2);
   delay(100);
+  wingAttached = true;
   servo_wl.attach(WL_MOTOR, 500, 2500);
   servo_wl.write(90);
   delay(100);
@@ -41,17 +44,38 @@ void initServo(int calM1, int calM2) {
 // set servo motors
 void setServo(allMotors * calibration, int calM1, int calM2) {
   // set motors values after calibration
-  servo_left.write(90 - calibration->left - calM1);
-  servo_right.write(90 + calibration->right + calM2);
+  if (wingAttached) {
+    servo_left.write(90 - calibration->left - calM1);
+    servo_right.write(90 + calibration->right + calM2);
+  }
   servo_wl.write(90 + calibration->m.wheel.motorL);
   servo_wr.write(90 - calibration->m.wheel.motorR);
 }
 
 // move motors.
 void updateServo(allMotors motorValue) {
-  servo_left.write(90 - motorValue.left);
-  servo_right.write(90 + motorValue.right);
+  if (wingAttached) {
+    servo_left.write(90 - motorValue.left);
+    servo_right.write(90 + motorValue.right);
+  }
   servo_wl.write(90 + motorValue.m.wheel.motorL);
   servo_wr.write(90 - motorValue.m.wheel.motorR);
 }
 
+// attach wings
+void attachWingServo(void) {
+  if (! wingAttached) {
+    servo_left.attach(LEFT_MOTOR, 500, 2500);
+    servo_right.attach(RIGHT_MOTOR, 500, 2500);
+  }
+  wingAttached = true;
+}
+
+// attach wings
+void detachWingServo(void) {
+  if (wingAttached) {
+    servo_left.detach();
+    servo_right.detach();
+  }
+  wingAttached = false;
+}

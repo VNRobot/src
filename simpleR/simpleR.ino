@@ -38,6 +38,8 @@ enum rPatterns {
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
   P_RECOVER,
+  P_ATTACH,
+  P_DETACH,
   P_END
 };
 // tasks
@@ -164,14 +166,12 @@ void setup() {
     Serial.println(F("Entering factory mode"));
     // init servo motors for calibration
     initServo(40, 40); // center arm
-    delay(1000);
     // set motors values positive closes wings. 50 closed, -30 open
     setServo(& m_calibration, 50, 50);
     // do calibration
     if (doCalibration(& m_calibration)) {
       writeCalibrationEeprom(m_calibration);
       writeSoftwareVersionEeprom();
-      delay(10000);
     }
     delay(500);
   } else {
@@ -204,6 +204,7 @@ void setup() {
   // load task and pattern
   setPattern(patternNow);
   sequenceCounter = updateCountPatterns();
+  detachWingServo();
 }
 
 // the loop function runs over and over again forever
@@ -277,6 +278,16 @@ void loop() {
       case P_ENABLEINPUTS:
       {
         sensorsEnabled = true;
+      }
+      break;
+      case P_ATTACH:
+      {
+        attachWingServo();
+      }
+      break;
+      case P_DETACH:
+      {
+        detachWingServo();
       }
       break;
       case P_DONE:

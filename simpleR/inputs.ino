@@ -52,11 +52,12 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned char normalDistance = 20; //cm
+unsigned char normalDistance = 60; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
 bool turnLeft = true;
+bool cliffEnabled = false;
 
 // analog sensors structure
 struct aSensors {
@@ -174,7 +175,11 @@ unsigned char getSensorState(unsigned short input) {
     }
   } else {
     // cliff
-    return SEN_CLIFF;
+    if (cliffEnabled) {
+      return SEN_CLIFF;
+    } else {
+      return SEN_NORMAL;
+    }
   }
 }
 
