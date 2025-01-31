@@ -1,5 +1,5 @@
 /*
-Simple Robot
+Ladybug Robot
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
@@ -127,15 +127,8 @@ void _setSequenceWingsDown(void) {
 void setPattern(unsigned char currentTaskItem) {
   // get new sequence array
   switch (currentTaskItem) {
-    case P_GOTOSTAND:
     case P_DOSTAND:
-    case P_STANDTOGO:
-    case P_STANDGO:
-    case P_DODOWN:
-    case P_DODOWNLEFT:
-    case P_DODOWNRIGHT:
-    case P_DODOWNFRONT:
-    case P_DODOWNREAR:
+
     {
       _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
       _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
@@ -162,39 +155,12 @@ void setPattern(unsigned char currentTaskItem) {
       _setSequenceWingsDown();
     }
     break;
-    case P_STANDGOSHIFTLEFT:
-    {
-      _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _setSequenceWingsDown();
-    }
-    break;
-    case P_STANDGOSHIFTRIGHT:
-    {
-      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart2(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart4(motorLWalk[_centerStatic], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _setSequenceWingsDown();
-    }
-    break;
     case P_GOFORWARD:
     {
       _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _setSequenceWingsDown();
-    }
-    break;
-    case P_GOFORWARDSLOW:
-    {
-      _updateSequencePart1(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
-      _updateSequencePart2(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
-      _updateSequencePart3(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
-      _updateSequencePart4(motorLWalk[_centerStatic + 1], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _setSequenceWingsDown();
     }
     break;
@@ -213,24 +179,6 @@ void setPattern(unsigned char currentTaskItem) {
       _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
       _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 1], & sequenceWheel[0]);
-      _setSequenceWingsDown();
-    }
-    break;
-    case P_GOSHIFTLEFT:
-    {
-      _updateSequencePart1(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart3(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _setSequenceWingsDown();
-    }
-    break;
-    case P_GOSHIFTRIGHT:
-    {
-      _updateSequencePart1(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic], & sequenceWheel[0]);
-      _updateSequencePart2(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart3(motorLWalk[_centerStatic], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
-      _updateSequencePart4(motorLWalk[_centerStatic + 2], motorRWalk[_centerStatic + 2], & sequenceWheel[0]);
       _setSequenceWingsDown();
     }
     break;
@@ -325,21 +273,6 @@ void printPatternName(unsigned char currentTaskItem) {
       Serial.println(" P_DOSTAND ");
     }
     break;
-    case P_STANDTOGO:
-    {
-      Serial.println(" P_STANDTOGO ");
-    }
-    break;
-    case P_GOTOSTAND:
-    {
-      Serial.println(" P_GOTOSTAND ");
-    }
-    break;
-    case P_STANDGO:
-    {
-      Serial.println(" P_STANDGO ");
-    }
-    break;
     case P_STANDGOLEFT:
     {
       Serial.println(" P_STANDGOLEFT ");
@@ -353,11 +286,6 @@ void printPatternName(unsigned char currentTaskItem) {
     case P_GOFORWARD:
     {
       Serial.println(" P_GOFORWARD ");
-    }
-    break;
-    case P_GOFORWARDSLOW:
-    {
-      Serial.println(" P_GOFORWARDSLOW ");
     }
     break;
     case P_GOLEFT:
@@ -409,59 +337,24 @@ void printPatternName(unsigned char currentTaskItem) {
       Serial.println(" P_RESTOREDIRECTION ");
     }
     break;
-    case P_ENABLEINPUTS:
+    case P_ENABLEINPUTLEFT:
     {
-      Serial.println(" P_ENABLEINPUTS ");
+      Serial.println(" P_ENABLEINPUTLEFT ");
     }
     break;
-    case P_DISABLEINPUTS:
+    case P_ENABLEINPUTRIGHT:
     {
-      Serial.println(" P_DISABLEINPUTS ");
+      Serial.println(" P_ENABLEINPUTRIGHT ");
     }
     break;
-    case P_STANDGOSHIFTLEFT:
+    case P_DISABLEINPUTLEFT:
     {
-      Serial.println(" P_STANDGOSHIFTLEFT ");
+      Serial.println(" P_DISABLEINPUTLEFT ");
     }
     break;
-    case P_STANDGOSHIFTRIGHT:
+    case P_DISABLEINPUTRIGHT:
     {
-      Serial.println(" P_STANDGOSHIFTRIGHT ");
-    }
-    break;
-    case P_GOSHIFTLEFT:
-    {
-      Serial.println(" P_GOSHIFTLEFT ");
-    }
-    break;
-    case P_GOSHIFTRIGHT:
-    {
-      Serial.println(" P_GOSHIFTRIGHT ");
-    }
-    break;
-    case P_DODOWN:
-    {
-      Serial.println(" P_DODOWN ");
-    }
-    break;
-    case P_DODOWNLEFT:
-    {
-      Serial.println(" P_DODOWNLEFT ");
-    }
-    break;
-    case P_DODOWNRIGHT:
-    {
-      Serial.println(" P_DODOWNRIGHT ");
-    }
-    break;
-    case P_DODOWNFRONT:
-    {
-      Serial.println(" P_DODOWNFRONT ");
-    }
-    break;
-    case P_DODOWNREAR:
-    {
-      Serial.println(" P_DODOWNREAR ");
+      Serial.println(" P_DISABLEINPUTRIGHT ");
     }
     break;
     case P_RECOVERLEFT:

@@ -1,5 +1,5 @@
 /*
-Simple Robot
+Ladybug Robot
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Operates servo motors

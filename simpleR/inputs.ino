@@ -1,5 +1,5 @@
 /*
-Simple Robot
+Ladybug Robot
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Gets analog inputs
@@ -19,11 +19,6 @@ Gets analog inputs
 
 */
 
-// digital inputs pins
-enum dPinsInputs {
-  F_SWITCH = 3
-};
-
 // sensor state
 enum senState {
   SEN_CLIFF = 0,
@@ -35,12 +30,11 @@ enum senState {
 
 // input state
 enum inState {
+  IN_NORMAL,
   IN_LOW_BATTERY,
   IN_HIGH_CURRENT_1,
   IN_HIGH_CURRENT_2,
   IN_HIGH_CURRENT_3,
-  IN_TOUCH_FRONTLEFT,
-  IN_TOUCH_FRONTRIGHT,
   IN_WALL_FRONTLEFT,
   IN_WALL_FRONTRIGHT,
   IN_WALL_LEFT,
@@ -48,11 +42,18 @@ enum inState {
   IN_OBSTACLE_FRONTLEFT,
   IN_OBSTACLE_FRONTRIGHT,
   IN_OBSTACLE_LEFT,
-  IN_OBSTACLE_RIGHT,
-  IN_NORMAL             
+  IN_OBSTACLE_RIGHT
 };
 
-unsigned char normalDistance = 60; //cm
+// ultrasonic output pin
+const int triggerPin = 7;   // connector S6
+// ultrasonic input pin 
+const int echoPin = 8;      // connector S7
+// flags for reading sensors
+//bool turningleft = true;
+//bool turningRight = true;
+
+unsigned char normalDistance = 50; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -73,30 +74,29 @@ struct aSensors {
 aSensors analogInputs = {0, 0, 0, 0, 0, 0}; // raw values
 aSensors analogValueInputs = {6500, 0, 0, 0, 0, 0}; // processed values
 
-// digital sensors structure
-struct dSensors {
-  unsigned char f;
-};
-
-// digital input values array
-dSensors digitalInputs = {0};
-
 // init inputs
 void initInputs(void) {
-  pinMode(F_SWITCH, INPUT_PULLUP);
+  pinMode(triggerPin, OUTPUT); 
+	pinMode(echoPin, INPUT);
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+}
+
+// get sensor input
+unsigned short getSensorInputs(void) {
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(10000);
+  digitalWrite(triggerPin, LOW);
+  return (unsigned short)(pulseIn(echoPin, HIGH) / 40);
 }
 
 // read and remember analog sensors readings
-unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
+unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool turningRight) {  
   // read analog inputs
   analogInputs.battery = (unsigned short)analogRead(A6);
   analogInputs.current1 = (unsigned short)analogRead(A7);
   analogInputs.current2 = (unsigned short)analogRead(A3);
   analogInputs.current3 = (unsigned short)analogRead(A2);
-  analogInputs.left = (unsigned short)analogRead(A0);
-  analogInputs.right = (unsigned short)analogRead(A1);
-  // read digital inputs
-  digitalInputs.f = (unsigned char)digitalRead(F_SWITCH);
   // calculate sensor current in mA
   // 1
   if (analogInputs.current1 > analogInputs.battery) {
@@ -131,15 +131,24 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   } else {
     analogValueInputs.battery += 10;
   }
-  // proximity sensors in cm
-  // crossconnection left senor is facing right and right sensor is facing left
-  analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
-  analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
   if ((sequenceCount == 0) || (sequenceCount == 10)) {
-    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
-    //
-    if (sensorsEnabled) {
+    // read sensor
+    if (turningleft || turningRight) {
+      if (turningleft && turningRight) {
+        analogInputs.left = getSensorInputs();
+        analogInputs.right = analogInputs.left;
+      } else if (turningRight) {
+        analogInputs.right = getSensorInputs();
+      } else {
+        analogInputs.left = getSensorInputs();
+      }
+      // proximity sensors in cm
+      analogValueInputs.right = analogInputs.right;
+      analogValueInputs.left = analogInputs.left;
+      //
+      allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
+      //
       if (allStateInputsOld != allStateInputs) {
         allStateInputsOld = allStateInputs;
         // debug print
@@ -188,13 +197,13 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
     return DOWN_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_1) {
-    return STAND_TASK;
+    return DOWN_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_2) {
-    return STAND_TASK;
+    return DOWN_TASK;
   }
   if (inputState == IN_HIGH_CURRENT_3) {
-    return STAND_TASK;
+    return DOWN_TASK;
   }
   switch (gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
@@ -235,12 +244,6 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
 unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defaultTask) {
   // obstacle state
   switch (inputState) {
-    case IN_TOUCH_FRONTLEFT:
-      return GOBACKRIGHT_TASK;
-    break;
-    case IN_TOUCH_FRONTRIGHT:
-      return GOBACKLEFT_TASK;
-    break;
     case IN_WALL_FRONTLEFT:
       return GOBACKRIGHT_TASK;
     break;
@@ -288,9 +291,7 @@ void _printLineInputs(void) {
   Serial.print(F(" left "));
   Serial.print((int)analogValueInputs.left);
   Serial.print(F(" right "));
-  Serial.print((int)analogValueInputs.right);
-  Serial.print(F(" touch "));
-  Serial.println((int)digitalInputs.f);
+  Serial.println((int)analogValueInputs.right);
 }
 */
 // print inputs
@@ -308,12 +309,6 @@ void _printInputs(int state) {
     break;
     case IN_HIGH_CURRENT_3:
       Serial.print(F(" IN_HIGH_CURRENT_3 "));
-    break;
-    case IN_TOUCH_FRONTLEFT:
-      Serial.print(F(" IN_TOUCH_FRONTLEFT "));
-    break;
-    case IN_TOUCH_FRONTRIGHT:
-      Serial.print(F(" IN_TOUCH_FRONTRIGHT "));
     break;
     case IN_WALL_FRONTLEFT:
       Serial.print(F(" IN_WALL_FRONTLEFT "));
@@ -364,19 +359,6 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   // motor 3 current too high
   if (analogValueInputs.current3 > 1500) {
     return IN_HIGH_CURRENT_3;
-  }
-  // touch
-  if (digitalInputs.f == 0) {
-    if (analogValueInputs.left > analogValueInputs.right) {
-      turnLeft = true;
-    } else {
-      turnLeft = false;
-    } 
-    if (turnLeft) {
-      return IN_TOUCH_FRONTRIGHT;
-    } else {
-      return IN_TOUCH_FRONTLEFT;
-    }
   }
   // check sensors
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
@@ -450,8 +432,8 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
 
 // check for demo mode
 bool checkForDemoModeInputs(void) {
-    // sensors are blocked 500 ~ 5cm
-    if (analogInputs.left > 400 || analogInputs.right > 400) {
+    // sensors are blocked ~ 5cm
+    if (analogInputs.left < 5 || analogInputs.right < 5) {
         return true;
     }
     return false;

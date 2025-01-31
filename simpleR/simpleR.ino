@@ -1,5 +1,5 @@
 /*
-Simple Robot
+Ladybug Robot
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Main file
@@ -8,13 +8,9 @@ Main file
 // patterns
 enum rPatterns {
   P_DOSTAND,
-  P_STANDTOGO,
-  P_GOTOSTAND,
-  P_STANDGO,
   P_STANDGOLEFT,
   P_STANDGORIGHT,
   P_GOFORWARD,
-  P_GOFORWARDSLOW,
   P_GOLEFT,
   P_GORIGHT,
   P_GOBACK,
@@ -24,17 +20,10 @@ enum rPatterns {
   P_RESETDIRECTION,
   P_RESTOREDIRECTION,
   P_RESETGIRO,
-  P_ENABLEINPUTS,
-  P_DISABLEINPUTS,
-  P_STANDGOSHIFTLEFT,
-  P_STANDGOSHIFTRIGHT,
-  P_GOSHIFTLEFT,
-  P_GOSHIFTRIGHT,
-  P_DODOWN,
-  P_DODOWNLEFT,
-  P_DODOWNRIGHT,
-  P_DODOWNFRONT,
-  P_DODOWNREAR,
+  P_ENABLEINPUTLEFT,
+  P_ENABLEINPUTRIGHT,
+  P_DISABLEINPUTLEFT,
+  P_DISABLEINPUTRIGHT,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
   P_RECOVER,
@@ -54,10 +43,7 @@ enum rTasks {
   STANDTURNRIGHT2_TASK,
   STANDTURNLEFT2_TASK,
   GO_TASK,
-  STANDGO_TASK,
   STAND_TASK,
-  GOSHIFTRIGHT_TASK,
-  GOSHIFTLEFT_TASK,
   DEMO_TASK,
   DOWN_TASK,
   BEND_LEFT_TASK,
@@ -115,8 +101,8 @@ typedef struct accRoll {
 
 // motors calibration values for 10 motors
 allMotors m_calibration = {0, 0, 0, 0};
-// inputs state
-unsigned char inputState = 0;
+// inputs logical state
+unsigned char inputState = 0; // IN_NORMAL
 // gyro state
 accRoll gyroState;
 // sequence counter
@@ -124,7 +110,8 @@ unsigned char sequenceCounter = 0;
 // current pattern
 unsigned char patternNow = P_DOSTAND;
 // enable sensors flag
-bool sensorsEnabled = false;
+bool sensorLeftEnabled = true;
+bool sensorRightEnabled = true;
 // default task
 unsigned char defaultTask = GO_TASK;
 // current task
@@ -156,7 +143,7 @@ void setup() {
   Serial.println(F("Device started"));
   // init proximity sensors
   initInputs();
-  updateInputs(0, sensorsEnabled);
+  updateInputs(0, sensorLeftEnabled, sensorRightEnabled);
   // init gyro MPU6050 using I2C
   delay(500);
   initGyro();
@@ -222,7 +209,7 @@ void loop() {
       patternNow = getPatternInTask();
     } else {
       // check for normal task end
-      if ((patternNow == P_DONE) || (((patternNow == P_STANDGO) || (patternNow == P_GOFORWARD)) && (sensorsEnabled))) {
+      if ((patternNow == P_DONE) || ((patternNow == P_GOFORWARD) && (sensorLeftEnabled && sensorRightEnabled))) {
         // get next task
         taskNow = getNormalTaskByInputs(inputState, defaultTask);
         // apply new task
@@ -241,13 +228,6 @@ void loop() {
     // debug print
     // printPatternName(patternNow);
     switch (patternNow) {
-      case P_STANDGO:
-      {
-        setPattern(patternNow);
-        updateTurnPattern(getDirectionCorrectionGyro());
-        doCycle();
-      }        
-      break;
       case P_GOFORWARD:
       {
         setPattern(patternNow);
@@ -270,14 +250,24 @@ void loop() {
         restoreDirectionGyro();
       }
       break;
-      case P_DISABLEINPUTS:
+      case P_DISABLEINPUTLEFT:
       {
-        sensorsEnabled = false;
+        sensorLeftEnabled = false;
       }
       break;
-      case P_ENABLEINPUTS:
+      case P_DISABLEINPUTRIGHT:
       {
-        sensorsEnabled = true;
+        sensorRightEnabled = false;
+      }
+      break;
+      case P_ENABLEINPUTLEFT:
+      {
+        sensorLeftEnabled = true;
+      }
+      break;
+      case P_ENABLEINPUTRIGHT:
+      {
+        sensorRightEnabled = true;
       }
       break;
       case P_ATTACH:
@@ -302,7 +292,7 @@ void loop() {
   } else if (sequenceCounter == 10) {
     // check for task interruption
     if (checkInterruptionInputs(taskNow, patternNow)) {
-      setPattern(P_STANDGO);
+      setPattern(P_DOSTAND);
     }
     doCycle();
   } else {
@@ -319,7 +309,7 @@ void doCycle(void) {
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors
-  inputState = updateInputs(sequenceCounter, sensorsEnabled);
+  inputState = updateInputs(sequenceCounter, sensorLeftEnabled, sensorRightEnabled);
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
 }

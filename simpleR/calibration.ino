@@ -1,5 +1,5 @@
 /*
-Simple Robot
+Ladybug Robot
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 motors calibration
@@ -106,13 +106,12 @@ bool doCalibration(allMotors * calibrationData) {
           modePressed = false;
           deviceMode = CALIBRATION_START;
         }
-        // print gyro data
+        // update gyro data
         updateGyro(0);
+        // get sensor data
+        Serial.print(F("Sensor "));
+        Serial.print((int)getSensorInputs());
         // print proximity sensors
-        Serial.print(F("Left eye "));
-        Serial.print((int)((1600000 / analogRead(A0)) / analogRead(A0)));
-        Serial.print(F(" Right eye "));
-        Serial.print((int)((1600000 / analogRead(A1)) / analogRead(A1)));
         Serial.print(F(" Direction "));
         Serial.print((int)getDirectionCorrectionGyro());
         // motors current
