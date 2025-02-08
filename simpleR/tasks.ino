@@ -12,34 +12,6 @@ unsigned char currentTaskPoint = 0;
 // current pattern
 unsigned char _curPattern = P_DOSTAND;
 
-// set demo task
-void _setDemoTask(void) {
-  currentTask[0] = P_DISABLEINPUTLEFT;
-  currentTask[1] = P_DISABLEINPUTRIGHT;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDGOLEFT;
-  currentTask[4] = P_RESETDIRECTION;
-  currentTask[5] = P_DOSTAND;
-  currentTask[6] = P_STANDGORIGHT;
-  currentTask[7] = P_RESETDIRECTION;
-  currentTask[8] = P_DOSTAND;
-  currentTask[9] = P_GOFORWARD;
-  currentTask[10] = P_GOFORWARD;
-  currentTask[11] = P_GOLEFT;
-  currentTask[12] = P_RESETDIRECTION;
-  currentTask[13] = P_GOFORWARD;
-  currentTask[14] = P_GORIGHT;
-  currentTask[15] = P_RESETDIRECTION;
-  currentTask[16] = P_GOFORWARD;
-  currentTask[17] = P_DOSTAND;
-  currentTask[18] = P_GOBACK;
-  currentTask[19] = P_GOBACKLEFT;
-  currentTask[20] = P_GOBACKRIGHT;
-  currentTask[21] = P_RESTOREDIRECTION;
-  currentTask[22] = P_DOSTAND;
-  currentTask[23] = P_END;
-}
-
 // set begin task
 void _setBeginTask(void) {
   currentTask[0] = P_DISABLEINPUTLEFT;
@@ -316,9 +288,6 @@ void _setRecoverTask(void) {
 // set task by name
 void applyTask(unsigned char task) {
   switch (task) {
-    case DEMO_TASK:
-      _setDemoTask();
-    break;
     case BEGIN_TASK:
       _setBeginTask();
     break;
@@ -409,9 +378,6 @@ unsigned char getPatternInTask(void) {
 // print task  name
 void printTaskname(unsigned char task) {
   switch (task) {
-    case DEMO_TASK:
-      Serial.println(F(" DEMO_TASK "));
-    break;
     case BEGIN_TASK:
       Serial.println(F(" BEGIN_TASK "));
     break;

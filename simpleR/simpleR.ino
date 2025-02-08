@@ -44,7 +44,6 @@ enum rTasks {
   STANDTURNLEFT2_TASK,
   GO_TASK,
   STAND_TASK,
-  DEMO_TASK,
   DOWN_TASK,
   BEND_LEFT_TASK,
   BEND_RIGHT_TASK,
@@ -171,15 +170,8 @@ void setup() {
     // read values by using pointer to struct
     readCalibrationEeprom(& m_calibration);
   }
-  // demo mode activated when hand is placed 5cm from sensors during the boot
-  if (checkForDemoModeInputs()) {
-    // demo mode
-    Serial.println(F("Entering demo mode"));
-    applyTask(DEMO_TASK);
-  } else {
-    Serial.println(F("Entering explore mode"));
-    applyTask(BEGIN_TASK);
-  }
+  Serial.println(F("Entering explore mode"));
+  applyTask(BEGIN_TASK);
   // set motors values after calibration
   setServo(& m_calibration, 50, 50);
   delay(200);

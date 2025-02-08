@@ -79,7 +79,7 @@ void initInputs(void) {
   pinMode(triggerPin, OUTPUT); 
 	pinMode(echoPin, INPUT);
   digitalWrite(triggerPin, LOW);
-  delayMicroseconds(2);
+  delay(100);
 }
 
 // get sensor input
@@ -428,15 +428,6 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   }
   // normal
   return IN_NORMAL;
-}
-
-// check for demo mode
-bool checkForDemoModeInputs(void) {
-    // sensors are blocked ~ 5cm
-    if (analogInputs.left < 5 || analogInputs.right < 5) {
-        return true;
-    }
-    return false;
 }
 
 // check mode button pressed
