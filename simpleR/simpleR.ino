@@ -40,8 +40,6 @@ enum rTasks {
   GOTURNLEFT_TASK,
   STANDTURNRIGHT_TASK,
   STANDTURNLEFT_TASK,
-  STANDTURNRIGHT2_TASK,
-  STANDTURNLEFT2_TASK,
   GO_TASK,
   STAND_TASK,
   DOWN_TASK,
@@ -142,7 +140,7 @@ void setup() {
   Serial.println(F("Device started"));
   // init proximity sensors
   initInputs();
-  updateInputs(0, sensorLeftEnabled, sensorRightEnabled);
+  updateInputs(0, sensorLeftEnabled, sensorRightEnabled, 0);
   // init gyro MPU6050 using I2C
   delay(500);
   initGyro();
@@ -301,7 +299,7 @@ void doCycle(void) {
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors
-  inputState = updateInputs(sequenceCounter, sensorLeftEnabled, sensorRightEnabled);
+  inputState = updateInputs(sequenceCounter, sensorLeftEnabled, sensorRightEnabled, getDirectionGyro());
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
 }

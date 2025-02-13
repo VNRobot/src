@@ -53,12 +53,14 @@ const int echoPin = 8;      // connector S7
 //bool turningleft = true;
 //bool turningRight = true;
 
-unsigned char normalDistance = 50; //cm
+unsigned short normalDistance = 100; //cm
+unsigned short cliffDistance = 1000;
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
 bool turnLeft = true;
-bool cliffEnabled = false;
+bool cliffEnabled = true;
+unsigned char oldTask = BEGIN_TASK;
 
 // analog sensors structure
 struct aSensors {
@@ -91,7 +93,7 @@ unsigned short getSensorInputs(void) {
 }
 
 // read and remember analog sensors readings
-unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool turningRight) {  
+unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool turningRight, char direction) {  
   // read analog inputs
   analogInputs.battery = (unsigned short)analogRead(A6);
   analogInputs.current1 = (unsigned short)analogRead(A7);
@@ -147,7 +149,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool t
       analogValueInputs.right = analogInputs.right;
       analogValueInputs.left = analogInputs.left;
       //
-      allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
+      allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right), direction);
       //
       if (allStateInputsOld != allStateInputs) {
         allStateInputsOld = allStateInputs;
@@ -165,7 +167,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool t
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (normalDistance * 3)) { // no cliff
+  if (input < cliffDistance) { // no cliff
     if (input > (normalDistance / 6)) { // not blocked
       if (input > (normalDistance / 3)) { // no wall
         if (input > (normalDistance / 2)) { // no obstacle
@@ -245,36 +247,59 @@ unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defa
   // obstacle state
   switch (inputState) {
     case IN_WALL_FRONTLEFT:
+      oldTask = GOBACKRIGHT_TASK;
       return GOBACKRIGHT_TASK;
     break;
     case IN_WALL_FRONTRIGHT:
+      oldTask = GOBACKLEFT_TASK;
       return GOBACKLEFT_TASK;
     break;
     case IN_WALL_LEFT:
-      return STANDTURNRIGHT2_TASK;
-    break;
-    case IN_WALL_RIGHT:
-      return STANDTURNLEFT2_TASK;
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
+      oldTask = STANDTURNRIGHT_TASK;
       return STANDTURNRIGHT_TASK;
     break;
-    case IN_OBSTACLE_FRONTRIGHT:
+    case IN_WALL_RIGHT:
+      oldTask = STANDTURNLEFT_TASK;
       return STANDTURNLEFT_TASK;
     break;
+    case IN_OBSTACLE_FRONTLEFT:
+      {
+        if ((oldTask == STANDTURNRIGHT_TASK) || (oldTask == STANDTURNLEFT_TASK)) {
+          oldTask = GOBACKRIGHT_TASK;
+          return GOBACKRIGHT_TASK;
+        }
+        oldTask = STANDTURNRIGHT_TASK;
+        return STANDTURNRIGHT_TASK;
+      }
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      {
+        if ((oldTask == STANDTURNRIGHT_TASK) || (oldTask == STANDTURNLEFT_TASK)) {
+          oldTask = GOBACKLEFT_TASK;
+          return GOBACKLEFT_TASK;
+        }
+        oldTask = STANDTURNLEFT_TASK;
+        return STANDTURNLEFT_TASK;
+      }
+    break;
     case IN_OBSTACLE_LEFT:
+      oldTask = GOTURNRIGHT_TASK;
       return GOTURNRIGHT_TASK;
     break;
     case IN_OBSTACLE_RIGHT:
+      oldTask = GOTURNLEFT_TASK;
       return GOTURNLEFT_TASK;
     break;
     case IN_NORMAL:
+      oldTask = defaultTask;
       return defaultTask;
     break;
     default:
+      oldTask = defaultTask;
       return defaultTask;
     break;
   }
+  oldTask = defaultTask;
   return defaultTask;
 }
 /*
@@ -343,7 +368,7 @@ void _printInputs(int state) {
 }
 
 // status of inputs
-unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
+unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char direction) {
   // battery low 6500
   if (analogValueInputs.battery < 6500) {
     return IN_LOW_BATTERY;
@@ -361,43 +386,16 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_HIGH_CURRENT_3;
   }
   // check sensors
-  if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
-    return IN_NORMAL;
-  }
-  if (sRight == SEN_NORMAL) {
-    // only left side obstacle
-    turnLeft = false;
-    if (sLeft == SEN_BLOCK) {
-      turnLeft = true;
-      return IN_WALL_RIGHT;
-    }
-    if (sLeft == SEN_WALL) {
-      return IN_WALL_LEFT;
-    } else {
-      return IN_OBSTACLE_LEFT;
-    }
-  }
-  if (sLeft == SEN_NORMAL) {
-    // only right side obstacle
-    turnLeft = true;
-    if (sRight == SEN_BLOCK) {
+  if ((sLeft == SEN_NORMAL) || (sRight == SEN_NORMAL)) {
+    if (direction > 30) {
       turnLeft = false;
-      return IN_WALL_LEFT;
-    }
-    if (sRight == SEN_WALL) {
-      return IN_WALL_RIGHT;
-    } else {
-      //SEN_OBSTACLE
-      return IN_OBSTACLE_RIGHT;
-    }
-  }
-  // both sensors obstacle or cliff
-  if ((sLeft == SEN_CLIFF) || (sRight == SEN_CLIFF)) {
-    if (turnLeft) {
-      return IN_WALL_FRONTRIGHT;
-    } else {
       return IN_WALL_FRONTLEFT;
     }
+    if (direction < -30) {
+      turnLeft = true;
+      return IN_WALL_FRONTRIGHT;
+    }
+    return IN_NORMAL;
   }
   // both sensors obstacle and blocked
   if ((sLeft == SEN_BLOCK) || (sRight == SEN_BLOCK)) {

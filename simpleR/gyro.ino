@@ -257,6 +257,11 @@ void restoreDirectionGyro(void) {
   gyroData.yaw += directionOld;
 }
 
+// get direction
+char getDirectionGyro(void) {
+  return (char)(gyroData.yaw / 2);
+}
+
 // get walking direction correction from gyroscope
 char getDirectionCorrectionGyro(void) {
   // maximal direction correction is 5
