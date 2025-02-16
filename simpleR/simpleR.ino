@@ -188,8 +188,8 @@ void setup() {
 void loop() {
   if (sequenceCounter == 0) {
     // check emergency task
-    taskNext = getHighPriorityTaskByInputs(gyroState, inputState);
-    if ((taskNext != DEFAULT_TASK) && (taskNow != taskNext)) {
+    taskNext = getHighPriorityTaskByInputs(gyroState, inputState, taskNow);
+    if (taskNext != DEFAULT_TASK) {
       taskNow = taskNext;
       // apply new task
       applyTask(taskNow);

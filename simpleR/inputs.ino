@@ -53,7 +53,7 @@ const int echoPin = 8;      // connector S7
 //bool turningleft = true;
 //bool turningRight = true;
 
-unsigned short normalDistance = 100; //cm
+unsigned short normalDistance = 72; //cm
 unsigned short cliffDistance = 1000;
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
@@ -138,8 +138,13 @@ unsigned char updateInputs(unsigned char sequenceCount, bool turningleft, bool t
     // read sensor
     if (turningleft || turningRight) {
       if (turningleft && turningRight) {
-        analogInputs.left = getSensorInputs();
-        analogInputs.right = analogInputs.left;
+        if (turnLeft) {
+          analogInputs.left = analogInputs.right;
+          analogInputs.right = getSensorInputs();
+        } else {
+          analogInputs.right = analogInputs.left;
+          analogInputs.left = getSensorInputs();
+        }
       } else if (turningRight) {
         analogInputs.right = getSensorInputs();
       } else {
@@ -194,7 +199,7 @@ unsigned char getSensorState(unsigned short input) {
   }
 }
 
-unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char inputState) {
+unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char inputState, unsigned char taskNow) {
   if (inputState == IN_LOW_BATTERY) {
     return DOWN_TASK;
   }
@@ -206,6 +211,9 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
   }
   if (inputState == IN_HIGH_CURRENT_3) {
     return DOWN_TASK;
+  }
+  if ((taskNow == RECOVER_TASK) || (taskNow == RECOVER_LEFT_TASK) || (taskNow == RECOVER_RIGHT_TASK)) {
+    return DEFAULT_TASK;
   }
   switch (gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
@@ -394,6 +402,12 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char 
     if (direction < -30) {
       turnLeft = true;
       return IN_WALL_FRONTRIGHT;
+    }
+    if (sLeft != SEN_NORMAL) {
+      return IN_OBSTACLE_LEFT;
+    }
+    if (sRight != SEN_NORMAL) {
+      return IN_OBSTACLE_RIGHT;
     }
     return IN_NORMAL;
   }
