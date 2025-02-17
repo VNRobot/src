@@ -26,7 +26,7 @@ unsigned char deviceMode = CALIBRATION_INFO;
 // current buffer
 short current = 0;
 // wing angle
-int wingAngle = 0;
+int wingAngle = 50;
 
 // get current of center motors
 short _getCurrent1Inputs(void) {

@@ -149,7 +149,7 @@ void setup() {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // init servo motors for calibration
-    initServo(40, 40); // center arm
+    initServo(50, 50);
     // set motors values positive closes wings. 50 closed, -30 open
     setServo(& m_calibration, 50, 50);
     // do calibration
