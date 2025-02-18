@@ -6,8 +6,8 @@ Robot legs motion patterns
 */
 
 // servos speed
-char motorLWalk[5] =  {-20, -10, 0, 10, 20};
-char motorRWalk[5] =  {-20, -10, 0, 10, 20};
+char motorLWalk[5] =  {-25, -15, 0, 15, 25};
+char motorRWalk[5] =  {-25, -15, 0, 15, 25};
 // static motor point
 int _centerStatic = 2;
 // char buffer for temporary use

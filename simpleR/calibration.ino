@@ -149,7 +149,7 @@ bool doCalibration(allMotors * calibrationData) {
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
-              calibrationData->left -= 20;
+              calibrationData->left -= 10;
             }
             calibrationCounter = 0;
             deviceMode = CALIBRATION_RIGHT;
@@ -175,7 +175,7 @@ bool doCalibration(allMotors * calibrationData) {
           if (modePressed || (current > 512)) {
             modePressed = false;
             if (current > 512) {
-              calibrationData->right -= 20;
+              calibrationData->right -= 10;
             }
             calibrationCounter = 0;
             deviceMode = CALIBRATION_AUTO_1;
