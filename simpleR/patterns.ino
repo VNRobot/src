@@ -87,14 +87,9 @@ void _updateSequencePart4(char endPosition1, char endPosition2, motors * sequenc
 
 // create recover sequence
 void _setSequenceRecoverCenterL(void) {
-  sequenceWing[0].motorL = 50;
-  sequenceWing[1].motorL = 30;
-  sequenceWing[2].motorL = 0;
-  sequenceWing[3].motorL = -40;
-    for (i = 4; i < 16; i ++) {
-      sequenceWing[i].motorL = -60;
+    for (i = 0; i < 16; i ++) {
+      sequenceWing[i].motorL = -70;
     }
-  sequenceWing[16].motorL = -40;
   sequenceWing[17].motorL = 0;
   sequenceWing[18].motorL = 30;
   sequenceWing[19].motorL = 50;
@@ -102,14 +97,9 @@ void _setSequenceRecoverCenterL(void) {
 
 // create recover sequence
 void _setSequenceRecoverCenterR(void) {
-  sequenceWing[0].motorR = 50;
-  sequenceWing[1].motorR = 30;
-  sequenceWing[2].motorR = 0;
-  sequenceWing[3].motorR = -40;
-    for (i = 4; i < 16; i ++) {
-      sequenceWing[i].motorR = -60;
+    for (i = 0; i < 16; i ++) {
+      sequenceWing[i].motorR = -70;
     }
-  sequenceWing[16].motorR = -40;
   sequenceWing[17].motorR = 0;
   sequenceWing[18].motorR = 30;
   sequenceWing[19].motorR = 50;
@@ -243,13 +233,23 @@ void updateTurnPattern(char cAngle) {
   }
 }
 
+// limit angle value
+char limitValue(char mAngle) {
+  if (mAngle > 90) {
+    mAngle = 90;
+  } else if (mAngle < -90) {
+    mAngle = -90;
+  }
+  return mAngle;
+}
+
 // update servo motors values
 allMotors updateMotorsPatterns(allMotors calibration) {
   // set motors angle values
-  motorValue.left = (sequenceWing[mainCounter].motorL + calibration.left);
-  motorValue.right = (sequenceWing[mainCounter].motorR + calibration.right);
-  motorValue.m.wheel.motorL = (sequenceWheel[mainCounter].motorL + calibration.m.wheel.motorL);
-  motorValue.m.wheel.motorR = (sequenceWheel[mainCounter].motorR + calibration.m.wheel.motorR);
+  motorValue.left = limitValue(sequenceWing[mainCounter].motorL + calibration.left);
+  motorValue.right = limitValue(sequenceWing[mainCounter].motorR + calibration.right);
+  motorValue.m.wheel.motorL = limitValue(sequenceWheel[mainCounter].motorL + calibration.m.wheel.motorL);
+  motorValue.m.wheel.motorR = limitValue(sequenceWheel[mainCounter].motorR + calibration.m.wheel.motorR);
   return motorValue;
 }
 
