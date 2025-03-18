@@ -177,7 +177,7 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 1:
+          case 3:
           {
             Serial.println(F("CALIBRATION_FR_1"));
             // leg FR
@@ -231,7 +231,7 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 3:
+          case 5:
           {
             Serial.println(F("CALIBRATION_RR_1"));
             // leg RR
@@ -248,7 +248,8 @@ bool doCalibration(allMotors * calibrationData) {
                 //  calibrationData->m.rr.motor1 -= 15;
                 //}
                 calibrationCounter = 0;
-                calibrationStage ++;
+                calibrationStage = 0;
+                deviceMode = CALIBRATION_AUTO_2;
               } else {
                 calibrationData->m.rr.motor1 ++;
                 if (calibrationData->m.rr.motor1 > 30) {
@@ -258,9 +259,9 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 4:
+          case 1:
           {
-            Serial.println(F("CALIBRATION_RL_1"));
+            Serial.println(F("CALIBRATION_SL_1"));
             // leg RL
             if (calibrationCounter == 0) {
               // set initial leg calibration
@@ -285,9 +286,9 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 5:
+          case 4:
           {
-            Serial.println(F("CALIBRATION_RR_1"));
+            Serial.println(F("CALIBRATION_SR_1"));
             // leg RR
             if (calibrationCounter == 0) {
               // set initial leg calibration
@@ -302,8 +303,7 @@ bool doCalibration(allMotors * calibrationData) {
                 //  calibrationData->m.sr.motor1 -= 15;
                 //}
                 calibrationCounter = 0;
-                calibrationStage = 0;
-                deviceMode = CALIBRATION_AUTO_2;
+                calibrationStage ++;
               } else {
                 calibrationData->m.sr.motor1 ++;
                 if (calibrationData->m.sr.motor1 > 30) {
@@ -349,7 +349,7 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 1:
+          case 3:
           {
             Serial.println(F("CALIBRATION_FR_2"));
             // leg FR
@@ -403,7 +403,7 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 3:
+          case 5:
           {
             Serial.println(F("CALIBRATION_RR_2"));
             // leg RR
@@ -420,7 +420,9 @@ bool doCalibration(allMotors * calibrationData) {
                 //  calibrationData->m.rr.motor2 -= 15;
                 //}
                 calibrationCounter = 0;
-                calibrationStage ++;
+                calibrationStage = 0;
+                // end of calibration
+                deviceMode = CALIBRATION_SAVE;
               } else {
                 calibrationData->m.rr.motor2 ++;
                 if (calibrationData->m.rr.motor2 > 30) {
@@ -430,9 +432,9 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 4:
+          case 1:
           {
-            Serial.println(F("CALIBRATION_RL_2"));
+            Serial.println(F("CALIBRATION_SL_2"));
             // leg RL
             if (calibrationCounter == 0) {
               // set initial leg calibration
@@ -457,9 +459,9 @@ bool doCalibration(allMotors * calibrationData) {
             }
           }
           break;
-          case 5:
+          case 4:
           {
-            Serial.println(F("CALIBRATION_RR_2"));
+            Serial.println(F("CALIBRATION_SR_2"));
             // leg RR
             if (calibrationCounter == 0) {
               // set initial leg calibration
@@ -474,9 +476,7 @@ bool doCalibration(allMotors * calibrationData) {
                 //  calibrationData->m.sr.motor2 -= 15;
                 //}
                 calibrationCounter = 0;
-                calibrationStage = 0;
-                // end of calibration
-                deviceMode = CALIBRATION_SAVE;
+                calibrationStage ++;
               } else {
                 calibrationData->m.sr.motor2 ++;
                 if (calibrationData->m.sr.motor2 > 30) {

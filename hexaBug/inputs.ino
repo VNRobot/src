@@ -21,7 +21,7 @@ Gets analog inputs
 
 // sensor state
 enum senState {
-  SEN_CLIFF = 0,
+  SEN_EDGE = 0,
   SEN_OBSTACLE = 1,
   SEN_WALL = 2,
   SEN_BLOCK = 3,
@@ -50,6 +50,7 @@ unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
 bool turnLeft = true;
+bool edgeEnabled = false;
 
 // analog sensors structure
 struct aSensors {
@@ -137,7 +138,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, cha
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (normalDistance * 4)) { // no cliff
+  if (input < (normalDistance * 4)) { // no edge
     if (input > (normalDistance / 6)) { // not blocked
       if (input > (normalDistance / 3)) { // no wall
         if (input > (normalDistance / 2)) { // no obstacle
@@ -155,9 +156,13 @@ unsigned char getSensorState(unsigned short input) {
       return SEN_BLOCK;
     }
   } else {
-    // cliff
-    return SEN_CLIFF;
+    // edge
+    if (edgeEnabled) {
+      return SEN_EDGE;
+    }
+    return SEN_NORMAL;
   }
+  return SEN_NORMAL;
 }
 
 unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char inputState) {
@@ -373,8 +378,8 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char 
       return IN_OBSTACLE_RIGHT;
     }
   }
-  // both sensors obstacle or cliff
-  if ((sLeft == SEN_CLIFF) || (sRight == SEN_CLIFF)) {
+  // both sensors obstacle or edge
+  if ((sLeft == SEN_EDGE) || (sRight == SEN_EDGE)) {
     if (turnLeft) {
       return IN_WALL_FRONTRIGHT;
     } else {
