@@ -141,8 +141,8 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.yaw        += floatBuffer[2] * timeInterval;
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
-  // fix slow drift
-  if ((sequenceCount == 0) || (sequenceCount == 10)) {
+  // fix slow drift caused by vibration
+  if ((sequenceCount == 0) || (sequenceCount == 9)) {
     if (gyroData.gyroAngleX > 0) {
       gyroData.gyroAngleX --;
     } else if (gyroData.gyroAngleX < 0) {
@@ -252,6 +252,22 @@ char getDirectionGyro(void) {
   return (char)(gyroData.yaw / 2);
 }
 
+// get roll
+int getRollGiro(void) {
+  // positive - rolled right
+  // negative - rolled left
+  //return gyroData.roll;
+  return (int)(gyroData.accAngleX / 2);
+}
+
+// get pitch
+int getPitchGiro(void) {
+  // positive - nose down
+  // negative - nose up  
+  //return gyroData.pitch;
+  return (int)(gyroData.accAngleY / 2);
+}
+
 /*
 // print gyro values
 void _printLineGyro(struct acc data) {
@@ -344,43 +360,43 @@ unsigned char _statusGyro(struct acc data) {
     return GYRO_HIT_FRONT;
   }
   // fell left r < -30
-  if (gyroData.roll < -40) {
+  if ((gyroData.roll + ((int)AccErrorX)) < -40) {
     return GYRO_FELL_LEFT;
   }
   // fell right r > 30
-  if (gyroData.roll > 40) {
+  if ((gyroData.roll + ((int)AccErrorX)) > 40) {
     return GYRO_FELL_RIGHT;
   }
   // fell front p > 20
-  if (gyroData.pitch > 40) {
+  if ((gyroData.pitch + ((int)AccErrorY)) > 40) {
     return GYRO_FELL_FRONT;
   }
   // fell back p < -20
-  if (gyroData.pitch < -40) {
+  if ((gyroData.pitch + ((int)AccErrorY)) < -40) {
     return GYRO_FELL_BACK;
   }
   // folling left r negative grows
-  if (gyroData.roll < -30) {
+  if ((gyroData.roll + ((int)AccErrorX)) < -30) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right r grows
-  if (gyroData.roll > 30) {
+  if ((gyroData.roll + ((int)AccErrorX)) > 30) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front p grows
-  if (gyroData.pitch > 20) {
+  if ((gyroData.pitch + ((int)AccErrorY)) > 20) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back p negative grows
-  if (gyroData.pitch < -20) {
+  if ((gyroData.pitch + ((int)AccErrorY)) < -20) {
     return GYRO_FOLLING_BACK;
   }
   // walk down p > 5
-  if (gyroData.pitch > 5) {
+  if ((gyroData.pitch + ((int)AccErrorY)) > 5) {
     return GYRO_DOWN_HILL;
   }
   // walk up p < -5
-  if (gyroData.pitch < -5) {
+  if ((gyroData.pitch + ((int)AccErrorY)) < -5) {
     return GYRO_UP_HILL;
   }
   // walking aX > 5 or aY > 5

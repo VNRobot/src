@@ -4,16 +4,6 @@ Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
 */
-
-// servos angles for forward shift
-// legs 1.0 
-// forward shift(mm)          -40,           -30,           -20,           -10,          0,         10,         20,         30
-//char motor1Walk[24] =  { 46,  47,  48,  50,  52,  54,  56,  58,  60,  62,  64, 66, 69, 72, 75, 78, 81, 84, 87, 90, 94, 98,102,106};
-//char motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 51, 48, 45, 42, 40, 38, 36, 34, 33, 32, 31, 30, 29};
-// legs1.1 faster walking
-// forward shift(mm)                           -40       -30       -20       -10         0        10        20        30        40
-//char motor1Walk[25] =  {  24,  24,  24,  22,  22,  23,  25,  27,  30,  33,  37,  41,  45,  51,  57,  63,  70,  77,  84,  91, 101, 111, 126, 126, 126};
-//char motor2Walk[25] =  { 126, 126, 126, 111, 101,  91,  84,  77,  70,  63,  57,  51,  45,  41,  37,  33,  30,  27,  25,  23,  22,  22,  24,  24,  24};
 // legs1.1 slower walking
 char motor1Walk[25] =  { 21,  21,  21,  21,  22,  24,  26,  28,  30,  34,  38,  42,  45,  50,  55,  60,  65,  70,  75,  81,  87,  93, 100, 109, 119};
 char motor2Walk[25] =  {119, 109, 100,  93,  87,  81,  75,  70,  65,  60,  55,  50,  45,  42,  38,  34,  30,  28,  26,  24,  22,  21,  21,  21,  21};
@@ -25,11 +15,11 @@ unsigned char _centerStatic = _centerAbsolute;
 char cBuffer1;
 char cBuffer2;
 // leg lift angles
-unsigned char _liftm = 50;
+unsigned char _liftm = 32;
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
-// dynamic side ballance
-char _legUpCenter = 0;
+// dynamic ballance
+allMotors legUp = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // 20 positions per sequence
 motors sequenceSL[18] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
 motors sequenceSR[18] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
@@ -39,10 +29,15 @@ motors sequenceRL[18] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30,
 motors sequenceRR[18] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
 // motors values for 12 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+allMotors motorValueBuffer = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
+allMotors motorValueBufferOld = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
 // full cycle
 unsigned char fullCycle = 18;
 // pointer to array
 unsigned char apoint = 0;
+// position correction
+int correctRoll  = 0;
+int correctPitch = 0;
 
 // linear motor movement from point to point
 void _updateSequenceLinear(char endPosition1, char endPosition2, motors * sequence) {
@@ -107,16 +102,16 @@ void _updateSequenceStandWalk(char m1, char m2, motors * sequence, unsigned char
   sequence[apoint].motor1 = m1 - _liftm;
   sequence[apoint].motor2 = m2 - _liftm;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1 - _liftm;
-  sequence[apoint].motor2 = m2 - _liftm;
+  sequence[apoint].motor1 = m1 - _liftm / 2;
+  sequence[apoint].motor2 = m2 - _liftm / 2;
   for (i = 2; i < (fullCycle - 2); i++) {
     _updateApointer(i, shift);
     sequence[apoint].motor1 = m1;
     sequence[apoint].motor2 = m2;
   }
   _updateApointer(fullCycle - 2, shift);
-  sequence[apoint].motor1 = m1 - _liftm;
-  sequence[apoint].motor2 = m2 - _liftm;
+  sequence[apoint].motor1 = m1 - _liftm / 2;
+  sequence[apoint].motor2 = m2 - _liftm / 2;
   _updateApointer(fullCycle - 1, shift);
   sequence[apoint].motor1 = m1 - _liftm;
   sequence[apoint].motor2 = m2 - _liftm;
@@ -125,13 +120,13 @@ void _updateSequenceStandWalk(char m1, char m2, motors * sequence, unsigned char
 // create walk sequence
 void _updateSequenceWalk(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm;
-  sequence[apoint].motor2 = m2[center] - _liftm;
+  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center - 5] - _liftm;
-  sequence[apoint].motor2 = m2[center - 5] - _liftm;
+  sequence[apoint].motor1 = m1[center - 5] - _liftm - _liftm;
+  sequence[apoint].motor2 = m2[center - 5] - _liftm / 2;
   _updateApointer(2, shift);
-  sequence[apoint].motor1 = m1[center - 7] - _liftm;
+  sequence[apoint].motor1 = m1[center - 7] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center - 7];
   _updateApointer(3, shift);
   sequence[apoint].motor1 = m1[center - 6];
@@ -174,22 +169,22 @@ void _updateSequenceWalk(unsigned char center, char m1[], char m2[], motors * se
   sequence[apoint].motor2 = m2[center + 6];
   _updateApointer(16, shift);
   sequence[apoint].motor1 = m1[center + 7];
-  sequence[apoint].motor2 = m2[center + 7] - _liftm;
+  sequence[apoint].motor2 = m2[center + 7] - _liftm / 2;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm;
+  sequence[apoint].motor1 = m1[center + 4] - _liftm / 2;
   sequence[apoint].motor2 = m2[center + 4] - _liftm;
 }
 
 // create slow walk sequence
 void _updateSequenceWalkSlow(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm;
-  sequence[apoint].motor2 = m2[center] - _liftm;
+  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm;
-  sequence[apoint].motor2 = m2[center - 4] - _liftm;
+  sequence[apoint].motor1 = m1[center - 4] - _liftm - _liftm;
+  sequence[apoint].motor2 = m2[center - 4] - _liftm / 2;
   _updateApointer(2, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm;
+  sequence[apoint].motor1 = m1[center - 4] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center - 4];
   _updateApointer(3, shift);
   sequence[apoint].motor1 = m1[center - 3];
@@ -232,22 +227,22 @@ void _updateSequenceWalkSlow(unsigned char center, char m1[], char m2[], motors 
   sequence[apoint].motor2 = m2[center + 3];
   _updateApointer(16, shift);
   sequence[apoint].motor1 = m1[center + 3];
-  sequence[apoint].motor2 = m2[center + 3] - _liftm;
+  sequence[apoint].motor2 = m2[center + 3] - _liftm / 2;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm;
+  sequence[apoint].motor1 = m1[center + 4] - _liftm / 2;
   sequence[apoint].motor2 = m2[center + 4] - _liftm;
 }
 
 // create walk back sequence
 void _updateSequenceWalkBack(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm;
-  sequence[apoint].motor2 = m2[center] - _liftm;
+  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm;
-  sequence[apoint].motor2 = m2[center + 4] - _liftm;
+  sequence[apoint].motor1 = m1[center + 4] - _liftm - _liftm;
+  sequence[apoint].motor2 = m2[center + 4] - _liftm / 2;
   _updateApointer(2, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm;
+  sequence[apoint].motor1 = m1[center + 4] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center + 4];
   _updateApointer(3, shift);
   sequence[apoint].motor1 = m1[center + 3];
@@ -290,9 +285,9 @@ void _updateSequenceWalkBack(unsigned char center, char m1[], char m2[], motors 
   sequence[apoint].motor2 = m2[center - 3];
   _updateApointer(16, shift);
   sequence[apoint].motor1 = m1[center - 3];
-  sequence[apoint].motor2 = m2[center - 3] - _liftm;
+  sequence[apoint].motor2 = m2[center - 3] - _liftm / 2;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm;
+  sequence[apoint].motor1 = m1[center - 4] - _liftm / 2;
   sequence[apoint].motor2 = m2[center - 4] - _liftm;
 } 
 
@@ -534,22 +529,146 @@ char limitValue(char mAngle) {
   return mAngle;
 }
 
+// update servo motors buffer values
+void updateBufferPatterns(allMotors calibration) {
+  motorValueBuffer.m.fl.motor1 = limitValue(sequenceFL[mainCounter].motor1 - 30 + calibration.m.fl.motor1 + legUp.m.fl.motor1);
+  motorValueBuffer.m.fl.motor2 = limitValue(sequenceFL[mainCounter].motor2 - 30 + calibration.m.fl.motor2 + legUp.m.fl.motor2);
+  motorValueBuffer.m.fr.motor1 = limitValue(sequenceFR[mainCounter].motor1 - 30 + calibration.m.fr.motor1 + legUp.m.fr.motor1);
+  motorValueBuffer.m.fr.motor2 = limitValue(sequenceFR[mainCounter].motor2 - 30 + calibration.m.fr.motor2 + legUp.m.fr.motor2);
+  motorValueBuffer.m.sl.motor1 = limitValue(sequenceSL[mainCounter].motor1 - 30 + calibration.m.sl.motor1 + legUp.m.sl.motor1);
+  motorValueBuffer.m.sl.motor2 = limitValue(sequenceSL[mainCounter].motor2 - 30 + calibration.m.sl.motor2 + legUp.m.sl.motor2);
+  motorValueBuffer.m.sr.motor1 = limitValue(sequenceSR[mainCounter].motor1 - 30 + calibration.m.sr.motor1 + legUp.m.sr.motor1);
+  motorValueBuffer.m.sr.motor2 = limitValue(sequenceSR[mainCounter].motor2 - 30 + calibration.m.sr.motor2 + legUp.m.sr.motor2);
+  motorValueBuffer.m.rl.motor1 = limitValue(sequenceRL[mainCounter].motor1 - 30 + calibration.m.rl.motor1 + legUp.m.rl.motor1);
+  motorValueBuffer.m.rl.motor2 = limitValue(sequenceRL[mainCounter].motor2 - 30 + calibration.m.rl.motor2 + legUp.m.rl.motor2);
+  motorValueBuffer.m.rr.motor1 = limitValue(sequenceRR[mainCounter].motor1 - 30 + calibration.m.rr.motor1 + legUp.m.rr.motor1);
+  motorValueBuffer.m.rr.motor2 = limitValue(sequenceRR[mainCounter].motor2 - 30 + calibration.m.rr.motor2 + legUp.m.rr.motor2);
+}
+
+// update servo motors buffer old values
+void updateBufferOldPatterns(void) {
+  motorValueBufferOld.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
+  motorValueBufferOld.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
+  motorValueBufferOld.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
+  motorValueBufferOld.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
+  motorValueBufferOld.m.sl.motor1 = motorValueBuffer.m.sl.motor1;
+  motorValueBufferOld.m.sl.motor2 = motorValueBuffer.m.sl.motor2;
+  motorValueBufferOld.m.sr.motor1 = motorValueBuffer.m.sr.motor1;
+  motorValueBufferOld.m.sr.motor2 = motorValueBuffer.m.sr.motor2;
+  motorValueBufferOld.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
+  motorValueBufferOld.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
+  motorValueBufferOld.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
+  motorValueBufferOld.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
+}
+
 // update servo motors values
-allMotors updateMotorsPatterns(allMotors calibration) {
-  // set motors angle values
-  motorValue.m.sl.motor1 = limitValue(sequenceSL[mainCounter].motor1 - 30 + calibration.m.sl.motor1 + _legUpCenter);
-  motorValue.m.sl.motor2 = limitValue(sequenceSL[mainCounter].motor2 - 30 + calibration.m.sl.motor2 + _legUpCenter);
-  motorValue.m.sr.motor1 = limitValue(sequenceSR[mainCounter].motor1 - 30 + calibration.m.sr.motor1 + _legUpCenter);
-  motorValue.m.sr.motor2 = limitValue(sequenceSR[mainCounter].motor2 - 30 + calibration.m.sr.motor2 + _legUpCenter);
-  motorValue.m.fl.motor1 = limitValue(sequenceFL[mainCounter].motor1 - 30 + calibration.m.fl.motor1);
-  motorValue.m.fl.motor2 = limitValue(sequenceFL[mainCounter].motor2 - 30 + calibration.m.fl.motor2);
-  motorValue.m.fr.motor1 = limitValue(sequenceFR[mainCounter].motor1 - 30 + calibration.m.fr.motor1);
-  motorValue.m.fr.motor2 = limitValue(sequenceFR[mainCounter].motor2 - 30 + calibration.m.fr.motor2);
-  motorValue.m.rl.motor1 = limitValue(sequenceRL[mainCounter].motor1 - 30 + calibration.m.rl.motor1);
-  motorValue.m.rl.motor2 = limitValue(sequenceRL[mainCounter].motor2 - 30 + calibration.m.rl.motor2);
-  motorValue.m.rr.motor1 = limitValue(sequenceRR[mainCounter].motor1 - 30 + calibration.m.rr.motor1);
-  motorValue.m.rr.motor2 = limitValue(sequenceRR[mainCounter].motor2 - 30 + calibration.m.rr.motor2);
+allMotors updateMotorsQuarter1Patterns(void) {
+  motorValue.m.fl.motor1 = (motorValueBuffer.m.fl.motor1 + motorValueBufferOld.m.fl.motor1 * 3) / 4;
+  motorValue.m.fl.motor2 = (motorValueBuffer.m.fl.motor2 + motorValueBufferOld.m.fl.motor2 * 3) / 4;
+  motorValue.m.fr.motor1 = (motorValueBuffer.m.fr.motor1 + motorValueBufferOld.m.fr.motor1 * 3) / 4;
+  motorValue.m.fr.motor2 = (motorValueBuffer.m.fr.motor2 + motorValueBufferOld.m.fr.motor2 * 3) / 4;
+  motorValue.m.sl.motor1 = (motorValueBuffer.m.sl.motor1 + motorValueBufferOld.m.sl.motor1 * 3) / 4;
+  motorValue.m.sl.motor2 = (motorValueBuffer.m.sl.motor2 + motorValueBufferOld.m.sl.motor2 * 3) / 4;
+  motorValue.m.sr.motor1 = (motorValueBuffer.m.sr.motor1 + motorValueBufferOld.m.sr.motor1 * 3) / 4;
+  motorValue.m.sr.motor2 = (motorValueBuffer.m.sr.motor2 + motorValueBufferOld.m.sr.motor2 * 3) / 4;
+  motorValue.m.rl.motor1 = (motorValueBuffer.m.rl.motor1 + motorValueBufferOld.m.rl.motor1 * 3) / 4;
+  motorValue.m.rl.motor2 = (motorValueBuffer.m.rl.motor2 + motorValueBufferOld.m.rl.motor2 * 3) / 4;
+  motorValue.m.rr.motor1 = (motorValueBuffer.m.rr.motor1 + motorValueBufferOld.m.rr.motor1 * 3) / 4;
+  motorValue.m.rr.motor2 = (motorValueBuffer.m.rr.motor2 + motorValueBufferOld.m.rr.motor2 * 3) / 4;
   return motorValue;
+}
+
+// update servo motors values
+allMotors updateMotorsHalfPatterns(void) {
+  motorValue.m.fl.motor1 = (motorValueBuffer.m.fl.motor1 + motorValueBufferOld.m.fl.motor1) / 2;
+  motorValue.m.fl.motor2 = (motorValueBuffer.m.fl.motor2 + motorValueBufferOld.m.fl.motor2) / 2;
+  motorValue.m.fr.motor1 = (motorValueBuffer.m.fr.motor1 + motorValueBufferOld.m.fr.motor1) / 2;
+  motorValue.m.fr.motor2 = (motorValueBuffer.m.fr.motor2 + motorValueBufferOld.m.fr.motor2) / 2;
+  motorValue.m.sl.motor1 = (motorValueBuffer.m.sl.motor1 + motorValueBufferOld.m.sl.motor1) / 2;
+  motorValue.m.sl.motor2 = (motorValueBuffer.m.sl.motor2 + motorValueBufferOld.m.sl.motor2) / 2;
+  motorValue.m.sr.motor1 = (motorValueBuffer.m.sr.motor1 + motorValueBufferOld.m.sr.motor1) / 2;
+  motorValue.m.sr.motor2 = (motorValueBuffer.m.sr.motor2 + motorValueBufferOld.m.sr.motor2) / 2;
+  motorValue.m.rl.motor1 = (motorValueBuffer.m.rl.motor1 + motorValueBufferOld.m.rl.motor1) / 2;
+  motorValue.m.rl.motor2 = (motorValueBuffer.m.rl.motor2 + motorValueBufferOld.m.rl.motor2) / 2;
+  motorValue.m.rr.motor1 = (motorValueBuffer.m.rr.motor1 + motorValueBufferOld.m.rr.motor1) / 2;
+  motorValue.m.rr.motor2 = (motorValueBuffer.m.rr.motor2 + motorValueBufferOld.m.rr.motor2) / 2;
+  return motorValue;
+}
+
+// update servo motors values
+allMotors updateMotorsQuarter3Patterns(void) {
+  motorValue.m.fl.motor1 = (motorValueBuffer.m.fl.motor1 * 3 + motorValueBufferOld.m.fl.motor1) / 4;
+  motorValue.m.fl.motor2 = (motorValueBuffer.m.fl.motor2 * 3 + motorValueBufferOld.m.fl.motor2) / 4;
+  motorValue.m.fr.motor1 = (motorValueBuffer.m.fr.motor1 * 3 + motorValueBufferOld.m.fr.motor1) / 4;
+  motorValue.m.fr.motor2 = (motorValueBuffer.m.fr.motor2 * 3 + motorValueBufferOld.m.fr.motor2) / 4;
+  motorValue.m.sl.motor1 = (motorValueBuffer.m.sl.motor1 * 3 + motorValueBufferOld.m.sl.motor1) / 4;
+  motorValue.m.sl.motor2 = (motorValueBuffer.m.sl.motor2 * 3 + motorValueBufferOld.m.sl.motor2) / 4;
+  motorValue.m.sr.motor1 = (motorValueBuffer.m.sr.motor1 * 3 + motorValueBufferOld.m.sr.motor1) / 4;
+  motorValue.m.sr.motor2 = (motorValueBuffer.m.sr.motor2 * 3 + motorValueBufferOld.m.sr.motor2) / 4;
+  motorValue.m.rl.motor1 = (motorValueBuffer.m.rl.motor1 * 3 + motorValueBufferOld.m.rl.motor1) / 4;
+  motorValue.m.rl.motor2 = (motorValueBuffer.m.rl.motor2 * 3 + motorValueBufferOld.m.rl.motor2) / 4;
+  motorValue.m.rr.motor1 = (motorValueBuffer.m.rr.motor1 * 3 + motorValueBufferOld.m.rr.motor1) / 4;
+  motorValue.m.rr.motor2 = (motorValueBuffer.m.rr.motor2 * 3 + motorValueBufferOld.m.rr.motor2) / 4;
+  return motorValue;
+}
+
+// update servo motors values
+allMotors updateMotorsPatterns(void) {
+  // set motors angle values
+  motorValue.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
+  motorValue.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
+  motorValue.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
+  motorValue.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
+  motorValue.m.sl.motor1 = motorValueBuffer.m.sl.motor1;
+  motorValue.m.sl.motor2 = motorValueBuffer.m.sl.motor2;
+  motorValue.m.sr.motor1 = motorValueBuffer.m.sr.motor1;
+  motorValue.m.sr.motor2 = motorValueBuffer.m.sr.motor2;
+  motorValue.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
+  motorValue.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
+  motorValue.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
+  motorValue.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
+  return motorValue;
+}
+
+void updateBallanceInPattern( int roll, int pitch) {
+  if (roll > 1) {
+    if (correctRoll < 10) {
+      correctRoll ++;
+    }
+  } else if (roll < -1) {
+    if (correctRoll > -10) {
+      correctRoll --;
+    }
+  } //else if (correctRoll < 0) {
+  //  correctRoll ++;
+  //} else if (correctRoll > 0) {
+  //  correctRoll --;
+  //}
+  if (pitch > 1) {
+    if (correctPitch < 10) {
+      correctPitch ++;
+    }
+  } else if (pitch < -1) {
+    if (correctPitch > -10) {
+      correctPitch --;
+    }
+  } //else if (correctPitch < 0) {
+  //  correctPitch ++;
+  //} else if (correctPitch > 0) {
+  //  correctPitch --;
+  //}
+  legUp.m.fl.motor1 = -correctRoll + correctPitch;
+  legUp.m.fl.motor2 = -correctRoll + correctPitch;
+  legUp.m.fr.motor1 = correctRoll + correctPitch;
+  legUp.m.fr.motor2 = correctRoll + correctPitch;
+  legUp.m.sl.motor1 = -correctRoll;
+  legUp.m.sl.motor2 = -correctRoll;
+  legUp.m.sr.motor1 = correctRoll;
+  legUp.m.sr.motor2 = correctRoll;
+  legUp.m.rl.motor1 = -correctRoll - correctPitch;
+  legUp.m.rl.motor2 = -correctRoll - correctPitch;
+  legUp.m.rr.motor1 = correctRoll - correctPitch;
+  legUp.m.rr.motor2 = correctRoll - correctPitch;
 }
 
 // update servo motors values

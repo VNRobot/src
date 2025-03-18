@@ -50,7 +50,7 @@ unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
 bool turnLeft = true;
-bool edgeEnabled = false;
+bool edgeEnabled = true;
 
 // analog sensors structure
 struct aSensors {
