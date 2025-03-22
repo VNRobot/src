@@ -39,11 +39,6 @@ Servo servo_rr_2;
 
 // init servo motors
 void initServo(int calM1, int calM2) {
-  // init motor pins
-  // motor connection pins
-  //   f,  r, fl1, fl2, fr1, fr2, rl1, rl2, rr1, rr2
-  //   3,  4,   5,   6,   7,   8,   9,  10,  11,  12
-  // 
   // init motors one by one
   servo_fl_1.attach(FL1_MOTOR, 500, 2500);
   servo_fl_1.write(90 - calM1);

@@ -322,15 +322,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char 
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 1500) {
+  if (analogValueInputs.current1 > 1700) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 1500) {
+  if (analogValueInputs.current2 > 1700) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 1500) {
+  if (analogValueInputs.current3 > 1700) {
     return IN_HIGH_CURRENT_3;
   }
   // check sensors

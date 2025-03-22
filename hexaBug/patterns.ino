@@ -102,195 +102,153 @@ void _updateSequenceStandWalk(char m1, char m2, motors * sequence, unsigned char
   sequence[apoint].motor1 = m1 - _liftm;
   sequence[apoint].motor2 = m2 - _liftm;
   _updateApointer(1, shift);
+  sequence[apoint].motor1 = m1 - _liftm;
+  sequence[apoint].motor2 = m2 - _liftm;
+  _updateApointer(2, shift);
+  sequence[apoint].motor1 = m1 - _liftm;
+  sequence[apoint].motor2 = m2 - _liftm;
+  _updateApointer(3, shift);
   sequence[apoint].motor1 = m1 - _liftm / 2;
   sequence[apoint].motor2 = m2 - _liftm / 2;
-  for (i = 2; i < (fullCycle - 2); i++) {
+  for (i = 4; i < (fullCycle - 3); i++) {
     _updateApointer(i, shift);
     sequence[apoint].motor1 = m1;
     sequence[apoint].motor2 = m2;
   }
-  _updateApointer(fullCycle - 2, shift);
+  _updateApointer(fullCycle - 3, shift);
   sequence[apoint].motor1 = m1 - _liftm / 2;
   sequence[apoint].motor2 = m2 - _liftm / 2;
+  _updateApointer(fullCycle - 2, shift);
+  sequence[apoint].motor1 = m1 - _liftm;
+  sequence[apoint].motor2 = m2 - _liftm;
   _updateApointer(fullCycle - 1, shift);
   sequence[apoint].motor1 = m1 - _liftm;
   sequence[apoint].motor2 = m2 - _liftm;
 }
 
 // create walk sequence
-void _updateSequenceWalk(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
+void _updateSequenceStableWalk(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
-  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor1 = m1[center] - _liftm;
+  sequence[apoint].motor2 = m2[center] - _liftm;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center - 5] - _liftm - _liftm;
-  sequence[apoint].motor2 = m2[center - 5] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center - 5] - _liftm;
+  sequence[apoint].motor2 = m2[center - 5] - _liftm;
   _updateApointer(2, shift);
   sequence[apoint].motor1 = m1[center - 7] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center - 7];
-  _updateApointer(3, shift);
-  sequence[apoint].motor1 = m1[center - 6];
-  sequence[apoint].motor2 = m2[center - 6];
-  _updateApointer(4, shift);
-  sequence[apoint].motor1 = m1[center - 5];
-  sequence[apoint].motor2 = m2[center - 5];
-  _updateApointer(5, shift);
-  sequence[apoint].motor1 = m1[center - 4];
-  sequence[apoint].motor2 = m2[center - 4];
-  _updateApointer(6, shift);
-  sequence[apoint].motor1 = m1[center - 3];
-  sequence[apoint].motor2 = m2[center - 3];
-  _updateApointer(7, shift);
-  sequence[apoint].motor1 = m1[center - 2];
-  sequence[apoint].motor2 = m2[center - 2];
-  _updateApointer(8, shift);
-  sequence[apoint].motor1 = m1[center - 1];
-  sequence[apoint].motor2 = m2[center - 1];
-  _updateApointer(9, shift);
-  sequence[apoint].motor1 = m1[center];
-  sequence[apoint].motor2 = m2[center];
-  _updateApointer(10, shift);
-  sequence[apoint].motor1 = m1[center + 1];
-  sequence[apoint].motor2 = m2[center + 1];
-  _updateApointer(11, shift);
-  sequence[apoint].motor1 = m1[center + 2];
-  sequence[apoint].motor2 = m2[center + 2];
-  _updateApointer(12, shift);
-  sequence[apoint].motor1 = m1[center + 3];
-  sequence[apoint].motor2 = m2[center + 3];
-  _updateApointer(13, shift);
-  sequence[apoint].motor1 = m1[center + 4];
-  sequence[apoint].motor2 = m2[center + 4];
-  _updateApointer(14, shift);
-  sequence[apoint].motor1 = m1[center + 5];
-  sequence[apoint].motor2 = m2[center + 5];
-  _updateApointer(15, shift);
-  sequence[apoint].motor1 = m1[center + 6];
-  sequence[apoint].motor2 = m2[center + 6];
+  for (i = 3; i < 16; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center - 9 + i];
+    sequence[apoint].motor2 = m2[center - 9 + i];
+  }
   _updateApointer(16, shift);
   sequence[apoint].motor1 = m1[center + 7];
-  sequence[apoint].motor2 = m2[center + 7] - _liftm / 2;
+  sequence[apoint].motor2 = m2[center + 7] - _liftm;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center + 4] - _liftm;
   sequence[apoint].motor2 = m2[center + 4] - _liftm;
+}
+
+// create walk sequence
+void _updateSequenceWalk(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
+  _updateApointer(0, shift);
+  sequence[apoint].motor1 = m1[center] - _liftm;
+  sequence[apoint].motor2 = m2[center] - _liftm;
+  _updateApointer(1, shift);
+  sequence[apoint].motor1 = m1[center - 3] - _liftm;
+  sequence[apoint].motor2 = m2[center - 3] - _liftm;
+  _updateApointer(2, shift);
+  sequence[apoint].motor1 = m1[center - 6] - _liftm;
+  sequence[apoint].motor2 = m2[center - 6] - _liftm;
+  _updateApointer(3, shift);
+  sequence[apoint].motor1 = m1[center - 6] - _liftm - _liftm;
+  sequence[apoint].motor2 = m2[center - 6];
+  for (i = 4; i < 15; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center - 9 + i];
+    sequence[apoint].motor2 = m2[center - 9 + i];
+  }
+  _updateApointer(15, shift);
+  sequence[apoint].motor1 = m1[center + 6];
+  sequence[apoint].motor2 = m2[center + 6] - _liftm;
+  _updateApointer(16, shift);
+  sequence[apoint].motor1 = m1[center + 6] - _liftm;
+  sequence[apoint].motor2 = m2[center + 6] - _liftm;
+  _updateApointer(17, shift);
+  sequence[apoint].motor1 = m1[center + 3] - _liftm;
+  sequence[apoint].motor2 = m2[center + 3] - _liftm;
 }
 
 // create slow walk sequence
 void _updateSequenceWalkSlow(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
-  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor1 = m1[center] - _liftm;
+  sequence[apoint].motor2 = m2[center] - _liftm;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm - _liftm;
-  sequence[apoint].motor2 = m2[center - 4] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center - 2] - _liftm;
+  sequence[apoint].motor2 = m2[center - 2] - _liftm;
   _updateApointer(2, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm - _liftm;
-  sequence[apoint].motor2 = m2[center - 4];
+  sequence[apoint].motor1 = m1[center - 4] - _liftm;
+  sequence[apoint].motor2 = m2[center - 4] - _liftm;
   _updateApointer(3, shift);
-  sequence[apoint].motor1 = m1[center - 3];
+  sequence[apoint].motor1 = m1[center - 3] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center - 3];
-  _updateApointer(4, shift);
-  sequence[apoint].motor1 = m1[center - 3];
-  sequence[apoint].motor2 = m2[center - 3];
-  _updateApointer(5, shift);
-  sequence[apoint].motor1 = m1[center - 2];
-  sequence[apoint].motor2 = m2[center - 2];
-  _updateApointer(6, shift);
-  sequence[apoint].motor1 = m1[center - 2];
-  sequence[apoint].motor2 = m2[center - 2];
-  _updateApointer(7, shift);
-  sequence[apoint].motor1 = m1[center - 1];
-  sequence[apoint].motor2 = m2[center - 1];
-  _updateApointer(8, shift);
-  sequence[apoint].motor1 = m1[center - 1];
-  sequence[apoint].motor2 = m2[center - 1];
-  _updateApointer(9, shift);
-  sequence[apoint].motor1 = m1[center];
-  sequence[apoint].motor2 = m2[center];
-  _updateApointer(10, shift);
-  sequence[apoint].motor1 = m1[center];
-  sequence[apoint].motor2 = m2[center];
-  _updateApointer(11, shift);
-  sequence[apoint].motor1 = m1[center + 1];
-  sequence[apoint].motor2 = m2[center + 1];
-  _updateApointer(12, shift);
-  sequence[apoint].motor1 = m1[center + 1];
-  sequence[apoint].motor2 = m2[center + 1];
-  _updateApointer(13, shift);
-  sequence[apoint].motor1 = m1[center + 2];
-  sequence[apoint].motor2 = m2[center + 2];
-  _updateApointer(14, shift);
-  sequence[apoint].motor1 = m1[center + 2];
-  sequence[apoint].motor2 = m2[center + 2];
+  for (i = 4; i < 11; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center + (i - 10) / 2];
+    sequence[apoint].motor2 = m2[center + (i - 10) / 2];
+  }
+  for (i = 11; i < 15; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center + (i - 9) / 2];
+    sequence[apoint].motor2 = m2[center + (i - 9) / 2];
+  }
   _updateApointer(15, shift);
   sequence[apoint].motor1 = m1[center + 3];
-  sequence[apoint].motor2 = m2[center + 3];
+  sequence[apoint].motor2 = m2[center + 3] - _liftm;
   _updateApointer(16, shift);
-  sequence[apoint].motor1 = m1[center + 3];
-  sequence[apoint].motor2 = m2[center + 3] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center + 3] - _liftm;
+  sequence[apoint].motor2 = m2[center + 3] - _liftm;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm / 2;
-  sequence[apoint].motor2 = m2[center + 4] - _liftm;
+  sequence[apoint].motor1 = m1[center + 2] - _liftm;
+  sequence[apoint].motor2 = m2[center + 2] - _liftm;
 }
 
 // create walk back sequence
 void _updateSequenceWalkBack(unsigned char center, char m1[], char m2[], motors * sequence, unsigned char shift) {
   _updateApointer(0, shift);
-  sequence[apoint].motor1 = m1[center] - _liftm - _liftm / 2;
-  sequence[apoint].motor2 = m2[center] - _liftm - _liftm / 2;
+  sequence[apoint].motor1 = m1[center] - _liftm;
+  sequence[apoint].motor2 = m2[center] - _liftm;
   _updateApointer(1, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm - _liftm;
-  sequence[apoint].motor2 = m2[center + 4] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center + 2] - _liftm;
+  sequence[apoint].motor2 = m2[center + 2] - _liftm;
   _updateApointer(2, shift);
-  sequence[apoint].motor1 = m1[center + 4] - _liftm - _liftm;
-  sequence[apoint].motor2 = m2[center + 4];
+  sequence[apoint].motor1 = m1[center + 4] - _liftm;
+  sequence[apoint].motor2 = m2[center + 4] - _liftm;
   _updateApointer(3, shift);
-  sequence[apoint].motor1 = m1[center + 3];
+  sequence[apoint].motor1 = m1[center + 3] - _liftm - _liftm;
   sequence[apoint].motor2 = m2[center + 3];
-  _updateApointer(4, shift);
-  sequence[apoint].motor1 = m1[center + 3];
-  sequence[apoint].motor2 = m2[center + 3];
-  _updateApointer(5, shift);
-  sequence[apoint].motor1 = m1[center + 2];
-  sequence[apoint].motor2 = m2[center + 2];
-  _updateApointer(6, shift);
-  sequence[apoint].motor1 = m1[center + 2];
-  sequence[apoint].motor2 = m2[center + 2];
-  _updateApointer(7, shift);
-  sequence[apoint].motor1 = m1[center + 1];
-  sequence[apoint].motor2 = m2[center + 1];
-  _updateApointer(8, shift);
-  sequence[apoint].motor1 = m1[center + 1];
-  sequence[apoint].motor2 = m2[center + 1];
-  _updateApointer(9, shift);
-  sequence[apoint].motor1 = m1[center];
-  sequence[apoint].motor2 = m2[center];
-  _updateApointer(10, shift);
-  sequence[apoint].motor1 = m1[center];
-  sequence[apoint].motor2 = m2[center];
-  _updateApointer(11, shift);
-  sequence[apoint].motor1 = m1[center - 1];
-  sequence[apoint].motor2 = m2[center - 1];
-  _updateApointer(12, shift);
-  sequence[apoint].motor1 = m1[center - 1];
-  sequence[apoint].motor2 = m2[center - 1];
-  _updateApointer(13, shift);
-  sequence[apoint].motor1 = m1[center - 2];
-  sequence[apoint].motor2 = m2[center - 2];
-  _updateApointer(14, shift);
-  sequence[apoint].motor1 = m1[center - 2];
-  sequence[apoint].motor2 = m2[center - 2];
+  for (i = 4; i < 11; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center + (10 - i) / 2];
+    sequence[apoint].motor2 = m2[center + (10 - i) / 2];
+  }
+  for (i = 11; i < 15; i++) {
+    _updateApointer(i, shift);
+    sequence[apoint].motor1 = m1[center + (9 - i) / 2];
+    sequence[apoint].motor2 = m2[center + (9 - i) / 2];
+  }
   _updateApointer(15, shift);
   sequence[apoint].motor1 = m1[center - 3];
-  sequence[apoint].motor2 = m2[center - 3];
+  sequence[apoint].motor2 = m2[center - 3] - _liftm;
   _updateApointer(16, shift);
-  sequence[apoint].motor1 = m1[center - 3];
-  sequence[apoint].motor2 = m2[center - 3] - _liftm / 2;
+  sequence[apoint].motor1 = m1[center - 3] - _liftm;
+  sequence[apoint].motor2 = m2[center - 3] - _liftm;
   _updateApointer(17, shift);
-  sequence[apoint].motor1 = m1[center - 4] - _liftm / 2;
-  sequence[apoint].motor2 = m2[center - 4] - _liftm;
+  sequence[apoint].motor1 = m1[center - 2] - _liftm;
+  sequence[apoint].motor2 = m2[center - 2] - _liftm;
 } 
-
 
 // create walk sequence
 void _setSequenceRecover(motors * sequence1, motors * sequence2) {
@@ -382,12 +340,12 @@ void setPattern(unsigned char currentTaskItem) {
     break;
     case P_GOFORWARD:
     {
-      _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceSL[0], 2);
-      _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceSR[0], 11);
-      _updateSequenceWalk(_centerStatic - 2, motor1Walk, motor2Walk, & sequenceFL[0], 13);
-      _updateSequenceWalk(_centerStatic - 2, motor1Walk, motor2Walk, & sequenceFR[0], 4);
-      _updateSequenceWalk(_centerStatic + 2, motor1Walk, motor2Walk, & sequenceRL[0], 9);
-      _updateSequenceWalk(_centerStatic + 2, motor1Walk, motor2Walk, & sequenceRR[0], 0);
+      _updateSequenceStableWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceSL[0], 2);
+      _updateSequenceStableWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceSR[0], 11);
+      _updateSequenceStableWalk(_centerStatic - 2, motor1Walk, motor2Walk, & sequenceFL[0], 13);
+      _updateSequenceStableWalk(_centerStatic - 2, motor1Walk, motor2Walk, & sequenceFR[0], 4);
+      _updateSequenceStableWalk(_centerStatic + 2, motor1Walk, motor2Walk, & sequenceRL[0], 9);
+      _updateSequenceStableWalk(_centerStatic + 2, motor1Walk, motor2Walk, & sequenceRR[0], 0);
     }
     break;
     case P_GOFORWARDSLOW:
