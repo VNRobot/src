@@ -90,6 +90,7 @@ struct motors {
 };
 // legs motors structure
 struct legMotors {
+  motors st;
   motors fl;
   motors fr;
   motors rl;
@@ -97,8 +98,6 @@ struct legMotors {
 };
 // all motors structure
 struct allMotors {
-  char front;
-  char rear;
   legMotors m;
 };
 // acc and gyro data structure
@@ -205,7 +204,7 @@ void setup() {
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
   // load task and pattern
-  setPattern(patternNow);
+  setPattern(patternNow, 0);
   sequenceCounter = updateCountPatterns();
 }
 
@@ -245,14 +244,14 @@ void loop() {
     switch (patternNow) {
       case P_STANDGO:
       {
-        setPattern(patternNow);
+        setPattern(patternNow, getDirectionCorrectionGyro());
         updateTurnPattern(getDirectionCorrectionGyro());
         doCycle();
       }        
       break;
       case P_GOFORWARD:
       {
-        setPattern(patternNow);
+        setPattern(patternNow, getDirectionCorrectionGyro());
         updateTurnPattern(getDirectionCorrectionGyro());
         doCycle();
       }
@@ -287,14 +286,14 @@ void loop() {
       // immediatelly run loop again
       break;
       default:
-        setPattern(patternNow);
+        setPattern(patternNow, 0);
         doCycle();
       break;
     }
   } else if (sequenceCounter == 10) {
     // check for task interruption
     if (checkInterruptionInputs(taskNow, patternNow)) {
-      setPattern(P_STANDGO);
+      setPattern(P_STANDGO, 0);
     }
     doCycle();
   } else {
@@ -304,12 +303,12 @@ void loop() {
 
 // set motors and read sensors
 void doCycle(void) {
+  // update ballance
+  //updateBallanceInPattern(getRollGiro(), getPitchGiro(), gyroState);
   // update servo motors values, move motors
   updateServo(updateMotorsPatterns(m_calibration));
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
-  // update robot ballance
-  updateBallancePatterns();
   // walking speed depends of the delay
   delay(_timeDelay);
   // read proximity sensors

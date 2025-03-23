@@ -31,8 +31,8 @@ unsigned char readSoftwareVersionEeprom() {
 // write calibration to eeprom
 void writeCalibrationEeprom(allMotors calibration) {
   // calibration address is 1 to 10
-  EEPROM.update(1, (unsigned char)(calibration.front + 128));
-  EEPROM.update(2, (unsigned char)(calibration.rear + 128));
+  EEPROM.update(1, (unsigned char)(calibration.m.st.motor1 + 128));
+  EEPROM.update(2, (unsigned char)(calibration.m.st.motor2 + 128));
   EEPROM.update(3, (unsigned char)(calibration.m.fl.motor1 + 128));
   EEPROM.update(4, (unsigned char)(calibration.m.fl.motor2 + 128));
   EEPROM.update(5, (unsigned char)(calibration.m.fr.motor1 + 128));
@@ -46,8 +46,8 @@ void writeCalibrationEeprom(allMotors calibration) {
 // read calibration from eeprom
 void readCalibrationEeprom(allMotors * calibration) {
   // calibration address is 1 to 10
-  calibration->front = (char)(EEPROM.read(1) - 128);
-  calibration->rear = (char)(EEPROM.read(2) - 128);
+  calibration->m.st.motor1 = (char)(EEPROM.read(1) - 128);
+  calibration->m.st.motor2 = (char)(EEPROM.read(2) - 128);
   calibration->m.fl.motor1 = (char)(EEPROM.read(3) - 128);
   calibration->m.fl.motor2 = (char)(EEPROM.read(4) - 128);
   calibration->m.fr.motor1 = (char)(EEPROM.read(5) - 128);

@@ -6,7 +6,7 @@ List of tasks. Every task contains movement patterns.
 */
 
 // Array to store currently executed task. contains list of patterns
-unsigned char currentTask[40] = {P_DODOWN, P_DONE};
+unsigned char currentTask[26] = {P_DODOWN, P_DONE};
 // pattern counter points to currentTask
 unsigned char currentTaskPoint = 0;
 // current pattern
@@ -17,43 +17,29 @@ void _setDemoTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_DOSTAND;
   currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDTOGO;
-  currentTask[4] = P_STANDGO;
-  currentTask[5] = P_STANDGOLEFT;
-  currentTask[6] = P_RESETDIRECTION;
-  currentTask[7] = P_STANDGO;
-  currentTask[8] = P_STANDGORIGHT;
-  currentTask[9] = P_RESETDIRECTION;
-  currentTask[10] = P_STANDGO;
-  currentTask[11] = P_STANDGOSHIFTLEFT;
-  currentTask[12] = P_STANDGO;
-  currentTask[13] = P_STANDGOSHIFTRIGHT;
+  currentTask[3] = P_DOSTAND;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_DOSTAND;
+  currentTask[6] = P_DOSTAND;
+  currentTask[7] = P_DOSTAND;
+  currentTask[8] = P_DOSTAND;
+  currentTask[9] = P_DOSTAND;
+  currentTask[10] = P_DOSTAND;
+  currentTask[11] = P_RESETGIRO;
+  currentTask[12] = P_STANDTOGO;
+  currentTask[13] = P_STANDGO;
   currentTask[14] = P_STANDGO;
-  currentTask[15] = P_GOFORWARD;
-  currentTask[16] = P_GOFORWARDSLOW;
-  currentTask[17] = P_GOLEFT;
-  currentTask[18] = P_RESETDIRECTION;
-  currentTask[19] = P_GOFORWARD;
-  currentTask[20] = P_GORIGHT;
-  currentTask[21] = P_RESETDIRECTION;
-  currentTask[22] = P_GOFORWARD;
-  currentTask[23] = P_GOSHIFTLEFT;
-  currentTask[24] = P_GOFORWARD;
-  currentTask[25] = P_GOSHIFTRIGHT;
-  currentTask[26] = P_GOFORWARD;
-  currentTask[27] = P_STANDGO;
-  currentTask[28] = P_GOBACK;
-  currentTask[29] = P_GOBACKLEFT;
-  currentTask[30] = P_GOBACKRIGHT;
-  currentTask[31] = P_RESTOREDIRECTION;
-  currentTask[32] = P_STANDGO;
-  currentTask[33] = P_STANDGO;
-  currentTask[34] = P_GOTOSTAND;
-  currentTask[35] = P_DOSTAND;
-  currentTask[36] = P_DOSTAND;
-  currentTask[37] = P_DODOWN;
-  currentTask[38] = P_DODOWN;
-  currentTask[39] = P_END;
+  currentTask[15] = P_STANDGO;
+  currentTask[16] = P_STANDGO;
+  currentTask[17] = P_STANDGO;
+  currentTask[18] = P_STANDGO;
+  currentTask[19] = P_STANDGO;
+  currentTask[20] = P_STANDGO;
+  currentTask[21] = P_STANDGO;
+  currentTask[22] = P_STANDGO;
+  currentTask[23] = P_ENABLEINPUTS;
+  currentTask[24] = P_GOFORWARDSLOW;
+  currentTask[25] = P_DONE;
 }
 
 // set begin task

@@ -76,8 +76,8 @@ void initServo(int calM1, int calM2) {
 // set servo motors
 void setServo(allMotors * calibration, int calM1, int calM2) {
   // set motors values after calibration
-  servo_frnt.write(90 - calibration->front);
-  servo_rear.write(90 - calibration->rear);
+  servo_frnt.write(90 - calibration->m.st.motor1);
+  servo_rear.write(90 - calibration->m.st.motor2);
   servo_fl_1.write(90 + calibration->m.fl.motor1 - calM1);
   servo_fl_2.write(90 - calibration->m.fl.motor2 - calM2);
   servo_fr_1.write(90 - calibration->m.fr.motor1 + calM1);
@@ -90,8 +90,8 @@ void setServo(allMotors * calibration, int calM1, int calM2) {
 
 // move motors.
 void updateServo(allMotors motorValue) {
-  servo_frnt.write(90 - motorValue.front);
-  servo_rear.write(90 - motorValue.rear);
+  servo_frnt.write(90 - motorValue.m.st.motor1);
+  servo_rear.write(90 - motorValue.m.st.motor2);
   servo_fl_1.write(90 + motorValue.m.fl.motor1);
   servo_fl_2.write(90 - motorValue.m.fl.motor2);
   servo_fr_1.write(90 - motorValue.m.fr.motor1);

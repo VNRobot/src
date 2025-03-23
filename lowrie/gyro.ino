@@ -258,6 +258,23 @@ char getDirectionCorrectionGyro(void) {
   }
   return (char)(gyroData.yaw / 2);
 }
+
+// get roll
+int getRollGiro(void) {
+  // positive - rolled right
+  // negative - rolled left
+  //return gyroData.roll;
+  return (int)(gyroData.accAngleX / 2);
+}
+
+// get pitch
+int getPitchGiro(void) {
+  // positive - nose down
+  // negative - nose up  
+  //return gyroData.pitch;
+  return (int)(gyroData.accAngleY / 2);
+}
+
 /*
 // print gyro values
 void _printLineGyro(struct acc data) {
