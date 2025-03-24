@@ -130,7 +130,7 @@ unsigned char taskNow = STAND_TASK;
 // next task
 unsigned char taskNext = STAND_TASK;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 25;
+unsigned char _timeDelay = 12;
 // new task
  unsigned char _newTask = BEGIN_TASK;
 //----------------------------------------------------------
@@ -304,13 +304,18 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update ballance
-  //updateBallanceInPattern(getRollGiro(), getPitchGiro(), gyroState);
+  if (sequenceCounter == 0) {
+    updateBallanceInPattern(gyroState);
+  }
   // update servo motors values, move motors
-  updateServo(updateMotorsPatterns(m_calibration));
+  updateBufferPatterns(m_calibration);
+  updateServo(updateMotorsHalfPatterns());
+  delay(_timeDelay);
+  updateServo(updateMotorsPatterns());
+  delay(_timeDelay);
+  updateBufferOldPatterns();
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
-  // walking speed depends of the delay
-  delay(_timeDelay);
   // read proximity sensors
   inputState = updateInputs(sequenceCounter, sensorsEnabled);
   // update gyro readings

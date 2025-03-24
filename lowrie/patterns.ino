@@ -41,8 +41,8 @@ motors sequenceRL[20] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30,
 motors sequenceRR[20] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
 // motors values for 10 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-//allMotors motorValueBuffer = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
-//allMotors motorValueBufferOld = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
+allMotors motorValueBuffer = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
+allMotors motorValueBufferOld = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
 // full cycle
 unsigned char fullCycle = 20;
 // pointer to array
@@ -492,39 +492,91 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   }
 }
 
-// update servo motors values
-allMotors updateMotorsPatterns(allMotors calibration) {
-  // set motors angle values
-  motorValue.m.st.motor1 = (sequenceCenter[mainCounter].motor1 + calibration.m.st.motor1);
-  motorValue.m.st.motor2 = (sequenceCenter[mainCounter].motor2 + calibration.m.st.motor2);
-  motorValue.m.fl.motor1 = (sequenceFL[mainCounter].motor1 - 30 + calibration.m.fl.motor1 + legUp.m.fl.motor1);
-  motorValue.m.fl.motor2 = (sequenceFL[mainCounter].motor2 - 30 + calibration.m.fl.motor2 + legUp.m.fl.motor2);
-  motorValue.m.fr.motor1 = (sequenceFR[mainCounter].motor1 - 30 + calibration.m.fr.motor1 + legUp.m.fr.motor1);
-  motorValue.m.fr.motor2 = (sequenceFR[mainCounter].motor2 - 30 + calibration.m.fr.motor2 + legUp.m.fr.motor2);
-  motorValue.m.rl.motor1 = (sequenceRL[mainCounter].motor1 - 30 + calibration.m.rl.motor1 + legUp.m.rl.motor1);
-  motorValue.m.rl.motor2 = (sequenceRL[mainCounter].motor2 - 30 + calibration.m.rl.motor2 + legUp.m.rl.motor2);
-  motorValue.m.rr.motor1 = (sequenceRR[mainCounter].motor1 - 30 + calibration.m.rr.motor1 + legUp.m.rr.motor1);
-  motorValue.m.rr.motor2 = (sequenceRR[mainCounter].motor2 - 30 + calibration.m.rr.motor2 + legUp.m.rr.motor2);
+// limit angle value
+char limitValue(char mAngle) {
+  if (mAngle > 90) {
+    mAngle = 90;
+  } else if (mAngle < -90) {
+    mAngle = -90;
+  }
+  return mAngle;
+}
+
+// update servo motors buffer values
+void updateBufferPatterns(allMotors calibration) {
+  motorValueBuffer.m.st.motor1 = limitValue(sequenceCenter[mainCounter].motor1 + calibration.m.st.motor1);
+  motorValueBuffer.m.st.motor2 = limitValue(sequenceCenter[mainCounter].motor2 + calibration.m.st.motor2);
+  motorValueBuffer.m.fl.motor1 = limitValue(sequenceFL[mainCounter].motor1 - 30 + calibration.m.fl.motor1 + legUp.m.fl.motor1);
+  motorValueBuffer.m.fl.motor2 = limitValue(sequenceFL[mainCounter].motor2 - 30 + calibration.m.fl.motor2 + legUp.m.fl.motor2);
+  motorValueBuffer.m.fr.motor1 = limitValue(sequenceFR[mainCounter].motor1 - 30 + calibration.m.fr.motor1 + legUp.m.fr.motor1);
+  motorValueBuffer.m.fr.motor2 = limitValue(sequenceFR[mainCounter].motor2 - 30 + calibration.m.fr.motor2 + legUp.m.fr.motor2);
+  motorValueBuffer.m.rl.motor1 = limitValue(sequenceRL[mainCounter].motor1 - 30 + calibration.m.rl.motor1 + legUp.m.rl.motor1);
+  motorValueBuffer.m.rl.motor2 = limitValue(sequenceRL[mainCounter].motor2 - 30 + calibration.m.rl.motor2 + legUp.m.rl.motor2);
+  motorValueBuffer.m.rr.motor1 = limitValue(sequenceRR[mainCounter].motor1 - 30 + calibration.m.rr.motor1 + legUp.m.rr.motor1);
+  motorValueBuffer.m.rr.motor2 = limitValue(sequenceRR[mainCounter].motor2 - 30 + calibration.m.rr.motor2 + legUp.m.rr.motor2);
+}
+
+// update servo motors buffer old values
+void updateBufferOldPatterns(void) {
+  motorValueBufferOld.m.st.motor1 = motorValueBuffer.m.st.motor1;
+  motorValueBufferOld.m.st.motor2 = motorValueBuffer.m.st.motor2;
+  motorValueBufferOld.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
+  motorValueBufferOld.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
+  motorValueBufferOld.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
+  motorValueBufferOld.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
+  motorValueBufferOld.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
+  motorValueBufferOld.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
+  motorValueBufferOld.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
+  motorValueBufferOld.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
+}
+
+allMotors updateMotorsHalfPatterns(void) {
+  motorValue.m.st.motor1 = (motorValueBuffer.m.st.motor1 + motorValueBufferOld.m.st.motor1) / 2;
+  motorValue.m.st.motor2 = (motorValueBuffer.m.st.motor2 + motorValueBufferOld.m.st.motor2) / 2;
+  motorValue.m.fl.motor1 = (motorValueBuffer.m.fl.motor1 + motorValueBufferOld.m.fl.motor1) / 2;
+  motorValue.m.fl.motor2 = (motorValueBuffer.m.fl.motor2 + motorValueBufferOld.m.fl.motor2) / 2;
+  motorValue.m.fr.motor1 = (motorValueBuffer.m.fr.motor1 + motorValueBufferOld.m.fr.motor1) / 2;
+  motorValue.m.fr.motor2 = (motorValueBuffer.m.fr.motor2 + motorValueBufferOld.m.fr.motor2) / 2;
+  motorValue.m.rl.motor1 = (motorValueBuffer.m.rl.motor1 + motorValueBufferOld.m.rl.motor1) / 2;
+  motorValue.m.rl.motor2 = (motorValueBuffer.m.rl.motor2 + motorValueBufferOld.m.rl.motor2) / 2;
+  motorValue.m.rr.motor1 = (motorValueBuffer.m.rr.motor1 + motorValueBufferOld.m.rr.motor1) / 2;
+  motorValue.m.rr.motor2 = (motorValueBuffer.m.rr.motor2 + motorValueBufferOld.m.rr.motor2) / 2;
   return motorValue;
 }
 
-void updateBallanceInPattern( int roll, int pitch, accRoll gyroState) {
+// update servo motors values
+allMotors updateMotorsPatterns(void) {
+  // set motors angle values
+  motorValue.m.st.motor1 = motorValueBuffer.m.st.motor1;
+  motorValue.m.st.motor2 = motorValueBuffer.m.st.motor2;
+  motorValue.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
+  motorValue.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
+  motorValue.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
+  motorValue.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
+  motorValue.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
+  motorValue.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
+  motorValue.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
+  motorValue.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
+  return motorValue;
+}
+
+void updateBallanceInPattern(accRoll gyroState) {
   _centerF = _fixDynamicBalance(_centerF, gyroState);
   _centerR = - _centerF;
-  if (roll > 1) {
+  if (gyroState.accAngleX > 2) {
     if (correctRoll < 10) {
       correctRoll ++;
     }
-  } else if (roll < -1) {
+  } else if (gyroState.accAngleX < -2) {
     if (correctRoll > -10) {
       correctRoll --;
     }
   }
-  if (pitch > 1) {
+  if (gyroState.accAngleY > 2) {
     if (correctPitch < 10) {
       correctPitch ++;
     }
-  } else if (pitch < -1) {
+  } else if (gyroState.accAngleY < -2) {
     if (correctPitch > -10) {
       correctPitch --;
     }
@@ -537,6 +589,13 @@ void updateBallanceInPattern( int roll, int pitch, accRoll gyroState) {
   legUp.m.rl.motor2 = -correctRoll - correctPitch;
   legUp.m.rr.motor1 = correctRoll - correctPitch;
   legUp.m.rr.motor2 = correctRoll - correctPitch;
+  _centerStatic = _centerAbsolute - gyroState.accAngleY / 4;
+  if (_centerStatic > 16) {
+    _centerStatic = 16;
+  }
+  if (_centerStatic < 8) {
+    _centerStatic = 8;
+  }
 }
 
 // update servo motors values

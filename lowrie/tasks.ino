@@ -6,7 +6,7 @@ List of tasks. Every task contains movement patterns.
 */
 
 // Array to store currently executed task. contains list of patterns
-unsigned char currentTask[26] = {P_DODOWN, P_DONE};
+unsigned char currentTask[32] = {P_DODOWN, P_DONE};
 // pattern counter points to currentTask
 unsigned char currentTaskPoint = 0;
 // current pattern
@@ -37,9 +37,15 @@ void _setDemoTask(void) {
   currentTask[20] = P_STANDGO;
   currentTask[21] = P_STANDGO;
   currentTask[22] = P_STANDGO;
-  currentTask[23] = P_ENABLEINPUTS;
-  currentTask[24] = P_GOFORWARDSLOW;
-  currentTask[25] = P_DONE;
+  currentTask[23] = P_STANDGO;
+  currentTask[24] = P_STANDGO;
+  currentTask[25] = P_STANDGO;
+  currentTask[26] = P_STANDGO;
+  currentTask[27] = P_STANDGO;
+  currentTask[28] = P_STANDGO;
+  currentTask[29] = P_ENABLEINPUTS;
+  currentTask[30] = P_GOFORWARDSLOW;
+  currentTask[31] = P_DONE;
 }
 
 // set begin task
