@@ -304,9 +304,10 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update ballance
-  if (sequenceCounter == 0) {
-    updateBallanceInPattern(gyroState);
-  }
+  //if (sequenceCounter == 0) {
+  //  updateStaticBallanceInPattern(gyroState);
+  //  updateDynamicBallanceInPattern(gyroState);
+  //}
   // update servo motors values, move motors
   updateBufferPatterns(m_calibration);
   updateServo(updateMotorsHalfPatterns());

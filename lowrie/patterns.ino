@@ -560,9 +560,7 @@ allMotors updateMotorsPatterns(void) {
   return motorValue;
 }
 
-void updateBallanceInPattern(accRoll gyroState) {
-  _centerF = _fixDynamicBalance(_centerF, gyroState);
-  _centerR = - _centerF;
+void updateStaticBallanceInPattern(accRoll gyroState) {
   if (gyroState.accAngleX > 2) {
     if (correctRoll < 10) {
       correctRoll ++;
@@ -589,13 +587,37 @@ void updateBallanceInPattern(accRoll gyroState) {
   legUp.m.rl.motor2 = -correctRoll - correctPitch;
   legUp.m.rr.motor1 = correctRoll - correctPitch;
   legUp.m.rr.motor2 = correctRoll - correctPitch;
-  _centerStatic = _centerAbsolute - gyroState.accAngleY / 4;
+  // nose down increase waight on rear
+  // nose up increase waight on front
+  _centerStatic = _centerAbsolute - gyroState.accAngleY / 2;
   if (_centerStatic > 16) {
     _centerStatic = 16;
   }
   if (_centerStatic < 8) {
     _centerStatic = 8;
   }
+}
+
+void updateDynamicBallanceInPattern(accRoll gyroState) {
+  if (gyroState.rollMax - gyroState.rollMin > 2) {
+    // body rolls
+    if ((gyroState.rollMinTime < 10) && (gyroState.rollMaxTime > 9)) {
+      // front is too heavy
+      // increase weight on rear
+      _centerF -= 1;
+    }
+    if ((gyroState.rollMinTime > 9) && (gyroState.rollMaxTime < 10)) {
+      // rear is too heavy
+      //increase wight on front
+      _centerF += 1;
+    }
+  }
+  if (_centerF < -10) {
+    _centerF = -10;
+  } else if (_centerF > 10) {
+    _centerF = 10;
+  }
+  _centerR = - _centerF;
 }
 
 // update servo motors values
@@ -606,56 +628,6 @@ unsigned char updateCountPatterns(void) {
     mainCounter = 0;
   }
   return mainCounter;
-}
-
-// fix balance using gyro
-char _fixDynamicBalance(char center, accRoll gyroState) {
-  // nose down increase waight on rear
-  // nose up increase waight on front
-  if (gyroState.rollMax - gyroState.rollMin > 2) {
-    // body rolls
-    if ((gyroState.rollMinTime < 10) && (gyroState.rollMaxTime > 9)) {
-      // front is too heavy
-      // increase weight on rear
-      center -= 1;
-    }
-    if ((gyroState.rollMinTime > 9) && (gyroState.rollMaxTime < 10)) {
-      // rear is too heavy
-      //increase wight on front
-      center += 1;
-    }
-  }
-  if (center < -10) {
-    center = -10;
-  } else if (center > 10) {
-    center = 10;
-  }
-  return center;
-}
-
-/*/ compensate nose dive for static ballance
-int _compensateStaticBallance(accRoll gyroState) {
-  int center = _centerAbsolute - gyroState.accAngleY / 2;
-  if (center < 8) {
-    center = 8;
-  } else if (center > 16) {
-    center = 16;
-  }
-  return center;
-}
-*/
-// fix side balance using gyro
-char _fixSideBalance(char sideBallance, accRoll gyroState) {
-  if (gyroState.accAngleX > 1) {
-    if (sideBallance < 2) {
-      sideBallance ++;
-    }
-  } else if (gyroState.accAngleX < -1) {
-    if (sideBallance > -2) {
-      sideBallance --;
-    }
-  }
-  return sideBallance;
 }
 
 /*
