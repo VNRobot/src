@@ -5,34 +5,19 @@ Arduino nano
 Robot legs motion patterns
 */
 
-// servos angles for forward shift
-// legs 1.0 
-// forward shift(mm)          -40,           -30,           -20,           -10,          0,         10,         20,         30
-//char motor1Walk[24] =  { 46,  47,  48,  50,  52,  54,  56,  58,  60,  62,  64, 66, 69, 72, 75, 78, 81, 84, 87, 90, 94, 98,102,106};
-//char motor2Walk[24] =  { 96,  90,  85,  81,  77,  73,  69,  65,  61,  57,  54, 51, 48, 45, 42, 40, 38, 36, 34, 33, 32, 31, 30, 29};
-// legs1.1 faster walking
-// forward shift(mm)               -40       -30       -20       -10         0        10        20        30        40
-//char motor1Walk[21] =  {  24,  22,  22,  23,  25,  27,  30,  33,  37,  41,  45,  51,  57,  63,  70,  77,  84,  91, 101, 111, 126};
-//char motor2Walk[21] =  { 126, 111, 101,  91,  84,  77,  70,  63,  57,  51,  45,  41,  37,  33,  30,  27,  25,  23,  22,  22,  24};
 // legs1.1 slower walking
 char motor1Walk[25] =  { 21,  21,  21,  21,  22,  24,  26,  28,  30,  34,  38,  42,  45,  50,  55,  60,  65,  70,  75,  81,  87,  93, 100, 109, 119};
 char motor2Walk[25] =  {119, 109, 100,  93,  87,  81,  75,  70,  65,  60,  55,  50,  45,  42,  38,  34,  30,  28,  26,  24,  22,  21,  21,  21,  21};
-// center position in the pattern array
-int _centerAbsolute = 12; // (range 8 to 16) bigger the number more weight on front
-// static forward ballance
-int _centerStatic = _centerAbsolute;
 // char buffer for temporary use
 char cBuffer1;
 char cBuffer2;
 // leg lift angles
 unsigned char _liftm = 16;
 // center motor default position
-char _centerF = 0; // positive more distance between legs
-char _centerR = 0; // positive more distance between legs
+char centerF = 0; // positive more distance between legs
+char centerR = 0; // positive more distance between legs
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
-// dynamic ballance
-allMotors legUp = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // 20 positions per sequence
 motors sequenceCenter[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 motors sequenceFL[20] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
@@ -41,38 +26,29 @@ motors sequenceRL[20] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30,
 motors sequenceRR[20] = {30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 30};
 // motors values for 10 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-allMotors motorValueBuffer = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
-allMotors motorValueBufferOld = {60, 60, 60, 60, 60, 60, 60, 60, 60, 60};
 // full cycle
 unsigned char fullCycle = 20;
 // pointer to array
 unsigned char apoint = 0;
-// position correction
-int correctRoll  = 0;
-int correctPitch = 0;
 
 // set new values of center motors
 void _updateCenterMotor(char cAngleF, char cAngleR) {
-  sequenceCenter[0].motor1 = _centerF - cAngleF/2;
-  sequenceCenter[0].motor2 = _centerR - cAngleR/2;
+  sequenceCenter[0].motor1 = centerF - cAngleF/2;
+  sequenceCenter[0].motor2 = centerR - cAngleR/2;
   for (i = 1; i < 9; i++) {
-    sequenceCenter[i].motor1 = _centerF - cAngleF;
-    sequenceCenter[i].motor2 = _centerR - cAngleR;
+    sequenceCenter[i].motor1 = centerF - cAngleF;
+    sequenceCenter[i].motor2 = centerR - cAngleR;
   }
-  sequenceCenter[9].motor1 = _centerF - cAngleF/2;
-  sequenceCenter[9].motor2 = _centerR - cAngleR/2;
-  sequenceCenter[10].motor1 = _centerF + cAngleF/2;
-  sequenceCenter[10].motor2 = _centerR + cAngleR/2;
+  sequenceCenter[9].motor1 = centerF - cAngleF/2;
+  sequenceCenter[9].motor2 = centerR - cAngleR/2;
+  sequenceCenter[10].motor1 = centerF + cAngleF/2;
+  sequenceCenter[10].motor2 = centerR + cAngleR/2;
   for (i = 11; i < 19; i++) {
-    sequenceCenter[i].motor1 = _centerF + cAngleF;
-    sequenceCenter[i].motor2 = _centerR + cAngleR;
+    sequenceCenter[i].motor1 = centerF + cAngleF;
+    sequenceCenter[i].motor2 = centerR + cAngleR;
   }
-  sequenceCenter[19].motor1 = _centerF + cAngleF/2;
-  sequenceCenter[19].motor2 = _centerR + cAngleR/2;
-}
-
-void updateTurnPattern(char cAngle) {
-  _updateTurn(cAngle);
+  sequenceCenter[19].motor1 = centerF + cAngleF/2;
+  sequenceCenter[19].motor2 = centerR + cAngleR/2;
 }
 
 // update turning
@@ -285,146 +261,146 @@ void _setSequenceRecover(motors * sequence1, motors * sequence2) {
   sequence2[19].motor1 = 30; sequence2[19].motor2 = 30;
 }
 
-void _setStandWalkSequence(void) {
-  _updateSequenceStandWalk(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFL[0], 0);
-  _updateSequenceStandWalk(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFR[0], 10);
-  _updateSequenceStandWalk(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRL[0], 10);
-  _updateSequenceStandWalk(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRR[0], 0);
+void _setStandWalkSequence(unsigned char centerStatic) {
+  _updateSequenceStandWalk(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFL[0], 0);
+  _updateSequenceStandWalk(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFR[0], 10);
+  _updateSequenceStandWalk(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRL[0], 10);
+  _updateSequenceStandWalk(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRR[0], 0);
 }
 
-void _setWalkSequence(void) {
-  _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
-  _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
-  _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
-  _updateSequenceWalk(_centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
+void _setWalkSequence(unsigned char centerStatic) {
+  _updateSequenceWalk(centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
+  _updateSequenceWalk(centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
+  _updateSequenceWalk(centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
+  _updateSequenceWalk(centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
 }
 
-void _setWalkSlowSequence(void) {
-  _updateSequenceWalkSlow(_centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
-  _updateSequenceWalkSlow(_centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
-  _updateSequenceWalkSlow(_centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
-  _updateSequenceWalkSlow(_centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
+void _setWalkSlowSequence(unsigned char centerStatic) {
+  _updateSequenceWalkSlow(centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
+  _updateSequenceWalkSlow(centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
+  _updateSequenceWalkSlow(centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
+  _updateSequenceWalkSlow(centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
 }
 
-void _setWalkBackSequence(void) {
-  _updateSequenceWalkBack(_centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
-  _updateSequenceWalkBack(_centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
-  _updateSequenceWalkBack(_centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
-  _updateSequenceWalkBack(_centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
+void _setWalkBackSequence(unsigned char centerStatic) {
+  _updateSequenceWalkBack(centerStatic, motor1Walk, motor2Walk, & sequenceFL[0], 0);
+  _updateSequenceWalkBack(centerStatic, motor1Walk, motor2Walk, & sequenceFR[0], 10);
+  _updateSequenceWalkBack(centerStatic, motor1Walk, motor2Walk, & sequenceRL[0], 10);
+  _updateSequenceWalkBack(centerStatic, motor1Walk, motor2Walk, & sequenceRR[0], 0);
 }
 
 // get next sequence
-void setPattern(unsigned char currentTaskItem, char angleTurn) {
+void setPattern(unsigned char currentTaskItem, char angleTurn, unsigned char centerStatic) {
   // get new sequence array
   switch (currentTaskItem) {
     case P_DOSTAND:
     {
-      _updateSequenceLinear(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFL[0]);
-      _updateSequenceLinear(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFR[0]);
-      _updateSequenceLinear(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRL[0]);
-      _updateSequenceLinear(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRR[0]);
+      _updateSequenceLinear(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFL[0]);
+      _updateSequenceLinear(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFR[0]);
+      _updateSequenceLinear(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRL[0]);
+      _updateSequenceLinear(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRR[0]);
       _updateTurn(0);
     }
     break;
     case P_STANDTOGO:
     {
-      _updateSequenceLinearEnd(motor1Walk[_centerStatic] - _liftm, motor2Walk[_centerStatic] - _liftm, & sequenceFL[0]);
-      _updateSequenceLinearEnd(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFR[0]);
-      _updateSequenceLinearEnd(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRL[0]);
-      _updateSequenceLinearEnd(motor1Walk[_centerStatic] - _liftm, motor2Walk[_centerStatic] - _liftm, & sequenceRR[0]);
+      _updateSequenceLinearEnd(motor1Walk[centerStatic] - _liftm, motor2Walk[centerStatic] - _liftm, & sequenceFL[0]);
+      _updateSequenceLinearEnd(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFR[0]);
+      _updateSequenceLinearEnd(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRL[0]);
+      _updateSequenceLinearEnd(motor1Walk[centerStatic] - _liftm, motor2Walk[centerStatic] - _liftm, & sequenceRR[0]);
       _updateTurn(0);
     }
     break;
     case P_GOTOSTAND:
     {
-      _updateSequenceLinearStart(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFL[0]);
-      _updateSequenceLinearStart(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceFR[0]);
-      _updateSequenceLinearStart(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRL[0]);
-      _updateSequenceLinearStart(motor1Walk[_centerStatic], motor2Walk[_centerStatic], & sequenceRR[0]);
+      _updateSequenceLinearStart(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFL[0]);
+      _updateSequenceLinearStart(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceFR[0]);
+      _updateSequenceLinearStart(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRL[0]);
+      _updateSequenceLinearStart(motor1Walk[centerStatic], motor2Walk[centerStatic], & sequenceRR[0]);
       _updateTurn(0);
     }
     break;
     case P_STANDGO:
     {
-      _setStandWalkSequence();
+      _setStandWalkSequence(centerStatic);
       _updateTurn(angleTurn);
     }
     break;
     case P_STANDGOLEFT:
     {
-      _setStandWalkSequence();
+      _setStandWalkSequence(centerStatic);
       _updateTurn(-10);
     }
     break;
     case P_STANDGORIGHT:
     {
-      _setStandWalkSequence();
+      _setStandWalkSequence(centerStatic);
       _updateTurn(10);
     }
     break;
     case P_STANDGOSHIFTLEFT:
     {
-      _setStandWalkSequence();
+      _setStandWalkSequence(centerStatic);
       _updateShift(-10);
     }
     break;
     case P_STANDGOSHIFTRIGHT:
     {
-      _setStandWalkSequence();
+      _setStandWalkSequence(centerStatic);
       _updateShift(10);
     }
     break;
     case P_GOFORWARD:
     {
-      _setWalkSequence();
+      _setWalkSequence(centerStatic);
       _updateTurn(angleTurn);
     }
     break;
     case P_GOFORWARDSLOW:
     {
-      _setWalkSlowSequence();
+      _setWalkSlowSequence(centerStatic);
       _updateTurn(angleTurn);
     }
     break;
     case P_GOLEFT:
     {
-      _setWalkSequence();
+      _setWalkSequence(centerStatic);
       _updateTurn(-10);
     }
     break;
     case P_GORIGHT:
     {
-      _setWalkSequence();
+      _setWalkSequence(centerStatic);
       _updateTurn(10);
     }
     break;
     case P_GOSHIFTLEFT:
     {
-      _setWalkSequence();
+      _setWalkSequence(centerStatic);
       _updateShift(-10);
     }
     break;
     case P_GOSHIFTRIGHT:
     {
-      _setWalkSequence();
+      _setWalkSequence(centerStatic);
       _updateShift(10);
     }
     break;
     case P_GOBACK:
     {
-      _setWalkBackSequence();
+      _setWalkBackSequence(centerStatic);
       _updateTurn(0);
     }
     break;
     case P_GOBACKLEFT:
     {
-      _setWalkBackSequence();
+      _setWalkBackSequence(centerStatic);
       _updateTurn(-10);
     }
     break;
     case P_GOBACKRIGHT:
     {
-      _setWalkBackSequence();
+      _setWalkBackSequence(centerStatic);
       _updateTurn(10);
     }
     break;
@@ -492,132 +468,20 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   }
 }
 
-// limit angle value
-char limitValue(char mAngle) {
-  if (mAngle > 90) {
-    mAngle = 90;
-  } else if (mAngle < -90) {
-    mAngle = -90;
-  }
-  return mAngle;
-}
-
-// update servo motors buffer values
-void updateBufferPatterns(allMotors calibration) {
-  motorValueBuffer.m.st.motor1 = limitValue(sequenceCenter[mainCounter].motor1 + calibration.m.st.motor1);
-  motorValueBuffer.m.st.motor2 = limitValue(sequenceCenter[mainCounter].motor2 + calibration.m.st.motor2);
-  motorValueBuffer.m.fl.motor1 = limitValue(sequenceFL[mainCounter].motor1 - 30 + calibration.m.fl.motor1 + legUp.m.fl.motor1);
-  motorValueBuffer.m.fl.motor2 = limitValue(sequenceFL[mainCounter].motor2 - 30 + calibration.m.fl.motor2 + legUp.m.fl.motor2);
-  motorValueBuffer.m.fr.motor1 = limitValue(sequenceFR[mainCounter].motor1 - 30 + calibration.m.fr.motor1 + legUp.m.fr.motor1);
-  motorValueBuffer.m.fr.motor2 = limitValue(sequenceFR[mainCounter].motor2 - 30 + calibration.m.fr.motor2 + legUp.m.fr.motor2);
-  motorValueBuffer.m.rl.motor1 = limitValue(sequenceRL[mainCounter].motor1 - 30 + calibration.m.rl.motor1 + legUp.m.rl.motor1);
-  motorValueBuffer.m.rl.motor2 = limitValue(sequenceRL[mainCounter].motor2 - 30 + calibration.m.rl.motor2 + legUp.m.rl.motor2);
-  motorValueBuffer.m.rr.motor1 = limitValue(sequenceRR[mainCounter].motor1 - 30 + calibration.m.rr.motor1 + legUp.m.rr.motor1);
-  motorValueBuffer.m.rr.motor2 = limitValue(sequenceRR[mainCounter].motor2 - 30 + calibration.m.rr.motor2 + legUp.m.rr.motor2);
-}
-
-// update servo motors buffer old values
-void updateBufferOldPatterns(void) {
-  motorValueBufferOld.m.st.motor1 = motorValueBuffer.m.st.motor1;
-  motorValueBufferOld.m.st.motor2 = motorValueBuffer.m.st.motor2;
-  motorValueBufferOld.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
-  motorValueBufferOld.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
-  motorValueBufferOld.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
-  motorValueBufferOld.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
-  motorValueBufferOld.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
-  motorValueBufferOld.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
-  motorValueBufferOld.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
-  motorValueBufferOld.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
-}
-
-allMotors updateMotorsHalfPatterns(void) {
-  motorValue.m.st.motor1 = (motorValueBuffer.m.st.motor1 + motorValueBufferOld.m.st.motor1) / 2;
-  motorValue.m.st.motor2 = (motorValueBuffer.m.st.motor2 + motorValueBufferOld.m.st.motor2) / 2;
-  motorValue.m.fl.motor1 = (motorValueBuffer.m.fl.motor1 + motorValueBufferOld.m.fl.motor1) / 2;
-  motorValue.m.fl.motor2 = (motorValueBuffer.m.fl.motor2 + motorValueBufferOld.m.fl.motor2) / 2;
-  motorValue.m.fr.motor1 = (motorValueBuffer.m.fr.motor1 + motorValueBufferOld.m.fr.motor1) / 2;
-  motorValue.m.fr.motor2 = (motorValueBuffer.m.fr.motor2 + motorValueBufferOld.m.fr.motor2) / 2;
-  motorValue.m.rl.motor1 = (motorValueBuffer.m.rl.motor1 + motorValueBufferOld.m.rl.motor1) / 2;
-  motorValue.m.rl.motor2 = (motorValueBuffer.m.rl.motor2 + motorValueBufferOld.m.rl.motor2) / 2;
-  motorValue.m.rr.motor1 = (motorValueBuffer.m.rr.motor1 + motorValueBufferOld.m.rr.motor1) / 2;
-  motorValue.m.rr.motor2 = (motorValueBuffer.m.rr.motor2 + motorValueBufferOld.m.rr.motor2) / 2;
-  return motorValue;
-}
-
 // update servo motors values
 allMotors updateMotorsPatterns(void) {
   // set motors angle values
-  motorValue.m.st.motor1 = motorValueBuffer.m.st.motor1;
-  motorValue.m.st.motor2 = motorValueBuffer.m.st.motor2;
-  motorValue.m.fl.motor1 = motorValueBuffer.m.fl.motor1;
-  motorValue.m.fl.motor2 = motorValueBuffer.m.fl.motor2;
-  motorValue.m.fr.motor1 = motorValueBuffer.m.fr.motor1;
-  motorValue.m.fr.motor2 = motorValueBuffer.m.fr.motor2;
-  motorValue.m.rl.motor1 = motorValueBuffer.m.rl.motor1;
-  motorValue.m.rl.motor2 = motorValueBuffer.m.rl.motor2;
-  motorValue.m.rr.motor1 = motorValueBuffer.m.rr.motor1;
-  motorValue.m.rr.motor2 = motorValueBuffer.m.rr.motor2;
+  motorValue.m.st.motor1 = sequenceCenter[mainCounter].motor1;
+  motorValue.m.st.motor2 = sequenceCenter[mainCounter].motor2;
+  motorValue.m.fl.motor1 = sequenceFL[mainCounter].motor1;
+  motorValue.m.fl.motor2 = sequenceFL[mainCounter].motor2;
+  motorValue.m.fr.motor1 = sequenceFR[mainCounter].motor1;
+  motorValue.m.fr.motor2 = sequenceFR[mainCounter].motor2;
+  motorValue.m.rl.motor1 = sequenceRL[mainCounter].motor1;
+  motorValue.m.rl.motor2 = sequenceRL[mainCounter].motor2;
+  motorValue.m.rr.motor1 = sequenceRR[mainCounter].motor1;
+  motorValue.m.rr.motor2 = sequenceRR[mainCounter].motor2;
   return motorValue;
-}
-
-void updateStaticBallanceInPattern(accRoll gyroState) {
-  if (gyroState.accAngleX > 2) {
-    if (correctRoll < 10) {
-      correctRoll ++;
-    }
-  } else if (gyroState.accAngleX < -2) {
-    if (correctRoll > -10) {
-      correctRoll --;
-    }
-  }
-  if (gyroState.accAngleY > 2) {
-    if (correctPitch < 10) {
-      correctPitch ++;
-    }
-  } else if (gyroState.accAngleY < -2) {
-    if (correctPitch > -10) {
-      correctPitch --;
-    }
-  }
-  legUp.m.fl.motor1 = -correctRoll + correctPitch;
-  legUp.m.fl.motor2 = -correctRoll + correctPitch;
-  legUp.m.fr.motor1 = correctRoll + correctPitch;
-  legUp.m.fr.motor2 = correctRoll + correctPitch;
-  legUp.m.rl.motor1 = -correctRoll - correctPitch;
-  legUp.m.rl.motor2 = -correctRoll - correctPitch;
-  legUp.m.rr.motor1 = correctRoll - correctPitch;
-  legUp.m.rr.motor2 = correctRoll - correctPitch;
-  // nose down increase waight on rear
-  // nose up increase waight on front
-  _centerStatic = _centerAbsolute - gyroState.accAngleY / 2;
-  if (_centerStatic > 16) {
-    _centerStatic = 16;
-  }
-  if (_centerStatic < 8) {
-    _centerStatic = 8;
-  }
-}
-
-void updateDynamicBallanceInPattern(accRoll gyroState) {
-  if (gyroState.rollMax - gyroState.rollMin > 2) {
-    // body rolls
-    if ((gyroState.rollMinTime < 10) && (gyroState.rollMaxTime > 9)) {
-      // front is too heavy
-      // increase weight on rear
-      _centerF -= 1;
-    }
-    if ((gyroState.rollMinTime > 9) && (gyroState.rollMaxTime < 10)) {
-      // rear is too heavy
-      //increase wight on front
-      _centerF += 1;
-    }
-  }
-  if (_centerF < -10) {
-    _centerF = -10;
-  } else if (_centerF > 10) {
-    _centerF = 10;
-  }
-  _centerR = - _centerF;
 }
 
 // update servo motors values

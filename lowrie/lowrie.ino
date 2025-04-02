@@ -130,7 +130,7 @@ unsigned char taskNow = STAND_TASK;
 // next task
 unsigned char taskNext = STAND_TASK;
 // main time delay in the loop in msec
-unsigned char _timeDelay = 12;
+unsigned char _timeDelay = 25;
 // new task
  unsigned char _newTask = BEGIN_TASK;
 //----------------------------------------------------------
@@ -154,30 +154,30 @@ void setup() {
   // Start serial for debugging
   Serial.begin(9600);
   Serial.println(F("Device started"));
-  // init proximity sensors
+  delay(200);
+  // init digital sensors
   initInputs();
+  // read all sensors
   updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
-  delay(500);
+  // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
+  initServo(-10, -10);
+  delay(400);
+  // init gyro require horizontal position
   initGyro();
   // check for Mode button press or not calibrated
   if (_readButtonPress() || (getSoftwareVersionEeprom() != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
-    // init servo motors for calibration
-    initServo(-60, 60);
-    // set motors values
-    setServo(& m_calibration, -60, 60);
+    // set motors values with clear calibration data
+    setServo(m_calibration, 90, 90);
     // do calibration
     if (doCalibration(& m_calibration)) {
       writeCalibrationEeprom(m_calibration);
       writeSoftwareVersionEeprom();
-      delay(10000);
+      delay(6000);
     }
     delay(500);
-  } else {
-    // init servo motors for normal operation
-    initServo(0, 0);
   }
   // normal operation
   // load calibration if available
@@ -196,7 +196,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(& m_calibration, 0, 0);
+  setServo(m_calibration, 10, 10);
   delay(200);
   // reset gyro
   resetGyro();
@@ -204,7 +204,7 @@ void setup() {
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
   // load task and pattern
-  setPattern(patternNow, 0);
+  setPattern(patternNow, 0, getCenterStaticBallance());
   sequenceCounter = updateCountPatterns();
 }
 
@@ -244,15 +244,13 @@ void loop() {
     switch (patternNow) {
       case P_STANDGO:
       {
-        setPattern(patternNow, getDirectionCorrectionGyro());
-        updateTurnPattern(getDirectionCorrectionGyro());
+        setPattern(patternNow, getDirectionCorrectionGyro(), getCenterStaticBallance());
         doCycle();
       }        
       break;
       case P_GOFORWARD:
       {
-        setPattern(patternNow, getDirectionCorrectionGyro());
-        updateTurnPattern(getDirectionCorrectionGyro());
+        setPattern(patternNow, getDirectionCorrectionGyro(), getCenterStaticBallance());
         doCycle();
       }
       break;
@@ -286,14 +284,14 @@ void loop() {
       // immediatelly run loop again
       break;
       default:
-        setPattern(patternNow, 0);
+        setPattern(patternNow, 0, getCenterStaticBallance());
         doCycle();
       break;
     }
   } else if (sequenceCounter == 10) {
     // check for task interruption
     if (checkInterruptionInputs(taskNow, patternNow)) {
-      setPattern(P_STANDGO, 0);
+      setPattern(P_STANDGO, 0, getCenterStaticBallance());
     }
     doCycle();
   } else {
@@ -309,12 +307,8 @@ void doCycle(void) {
   //  updateDynamicBallanceInPattern(gyroState);
   //}
   // update servo motors values, move motors
-  updateBufferPatterns(m_calibration);
-  updateServo(updateMotorsHalfPatterns());
+  updateServo(m_calibration, updateMotorsPatterns());
   delay(_timeDelay);
-  updateServo(updateMotorsPatterns());
-  delay(_timeDelay);
-  updateBufferOldPatterns();
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
   // read proximity sensors

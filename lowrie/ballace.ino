@@ -1,0 +1,83 @@
+/*
+Walking Robot Lowrie
+Licensed GNU GPLv3 by VN ROBOT INC 2023
+Arduino nano
+Robot static and dynamic ballance
+*/
+
+// dynamic ballance
+allMotors legUp = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// position correction
+int correctRoll  = 0;
+int correctPitch = 0;
+
+// center position in the pattern array
+unsigned char centerAbsolute = 12; // (range 8 to 16) bigger the number more weight on front
+// static forward ballance
+unsigned char centerStatic = centerAbsolute;
+
+// get center static ballance point
+unsigned char getCenterStaticBallance(void) {
+  return centerStatic;
+}
+
+
+void updateStaticBallance(accRoll gyroState) {
+  if (gyroState.accAngleX > 2) {
+    if (correctRoll < 10) {
+      correctRoll ++;
+    }
+  } else if (gyroState.accAngleX < -2) {
+    if (correctRoll > -10) {
+      correctRoll --;
+    }
+  }
+  if (gyroState.accAngleY > 2) {
+    if (correctPitch < 10) {
+      correctPitch ++;
+    }
+  } else if (gyroState.accAngleY < -2) {
+    if (correctPitch > -10) {
+      correctPitch --;
+    }
+  }
+  legUp.m.fl.motor1 = -correctRoll + correctPitch;
+  legUp.m.fl.motor2 = -correctRoll + correctPitch;
+  legUp.m.fr.motor1 = correctRoll + correctPitch;
+  legUp.m.fr.motor2 = correctRoll + correctPitch;
+  legUp.m.rl.motor1 = -correctRoll - correctPitch;
+  legUp.m.rl.motor2 = -correctRoll - correctPitch;
+  legUp.m.rr.motor1 = correctRoll - correctPitch;
+  legUp.m.rr.motor2 = correctRoll - correctPitch;
+  // nose down increase waight on rear
+  // nose up increase waight on front
+  centerStatic = centerAbsolute - gyroState.accAngleY / 2;
+  if (centerStatic > 16) {
+    centerStatic = 16;
+  }
+  if (centerStatic < 8) {
+    centerStatic = 8;
+  }
+}
+
+void updateDynamicBallance(accRoll gyroState) {
+  if (gyroState.rollMax - gyroState.rollMin > 2) {
+    // body rolls
+    if ((gyroState.rollMinTime < 10) && (gyroState.rollMaxTime > 9)) {
+      // front is too heavy
+      // increase weight on rear
+      legUp.m.st.motor1 -= 1;
+    }
+    if ((gyroState.rollMinTime > 9) && (gyroState.rollMaxTime < 10)) {
+      // rear is too heavy
+      //increase wight on front
+      legUp.m.st.motor1 += 1;
+    }
+  }
+  if (legUp.m.st.motor1 < -10) {
+    legUp.m.st.motor1 = -10;
+  } else if (legUp.m.st.motor1 > 10) {
+    legUp.m.st.motor1 = 10;
+  }
+  legUp.m.st.motor2 = - legUp.m.st.motor1;
+}

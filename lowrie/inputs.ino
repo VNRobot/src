@@ -21,7 +21,8 @@ Gets analog inputs
 
 // digital inputs pins
 enum dPinsInputs {
-  F_SWITCH = 3
+  F1_SWITCH = 2,
+  F2_SWITCH = 3
 };
 
 // sensor state
@@ -52,6 +53,7 @@ enum inState {
   IN_NORMAL             
 };
 
+unsigned short maxCurrent = 1500; //ma
 unsigned char normalDistance = 50; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
@@ -74,7 +76,8 @@ aSensors analogValueInputs = {6500, 0, 0, 0, 0, 0}; // processed values
 
 // digital sensors structure
 struct dSensors {
-  unsigned char f;
+  unsigned char f1;
+  unsigned char f2;
 };
 
 // digital input values array
@@ -82,7 +85,8 @@ dSensors digitalInputs = {0};
 
 // init inputs
 void initInputs(void) {
-  pinMode(F_SWITCH, INPUT_PULLUP);
+  pinMode(F1_SWITCH, INPUT_PULLUP);
+  pinMode(F2_SWITCH, INPUT_PULLUP);
 }
 
 // read and remember analog sensors readings
@@ -95,7 +99,8 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   analogInputs.left = (unsigned short)analogRead(A0);
   analogInputs.right = (unsigned short)analogRead(A1);
   // read digital inputs
-  digitalInputs.f = (unsigned char)digitalRead(F_SWITCH);
+  digitalInputs.f1 = (unsigned char)digitalRead(F1_SWITCH);
+  digitalInputs.f2 = (unsigned char)digitalRead(F2_SWITCH);
   // calculate sensor current in mA
   // 1
   if (analogInputs.current1 > analogInputs.battery) {
@@ -284,8 +289,10 @@ void _printLineInputs(void) {
   Serial.print((int)analogValueInputs.left);
   Serial.print(F(" right "));
   Serial.print((int)analogValueInputs.right);
-  Serial.print(F(" touch "));
-  Serial.println((int)digitalInputs.f);
+  Serial.print(F(" touch 1 "));
+  Serial.println((int)digitalInputs.f1);
+  Serial.print(F(" touch 2 "));
+  Serial.println((int)digitalInputs.f2);
 }
 */
 // print inputs
@@ -349,20 +356,20 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 1500) {
+  if (analogValueInputs.current1 > maxCurrent) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 1500) {
+  if (analogValueInputs.current2 > maxCurrent) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 1500) {
+  if (analogValueInputs.current3 > maxCurrent) {
     return IN_HIGH_CURRENT_3;
   }
   // touch
-  if (digitalInputs.f == 0) {
-    if (analogValueInputs.left > analogValueInputs.right) {
+  if ((digitalInputs.f1 == 0) || (digitalInputs.f2 == 0)) {
+    if (digitalInputs.f2 == 0) {
       turnLeft = true;
     } else {
       turnLeft = false;
