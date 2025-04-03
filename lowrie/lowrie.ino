@@ -204,7 +204,7 @@ void setup() {
   // update gyro readings
   gyroState = updateGyro(sequenceCounter);
   // load task and pattern
-  setPattern(patternNow, 0, getCenterStaticBallance());
+  setPattern(patternNow, 0);
   sequenceCounter = updateCountPatterns();
 }
 
@@ -244,13 +244,13 @@ void loop() {
     switch (patternNow) {
       case P_STANDGO:
       {
-        setPattern(patternNow, getDirectionCorrectionGyro(), getCenterStaticBallance());
+        setPattern(patternNow, getDirectionCorrectionGyro());
         doCycle();
       }        
       break;
       case P_GOFORWARD:
       {
-        setPattern(patternNow, getDirectionCorrectionGyro(), getCenterStaticBallance());
+        setPattern(patternNow, getDirectionCorrectionGyro());
         doCycle();
       }
       break;
@@ -284,14 +284,14 @@ void loop() {
       // immediatelly run loop again
       break;
       default:
-        setPattern(patternNow, 0, getCenterStaticBallance());
+        setPattern(patternNow, 0);
         doCycle();
       break;
     }
   } else if (sequenceCounter == 10) {
     // check for task interruption
     if (checkInterruptionInputs(taskNow, patternNow)) {
-      setPattern(P_STANDGO, 0, getCenterStaticBallance());
+      setPattern(P_STANDGO, 0);
     }
     doCycle();
   } else {
@@ -307,7 +307,7 @@ void doCycle(void) {
   //  updateDynamicBallanceInPattern(gyroState);
   //}
   // update servo motors values, move motors
-  updateServo(m_calibration, updateMotorsPatterns());
+  updateServo(m_calibration, updateWalkPatterns(), updateLiftPatterns());
   delay(_timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();

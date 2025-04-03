@@ -10,14 +10,16 @@ allMotors legUp = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // position correction
 int correctRoll  = 0;
 int correctPitch = 0;
-
+// center motor default position for dynamic ballance
+char centerF = 0; // positive more distance between legs
+char centerR = 0; // positive more distance between legs
 // center position in the pattern array
-unsigned char centerAbsolute = 12; // (range 8 to 16) bigger the number more weight on front
+char centerAbsolute = 0; // (range -16 to 16) bigger the number more weight on front
 // static forward ballance
-unsigned char centerStatic = centerAbsolute;
+char centerStatic = centerAbsolute;
 
 // get center static ballance point
-unsigned char getCenterStaticBallance(void) {
+char getCenterStaticBallance(void) {
   return centerStatic;
 }
 
