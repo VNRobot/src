@@ -62,15 +62,15 @@ void updateStaticBallance(accRoll gyroState) {
   }
 }
 
-void updateDynamicBallance(accRoll gyroState) {
+allMotors getDynamicBallance(accRoll gyroState) {
   if (gyroState.rollMax - gyroState.rollMin > 2) {
     // body rolls
-    if ((gyroState.rollMinTime < 10) && (gyroState.rollMaxTime > 9)) {
+    if ((gyroState.rollMinTime < m_halfCycle) && (gyroState.rollMaxTime > m_halfCycle - 1)) {
       // front is too heavy
       // increase weight on rear
       legUp.m.st.motor1 -= 1;
     }
-    if ((gyroState.rollMinTime > 9) && (gyroState.rollMaxTime < 10)) {
+    if ((gyroState.rollMinTime > m_halfCycle - 1) && (gyroState.rollMaxTime < m_halfCycle)) {
       // rear is too heavy
       //increase wight on front
       legUp.m.st.motor1 += 1;
@@ -78,8 +78,11 @@ void updateDynamicBallance(accRoll gyroState) {
   }
   if (legUp.m.st.motor1 < -10) {
     legUp.m.st.motor1 = -10;
+    // change static ballance
   } else if (legUp.m.st.motor1 > 10) {
     legUp.m.st.motor1 = 10;
+    // change static ballance
   }
   legUp.m.st.motor2 = - legUp.m.st.motor1;
+  return legUp;
 }

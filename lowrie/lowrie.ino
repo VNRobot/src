@@ -137,6 +137,9 @@ unsigned char _timeDelay = 25;
 // variables for temporary use
 unsigned char i;
 //----------------------------------------------------------
+// full cycle
+unsigned char m_fullCycle = 20;
+unsigned char m_halfCycle = 10;
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -161,7 +164,7 @@ void setup() {
   updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
   // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  initServo(-10, -10);
+  initServo(0, 0);
   delay(400);
   // init gyro require horizontal position
   initGyro();
@@ -196,7 +199,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(m_calibration, 10, 10);
+  setServo(m_calibration, 0, 0);
   delay(200);
   // reset gyro
   resetGyro();
@@ -302,10 +305,10 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update ballance
-  //if (sequenceCounter == 0) {
-  //  updateStaticBallanceInPattern(gyroState);
-  //  updateDynamicBallanceInPattern(gyroState);
-  //}
+  if (sequenceCounter == 0) {
+    //  updateStaticBallanceInPattern(gyroState);
+    updateDynamicBallanceServo(getDynamicBallance(gyroState));
+  }
   // update servo motors values, move motors
   updateServo(m_calibration, updateWalkPatterns(), updateLiftPatterns());
   delay(_timeDelay);
@@ -314,5 +317,9 @@ void doCycle(void) {
   // read proximity sensors
   inputState = updateInputs(sequenceCounter, sensorsEnabled);
   // update gyro readings
-  gyroState = updateGyro(sequenceCounter);
+  if (sequenceCounter == 0) {
+    gyroState = updateGyro(sequenceCounter);
+  } else {
+    updateGyro(sequenceCounter);
+  }
 }
