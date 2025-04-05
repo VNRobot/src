@@ -164,7 +164,7 @@ void setup() {
   updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
   // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  initServo(0, 0);
+  initServo(30, 30);
   delay(400);
   // init gyro require horizontal position
   initGyro();
@@ -199,7 +199,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(m_calibration, 0, 0);
+  setServo(m_calibration, 30, 30);
   delay(200);
   // reset gyro
   resetGyro();
@@ -304,11 +304,6 @@ void loop() {
 
 // set motors and read sensors
 void doCycle(void) {
-  // update ballance
-  if (sequenceCounter == 0) {
-    //  updateStaticBallanceInPattern(gyroState);
-    updateDynamicBallanceServo(getDynamicBallance(gyroState));
-  }
   // update servo motors values, move motors
   updateServo(m_calibration, updateWalkPatterns(), updateLiftPatterns());
   delay(_timeDelay);
@@ -318,8 +313,13 @@ void doCycle(void) {
   inputState = updateInputs(sequenceCounter, sensorsEnabled);
   // update gyro readings
   if (sequenceCounter == 0) {
+    // update ballance
     gyroState = updateGyro(sequenceCounter);
+    updateDynamicBallanceServo(getDynamicBallance(gyroState));
+    updateStaticBallanceServo(getStaticBallance(gyroState, sequenceCounter));
+    setFowardBallanceServo(getCenterStaticBallance());
   } else {
-    updateGyro(sequenceCounter);
+    // update static ballance
+    updateStaticBallanceServo(getStaticBallance(updateGyro(sequenceCounter), sequenceCounter));
   }
 }

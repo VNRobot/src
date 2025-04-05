@@ -40,6 +40,7 @@ char m1Walk[47] =  {  22,  22,  22,  22,  22,  22,  22,  22,  22,  22,  23,  24,
 char m2Walk[47] =  { 118, 118, 118, 112, 107, 102,  98,  94,  91,  87,  84,  81,  78,  75,  72,  69,  66,  63,  60,  58,  55,  52,  50,  48,  45,  42,  40,  38,  36,  34,  33,  31,  29,  27,  26,  25,  24,  23,  23,  22,  22,  22,  22,  22,  22,  22,  22};
 // center position in the pattern array. center point is 24
 char centerServo = 24; // (range 16 to 32) bigger the number more weight on front
+char centerBallance = 0;
 bool reverseCenterMotor = false;
 allMotors ballance = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -51,6 +52,10 @@ short limitMotorValue(short mAngle) {
     mAngle = 0;
   }
   return mAngle;
+}
+
+void setFowardBallanceServo(char ballance) {
+  centerBallance = ballance;
 }
 
 // init servo motors
@@ -122,17 +127,28 @@ void updateServo(allMotors calibration, allMotors motorValue, allMotors motorLif
     servo_frnt.write(limitMotorValue(90 - (motorValue.m.st.motor1 + calibration.m.st.motor1 + ballance.m.st.motor1)));
     servo_rear.write(limitMotorValue(90 - (motorValue.m.st.motor2 + calibration.m.st.motor2 + ballance.m.st.motor2)));
     }
-  servo_fl_1.write(limitMotorValue(90 - 30 + (m1Walk[motorValue.m.fl.motor1 + centerServo] + calibration.m.fl.motor1 + motorLift.m.fl.motor1)));
-  servo_fl_2.write(limitMotorValue(90 + 30 - (m2Walk[motorValue.m.fl.motor2 + centerServo] + calibration.m.fl.motor2 + motorLift.m.fl.motor2)));
-  servo_fr_1.write(limitMotorValue(90 + 30 - (m1Walk[motorValue.m.fr.motor1 + centerServo] + calibration.m.fr.motor1 + motorLift.m.fr.motor1)));
-  servo_fr_2.write(limitMotorValue(90 - 30 + (m2Walk[motorValue.m.fr.motor2 + centerServo] + calibration.m.fr.motor2 + motorLift.m.fr.motor2)));
-  servo_rl_1.write(limitMotorValue(90 - 30 + (m1Walk[motorValue.m.rl.motor1 + centerServo] + calibration.m.rl.motor1 + motorLift.m.rl.motor1)));
-  servo_rl_2.write(limitMotorValue(90 + 30 - (m2Walk[motorValue.m.rl.motor2 + centerServo] + calibration.m.rl.motor2 + motorLift.m.rl.motor2)));
-  servo_rr_1.write(limitMotorValue(90 + 30 - (m1Walk[motorValue.m.rr.motor1 + centerServo] + calibration.m.rr.motor1 + motorLift.m.rr.motor1)));
-  servo_rr_2.write(limitMotorValue(90 - 30 + (m2Walk[motorValue.m.rr.motor2 + centerServo] + calibration.m.rr.motor2 + motorLift.m.rr.motor2)));
+  servo_fl_1.write(limitMotorValue(90 - 30 + (m1Walk[motorValue.m.fl.motor1 + centerServo + centerBallance] + calibration.m.fl.motor1 + motorLift.m.fl.motor1 + ballance.m.fl.motor1)));
+  servo_fl_2.write(limitMotorValue(90 + 30 - (m2Walk[motorValue.m.fl.motor2 + centerServo + centerBallance] + calibration.m.fl.motor2 + motorLift.m.fl.motor2 + ballance.m.fl.motor2)));
+  servo_fr_1.write(limitMotorValue(90 + 30 - (m1Walk[motorValue.m.fr.motor1 + centerServo + centerBallance] + calibration.m.fr.motor1 + motorLift.m.fr.motor1 + ballance.m.fr.motor1)));
+  servo_fr_2.write(limitMotorValue(90 - 30 + (m2Walk[motorValue.m.fr.motor2 + centerServo + centerBallance] + calibration.m.fr.motor2 + motorLift.m.fr.motor2 + ballance.m.fr.motor2)));
+  servo_rl_1.write(limitMotorValue(90 - 30 + (m1Walk[motorValue.m.rl.motor1 + centerServo + centerBallance] + calibration.m.rl.motor1 + motorLift.m.rl.motor1 + ballance.m.rl.motor1)));
+  servo_rl_2.write(limitMotorValue(90 + 30 - (m2Walk[motorValue.m.rl.motor2 + centerServo + centerBallance] + calibration.m.rl.motor2 + motorLift.m.rl.motor2 + ballance.m.rl.motor2)));
+  servo_rr_1.write(limitMotorValue(90 + 30 - (m1Walk[motorValue.m.rr.motor1 + centerServo + centerBallance] + calibration.m.rr.motor1 + motorLift.m.rr.motor1 + ballance.m.rr.motor1)));
+  servo_rr_2.write(limitMotorValue(90 - 30 + (m2Walk[motorValue.m.rr.motor2 + centerServo + centerBallance] + calibration.m.rr.motor2 + motorLift.m.rr.motor2 + ballance.m.rr.motor2)));
 }
 
-void updateDynamicBallanceServo(allMotors centerBallance) {
-  ballance.m.st.motor1 = centerBallance.m.st.motor1;
-  ballance.m.st.motor2 = centerBallance.m.st.motor2;
+void updateDynamicBallanceServo(allMotors cBallance) {
+  ballance.m.st.motor1 = cBallance.m.st.motor1;
+  ballance.m.st.motor2 = cBallance.m.st.motor2;
+}
+
+void updateStaticBallanceServo(allMotors cBallance) {
+  ballance.m.fl.motor1 = cBallance.m.fl.motor1;
+  ballance.m.fl.motor2 = cBallance.m.fl.motor2;
+  ballance.m.fr.motor1 = cBallance.m.fr.motor1;
+  ballance.m.fr.motor2 = cBallance.m.fr.motor2;
+  ballance.m.rl.motor1 = cBallance.m.rl.motor1;
+  ballance.m.rl.motor2 = cBallance.m.rl.motor2;
+  ballance.m.rr.motor1 = cBallance.m.rr.motor1;
+  ballance.m.rr.motor2 = cBallance.m.rr.motor2;
 }

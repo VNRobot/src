@@ -7,7 +7,7 @@ Robot legs motion patterns
 
 char cBuffer;
 // leg lift angles
-unsigned char _liftm = 32;
+unsigned char _liftm = 16;
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
 // 20 positions per sequence
