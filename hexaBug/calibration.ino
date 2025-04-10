@@ -26,6 +26,7 @@ unsigned char deviceMode = CALIBRATION_INFO;
 short current = 0;
 // auto calibration enabled
 bool autoCalibrationEnabled = false;
+unsigned short testCurrent = 960; //ma
 
 // get current of center motors
 short _getCurrent1Inputs(void) {
@@ -87,9 +88,9 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
     calibrationSet->motor1 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > 640) && autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > testCurrent) && autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > 640) && autoCalibrationEnabled) {
+      if ((current > testCurrent) && autoCalibrationEnabled) {
         calibrationSet->motor1 -= 15;
       }
       calibrationCounter = 0;
@@ -109,9 +110,9 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
     calibrationSet->motor2 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > 640) && autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > testCurrent) && autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > 640) && autoCalibrationEnabled) {
+      if ((current > testCurrent) && autoCalibrationEnabled) {
         calibrationSet->motor2 -= 15;
       }
       calibrationCounter = 0;
@@ -132,7 +133,7 @@ bool doCalibration(allMotors * calibrationData) {
   deviceMode = CALIBRATION_INFO;
   // do loop
   while (true) {
-    setServo(calibrationData, -60, 60);
+    setServo(*calibrationData, 90, 90);
     delay(100);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
@@ -157,16 +158,16 @@ bool doCalibration(allMotors * calibrationData) {
         Serial.print(F(" Right eye "));
         Serial.print((int)((1600000 / analogRead(A1)) / analogRead(A1)));
         Serial.print(F(" Direction "));
-        Serial.print((int)getDirectionGyro());
+        Serial.print((int)getDirectionCorrectionGyro());
         // motors current
         Serial.print(F(" Battery  "));
         Serial.print((int)analogRead(A6));
-        Serial.print(F(" Current center "));
-        Serial.print((int)_getCurrent1Inputs());
         Serial.print(F(" front "));
-        Serial.print((int)_getCurrent2Inputs());
+        Serial.print((int)analogRead(A7));
+        Serial.print(F(" center "));
+        Serial.print((int)analogRead(A3));
         Serial.print(F(" rear "));
-        Serial.println((int)_getCurrent3Inputs());
+        Serial.println((int)analogRead(A2));
         delay(500);
       }
       break;
@@ -189,62 +190,63 @@ bool doCalibration(allMotors * calibrationData) {
         calibrationData->m.rr.motor2 = -30;
         calibrationCounter = 0;
         calibrationStage = 0;
-      } 
+      }
       break;
       case CALIBRATION_AUTO:
       {
-        // tune motor 1
         switch (calibrationStage) {
           case 0:
-            //Serial.println(F("CALIBRATION_FL_1"));
+            Serial.println(F("CALIBRATION_FL_1"));
             _calibrateMotor1(& calibrationData->m.fl,  _getCurrent1Inputs());
           break;
           case 1:
-            //Serial.println(F("CALIBRATION_FL_2"));
+            Serial.println(F("CALIBRATION_FL_2"));
             _calibrateMotor2(& calibrationData->m.fl,  _getCurrent1Inputs());
           break;
           case 2:
-            //Serial.println(F("CALIBRATION_SL_1"));
+            Serial.println(F("CALIBRATION_SL_1"));
             _calibrateMotor1(& calibrationData->m.sl,  _getCurrent2Inputs());
           break;
           case 3:
-            //Serial.println(F("CALIBRATION_SL_2"));
+            Serial.println(F("CALIBRATION_SL_2"));
             _calibrateMotor2(& calibrationData->m.sl,  _getCurrent2Inputs());
           break;
           case 4:
-            //Serial.println(F("CALIBRATION_RL_1"));
+            Serial.println(F("CALIBRATION_RL_1"));
             _calibrateMotor1(& calibrationData->m.rl,  _getCurrent3Inputs());
           break;
           case 5:
-            //Serial.println(F("CALIBRATION_RL_2"));
+            Serial.println(F("CALIBRATION_RL_2"));
             _calibrateMotor2(& calibrationData->m.rl,  _getCurrent3Inputs());
           break;
           case 6:
-            //Serial.println(F("CALIBRATION_FR_1"));
+            Serial.println(F("CALIBRATION_FR_1"));
             _calibrateMotor1(& calibrationData->m.fr,  _getCurrent1Inputs());
           break;
           case 7:
-            //Serial.println(F("CALIBRATION_FR_2"));
+            Serial.println(F("CALIBRATION_FR_2"));
             _calibrateMotor2(& calibrationData->m.fr,  _getCurrent1Inputs());
           break;
           case 8:
-            //Serial.println(F("CALIBRATION_SR_1"));
+            Serial.println(F("CALIBRATION_SR_1"));
             _calibrateMotor1(& calibrationData->m.sr,  _getCurrent2Inputs());
           break;
           case 9:
-            //Serial.println(F("CALIBRATION_SR_2"));
+            Serial.println(F("CALIBRATION_SR_2"));
             _calibrateMotor2(& calibrationData->m.sr,  _getCurrent2Inputs());
           break;
           case 10:
-            //Serial.println(F("CALIBRATION_RR_1"));
+            Serial.println(F("CALIBRATION_RR_1"));
             _calibrateMotor1(& calibrationData->m.rr,  _getCurrent3Inputs());
           break;
           case 11:
-            //Serial.println(F("CALIBRATION_RR_2"));
+            Serial.println(F("CALIBRATION_RR_2"));
             _calibrateMotor2(& calibrationData->m.rr,  _getCurrent3Inputs());
           break;
           case 12:
+            calibrationCounter = 0;
             calibrationStage = 0;
+            // end of calibration
             deviceMode = CALIBRATION_SAVE;
           break;
           default:
@@ -276,7 +278,7 @@ bool doCalibration(allMotors * calibrationData) {
       break;
       case CALIBRATION_DONE:
       { 
-        Serial.println(F("Done. Please wait for normal operation to start."));
+        Serial.println(F("Done. Please wait."));
         return true;
       }
       break;

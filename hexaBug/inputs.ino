@@ -45,7 +45,8 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned char normalDistance = 36; //cm
+unsigned short maxCurrent = 2500; //ma
+unsigned char normalDistance = 50; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -71,7 +72,7 @@ void initInputs(void) {
 }
 
 // read and remember analog sensors readings
-unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, char direction) {
+unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   // read analog inputs
   analogInputs.battery = (unsigned short)analogRead(A6);
   analogInputs.current1 = (unsigned short)analogRead(A7);
@@ -119,7 +120,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, cha
   analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
   if (sequenceCount == 0) {
-    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right), direction);
+    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
     //
     if (sensorsEnabled) {
       if (allStateInputsOld != allStateInputs) {
@@ -162,7 +163,6 @@ unsigned char getSensorState(unsigned short input) {
     }
     return SEN_NORMAL;
   }
-  return SEN_NORMAL;
 }
 
 unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char inputState) {
@@ -264,7 +264,7 @@ void _printLineInputs(void) {
   Serial.print(F(" left "));
   Serial.print((int)analogValueInputs.left);
   Serial.print(F(" right "));
-  Serial.print((int)analogValueInputs.right);
+  Serial.println((int)analogValueInputs.right);
 }
 */
 // print inputs
@@ -316,39 +316,25 @@ void _printInputs(int state) {
 }
 
 // status of inputs
-unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char direction) {
+unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   // battery low 6500
   if (analogValueInputs.battery < 6500) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 1700) {
+  if (analogValueInputs.current1 > maxCurrent) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 1700) {
+  if (analogValueInputs.current2 > maxCurrent) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 1700) {
+  if (analogValueInputs.current3 > maxCurrent) {
     return IN_HIGH_CURRENT_3;
   }
   // check sensors
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
-    if (direction > 30) {
-      turnLeft = false;
-      return IN_WALL_FRONTLEFT;
-    }
-    if (direction < -30) {
-      turnLeft = true;
-      return IN_WALL_FRONTRIGHT;
-    }
-    if (direction > 5) {
-      return IN_OBSTACLE_LEFT;
-    }
-    if (direction < -5) {
-      return IN_OBSTACLE_RIGHT;
-    }
     return IN_NORMAL;
   }
   if (sRight == SEN_NORMAL) {

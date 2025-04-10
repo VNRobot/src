@@ -28,8 +28,6 @@ typedef struct acc {
 gyro gyroData = {0, 0, 0, 0, 0, 0, 0};
 acc accDataOld1 = {0, 0};
 acc accDataOld2 = {0, 0};
-acc accError = {0, 0};
-acc accErrorAverage = {0, 0};
 accRoll accAverageValue = {0, 0, 0, 0, 0, 0, GYRO_NORM};
 
 // acceleration errors
@@ -47,6 +45,10 @@ unsigned long oldTime;
 float floatBuffer[3];
 float directionOld = 0;
 unsigned char stateGyroOld = GYRO_NORM;
+int rollMinBuffer;
+int rollMaxBuffer;
+unsigned char rollMinTimeBuffer;
+unsigned char rollMaxTimeBuffer;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -141,8 +143,8 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.yaw        += floatBuffer[2] * timeInterval;
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
-  // fix slow drift caused by vibration
-  if ((sequenceCount == 0) || (sequenceCount == 9)) {
+  // fix slow drift
+  if ((sequenceCount == 0) || (sequenceCount == m_halfCycle)) {
     if (gyroData.gyroAngleX > 0) {
       gyroData.gyroAngleX --;
     } else if (gyroData.gyroAngleX < 0) {
@@ -155,21 +157,6 @@ accRoll updateGyro(unsigned char sequenceCount) {
     }
   }
   // end fix slow drift
-  if (accError.accAngleX > 0) {
-    accErrorAverage.accAngleX += accError.accAngleX;
-  } else {
-    accErrorAverage.accAngleX -= accError.accAngleX;
-  }
-  accErrorAverage.accAngleX -= accErrorAverage.accAngleX / 4;
-  if (accError.accAngleY > 0) {
-    accErrorAverage.accAngleY += accError.accAngleY;
-  } else {
-    accErrorAverage.accAngleY -= accError.accAngleY;
-  }
-  accErrorAverage.accAngleY -= accErrorAverage.accAngleY / 4;
-  //
-  accError.accAngleX = (int)gyroData.accAngleX - accAverageValue.accAngleX;
-  accError.accAngleY = (int)gyroData.accAngleY - accAverageValue.accAngleY;
   // 
   accAverageValue.accAngleX = ((int)gyroData.accAngleX + accDataOld1.accAngleX + accDataOld2.accAngleX + accAverageValue.accAngleX + 2) / 4;
   accAverageValue.accAngleY = ((int)gyroData.accAngleY + accDataOld1.accAngleY + accDataOld2.accAngleY + accAverageValue.accAngleY + 2) / 4;
@@ -183,32 +170,36 @@ accRoll updateGyro(unsigned char sequenceCount) {
   // walk cycle related operations
   if (sequenceCount == 0) {
     // start of walk cycle
-    accAverageValue.rollMin = gyroData.roll;
-    accAverageValue.rollMax = gyroData.roll;
-    accAverageValue.rollMinTime = 0;
-    accAverageValue.rollMaxTime = 0;
+    accAverageValue.rollMin = rollMinBuffer;
+    accAverageValue.rollMax = rollMaxBuffer;
+    accAverageValue.rollMinTime = rollMinTimeBuffer;
+    accAverageValue.rollMaxTime = rollMaxTimeBuffer;
+    rollMinBuffer = gyroData.roll;
+    rollMaxBuffer = gyroData.roll;
+    rollMinTimeBuffer = 0;
+    rollMaxTimeBuffer = 0;
   } else {
     // find max and min roll
-    if (gyroData.roll > accAverageValue.rollMax) {
-      accAverageValue.rollMax = gyroData.roll;
-      accAverageValue.rollMaxTime = sequenceCount;
+    if (gyroData.roll > rollMaxBuffer) {
+      rollMaxBuffer = gyroData.roll;
+      rollMaxTimeBuffer = sequenceCount;
     }
-    if (gyroData.roll < accAverageValue.rollMin) {
-      accAverageValue.rollMin = gyroData.roll;
-      accAverageValue.rollMinTime = sequenceCount;
+    if (gyroData.roll < rollMinBuffer) {
+      rollMinBuffer = gyroData.roll;
+      rollMinTimeBuffer = sequenceCount;
     }
   }
   // end walk cycle related operations
-  accAverageValue.stateGyro = _statusGyro(accErrorAverage);
-  if (stateGyroOld != accAverageValue.stateGyro) {
-    stateGyroOld = accAverageValue.stateGyro;
+  if (sequenceCount == 0) {
+    accAverageValue.stateGyro = _statusGyro();
+    if (stateGyroOld != accAverageValue.stateGyro) {
+      stateGyroOld = accAverageValue.stateGyro;
+      // debug print
+      _printGyro(accAverageValue.stateGyro);
+    }
     // debug print
-    _printGyro(accAverageValue.stateGyro);
+    //  _printLineGyro();
   }
-  // debug print
-  //if (sequenceCount == 0) {
-  //  _printLineGyro(accErrorAverage);
-  //}
   return accAverageValue;
 }
 
@@ -247,8 +238,15 @@ void restoreDirectionGyro(void) {
   gyroData.yaw += directionOld;
 }
 
-// get direction
-char getDirectionGyro(void) {
+// get walking direction correction from gyroscope
+char getDirectionCorrectionGyro(void) {
+  // maximal direction correction is 5
+  if (gyroData.yaw > 10) {
+    return 5;
+  }
+  if (gyroData.yaw < -10) {
+    return -5;
+  }
   return (char)(gyroData.yaw / 2);
 }
 
@@ -266,6 +264,56 @@ int getPitchGiro(void) {
   // negative - nose up  
   //return gyroData.pitch;
   return (int)(gyroData.accAngleY / 2);
+}
+
+// status of gyro
+unsigned char _statusGyro(void) {
+  // upside down r > 70 or r < -70
+  if ((gyroData.roll > 70) || (gyroData.roll < -70)) {
+    return GYRO_UPSIDEDOWN;
+  }
+  // fell left r < -30
+  if ((gyroData.roll + ((int)AccErrorX)) < -40) {
+    return GYRO_FELL_LEFT;
+  }
+  // fell right r > 30
+  if ((gyroData.roll + ((int)AccErrorX)) > 40) {
+    return GYRO_FELL_RIGHT;
+  }
+  // fell front p > 20
+  if ((gyroData.pitch + ((int)AccErrorY)) > 40) {
+    return GYRO_FELL_FRONT;
+  }
+  // fell back p < -20
+  if ((gyroData.pitch + ((int)AccErrorY)) < -40) {
+    return GYRO_FELL_BACK;
+  }
+  // folling left r negative grows
+  if ((gyroData.roll + ((int)AccErrorX)) < -30) {
+    return GYRO_FOLLING_LEFT;
+  }
+  // folling right r grows
+  if ((gyroData.roll + ((int)AccErrorX)) > 30) {
+    return GYRO_FOLLING_RIGHT;
+  }
+  // folling front p grows
+  if ((gyroData.pitch + ((int)AccErrorY)) > 20) {
+    return GYRO_FOLLING_FRONT;
+  }
+  // folling back p negative grows
+  if ((gyroData.pitch + ((int)AccErrorY)) < -20) {
+    return GYRO_FOLLING_BACK;
+  }
+  // walk down p > 5
+  if ((gyroData.pitch + ((int)AccErrorY)) > 5) {
+    return GYRO_DOWN_HILL;
+  }
+  // walk up p < -5
+  if ((gyroData.pitch + ((int)AccErrorY)) < -5) {
+    return GYRO_UP_HILL;
+  }
+  // walking aX > 5 or aY > 5
+  return GYRO_NORM;
 }
 
 /*
@@ -339,66 +387,4 @@ void _printGyro(unsigned char state) {
     default:
       Serial.println(F(" Wrong gyro state "));
   }
-}
-
-// status of gyro
-unsigned char _statusGyro(struct acc data) {
-  // upside down r > 70 or r < -70
-  if ((gyroData.roll > 70) || (gyroData.roll < -70)) {
-    return GYRO_UPSIDEDOWN;
-  }
-  // shaken aX > 200 or aY > 200
-  if ((data.accAngleX > 200) || (data.accAngleY > 200)) {
-    return GYRO_SHAKEN;
-  }
-  // hit side aX > 100
-  if ((data.accAngleX > 100) && (data.accAngleX > data.accAngleY)) {
-    return GYRO_HIT_SIDE;
-  }
-  // hit front aY > 100
-  if ((data.accAngleY > 100) && (data.accAngleY > data.accAngleX)) {
-    return GYRO_HIT_FRONT;
-  }
-  // fell left r < -30
-  if ((gyroData.roll + ((int)AccErrorX)) < -40) {
-    return GYRO_FELL_LEFT;
-  }
-  // fell right r > 30
-  if ((gyroData.roll + ((int)AccErrorX)) > 40) {
-    return GYRO_FELL_RIGHT;
-  }
-  // fell front p > 20
-  if ((gyroData.pitch + ((int)AccErrorY)) > 40) {
-    return GYRO_FELL_FRONT;
-  }
-  // fell back p < -20
-  if ((gyroData.pitch + ((int)AccErrorY)) < -40) {
-    return GYRO_FELL_BACK;
-  }
-  // folling left r negative grows
-  if ((gyroData.roll + ((int)AccErrorX)) < -30) {
-    return GYRO_FOLLING_LEFT;
-  }
-  // folling right r grows
-  if ((gyroData.roll + ((int)AccErrorX)) > 30) {
-    return GYRO_FOLLING_RIGHT;
-  }
-  // folling front p grows
-  if ((gyroData.pitch + ((int)AccErrorY)) > 20) {
-    return GYRO_FOLLING_FRONT;
-  }
-  // folling back p negative grows
-  if ((gyroData.pitch + ((int)AccErrorY)) < -20) {
-    return GYRO_FOLLING_BACK;
-  }
-  // walk down p > 5
-  if ((gyroData.pitch + ((int)AccErrorY)) > 5) {
-    return GYRO_DOWN_HILL;
-  }
-  // walk up p < -5
-  if ((gyroData.pitch + ((int)AccErrorY)) < -5) {
-    return GYRO_UP_HILL;
-  }
-  // walking aX > 5 or aY > 5
-  return GYRO_NORM;
 }
