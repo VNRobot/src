@@ -8,26 +8,26 @@ Robot legs motion patterns
 char cBuffer;
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
-// 20 positions per sequence
-char sequenceCenterF[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceCenterR[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceFL1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceFL2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceFR1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceFR2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceRL1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceRL2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceRR1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceRR2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// 24 positions per sequence
+char sequenceCenterF[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceCenterR[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceFL1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceFL2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceFR1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceFR2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceRL1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceRL2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceRR1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceRR2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // sequence for leg lift
-char sequenceLiftFL1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftFL2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftFR1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftFR2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftRL1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftRL2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftRR1[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-char sequenceLiftRR2[20] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftFL1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftFL2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftFR1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftFR2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftRL1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftRL2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftRR1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+char sequenceLiftRR2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // motors values for 10 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 allMotors motorLift = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -154,13 +154,13 @@ void _updateSequenceWalk(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
-  sequence[apoint] = - 10;
+  sequence[apoint] = - m_halfCycle;
   for (i = 2; i < m_fullCycle - 1; i++) {
     _updateApointer(i, shift);
     sequence[apoint] = (i - m_halfCycle) * 2;
   }
   _updateApointer(m_fullCycle - 1, shift);
-  sequence[apoint] = 8;
+  sequence[apoint] = m_halfCycle;
 }
 
 // create walk sequence
@@ -168,13 +168,13 @@ void _updateSequenceWalkSlow(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
-  sequence[apoint] = - 5;
+  sequence[apoint] = - m_halfCycle / 2;
   for (i = 2; i < m_fullCycle - 1; i++) {
     _updateApointer(i, shift);
     sequence[apoint] = i - m_halfCycle;
   }
   _updateApointer(m_fullCycle - 1, shift);
-  sequence[apoint] = 4;
+  sequence[apoint] = m_halfCycle / 2;
 }
 
 // create walk sequence
@@ -182,13 +182,13 @@ void _updateSequenceWalkBack(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
-  sequence[apoint] = 5;
+  sequence[apoint] = m_halfCycle / 2;
   for (i = 2; i < m_fullCycle - 1; i++) {
     _updateApointer(i, shift);
     sequence[apoint] = m_halfCycle - i;
   }
   _updateApointer(m_fullCycle - 1, shift);
-  sequence[apoint] = - 4;
+  sequence[apoint] = - m_halfCycle / 2;
 }
 
 // create recover sequence

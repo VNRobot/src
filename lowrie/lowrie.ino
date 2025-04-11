@@ -135,11 +135,11 @@ unsigned char _newTask = BEGIN_TASK;
 unsigned char i;
 //-------------global variables---------------------------
 // full cycle
-unsigned char m_fullCycle = 20;
+unsigned char m_fullCycle = 24;
 // half cycle
-unsigned char m_halfCycle = 10;
+unsigned char m_halfCycle = 12;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 25;
+unsigned char m_timeDelay = 21;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
