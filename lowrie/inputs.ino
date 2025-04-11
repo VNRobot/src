@@ -140,7 +140,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
   analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
   //
-  if ((sequenceCount == 0) || (sequenceCount == 10)) {
+  if (sequenceCount == 0) {
     allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
     //
     if (sensorsEnabled) {
@@ -463,14 +463,6 @@ bool checkForDemoModeInputs(void) {
 bool checkModeButtonPressedInputs(void) {
   // button is pressed if lower than 400
   if (analogRead(A6) < 400) {
-    return true;
-  }
-  return false;
-}
-
-// check for walk interruption
-bool checkInterruptionInputs(unsigned char taskNow, unsigned char patternNow) {
-  if ((taskNow == GO_TASK) && (patternNow == P_GOFORWARD) && (allStateInputs != IN_NORMAL)) {
     return true;
   }
   return false;

@@ -291,12 +291,6 @@ void loop() {
         doCycle();
       break;
     }
-  } else if (sequenceCounter == 10) {
-    // check for task interruption
-    if (checkInterruptionInputs(taskNow, patternNow)) {
-      setPattern(P_STANDGO, 0);
-    }
-    doCycle();
   } else {
     doCycle();
   }
@@ -315,9 +309,8 @@ void doCycle(void) {
   if (sequenceCounter == 0) {
     // update ballance
     gyroState = updateGyro(sequenceCounter);
-    updateDynamicBallanceServo(getDynamicBallance(gyroState));
     updateStaticBallanceServo(getStaticBallance(gyroState, sequenceCounter));
-    setFowardBallanceServo(getCenterStaticBallance());
+    setFowardBallanceServo(getForwardBallance(gyroState));
   } else {
     // update static ballance
     updateStaticBallanceServo(getStaticBallance(updateGyro(sequenceCounter), sequenceCounter));
