@@ -6,8 +6,6 @@ Robot legs motion patterns
 */
 
 char cBuffer;
-// leg lift angles
-unsigned char _liftm = 16;
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
 // 20 positions per sequence
@@ -136,19 +134,19 @@ void _updateApointer(unsigned char pointer, unsigned char shift) {
 // create lift sequence
 void _updateSequenceLiftWalk(char * lift, unsigned char shift) {
   _updateApointer(0, shift);
-  lift[apoint] = - _liftm;
+  lift[apoint] = - m_legPatternLift;
   _updateApointer(1, shift);
-  lift[apoint] = - _liftm;
+  lift[apoint] = - m_legPatternLift;
   _updateApointer(2, shift);
-  lift[apoint] = - _liftm / 2;
+  lift[apoint] = - m_legPatternLift / 2;
   for (i = 3; i < m_fullCycle - 2; i++) {
     _updateApointer(i, shift);
     lift[apoint] = 0;
   }
   _updateApointer(m_fullCycle - 2, shift);
-  lift[apoint] = - _liftm;
+  lift[apoint] = - m_legPatternLift;
   _updateApointer(m_fullCycle - 1, shift);
-  lift[apoint] = - _liftm;
+  lift[apoint] = - m_legPatternLift;
 }
 
 // create walk sequence
@@ -273,14 +271,14 @@ void _setStandSequenceWalk(char position1, char position2) {
 }
 
 void _setStandToGoLift(void) {
-  _updateSequenceLinearLiftEnd(-_liftm, sequenceLiftFL1);
-  _updateSequenceLinearLiftEnd(-_liftm, sequenceLiftFL2);
+  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftFL1);
+  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftFL2);
   _updateSequenceLinearLiftEnd(0, sequenceLiftFR1);
   _updateSequenceLinearLiftEnd(0, sequenceLiftFR2);
   _updateSequenceLinearLiftEnd(0, sequenceLiftRL1);
   _updateSequenceLinearLiftEnd(0, sequenceLiftRL2);
-  _updateSequenceLinearLiftEnd(-_liftm, sequenceLiftRR1);
-  _updateSequenceLinearLiftEnd(-_liftm, sequenceLiftRR2);
+  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftRR1);
+  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftRR2);
 }
 
 void _setGoToStandLift(void) {

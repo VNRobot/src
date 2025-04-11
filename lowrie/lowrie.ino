@@ -112,7 +112,7 @@ typedef struct accRoll {
 } accRoll;
 
 // motors calibration values for 10 motors
-allMotors m_calibration = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // inputs state
 unsigned char inputState = 0;
 // gyro state
@@ -129,17 +129,40 @@ unsigned char defaultTask = GO_TASK;
 unsigned char taskNow = STAND_TASK;
 // next task
 unsigned char taskNext = STAND_TASK;
-// main time delay in the loop in msec
-unsigned char _timeDelay = 25;
 // new task
- unsigned char _newTask = BEGIN_TASK;
-//----------------------------------------------------------
-// variables for temporary use
+unsigned char _newTask = BEGIN_TASK;
+// variable for temporary use
 unsigned char i;
-//----------------------------------------------------------
+//-------------global variables---------------------------
 // full cycle
 unsigned char m_fullCycle = 20;
+// half cycle
 unsigned char m_halfCycle = 10;
+// main time delay in the loop in msec
+unsigned char m_timeDelay = 25;
+// roll ballance flag
+bool m_rollBallanceEnabled = false;
+// pitch ballance flag
+bool m_pitchBallanceEnabled = true;
+// forward ballance flag
+bool m_forwardBallanceEnabled = true;
+// auto calibration enabled
+bool m_autoCalibrationEnabled = true;
+// calibration current
+unsigned short m_calibrationCurrent = 640; //ma
+// software version hardcoded. should be changed manually
+unsigned char m_versionEeprom = 51;
+// maximal pair of legs current
+unsigned short m_maxInputCurrent = 1500; //ma
+// normal distance sensor beam to ground
+unsigned char m_normalInputDistance = 50; //cm
+// leg lift angle when walking
+unsigned char m_legPatternLift = 16;
+// reverse center motor direction
+bool m_reverseCenterServo = false;
+// center position in the pattern array. center point is 24
+char m_forwardCenterServo = 24; // (range 16 to 32) bigger the number more weight on front
+//----------------------------------------------------------
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -169,24 +192,24 @@ void setup() {
   // init gyro require horizontal position
   initGyro();
   // check for Mode button press or not calibrated
-  if (_readButtonPress() || (getSoftwareVersionEeprom() != readSoftwareVersionEeprom())) {
+  if (_readButtonPress() || (m_versionEeprom != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // set motors values with clear calibration data
-    setServo(m_calibration, 90, 90);
+    setServo(calibrationData, 90, 90);
     // do calibration
-    if (doCalibration(& m_calibration)) {
-      writeCalibrationEeprom(m_calibration);
-      writeSoftwareVersionEeprom();
+    if (doCalibration(& calibrationData)) {
+      writeCalibrationEeprom(calibrationData);
+      writeSoftwareVersionEeprom(m_versionEeprom);
       delay(6000);
     }
     delay(500);
   }
   // normal operation
   // load calibration if available
-  if (getSoftwareVersionEeprom() == readSoftwareVersionEeprom()) {
+  if (m_versionEeprom == readSoftwareVersionEeprom()) {
     // read values by using pointer to struct
-    readCalibrationEeprom(& m_calibration);
+    readCalibrationEeprom(& calibrationData);
   }
   // demo mode activated when hand is placed 5cm from sensors during the boot
   if (checkForDemoModeInputs()) {
@@ -199,7 +222,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(m_calibration, 30, 30);
+  setServo(calibrationData, 30, 30);
   delay(200);
   // reset gyro
   resetGyro();
@@ -299,8 +322,8 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateServo(m_calibration, updateWalkPatterns(), updateLiftPatterns());
-  delay(_timeDelay);
+  updateServo(calibrationData, updateWalkPatterns(), updateLiftPatterns());
+  delay(m_timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
   // read proximity sensors

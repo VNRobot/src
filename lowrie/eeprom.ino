@@ -7,17 +7,8 @@ Read and write eeprom for software version and calibration data
 
 #include <EEPROM.h>
 
-// software version hardcoded
-// should be changed manually
-unsigned char _version = 51;
-
-// get software version
-unsigned char getSoftwareVersionEeprom(void) {
-  return _version;
-}
-
 // write software version to eeprom
-void writeSoftwareVersionEeprom(void) {
+void writeSoftwareVersionEeprom(unsigned char _version) {
   // software version address is 0
   EEPROM.update(0, _version);
 }

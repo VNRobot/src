@@ -26,9 +26,6 @@ bool modePressed = false;
 unsigned char deviceMode = CALIBRATION_INFO;
 // current buffer
 short current = 0;
-// auto calibration enabled
-bool autoCalibrationEnabled = true;
-unsigned short testCurrent = 640; //ma
 
 // get current of center motors
 short _getCurrent1Inputs(void) {
@@ -90,9 +87,9 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
     calibrationSet->motor1 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > testCurrent) && autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > testCurrent) && autoCalibrationEnabled) {
+      if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
         calibrationSet->motor1 -= 15;
       }
       calibrationCounter = 0;
@@ -112,9 +109,9 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
     calibrationSet->motor2 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > testCurrent) && autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > testCurrent) && autoCalibrationEnabled) {
+      if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
         calibrationSet->motor2 -= 15;
       }
       calibrationCounter = 0;
@@ -198,9 +195,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > testCurrent) && autoCalibrationEnabled)) {
+          if (modePressed || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
             modePressed = false;
-            if ((current > testCurrent) && autoCalibrationEnabled) {
+            if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
               calibrationData->m.st.motor1 -= 25;
             }
             calibrationCounter = 0;
@@ -224,9 +221,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > testCurrent) && autoCalibrationEnabled)) {
+          if (modePressed || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
             modePressed = false;
-            if ((current > testCurrent) && autoCalibrationEnabled) {
+            if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
               calibrationData->m.st.motor2 -= 25;
             }
             calibrationCounter = 0;

@@ -13,19 +13,14 @@ char correctRollR  = 0;
 char correctPitchF = 0;
 char correctPitchR = 0;
 // center position in the pattern array
-char centerAbsolute = 0; // (range -16 to 16) bigger the number more weight on front
+char centerAbsolute = 0; // (range -8 to 8) bigger the number more weight on front
+char centerAbsoluteMax = 8;
 // static forward ballance
 char centerForward = centerAbsolute;
-// roll ballance flag
-bool rollBallanceEnabled = false;
-// pitch ballance flag
-bool pitchBallanceEnabled = true;
-// forward ballance flag
-bool forwardBallanceEnabled = true;
 
 allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
   // roll
-  if (rollBallanceEnabled) {
+  if (m_rollBallanceEnabled) {
     if (gyroState.accAngleX < -8) {
       if (correctRollR < 10) {
         correctRollR ++;
@@ -49,7 +44,7 @@ allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
     }
   }
   // pitch
-  if (pitchBallanceEnabled) {
+  if (m_pitchBallanceEnabled) {
     if (gyroState.accAngleY > 2) {
       if (correctPitchR < 10) {
         correctPitchR ++;
@@ -85,18 +80,20 @@ allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
 
 // update forward ballance
 char getForwardBallance(accRoll gyroState) {
-  if (gyroState.rollMax - gyroState.rollMin > 2) {
-    // body rolls
-    if ((gyroState.rollMinTime < m_halfCycle) && (gyroState.rollMaxTime > m_halfCycle - 1)) {
-      // front is too heavy
-      if (centerForward > -8) {
-        centerForward --;
-      }
+  if (m_forwardBallanceEnabled) {
+    if (gyroState.rollMax - gyroState.rollMin > 2) {
+      // body rolls
+      if ((gyroState.rollMinTime < m_halfCycle) && (gyroState.rollMaxTime > m_halfCycle - 1)) {
+        // front is too heavy
+        if (centerForward > -centerAbsoluteMax) {
+          centerForward --;
         }
-    if ((gyroState.rollMinTime > m_halfCycle - 1) && (gyroState.rollMaxTime < m_halfCycle)) {
-      // rear is too heavy
-      if (centerForward < 8) {
-        centerForward ++;
+          }
+      if ((gyroState.rollMinTime > m_halfCycle - 1) && (gyroState.rollMaxTime < m_halfCycle)) {
+        // rear is too heavy
+        if (centerForward < centerAbsoluteMax) {
+          centerForward ++;
+        }
       }
     }
   }
