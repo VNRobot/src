@@ -45,12 +45,12 @@ allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
   }
   // pitch
   if (m_pitchBallanceEnabled) {
-    if (gyroState.accAngleY > 2) {
+    if (gyroState.accAngleY > 4) {
       if (correctPitchR < 10) {
         correctPitchR ++;
       }
       correctPitchF = 0;
-    } else if (gyroState.accAngleY < -2) {
+    } else if (gyroState.accAngleY < -4) {
       if (correctPitchF < 10) {
         correctPitchF ++;
       }

@@ -162,6 +162,8 @@ unsigned char m_legPatternLift = 16;
 bool m_reverseCenterServo = false;
 // center position in the pattern array. center point is 24
 char m_forwardCenterServo = 24; // (range 16 to 32) bigger the number more weight on front
+// enable fast walking
+bool m_fastWalkingPatternEnabled = true;
 //----------------------------------------------------------
 
 // read button press in blocking mode
