@@ -45,8 +45,6 @@ enum inState {
   IN_NORMAL             
 };
 
-unsigned short maxCurrent = 2500; //ma
-unsigned char normalDistance = 50; //cm
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
@@ -139,10 +137,10 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (normalDistance * 4)) { // no edge
-    if (input > (normalDistance / 6)) { // not blocked
-      if (input > (normalDistance / 3)) { // no wall
-        if (input > (normalDistance / 2)) { // no obstacle
+  if (input < (m_normalInputDistance * 4)) { // no edge
+    if (input > (m_normalInputDistance / 6)) { // not blocked
+      if (input > (m_normalInputDistance / 3)) { // no wall
+        if (input > (m_normalInputDistance / 2)) { // no obstacle
           return SEN_NORMAL;
         } else {
           // obstacle
@@ -322,15 +320,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > maxCurrent) {
+  if (analogValueInputs.current1 > m_maxInputCurrent) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > maxCurrent) {
+  if (analogValueInputs.current2 > m_maxInputCurrent) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > maxCurrent) {
+  if (analogValueInputs.current3 > m_maxInputCurrent) {
     return IN_HIGH_CURRENT_3;
   }
   // check sensors
