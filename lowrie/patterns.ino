@@ -45,7 +45,7 @@ unsigned char updateCountPatterns(void) {
 }
 
 // set new values of center motors
-void _updateCenterMotor(char * sequenceCenter, char cAngle) {
+void _setCenterMotor(char * sequenceCenter, char cAngle) {
   sequenceCenter[0] = - cAngle / 2;
   for (i = 1; i < m_halfCycle - 1; i++) {
     sequenceCenter[i] = - cAngle;
@@ -60,14 +60,14 @@ void _updateCenterMotor(char * sequenceCenter, char cAngle) {
 
 // update turning
 void _updateTurn(char cAngle) {
-  _updateCenterMotor(sequenceCenterF, cAngle);
-  _updateCenterMotor(sequenceCenterR, cAngle);
+  _setCenterMotor(sequenceCenterF, cAngle);
+  _setCenterMotor(sequenceCenterR, cAngle);
 }
 
 // update shift
 void _updateShift(char cAngle) {
-  _updateCenterMotor(sequenceCenterF, cAngle);
-  _updateCenterMotor(sequenceCenterR, -cAngle);
+  _setCenterMotor(sequenceCenterF, cAngle);
+  _setCenterMotor(sequenceCenterR, -cAngle);
 }
 
 // create walk sequence
@@ -91,7 +91,7 @@ void _setSequenceValue(char endPosition, char * sequence) {
 }
 
 // linear motor movement from point to point
-void _updateSequenceLinearLift(char endPosition, char * sequence) {
+void _setLinearLift(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   sequence[0] = cBuffer;
   for (i = 1; i < (m_fullCycle - 1); i++) {
@@ -101,7 +101,7 @@ void _updateSequenceLinearLift(char endPosition, char * sequence) {
 }
 
 // linear motor movement from point to point at the end of sequence
-void _updateSequenceLinearLiftEnd(char endPosition, char * sequence) {
+void _setLinearLiftEnd(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   for (i = 0; i < (m_fullCycle - 4); i++) {
     sequence[i] = cBuffer;
@@ -113,7 +113,7 @@ void _updateSequenceLinearLiftEnd(char endPosition, char * sequence) {
 }
 
 // linear motor movement from point to point at the start of sequence
-void _updateSequenceLinearLiftStart(char endPosition, char * sequence) {
+void _setLinearLiftStart(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   sequence[0] = cBuffer;
   sequence[1] = cBuffer + (endPosition - cBuffer) / 4;
@@ -132,7 +132,7 @@ void _updateApointer(unsigned char pointer, unsigned char shift) {
 }
 
 // create lift sequence for stand
-void _updateSequenceLiftStandWalk(char * lift, unsigned char shift) {
+void _setWalkLift(char * lift, unsigned char shift) {
   _updateApointer(0, shift);
   lift[apoint] = - m_legPatternLift;
   _updateApointer(1, shift);
@@ -150,7 +150,7 @@ void _updateSequenceLiftStandWalk(char * lift, unsigned char shift) {
 }
 
 // create lift sequence for walk
-void _updateSequenceLiftWalk1(char * lift, unsigned char shift) {
+void _setWalkLiftHigh1(char * lift, unsigned char shift) {
   _updateApointer(0, shift);
   lift[apoint] = - m_legPatternLift * 2;
   _updateApointer(1, shift);
@@ -168,7 +168,7 @@ void _updateSequenceLiftWalk1(char * lift, unsigned char shift) {
 }
 
 // create lift sequence for walk
-void _updateSequenceLiftWalk2(char * lift, unsigned char shift) {
+void _setWalkLiftHigh2(char * lift, unsigned char shift) {
   _updateApointer(0, shift);
   lift[apoint] = - m_legPatternLift * 2;
   _updateApointer(1, shift);
@@ -186,7 +186,7 @@ void _updateSequenceLiftWalk2(char * lift, unsigned char shift) {
 }
 
 // create walk sequence
-void _updateSequenceWalk(char * sequence, unsigned char shift) {
+void _setForwardWalk(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
@@ -200,7 +200,7 @@ void _updateSequenceWalk(char * sequence, unsigned char shift) {
 }
 
 // create walk sequence
-void _updateSequenceWalkSlow(char * sequence, unsigned char shift) {
+void _setForwardWalkSlow(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
@@ -214,7 +214,7 @@ void _updateSequenceWalkSlow(char * sequence, unsigned char shift) {
 }
 
 // create walk sequence
-void _updateSequenceWalkBack(char * sequence, unsigned char shift) {
+void _setForwardWalkBack(char * sequence, unsigned char shift) {
   _updateApointer(0, shift);
   sequence[apoint] = 0;
   _updateApointer(1, shift);
@@ -228,7 +228,7 @@ void _updateSequenceWalkBack(char * sequence, unsigned char shift) {
 }
 
 // create recover sequence
-void _setSequenceRecoverLift(char * sequence1, char * sequence2) {
+void _setRecoverLift(char * sequence1, char * sequence2) {
   // leg 1
   sequence1[0] = -15;
   sequence1[1] = -45;
@@ -251,103 +251,115 @@ void _setSequenceRecoverLift(char * sequence1, char * sequence2) {
   sequence2[m_fullCycle - 1] = 0;
 }
 
-void _setStandWalkLiftSequence(void) {
-  _updateSequenceLiftStandWalk(sequenceLiftFL1, 0);
-  _updateSequenceLiftStandWalk(sequenceLiftFL2, 0);
-  _updateSequenceLiftStandWalk(sequenceLiftFR1, m_halfCycle);
-  _updateSequenceLiftStandWalk(sequenceLiftFR2, m_halfCycle);
-  _updateSequenceLiftStandWalk(sequenceLiftRL1, m_halfCycle);
-  _updateSequenceLiftStandWalk(sequenceLiftRL2, m_halfCycle);
-  _updateSequenceLiftStandWalk(sequenceLiftRR1, 0);
-  _updateSequenceLiftStandWalk(sequenceLiftRR2, 0);
-}
-
 void _setWalkLiftSequence(void) {
-  _updateSequenceLiftWalk1(sequenceLiftFL1, 0);
-  _updateSequenceLiftWalk2(sequenceLiftFL2, 0);
-  _updateSequenceLiftWalk1(sequenceLiftFR1, m_halfCycle);
-  _updateSequenceLiftWalk2(sequenceLiftFR2, m_halfCycle);
-  _updateSequenceLiftWalk1(sequenceLiftRL1, m_halfCycle);
-  _updateSequenceLiftWalk2(sequenceLiftRL2, m_halfCycle);
-  _updateSequenceLiftWalk1(sequenceLiftRR1, 0);
-  _updateSequenceLiftWalk2(sequenceLiftRR2, 0);
+  _setWalkLift(sequenceLiftFL1, 0);
+  _setWalkLift(sequenceLiftFL2, 0);
+  _setWalkLift(sequenceLiftFR1, m_halfCycle);
+  _setWalkLift(sequenceLiftFR2, m_halfCycle);
+  _setWalkLift(sequenceLiftRL1, m_halfCycle);
+  _setWalkLift(sequenceLiftRL2, m_halfCycle);
+  _setWalkLift(sequenceLiftRR1, 0);
+  _setWalkLift(sequenceLiftRR2, 0);
 }
 
-void _setWalkSequence(void) {
-  _updateSequenceWalk(sequenceFL1, 0);
-  _updateSequenceWalk(sequenceFL2, 0);
-  _updateSequenceWalk(sequenceFR1, m_halfCycle);
-  _updateSequenceWalk(sequenceFR2, m_halfCycle);
-  _updateSequenceWalk(sequenceRL1, m_halfCycle);
-  _updateSequenceWalk(sequenceRL2, m_halfCycle);
-  _updateSequenceWalk(sequenceRR1, 0);
-  _updateSequenceWalk(sequenceRR2, 0);
+void _setWalkLiftHighSequence(void) {
+  _setWalkLiftHigh1(sequenceLiftFL1, 0);
+  _setWalkLiftHigh2(sequenceLiftFL2, 0);
+  _setWalkLiftHigh1(sequenceLiftFR1, m_halfCycle);
+  _setWalkLiftHigh2(sequenceLiftFR2, m_halfCycle);
+  _setWalkLiftHigh1(sequenceLiftRL1, m_halfCycle);
+  _setWalkLiftHigh2(sequenceLiftRL2, m_halfCycle);
+  _setWalkLiftHigh1(sequenceLiftRR1, 0);
+  _setWalkLiftHigh2(sequenceLiftRR2, 0);
 }
 
-void _setWalkSlowSequence(void) {
-  _updateSequenceWalkSlow(sequenceFL1, 0);
-  _updateSequenceWalkSlow(sequenceFL2, 0);
-  _updateSequenceWalkSlow(sequenceFR1, m_halfCycle);
-  _updateSequenceWalkSlow(sequenceFR2, m_halfCycle);
-  _updateSequenceWalkSlow(sequenceRL1, m_halfCycle);
-  _updateSequenceWalkSlow(sequenceRL2, m_halfCycle);
-  _updateSequenceWalkSlow(sequenceRR1, 0);
-  _updateSequenceWalkSlow(sequenceRR2, 0);
+void _setWalkFastSequenceL(void) {
+  _setForwardWalk(sequenceFL1, 0);
+  _setForwardWalk(sequenceFL2, 0);
+  _setForwardWalk(sequenceRL1, m_halfCycle);
+  _setForwardWalk(sequenceRL2, m_halfCycle);
 }
 
-void _setWalkBackSequence(void) {
-  _updateSequenceWalkBack(sequenceFL1, 0);
-  _updateSequenceWalkBack(sequenceFL2, 0);
-  _updateSequenceWalkBack(sequenceFR1, m_halfCycle);
-  _updateSequenceWalkBack(sequenceFR2, m_halfCycle);
-  _updateSequenceWalkBack(sequenceRL1, m_halfCycle);
-  _updateSequenceWalkBack(sequenceRL2, m_halfCycle);
-  _updateSequenceWalkBack(sequenceRR1, 0);
-  _updateSequenceWalkBack(sequenceRR2, 0);
+void _setWalkFastSequenceR(void) {
+  _setForwardWalk(sequenceFR1, m_halfCycle);
+  _setForwardWalk(sequenceFR2, m_halfCycle);
+  _setForwardWalk(sequenceRR1, 0);
+  _setForwardWalk(sequenceRR2, 0);
 }
 
-void _setStandSequenceWalk(char position1, char position2) {
+void _setWalkSlowSequenceL(void) {
+  _setForwardWalkSlow(sequenceFL1, 0);
+  _setForwardWalkSlow(sequenceFL2, 0);
+  _setForwardWalkSlow(sequenceRL1, m_halfCycle);
+  _setForwardWalkSlow(sequenceRL2, m_halfCycle);
+}
+
+void _setWalkSlowSequenceR(void) {
+  _setForwardWalkSlow(sequenceFR1, m_halfCycle);
+  _setForwardWalkSlow(sequenceFR2, m_halfCycle);
+  _setForwardWalkSlow(sequenceRR1, 0);
+  _setForwardWalkSlow(sequenceRR2, 0);
+}
+
+void _setWalkBackSequenceL(void) {
+  _setForwardWalkBack(sequenceFL1, 0);
+  _setForwardWalkBack(sequenceFL2, 0);
+  _setForwardWalkBack(sequenceRL1, m_halfCycle);
+  _setForwardWalkBack(sequenceRL2, m_halfCycle);
+}
+
+void _setWalkBackSequenceR(void) {
+  _setForwardWalkBack(sequenceFR1, m_halfCycle);
+  _setForwardWalkBack(sequenceFR2, m_halfCycle);
+  _setForwardWalkBack(sequenceRR1, 0);
+  _setForwardWalkBack(sequenceRR2, 0);
+}
+
+void _setWalkStandSequenceL(char position1, char position2) {
   _setSequenceValue(position1, sequenceFL1);
   _setSequenceValue(position2, sequenceFL2);
-  _setSequenceValue(position1, sequenceFR1);
-  _setSequenceValue(position2, sequenceFR2);
   _setSequenceValue(position1, sequenceRL1);
   _setSequenceValue(position2, sequenceRL2);
+}
+
+void _setWalkStandSequenceR(char position1, char position2) {
+  _setSequenceValue(position1, sequenceFR1);
+  _setSequenceValue(position2, sequenceFR2);
   _setSequenceValue(position1, sequenceRR1);
   _setSequenceValue(position2, sequenceRR2);
 }
 
-void _setStandToGoLift(void) {
-  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftFL1);
-  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftFL2);
-  _updateSequenceLinearLiftEnd(0, sequenceLiftFR1);
-  _updateSequenceLinearLiftEnd(0, sequenceLiftFR2);
-  _updateSequenceLinearLiftEnd(0, sequenceLiftRL1);
-  _updateSequenceLinearLiftEnd(0, sequenceLiftRL2);
-  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftRR1);
-  _updateSequenceLinearLiftEnd(-m_legPatternLift, sequenceLiftRR2);
+void _setStandToGoLiftSequence(void) {
+  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftFL1);
+  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftFL2);
+  _setLinearLiftEnd(0, sequenceLiftFR1);
+  _setLinearLiftEnd(0, sequenceLiftFR2);
+  _setLinearLiftEnd(0, sequenceLiftRL1);
+  _setLinearLiftEnd(0, sequenceLiftRL2);
+  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftRR1);
+  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftRR2);
 }
 
-void _setGoToStandLift(void) {
-  _updateSequenceLinearLiftStart(0, sequenceLiftFL1);
-  _updateSequenceLinearLiftStart(0, sequenceLiftFL2);
-  _updateSequenceLinearLiftStart(0, sequenceLiftFR1);
-  _updateSequenceLinearLiftStart(0, sequenceLiftFR2);
-  _updateSequenceLinearLiftStart(0, sequenceLiftRL1);
-  _updateSequenceLinearLiftStart(0, sequenceLiftRL2);
-  _updateSequenceLinearLiftStart(0, sequenceLiftRR1);
-  _updateSequenceLinearLiftStart(0, sequenceLiftRR2);
+void _setGoToStandLiftSequence(void) {
+  _setLinearLiftStart(0, sequenceLiftFL1);
+  _setLinearLiftStart(0, sequenceLiftFL2);
+  _setLinearLiftStart(0, sequenceLiftFR1);
+  _setLinearLiftStart(0, sequenceLiftFR2);
+  _setLinearLiftStart(0, sequenceLiftRL1);
+  _setLinearLiftStart(0, sequenceLiftRL2);
+  _setLinearLiftStart(0, sequenceLiftRR1);
+  _setLinearLiftStart(0, sequenceLiftRR2);
 }
 
-void _setLinearLift(char FL1, char FL2, char FR1, char FR2, char RL1, char RL2, char RR1, char RR2) {
-  _updateSequenceLinearLift(FL1, sequenceLiftFL1);
-  _updateSequenceLinearLift(FL2, sequenceLiftFL2);
-  _updateSequenceLinearLift(FR1, sequenceLiftFR1);
-  _updateSequenceLinearLift(FR2, sequenceLiftFR2);
-  _updateSequenceLinearLift(RL1, sequenceLiftRL1);
-  _updateSequenceLinearLift(RL2, sequenceLiftRL2);
-  _updateSequenceLinearLift(RR1, sequenceLiftRR1);
-  _updateSequenceLinearLift(RR2, sequenceLiftRR2);
+void _setLinearLiftSequence(char FL1, char FL2, char FR1, char FR2, char RL1, char RL2, char RR1, char RR2) {
+  _setLinearLift(FL1, sequenceLiftFL1);
+  _setLinearLift(FL2, sequenceLiftFL2);
+  _setLinearLift(FR1, sequenceLiftFR1);
+  _setLinearLift(FR2, sequenceLiftFR2);
+  _setLinearLift(RL1, sequenceLiftRL1);
+  _setLinearLift(RL2, sequenceLiftRL2);
+  _setLinearLift(RR1, sequenceLiftRR1);
+  _setLinearLift(RR2, sequenceLiftRR2);
 }
 
 // get next sequence
@@ -356,196 +368,225 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   switch (currentTaskItem) {
     case P_DOSTAND:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(0, 0, 0, 0, 0, 0, 0, 0);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(0, 0, 0, 0, 0, 0, 0, 0);
       _updateTurn(0);
     }
     break;
     case P_STANDTOGO:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandToGoLift();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setStandToGoLiftSequence();
       _updateTurn(0);
     }
     break;
     case P_GOTOSTAND:
     {
-      _setStandSequenceWalk(0, 0);
-      _setGoToStandLift();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setGoToStandLiftSequence();
       _updateTurn(0);
     }
     break;
     case P_STANDGO:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandWalkLiftSequence();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setWalkLiftSequence();
       _updateTurn(angleTurn);
     }
     break;
     case P_STANDGOLEFT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandWalkLiftSequence();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setWalkLiftSequence();
       _updateTurn(-10);
     }
     break;
     case P_STANDGORIGHT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandWalkLiftSequence();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setWalkLiftSequence();
       _updateTurn(10);
     }
     break;
     case P_STANDGOSHIFTLEFT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandWalkLiftSequence();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setWalkLiftSequence();
       _updateShift(-10);
     }
     break;
     case P_STANDGOSHIFTRIGHT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setStandWalkLiftSequence();
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setWalkLiftSequence();
       _updateShift(10);
     }
     break;
     case P_GOFORWARD:
     {
       if (m_fastWalkingPatternEnabled) {
-        _setWalkSequence();
+        _setWalkFastSequenceL();
+        _setWalkFastSequenceR();
       } else {
-        _setWalkSlowSequence();
+        _setWalkSlowSequenceL();
+        _setWalkSlowSequenceR();
       }
-      _setWalkLiftSequence();
+      _setWalkLiftHighSequence();
       _updateTurn(angleTurn);
     }
     break;
     case P_GOFORWARDSLOW:
     {
-      _setWalkSlowSequence();
-      _setWalkLiftSequence();
+      _setWalkSlowSequenceL();
+      _setWalkSlowSequenceR();
+      _setWalkLiftHighSequence();
       _updateTurn(angleTurn);
     }
     break;
     case P_GOLEFT:
     {
       if (m_fastWalkingPatternEnabled) {
-        _setWalkSequence();
+        _setWalkFastSequenceL();
+        _setWalkFastSequenceR();
       } else {
-        _setWalkSlowSequence();
+        _setWalkSlowSequenceL();
+        _setWalkSlowSequenceR();
       }
-      _setWalkLiftSequence();
+      _setWalkLiftHighSequence();
       _updateTurn(-10);
     }
     break;
     case P_GORIGHT:
     {
       if (m_fastWalkingPatternEnabled) {
-        _setWalkSequence();
+        _setWalkFastSequenceL();
+        _setWalkFastSequenceR();
       } else {
-        _setWalkSlowSequence();
+        _setWalkSlowSequenceL();
+        _setWalkSlowSequenceR();
       }
-      _setWalkLiftSequence();
+      _setWalkLiftHighSequence();
       _updateTurn(10);
     }
     break;
     case P_GOSHIFTLEFT:
     {
       if (m_fastWalkingPatternEnabled) {
-        _setWalkSequence();
+        _setWalkFastSequenceL();
+        _setWalkFastSequenceR();
       } else {
-        _setWalkSlowSequence();
+        _setWalkSlowSequenceL();
+        _setWalkSlowSequenceR();
       }
-      _setWalkLiftSequence();
+      _setWalkLiftHighSequence();
       _updateShift(-10);
     }
     break;
     case P_GOSHIFTRIGHT:
     {
       if (m_fastWalkingPatternEnabled) {
-        _setWalkSequence();
+        _setWalkFastSequenceL();
+        _setWalkFastSequenceR();
       } else {
-        _setWalkSlowSequence();
+        _setWalkSlowSequenceL();
+        _setWalkSlowSequenceR();
       }
-      _setWalkLiftSequence();
+      _setWalkLiftHighSequence();
       _updateShift(10);
     }
     break;
     case P_GOBACK:
     {
-      _setWalkBackSequence();
-      _setStandWalkLiftSequence();
+      _setWalkBackSequenceL();
+      _setWalkBackSequenceR();
+      _setWalkLiftSequence();
       _updateTurn(0);
     }
     break;
     case P_GOBACKLEFT:
     {
-      _setWalkBackSequence();
-      _setStandWalkLiftSequence();
+      _setWalkBackSequenceL();
+      _setWalkBackSequenceR();
+      _setWalkLiftSequence();
       _updateTurn(-10);
     }
     break;
     case P_GOBACKRIGHT:
     {
-      _setWalkBackSequence();
-      _setStandWalkLiftSequence();
+      _setWalkBackSequenceL();
+      _setWalkBackSequenceR();
+      _setWalkLiftSequence();
       _updateTurn(10);
     }
     break;
     case P_DODOWN:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(-30, -30, -30, -30, -30, -30, -30, -30);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(-30, -30, -30, -30, -30, -30, -30, -30);
       _updateTurn(0);
     }
     break;
     case P_DODOWNLEFT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(-30, -30, -45, -45, -30, -30, -45, -45);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(-30, -30, -45, -45, -30, -30, -45, -45);
       _updateTurn(0);
     }
     break;
     case P_DODOWNRIGHT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(-45, -45, -30, -30, -45, -45, -30, -30);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(-45, -45, -30, -30, -45, -45, -30, -30);
       _updateTurn(0);
     }
     break;
     case P_DODOWNFRONT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(-30, -30, -30, -30, -45, -45, -45, -45);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(-30, -30, -30, -30, -45, -45, -45, -45);
       _updateTurn(0);
     }
     break;
     case P_DODOWNREAR:
     {
-      _setStandSequenceWalk(0, 0);
-      _setLinearLift(-45, -45, -45, -45, -30, -30, -30, -30);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setLinearLiftSequence(-45, -45, -45, -45, -30, -30, -30, -30);
       _updateTurn(0);
     }
     break;
     case P_RECOVERLEFT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setSequenceRecoverLift(sequenceLiftFL1, sequenceLiftFR1);
-      _setSequenceRecoverLift(sequenceLiftFL2, sequenceLiftFR2);
-      _setSequenceRecoverLift(sequenceLiftRL1, sequenceLiftRR1);
-      _setSequenceRecoverLift(sequenceLiftRL2, sequenceLiftRR2);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setRecoverLift(sequenceLiftFL1, sequenceLiftFR1);
+      _setRecoverLift(sequenceLiftFL2, sequenceLiftFR2);
+      _setRecoverLift(sequenceLiftRL1, sequenceLiftRR1);
+      _setRecoverLift(sequenceLiftRL2, sequenceLiftRR2);
       _setSequenceRecoverCenter(sequenceCenterF);
       _setSequenceRecoverCenter(sequenceCenterR);
     }
     break;
     case P_RECOVERRIGHT:
     {
-      _setStandSequenceWalk(0, 0);
-      _setSequenceRecoverLift(sequenceLiftFR1, sequenceLiftFL1);
-      _setSequenceRecoverLift(sequenceLiftFR2, sequenceLiftFL2);
-      _setSequenceRecoverLift(sequenceLiftRR1, sequenceLiftRL1);
-      _setSequenceRecoverLift(sequenceLiftRR2, sequenceLiftRL2);
+      _setWalkStandSequenceL(0, 0);
+      _setWalkStandSequenceR(0, 0);
+      _setRecoverLift(sequenceLiftFR1, sequenceLiftFL1);
+      _setRecoverLift(sequenceLiftFR2, sequenceLiftFL2);
+      _setRecoverLift(sequenceLiftRR1, sequenceLiftRL1);
+      _setRecoverLift(sequenceLiftRR2, sequenceLiftRL2);
       _setSequenceRecoverCenter(sequenceCenterF);
       _setSequenceRecoverCenter(sequenceCenterR);
     }
