@@ -71,7 +71,7 @@ void _updateShift(char cAngle) {
 }
 
 // create walk sequence
-void _setSequenceRecoverCenter(char * sequenceCenter) {
+void _setRecoverCenterMotor(char * sequenceCenter) {
   // motor center
   for (i = 0; i < m_halfCycle + 2; i++) {
     sequenceCenter[i] = -40;
@@ -83,15 +83,32 @@ void _setSequenceRecoverCenter(char * sequenceCenter) {
   sequenceCenter[m_fullCycle - 1] = 0;
 }
 
-// motor value for walk
-void _setSequenceValue(char endPosition, char * sequence) {
-  for (i = 0; i < m_fullCycle; i++) {
-    sequence[i] = endPosition;
+// create recover sequence
+void _setRecoverLift(char * sequence1, char * sequence2) {
+  // leg 1
+  sequence1[0] = -15;
+  sequence1[1] = -45;
+  for (i = 2; i < m_fullCycle - 2; i++) {
+    sequence1[i] = -75;
   }
+  sequence1[m_fullCycle - 2] = -15;
+  sequence1[m_fullCycle - 1] = 0;
+  // leg 2
+  sequence2[0] = 15;
+  sequence2[1] = 35;
+  sequence2[2] = 45;
+  sequence2[3] = 45;
+  sequence2[4] = 45;
+  sequence2[5] = 45;
+  for (i = 6; i < m_fullCycle - 2; i++) {
+    sequence2[i] = -45;
+  }
+  sequence2[m_fullCycle - 2] = -15;
+  sequence2[m_fullCycle - 1] = 0;
 }
 
 // linear motor movement from point to point
-void _setLinearLift(char endPosition, char * sequence) {
+void _setLinearValue(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   sequence[0] = cBuffer;
   for (i = 1; i < (m_fullCycle - 1); i++) {
@@ -101,7 +118,7 @@ void _setLinearLift(char endPosition, char * sequence) {
 }
 
 // linear motor movement from point to point at the end of sequence
-void _setLinearLiftEnd(char endPosition, char * sequence) {
+void _setLinearValueEnd(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   for (i = 0; i < (m_fullCycle - 4); i++) {
     sequence[i] = cBuffer;
@@ -113,7 +130,7 @@ void _setLinearLiftEnd(char endPosition, char * sequence) {
 }
 
 // linear motor movement from point to point at the start of sequence
-void _setLinearLiftStart(char endPosition, char * sequence) {
+void _setLinearValueStart(char endPosition, char * sequence) {
   cBuffer = sequence[m_fullCycle - 1];
   sequence[0] = cBuffer;
   sequence[1] = cBuffer + (endPosition - cBuffer) / 4;
@@ -227,30 +244,6 @@ void _setForwardWalkBack(char * sequence, unsigned char shift) {
   sequence[apoint] = - m_halfCycle / 2;
 }
 
-// create recover sequence
-void _setRecoverLift(char * sequence1, char * sequence2) {
-  // leg 1
-  sequence1[0] = -15;
-  sequence1[1] = -45;
-  for (i = 2; i < m_fullCycle - 2; i++) {
-    sequence1[i] = -75;
-  }
-  sequence1[m_fullCycle - 2] = -15;
-  sequence1[m_fullCycle - 1] = 0;
-  // leg 2
-  sequence2[0] = 15;
-  sequence2[1] = 35;
-  sequence2[2] = 45;
-  sequence2[3] = 45;
-  sequence2[4] = 45;
-  sequence2[5] = 45;
-  for (i = 6; i < m_fullCycle - 2; i++) {
-    sequence2[i] = -45;
-  }
-  sequence2[m_fullCycle - 2] = -15;
-  sequence2[m_fullCycle - 1] = 0;
-}
-
 void _setWalkLiftSequence(void) {
   _setWalkLift(sequenceLiftFL1, 0);
   _setWalkLift(sequenceLiftFL2, 0);
@@ -316,50 +309,50 @@ void _setWalkBackSequenceR(void) {
 }
 
 void _setWalkStandSequenceL(char position1, char position2) {
-  _setSequenceValue(position1, sequenceFL1);
-  _setSequenceValue(position2, sequenceFL2);
-  _setSequenceValue(position1, sequenceRL1);
-  _setSequenceValue(position2, sequenceRL2);
+  _setLinearValue(position1, sequenceFL1);
+  _setLinearValue(position2, sequenceFL2);
+  _setLinearValue(position1, sequenceRL1);
+  _setLinearValue(position2, sequenceRL2);
 }
 
 void _setWalkStandSequenceR(char position1, char position2) {
-  _setSequenceValue(position1, sequenceFR1);
-  _setSequenceValue(position2, sequenceFR2);
-  _setSequenceValue(position1, sequenceRR1);
-  _setSequenceValue(position2, sequenceRR2);
+  _setLinearValue(position1, sequenceFR1);
+  _setLinearValue(position2, sequenceFR2);
+  _setLinearValue(position1, sequenceRR1);
+  _setLinearValue(position2, sequenceRR2);
 }
 
 void _setStandToGoLiftSequence(void) {
-  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftFL1);
-  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftFL2);
-  _setLinearLiftEnd(0, sequenceLiftFR1);
-  _setLinearLiftEnd(0, sequenceLiftFR2);
-  _setLinearLiftEnd(0, sequenceLiftRL1);
-  _setLinearLiftEnd(0, sequenceLiftRL2);
-  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftRR1);
-  _setLinearLiftEnd(-m_legPatternLift, sequenceLiftRR2);
+  _setLinearValueEnd(-m_legPatternLift, sequenceLiftFL1);
+  _setLinearValueEnd(-m_legPatternLift, sequenceLiftFL2);
+  _setLinearValueEnd(0, sequenceLiftFR1);
+  _setLinearValueEnd(0, sequenceLiftFR2);
+  _setLinearValueEnd(0, sequenceLiftRL1);
+  _setLinearValueEnd(0, sequenceLiftRL2);
+  _setLinearValueEnd(-m_legPatternLift, sequenceLiftRR1);
+  _setLinearValueEnd(-m_legPatternLift, sequenceLiftRR2);
 }
 
 void _setGoToStandLiftSequence(void) {
-  _setLinearLiftStart(0, sequenceLiftFL1);
-  _setLinearLiftStart(0, sequenceLiftFL2);
-  _setLinearLiftStart(0, sequenceLiftFR1);
-  _setLinearLiftStart(0, sequenceLiftFR2);
-  _setLinearLiftStart(0, sequenceLiftRL1);
-  _setLinearLiftStart(0, sequenceLiftRL2);
-  _setLinearLiftStart(0, sequenceLiftRR1);
-  _setLinearLiftStart(0, sequenceLiftRR2);
+  _setLinearValueStart(0, sequenceLiftFL1);
+  _setLinearValueStart(0, sequenceLiftFL2);
+  _setLinearValueStart(0, sequenceLiftFR1);
+  _setLinearValueStart(0, sequenceLiftFR2);
+  _setLinearValueStart(0, sequenceLiftRL1);
+  _setLinearValueStart(0, sequenceLiftRL2);
+  _setLinearValueStart(0, sequenceLiftRR1);
+  _setLinearValueStart(0, sequenceLiftRR2);
 }
 
 void _setLinearLiftSequence(char FL1, char FL2, char FR1, char FR2, char RL1, char RL2, char RR1, char RR2) {
-  _setLinearLift(FL1, sequenceLiftFL1);
-  _setLinearLift(FL2, sequenceLiftFL2);
-  _setLinearLift(FR1, sequenceLiftFR1);
-  _setLinearLift(FR2, sequenceLiftFR2);
-  _setLinearLift(RL1, sequenceLiftRL1);
-  _setLinearLift(RL2, sequenceLiftRL2);
-  _setLinearLift(RR1, sequenceLiftRR1);
-  _setLinearLift(RR2, sequenceLiftRR2);
+  _setLinearValue(FL1, sequenceLiftFL1);
+  _setLinearValue(FL2, sequenceLiftFL2);
+  _setLinearValue(FR1, sequenceLiftFR1);
+  _setLinearValue(FR2, sequenceLiftFR2);
+  _setLinearValue(RL1, sequenceLiftRL1);
+  _setLinearValue(RL2, sequenceLiftRL2);
+  _setLinearValue(RR1, sequenceLiftRR1);
+  _setLinearValue(RR2, sequenceLiftRR2);
 }
 
 // get next sequence
@@ -575,8 +568,8 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
       _setRecoverLift(sequenceLiftFL2, sequenceLiftFR2);
       _setRecoverLift(sequenceLiftRL1, sequenceLiftRR1);
       _setRecoverLift(sequenceLiftRL2, sequenceLiftRR2);
-      _setSequenceRecoverCenter(sequenceCenterF);
-      _setSequenceRecoverCenter(sequenceCenterR);
+      _setRecoverCenterMotor(sequenceCenterF);
+      _setRecoverCenterMotor(sequenceCenterR);
     }
     break;
     case P_RECOVERRIGHT:
@@ -587,8 +580,8 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
       _setRecoverLift(sequenceLiftFR2, sequenceLiftFL2);
       _setRecoverLift(sequenceLiftRR1, sequenceLiftRL1);
       _setRecoverLift(sequenceLiftRR2, sequenceLiftRL2);
-      _setSequenceRecoverCenter(sequenceCenterF);
-      _setSequenceRecoverCenter(sequenceCenterR);
+      _setRecoverCenterMotor(sequenceCenterF);
+      _setRecoverCenterMotor(sequenceCenterR);
     }
     break;
     default:
@@ -596,8 +589,8 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   }
 }
 
-// update servo motors values
-allMotors updateWalkPatterns(void) {
+// get servo motors values
+allMotors getWalkPatterns(void) {
   // set motors angle values
   motorValue.m.st.motor1 = sequenceCenterF[mainCounter];
   motorValue.m.st.motor2 = sequenceCenterR[mainCounter];
@@ -612,11 +605,9 @@ allMotors updateWalkPatterns(void) {
   return motorValue;
 }
 
-// update servo motors values for lift
-allMotors updateLiftPatterns(void) {
+// get servo motors values for lift
+allMotors getLiftPatterns(void) {
   // set motors angle values
-  motorLift.m.st.motor1 = 0;
-  motorLift.m.st.motor2 = 0;
   motorLift.m.fl.motor1 = sequenceLiftFL1[mainCounter];
   motorLift.m.fl.motor2 = sequenceLiftFL2[mainCounter];
   motorLift.m.fr.motor1 = sequenceLiftFR1[mainCounter];

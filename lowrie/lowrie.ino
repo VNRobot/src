@@ -324,7 +324,7 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateServo(calibrationData, updateWalkPatterns(), updateLiftPatterns());
+  updateServo(calibrationData, getWalkPatterns(), getLiftPatterns());
   delay(m_timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
