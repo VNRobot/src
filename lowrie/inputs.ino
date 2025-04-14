@@ -205,10 +205,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FELL_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FELL_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_LEFT:
       return RECOVER_LEFT_TASK;
@@ -217,10 +217,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FOLLING_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return DEFAULT_TASK;
     break;
     default:
     break;

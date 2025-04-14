@@ -31,10 +31,6 @@ enum rPatterns {
   P_GOSHIFTLEFT,
   P_GOSHIFTRIGHT,
   P_DODOWN,
-  P_DODOWNLEFT,
-  P_DODOWNRIGHT,
-  P_DODOWNFRONT,
-  P_DODOWNREAR,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
   P_END
@@ -57,10 +53,6 @@ enum rTasks {
   GOSHIFTLEFT_TASK,
   DEMO_TASK,
   DOWN_TASK,
-  BEND_LEFT_TASK,
-  BEND_RIGHT_TASK,
-  BEND_FRONT_TASK,
-  BEND_REAR_TASK,
   RECOVER_LEFT_TASK,
   RECOVER_RIGHT_TASK,
   DEFAULT_TASK
@@ -160,10 +152,12 @@ unsigned char m_normalInputDistance = 50; //cm
 unsigned char m_legPatternLift = 16;
 // reverse center motor direction
 bool m_reverseCenterServo = false;
-// center position in the pattern array. center point is 24
-char m_forwardCenterServo = 24; // (range 16 to 32) bigger the number more weight on front
-// enable fast walking
-bool m_fastWalkingPatternEnabled = true;
+// center position in the pattern array. center point is 35
+char m_forwardCenterServo = 35; // bigger the number more weight on front
+// set fast walking speed. 1 or 2
+char m_speedPatternValue = 2;
+// set fast walking leg lift value. 1 or 2
+char m_liftPatternValue = 1;
 //----------------------------------------------------------
 
 // read button press in blocking mode

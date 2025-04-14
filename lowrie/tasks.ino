@@ -224,46 +224,6 @@ void _setStandTask(void) {
 }
 
 // set bend left task
-void _setBendLeftTask(void) {
-  currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWNLEFT;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDTOGO;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
-}
-
-// set bend right task
-void _setBendRightTask(void) {
-  currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWNRIGHT;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDTOGO;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
-}
-
-// set bend front task
-void _setBendFrontTask(void) {
-  currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWNFRONT;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDTOGO;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
-}
-
-// set bend rear task
-void _setBendRearTask(void) {
-  currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWNREAR;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_STANDTOGO;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
-}
-
-// set bend left task
 void _setRecoverLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_DODOWN;
@@ -342,18 +302,6 @@ void applyTask(unsigned char task) {
     break;
     case STAND_TASK:
       _setStandTask();
-    break;
-    case BEND_LEFT_TASK:
-      _setBendLeftTask();
-    break;
-    case BEND_RIGHT_TASK:
-      _setBendRightTask();
-    break;
-    case BEND_FRONT_TASK:
-      _setBendFrontTask();
-    break;
-    case BEND_REAR_TASK:
-      _setBendRearTask();
     break;
     case RECOVER_LEFT_TASK:
       _setRecoverLeftTask();
@@ -441,18 +389,6 @@ void printTaskname(unsigned char task) {
     break;
     case STAND_TASK:
       Serial.println(F(" STAND_TASK "));
-    break;
-    case BEND_LEFT_TASK:
-      Serial.println(F(" BEND_LEFT_TASK "));
-    break;
-    case BEND_RIGHT_TASK:
-      Serial.println(F(" BEND_RIGHT_TASK "));
-    break;
-    case BEND_FRONT_TASK:
-      Serial.println(F(" BEND_FRONT_TASK "));
-    break;
-    case BEND_REAR_TASK:
-      Serial.println(F(" BEND_REAR_TASK "));
     break;
     case RECOVER_LEFT_TASK:
       Serial.println(F(" RECOVER_LEFT_TASK "));
