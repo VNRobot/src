@@ -148,16 +148,16 @@ unsigned char m_versionEeprom = 51;
 unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// leg lift angle when walking
-unsigned char m_legPatternLift = 16;
+// leg lift when walking
+unsigned char m_legPatternLift = 4;
+// set fast walking leg lift value. 1 or 2
+char m_liftHighPatternMultiplier = 2;
 // reverse center motor direction
 bool m_reverseCenterServo = false;
 // center position in the pattern array. center point is 35
 char m_forwardCenterServo = 35; // bigger the number more weight on front
 // set fast walking speed. 1 or 2
 char m_speedPatternValue = 2;
-// set fast walking leg lift value. 1 or 2
-char m_liftPatternValue = 1;
 //----------------------------------------------------------
 
 // read button press in blocking mode

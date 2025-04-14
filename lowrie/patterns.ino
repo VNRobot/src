@@ -28,6 +28,10 @@ char sequenceLiftRL1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 char sequenceLiftRL2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 char sequenceLiftRR1[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 char sequenceLiftRR2[24] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// walking and lifting pointers
+char m1Lift[24]       = {4, 4,  4, 4, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4};
+char m2Lift[24]       = {4, 4,  4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4};
+char mWalk[24]        = {0,-5,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10, 5};
 // motors values for 10 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 allMotors motorLift = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -148,61 +152,45 @@ void _updateApointer(unsigned char pointer, unsigned char shift) {
   }
 }
 
-// create lift sequence shift +1 for motor 2
-void _setWalkLift(char * lift, unsigned char shift, unsigned char heihgt) {
-  _updateApointer(0, shift);
-  lift[apoint] = - m_legPatternLift * heihgt;
-  _updateApointer(1, shift);
-  lift[apoint] = - m_legPatternLift * heihgt;
-  _updateApointer(2, shift);
-  lift[apoint] = - (m_legPatternLift * heihgt) / 2;
-  for (i = 3; i < m_fullCycle - 2; i++) {
+// create lift sequence
+void _setWalkLift(char * lift, char * liftPoint, unsigned char shift, unsigned char heihgt) {
+  for (i = 0; i < m_fullCycle; i++) {
     _updateApointer(i, shift);
-    lift[apoint] = 0;
+    lift[apoint] = - liftPoint[i] * m_legPatternLift * heihgt;
   }
-  _updateApointer(m_fullCycle - 2, shift);
-  lift[apoint] = - m_legPatternLift * heihgt;
-  _updateApointer(m_fullCycle - 1, shift);
-  lift[apoint] = - m_legPatternLift * heihgt;
 }
 
 // create walk sequence
-void _setForwardWalk(char * sequence, unsigned char shift, char speed) {
-  _updateApointer(0, shift);
-  sequence[apoint] = 0;
-  _updateApointer(1, shift);
-  sequence[apoint] = - (m_halfCycle * speed) / 2;
-  for (i = 2; i < m_fullCycle - 1; i++) {
+void _setForwardWalk(char * sequence, char * walkPoint, unsigned char shift, char speed) {
+  for (i = 0; i < m_fullCycle; i++) {
     _updateApointer(i, shift);
-    sequence[apoint] = (i - m_halfCycle) * speed;
+    sequence[apoint] = walkPoint[i] * speed;
   }
-  _updateApointer(m_fullCycle - 1, shift);
-  sequence[apoint] = (m_halfCycle * speed) / 2;
 }
 
 void _setWalkLiftSequence(unsigned char heihgt) {
-  _setWalkLift(sequenceLiftFL1, 0, heihgt);
-  _setWalkLift(sequenceLiftFL2, heihgt / 2, heihgt);
-  _setWalkLift(sequenceLiftFR1, m_halfCycle, heihgt);
-  _setWalkLift(sequenceLiftFR2, m_halfCycle + heihgt / 2, heihgt);
-  _setWalkLift(sequenceLiftRL1, m_halfCycle, heihgt);
-  _setWalkLift(sequenceLiftRL2, m_halfCycle + heihgt / 2, heihgt);
-  _setWalkLift(sequenceLiftRR1, 0, heihgt);
-  _setWalkLift(sequenceLiftRR2, heihgt / 2, heihgt);
+  _setWalkLift(sequenceLiftFL1, m1Lift, 0, heihgt);
+  _setWalkLift(sequenceLiftFL2, m2Lift, 0, heihgt);
+  _setWalkLift(sequenceLiftFR1, m1Lift, m_halfCycle, heihgt);
+  _setWalkLift(sequenceLiftFR2, m2Lift, m_halfCycle, heihgt);
+  _setWalkLift(sequenceLiftRL1, m1Lift, m_halfCycle, heihgt);
+  _setWalkLift(sequenceLiftRL2, m2Lift, m_halfCycle, heihgt);
+  _setWalkLift(sequenceLiftRR1, m1Lift, 0, heihgt);
+  _setWalkLift(sequenceLiftRR2, m2Lift, 0, heihgt);
 }
 
 void _setWalkSequenceL(char speed) {
-  _setForwardWalk(sequenceFL1, 0, speed);
-  _setForwardWalk(sequenceFL2, 0, speed);
-  _setForwardWalk(sequenceRL1, m_halfCycle, speed);
-  _setForwardWalk(sequenceRL2, m_halfCycle, speed);
+  _setForwardWalk(sequenceFL1, mWalk, 0, speed);
+  _setForwardWalk(sequenceFL2, mWalk, 0, speed);
+  _setForwardWalk(sequenceRL1, mWalk, m_halfCycle, speed);
+  _setForwardWalk(sequenceRL2, mWalk, m_halfCycle, speed);
 }
 
 void _setWalkSequenceR(char speed) {
-  _setForwardWalk(sequenceFR1, m_halfCycle, speed);
-  _setForwardWalk(sequenceFR2, m_halfCycle, speed);
-  _setForwardWalk(sequenceRR1, 0, speed);
-  _setForwardWalk(sequenceRR2, 0, speed);
+  _setForwardWalk(sequenceFR1, mWalk, m_halfCycle, speed);
+  _setForwardWalk(sequenceFR2, mWalk, m_halfCycle, speed);
+  _setForwardWalk(sequenceRR1, mWalk, 0, speed);
+  _setForwardWalk(sequenceRR2, mWalk, 0, speed);
 }
 
 void _setStandToGoLiftSequence(void) {
@@ -297,7 +285,7 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
-      _setWalkLiftSequence(m_liftPatternValue);
+      _setWalkLiftSequence(m_liftHighPatternMultiplier);
       _updateTurn(angleTurn);
     }
     break;
@@ -313,7 +301,7 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
-      _setWalkLiftSequence(m_liftPatternValue);
+      _setWalkLiftSequence(m_liftHighPatternMultiplier);
       _updateTurn(-10);
     }
     break;
@@ -321,7 +309,7 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
-      _setWalkLiftSequence(m_liftPatternValue);
+      _setWalkLiftSequence(m_liftHighPatternMultiplier);
       _updateTurn(10);
     }
     break;
@@ -329,7 +317,7 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
-      _setWalkLiftSequence(m_liftPatternValue);
+      _setWalkLiftSequence(m_liftHighPatternMultiplier);
       _updateShift(-10);
     }
     break;
@@ -337,7 +325,7 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
-      _setWalkLiftSequence(m_liftPatternValue);
+      _setWalkLiftSequence(m_liftHighPatternMultiplier);
       _updateShift(10);
     }
     break;
