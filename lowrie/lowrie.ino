@@ -131,7 +131,7 @@ unsigned char m_fullCycle = 24;
 // half cycle
 unsigned char m_halfCycle = 12;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 21;
+unsigned char m_timeDelay = 18;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
@@ -149,7 +149,7 @@ unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
 // leg lift when walking
-unsigned char m_legPatternLift = 4;
+unsigned char m_legPatternLift = 2;
 // set fast walking leg lift value. 1 or 2
 char m_liftHighPatternMultiplier = 2;
 // reverse center motor direction
