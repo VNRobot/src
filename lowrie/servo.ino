@@ -45,6 +45,8 @@ char m2Walk[68] =  { 118, 118, 118,114,110,107,104,101,98,95,93, 91,88,86, 84,82
 char forwardBallance = 0;
 // static ballance
 allMotors staticBallance = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// motors attached flag
+bool attached = false;
 
 // limit angle value
 short limitMotorValue(short mAngle) {
@@ -94,18 +96,32 @@ void initServo(int calM1, int calM2) {
   servo_rr_2.attach(RR2_MOTOR, 500, 2500);
   servo_rr_2.write(limitMotorValue(90 - 30 + calM2));
   delay(100);
+  attached = true;
+}
+
+// attach wings
+void detachServo(void) {
+  if (attached) {
+    servo_frnt.detach();
+    servo_rear.detach();
+    servo_fl_1.detach();
+    servo_fr_1.detach();
+    servo_rl_1.detach();
+    servo_rr_1.detach();
+    servo_fl_2.detach();
+    servo_fr_2.detach();
+    servo_rl_2.detach();
+    servo_rr_2.detach();
+  }
+  attached = false;
+  delay(1000);
 }
 
 // set servo motors
 void setServo(allMotors calibration, int calM1, int calM2) {
   // set motors values after calibration
-  if (m_reverseCenterServo) {
-    servo_frnt.write(90 + calibration.m.st.motor1);
-    servo_rear.write(90 + calibration.m.st.motor2);
-    } else {
-    servo_frnt.write(90 - calibration.m.st.motor1);
-    servo_rear.write(90 - calibration.m.st.motor2);
-    }
+  servo_frnt.write(90 - calibration.m.st.motor1);
+  servo_rear.write(90 - calibration.m.st.motor2);
   servo_fl_1.write(limitMotorValue(90 - 30 + calM1 + calibration.m.fl.motor1));
   servo_fl_2.write(limitMotorValue(90 + 30 - calM2 - calibration.m.fl.motor2));
   servo_fr_1.write(limitMotorValue(90 + 30 - calM1 - calibration.m.fr.motor1));
@@ -117,14 +133,9 @@ void setServo(allMotors calibration, int calM1, int calM2) {
 }
 
 // move motors.
-void updateServo(allMotors calibration, allMotors motorValue, allMotors motorLift) {
-  if (m_reverseCenterServo) {
-    servo_frnt.write(limitMotorValue(90 + (motorValue.m.st.motor1 + calibration.m.st.motor1)));
-    servo_rear.write(limitMotorValue(90 + (motorValue.m.st.motor2 + calibration.m.st.motor2)));
-    } else {
-    servo_frnt.write(limitMotorValue(90 - (motorValue.m.st.motor1 + calibration.m.st.motor1)));
-    servo_rear.write(limitMotorValue(90 - (motorValue.m.st.motor2 + calibration.m.st.motor2)));
-    }
+void updateServo(allMotors calibration, allMotors motorValue, allMotors motorLift, motors centerMotors) {
+  servo_frnt.write(limitMotorValue(90 - (centerMotors.motor1 + calibration.m.st.motor1)));
+  servo_rear.write(limitMotorValue(90 - (centerMotors.motor2 + calibration.m.st.motor2)));
   servo_fl_1.write(limitMotorValue(90 - 30 + (m1Walk[motorValue.m.fl.motor1 + m_forwardCenterServo + forwardBallance] + calibration.m.fl.motor1 + motorLift.m.fl.motor1 + staticBallance.m.fl.motor1)));
   servo_fl_2.write(limitMotorValue(90 + 30 - (m2Walk[motorValue.m.fl.motor2 + m_forwardCenterServo + forwardBallance] + calibration.m.fl.motor2 + motorLift.m.fl.motor2 + staticBallance.m.fl.motor2)));
   servo_fr_1.write(limitMotorValue(90 + 30 - (m1Walk[motorValue.m.fr.motor1 + m_forwardCenterServo + forwardBallance] + calibration.m.fr.motor1 + motorLift.m.fr.motor1 + staticBallance.m.fr.motor1)));

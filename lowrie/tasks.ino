@@ -6,11 +6,11 @@ List of tasks. Every task contains movement patterns.
 */
 
 // Array to store currently executed task. contains list of patterns
-unsigned char currentTask[32] = {P_DODOWN, P_DONE};
+unsigned char currentTask[32] = {P_DOSTAND, P_DONE};
 // pattern counter points to currentTask
 unsigned char currentTaskPoint = 0;
 // current pattern
-unsigned char _curPattern = P_DODOWN;
+unsigned char _curPattern = P_DOSTAND;
 
 // set demo task
 void _setDemoTask(void) {
@@ -72,8 +72,7 @@ void _setDownTask(void) {
   currentTask[2] = P_GOTOSTAND;
   currentTask[3] = P_DOSTAND;
   currentTask[4] = P_DODOWN;
-  currentTask[5] = P_DODOWN;
-  currentTask[6] = P_END;
+  currentTask[5] = P_END;
 }
 
 // set walk back left task
@@ -226,8 +225,8 @@ void _setStandTask(void) {
 // set bend left task
 void _setRecoverLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWN;
-  currentTask[2] = P_DODOWN;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DOSTAND;
   currentTask[3] = P_RECOVERLEFT;
   currentTask[4] = P_DOSTAND;
   currentTask[5] = P_DOSTAND;
@@ -240,8 +239,8 @@ void _setRecoverLeftTask(void) {
 // set bend right task
 void _setRecoverRightTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWN;
-  currentTask[2] = P_DODOWN;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DOSTAND;
   currentTask[3] = P_RECOVERRIGHT;
   currentTask[4] = P_DOSTAND;
   currentTask[5] = P_DOSTAND;
