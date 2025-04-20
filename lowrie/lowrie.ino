@@ -127,11 +127,11 @@ unsigned char _newTask = BEGIN_TASK;
 unsigned char i;
 //-------------global variables---------------------------
 // full cycle
-unsigned char m_fullCycle = 32;
+unsigned char m_fullCycle = 36;
 // half cycle
-unsigned char m_halfCycle = 16;
+unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 18;
+unsigned char m_timeDelay = 14;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
@@ -153,7 +153,7 @@ unsigned char m_legPatternLift = 2;
 // set fast walking leg lift value. 1 or 2
 char m_liftHighPatternMultiplier = 2;
 // center position in the pattern array. center point is 35
-char m_forwardCenterServo = 35; // bigger the number more weight on front
+char m_forwardCenterServo = 48; // bigger the number more weight on front
 // set fast walking speed. 1 or 2
 char m_speedPatternValue = 2;
 //----------------------------------------------------------
@@ -181,7 +181,6 @@ void setup() {
   updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
   // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  initServo(45, 45);
   delay(400);
   // init gyro require horizontal position
   initGyro();
@@ -190,6 +189,7 @@ void setup() {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // set motors values with clear calibration data
+    initServo(calibrationData, 45, 45);
     setServo(calibrationData, 90, 90);
     // do calibration
     if (doCalibration(& calibrationData)) {
@@ -197,6 +197,7 @@ void setup() {
       writeSoftwareVersionEeprom(m_versionEeprom);
       delay(6000);
     }
+    detachServo(calibrationData);
     delay(500);
   }
   // normal operation
@@ -216,6 +217,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
+  initServo(calibrationData, 20, 20);
   setServo(calibrationData, 45, 45);
   delay(200);
   // reset gyro
@@ -304,7 +306,7 @@ void loop() {
       case P_DODOWN:
       {
         // disable motors
-        detachServo();
+        detachServo(calibrationData);
       }
       break;
       default:
