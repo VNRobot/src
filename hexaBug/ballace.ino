@@ -13,8 +13,8 @@ char correctRollR  = 0;
 char correctPitchF = 0;
 char correctPitchR = 0;
 // center position in the pattern array
-char centerAbsolute = 0; // (range -8 to 8) bigger the number more weight on front
-char centerAbsoluteMax = 8;
+char centerAbsolute = 0; // (range -12 to 12) bigger the number more weight on front
+char centerAbsoluteMax = 12;
 // static forward ballance
 char centerForward = centerAbsolute;
 

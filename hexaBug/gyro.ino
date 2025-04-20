@@ -242,12 +242,12 @@ void restoreDirectionGyro(void) {
 char getDirectionCorrectionGyro(void) {
   // maximal direction correction is 5
   if (gyroData.yaw > 10) {
-    return 5;
+    return 10;
   }
   if (gyroData.yaw < -10) {
-    return -5;
+    return -10;
   }
-  return (char)(gyroData.yaw / 2);
+  return (char)(gyroData.yaw);
 }
 
 // get roll

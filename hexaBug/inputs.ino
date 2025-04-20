@@ -49,7 +49,6 @@ unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision
 bool turnLeft = true;
-bool edgeEnabled = true;
 
 // analog sensors structure
 struct aSensors {
@@ -62,7 +61,7 @@ struct aSensors {
 };
 
 // analog input values array
-aSensors analogInputs = {0, 0, 0, 0, 0, 0}; // raw values
+aSensors analogRawInputs = {0, 0, 0, 0, 0, 0}; // raw values
 aSensors analogValueInputs = {6500, 0, 0, 0, 0, 0}; // processed values
 
 // init inputs
@@ -72,50 +71,50 @@ void initInputs(void) {
 // read and remember analog sensors readings
 unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   // read analog inputs
-  analogInputs.battery = (unsigned short)analogRead(A6);
-  analogInputs.current1 = (unsigned short)analogRead(A7);
-  analogInputs.current2 = (unsigned short)analogRead(A3);
-  analogInputs.current3 = (unsigned short)analogRead(A2);
-  analogInputs.left = (unsigned short)analogRead(A0);
-  analogInputs.right = (unsigned short)analogRead(A1);
+  analogRawInputs.battery = (unsigned short)analogRead(A6);
+  analogRawInputs.current1 = (unsigned short)analogRead(A7);
+  analogRawInputs.current2 = (unsigned short)analogRead(A3);
+  analogRawInputs.current3 = (unsigned short)analogRead(A2);
+  analogRawInputs.left = (unsigned short)analogRead(A0);
+  analogRawInputs.right = (unsigned short)analogRead(A1);
   // calculate sensor current in mA
   // 1
-  if (analogInputs.current1 > analogInputs.battery) {
-    analogInputs.current1 = analogInputs.battery;
+  if (analogRawInputs.current1 > analogRawInputs.battery) {
+    analogRawInputs.current1 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current1 > (analogInputs.battery - analogInputs.current1) * 8) {
+  if (analogValueInputs.current1 > (analogRawInputs.battery - analogRawInputs.current1) * 8) {
     analogValueInputs.current1 -= 50;
   } else {
     analogValueInputs.current1 += 50;
   }
   // 2
-  if (analogInputs.current2 > analogInputs.battery) {
-    analogInputs.current2 = analogInputs.battery;
+  if (analogRawInputs.current2 > analogRawInputs.battery) {
+    analogRawInputs.current2 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current2 > (analogInputs.battery - analogInputs.current2) * 8) {
+  if (analogValueInputs.current2 > (analogRawInputs.battery - analogRawInputs.current2) * 8) {
     analogValueInputs.current2 -= 50;
   } else {
     analogValueInputs.current2 += 50;
   }
   // 3
-  if (analogInputs.current3 > analogInputs.battery) {
-    analogInputs.current3 = analogInputs.battery;
+  if (analogRawInputs.current3 > analogRawInputs.battery) {
+    analogRawInputs.current3 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current3 > (analogInputs.battery - analogInputs.current3) * 8) {
+  if (analogValueInputs.current3 > (analogRawInputs.battery - analogRawInputs.current3) * 8) {
     analogValueInputs.current3 -= 50;
   } else {
     analogValueInputs.current3 += 50;
   }
   // battery in mV
-  if (analogValueInputs.battery > analogInputs.battery * 25 / 3) {
+  if (analogValueInputs.battery > analogRawInputs.battery * 25 / 3) {
     analogValueInputs.battery -= 10;
   } else {
     analogValueInputs.battery += 10;
   }
   // proximity sensors in cm
   // crossconnection left senor is facing right and right sensor is facing left
-  analogValueInputs.right = (unsigned short)((1600000 / analogInputs.left) / analogInputs.left);
-  analogValueInputs.left = (unsigned short)((1600000 / analogInputs.right) / analogInputs.right);
+  analogValueInputs.right = (unsigned short)((1600000 / analogRawInputs.left) / analogRawInputs.left);
+  analogValueInputs.left = (unsigned short)((1600000 / analogRawInputs.right) / analogRawInputs.right);
   //
   if (sequenceCount == 0) {
     allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
@@ -156,10 +155,7 @@ unsigned char getSensorState(unsigned short input) {
     }
   } else {
     // edge
-    if (edgeEnabled) {
-      return SEN_EDGE;
-    }
-    return SEN_NORMAL;
+    return SEN_EDGE;
   }
 }
 
@@ -187,10 +183,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FELL_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FELL_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_LEFT:
       return RECOVER_LEFT_TASK;
@@ -199,10 +195,10 @@ unsigned char getHighPriorityTaskByInputs(accRoll gyroState, unsigned char input
       return RECOVER_RIGHT_TASK;
     break;
     case GYRO_FOLLING_FRONT:
-      return DEFAULT_TASK; //BEND_FRONT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_BACK:
-      return DEFAULT_TASK; //BEND_REAR_TASK;
+      return DEFAULT_TASK;
     break;
     default:
     break;
@@ -247,70 +243,6 @@ unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defa
     break;
   }
   return defaultTask;
-}
-/*
-// print raw data
-void _printLineInputs(void) {
-  Serial.print(F(" battery "));
-  Serial.print((int)analogValueInputs.battery);
-  Serial.print(F(" C "));
-  Serial.print((int)analogValueInputs.current1);
-  Serial.print(F(" F "));
-  Serial.print((int)analogValueInputs.current2);
-  Serial.print(F(" R "));
-  Serial.print((int)analogValueInputs.current3);
-  Serial.print(F(" left "));
-  Serial.print((int)analogValueInputs.left);
-  Serial.print(F(" right "));
-  Serial.println((int)analogValueInputs.right);
-}
-*/
-// print inputs
-void _printInputs(int state) {
-  // print input state
-  switch (state) {
-    case IN_LOW_BATTERY:
-      Serial.print(F(" IN_LOW_BATTERY "));
-    break;
-    case IN_HIGH_CURRENT_1:
-      Serial.print(F(" IN_HIGH_CURRENT_1 "));
-    break;
-    case IN_HIGH_CURRENT_2:
-      Serial.print(F(" IN_HIGH_CURRENT_2 "));
-    break;
-    case IN_HIGH_CURRENT_3:
-      Serial.print(F(" IN_HIGH_CURRENT_3 "));
-    break;
-    case IN_WALL_FRONTLEFT:
-      Serial.print(F(" IN_WALL_FRONTLEFT "));
-    break;
-    case IN_WALL_FRONTRIGHT:
-      Serial.print(F(" IN_WALL_FRONTRIGHT "));
-    break;
-    case IN_WALL_LEFT:
-      Serial.print(F(" IN_WALL_LEFT "));
-    break;
-    case IN_WALL_RIGHT:
-      Serial.print(F(" IN_WALL_RIGHT "));
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
-      Serial.print(F(" IN_OBSTACLE_FRONTLEFT "));
-    break;
-    case IN_OBSTACLE_FRONTRIGHT:
-      Serial.print(F(" IN_OBSTACLE_FRONTRIGHT "));
-    break;
-    case IN_OBSTACLE_LEFT:
-      Serial.print(F(" IN_OBSTACLE_LEFT "));
-    break;
-    case IN_OBSTACLE_RIGHT:
-      Serial.print(F(" IN_OBSTACLE_RIGHT "));
-    break;
-    case IN_NORMAL:
-      Serial.print(F(" IN_NORMAL "));
-    break;
-    default:
-      Serial.println(F(" Wrong inputs state "));
-  }
 }
 
 // status of inputs
@@ -404,7 +336,7 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
 // check for demo mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
-    if (analogInputs.left > 400 || analogInputs.right > 400) {
+    if (analogRawInputs.left > 400 || analogRawInputs.right > 400) {
         return true;
     }
     return false;
@@ -417,4 +349,68 @@ bool checkModeButtonPressedInputs(void) {
     return true;
   }
   return false;
+}
+/*
+// print raw data
+void _printLineInputs(void) {
+  Serial.print(F(" battery "));
+  Serial.print((int)analogValueInputs.battery);
+  Serial.print(F(" C "));
+  Serial.print((int)analogValueInputs.current1);
+  Serial.print(F(" F "));
+  Serial.print((int)analogValueInputs.current2);
+  Serial.print(F(" R "));
+  Serial.print((int)analogValueInputs.current3);
+  Serial.print(F(" left "));
+  Serial.print((int)analogValueInputs.left);
+  Serial.print(F(" right "));
+  Serial.println((int)analogValueInputs.right);
+}
+*/
+// print inputs
+void _printInputs(int state) {
+  // print input state
+  switch (state) {
+    case IN_LOW_BATTERY:
+      Serial.print(F(" IN_LOW_BATTERY "));
+    break;
+    case IN_HIGH_CURRENT_1:
+      Serial.print(F(" IN_HIGH_CURRENT_1 "));
+    break;
+    case IN_HIGH_CURRENT_2:
+      Serial.print(F(" IN_HIGH_CURRENT_2 "));
+    break;
+    case IN_HIGH_CURRENT_3:
+      Serial.print(F(" IN_HIGH_CURRENT_3 "));
+    break;
+    case IN_WALL_FRONTLEFT:
+      Serial.print(F(" IN_WALL_FRONTLEFT "));
+    break;
+    case IN_WALL_FRONTRIGHT:
+      Serial.print(F(" IN_WALL_FRONTRIGHT "));
+    break;
+    case IN_WALL_LEFT:
+      Serial.print(F(" IN_WALL_LEFT "));
+    break;
+    case IN_WALL_RIGHT:
+      Serial.print(F(" IN_WALL_RIGHT "));
+    break;
+    case IN_OBSTACLE_FRONTLEFT:
+      Serial.print(F(" IN_OBSTACLE_FRONTLEFT "));
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      Serial.print(F(" IN_OBSTACLE_FRONTRIGHT "));
+    break;
+    case IN_OBSTACLE_LEFT:
+      Serial.print(F(" IN_OBSTACLE_LEFT "));
+    break;
+    case IN_OBSTACLE_RIGHT:
+      Serial.print(F(" IN_OBSTACLE_RIGHT "));
+    break;
+    case IN_NORMAL:
+      Serial.print(F(" IN_NORMAL "));
+    break;
+    default:
+      Serial.println(F(" Wrong inputs state "));
+  }
 }

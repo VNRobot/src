@@ -27,10 +27,6 @@ enum rPatterns {
   P_ENABLEINPUTS,
   P_DISABLEINPUTS,
   P_DODOWN,
-  P_DODOWNLEFT,
-  P_DODOWNRIGHT,
-  P_DODOWNFRONT,
-  P_DODOWNREAR,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
   P_END
@@ -51,10 +47,6 @@ enum rTasks {
   STAND_TASK,
   DEMO_TASK,
   DOWN_TASK,
-  BEND_LEFT_TASK,
-  BEND_RIGHT_TASK,
-  BEND_FRONT_TASK,
-  BEND_REAR_TASK,
   RECOVER_LEFT_TASK,
   RECOVER_RIGHT_TASK,
   DEFAULT_TASK
@@ -130,9 +122,9 @@ unsigned char _newTask = BEGIN_TASK;
 unsigned char i;
 //-------------global variables---------------------------
 // full cycle
-unsigned char m_fullCycle = 24;
+unsigned char m_fullCycle = 32;
 // half cycle
-unsigned char m_halfCycle = 12;
+unsigned char m_halfCycle = 16;
 // main time delay in the loop in msec
 unsigned char m_timeDelay = 21;
 // roll ballance flag
@@ -151,12 +143,14 @@ unsigned char m_versionEeprom = 91;
 unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// leg lift angle when walking
-unsigned char m_legPatternLift = 16;
-// center position in the pattern array. center point is 24
-char m_forwardCenterServo = 24; // (range 16 to 32) bigger the number more weight on front
-// enable fast walking
-bool m_fastWalkingPatternEnabled = true;
+// leg lift when walking. actual angle m_legPatternLift * 4 * m_liftHighPatternMultiplier
+unsigned char m_legPatternLift = 2;
+// set fast walking leg lift value. 1 or 2
+char m_liftHighPatternMultiplier = 2;
+// center position in the pattern array. center point is 35
+char m_forwardCenterServo = 34; // bigger the number more weight on front
+// set fast walking speed. 1 or 2
+char m_speedPatternValue = 2;
 //----------------------------------------------------------
 
 // read button press in blocking mode
@@ -182,7 +176,7 @@ void setup() {
   updateInputs(0, sensorsEnabled);
   // init gyro MPU6050 using I2C
   // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  initServo(30, 30);
+  initServo(45, 45);
   delay(400);
   // init gyro require horizontal position
   initGyro();
@@ -217,7 +211,7 @@ void setup() {
     applyTask(BEGIN_TASK);
   }
   // set motors values after calibration
-  setServo(calibrationData, 30, 30);
+  setServo(calibrationData, 45, 45);
   delay(200);
   // reset gyro
   resetGyro();
@@ -264,12 +258,8 @@ void loop() {
     // printPatternName(patternNow);
     switch (patternNow) {
       case P_STANDGO:
-      {
-        setPattern(patternNow, getDirectionCorrectionGyro());
-        doCycle();
-      }        
-      break;
       case P_GOFORWARD:
+      case P_GOFORWARDSLOW:
       {
         setPattern(patternNow, getDirectionCorrectionGyro());
         doCycle();
@@ -304,9 +294,17 @@ void loop() {
       // do nothing
       // immediatelly run loop again
       break;
+      case P_DODOWN:
+      {
+        // disable motors
+        detachServo();
+      }
+      break;
       default:
+      {
         setPattern(patternNow, 0);
         doCycle();
+      }
       break;
     }
   } else {
@@ -317,7 +315,7 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateServo(calibrationData, updateWalkPatterns(), updateLiftPatterns());
+  updateServo(calibrationData, getWalkPatterns(), getLiftPatterns());
   delay(m_timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
