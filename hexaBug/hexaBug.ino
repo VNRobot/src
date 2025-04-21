@@ -26,6 +26,10 @@ enum rPatterns {
   P_RESETGIRO,
   P_ENABLEINPUTS,
   P_DISABLEINPUTS,
+  P_STANDGOSHIFTLEFT,
+  P_STANDGOSHIFTRIGHT,
+  P_GOSHIFTLEFT,
+  P_GOSHIFTRIGHT,
   P_DODOWN,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
@@ -45,6 +49,8 @@ enum rTasks {
   GO_TASK,
   STANDGO_TASK,
   STAND_TASK,
+  GOSHIFTRIGHT_TASK,
+  GOSHIFTLEFT_TASK,
   DEMO_TASK,
   DOWN_TASK,
   RECOVER_LEFT_TASK,
@@ -126,7 +132,7 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 21;
+unsigned char m_timeDelay = 14;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag

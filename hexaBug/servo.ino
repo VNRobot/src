@@ -148,7 +148,7 @@ void initServo(allMotors calibration, short calM1, short calM2) {
   m2InitValue = calM2;
   m1Value = calM1;
   m2Value = calM2;
-  }
+}
 
 // attach wings
 void detachServo(allMotors calibration) {

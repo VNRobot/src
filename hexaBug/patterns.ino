@@ -59,32 +59,26 @@ unsigned char updateCountPatterns(void) {
   if (mainCounter >= m_fullCycle) {
     mainCounter = 0;
   }
-  // FL
   counterFL = mainCounter + m_halfCycle + m_halfCycle / 2;
   if (counterFL >= m_fullCycle) {
     counterFL -= m_fullCycle;
   }
-  // FR
   counterFR = mainCounter + m_halfCycle / 2;
   if (counterFR >= m_fullCycle) {
     counterFR -= m_fullCycle;
   }
-  // SL
   counterSL = mainCounter + m_halfCycle / 4;
   if (counterSL >= m_fullCycle) {
     counterSL -= m_fullCycle;
   }
-  // SR
   counterSR = mainCounter + m_halfCycle + m_halfCycle / 4;
   if (counterSR >= m_fullCycle) {
     counterSR -= m_fullCycle;
   }
-  // RL
   counterRL = mainCounter + m_halfCycle;
   if (counterRL >= m_fullCycle) {
     counterRL -= m_fullCycle;
   }
-  // RR
   counterRR = mainCounter;
   return mainCounter;
 }
@@ -96,85 +90,28 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   // set walk speed
   switch (taskItemBuffer) {
     case P_GOLEFT:
-    {
-      speedL = m_speedPatternValue / 2;
-      speedR = m_speedPatternValue;
-    }
-    break;
     case P_GORIGHT:
-    {
-      speedL = m_speedPatternValue;
-      speedR = m_speedPatternValue / 2;
-    }
-    break;
+    case P_GOSHIFTLEFT:
+    case P_GOSHIFTRIGHT:
     case P_GOFORWARD:
     {
-      if (angleTurn > 2) {
-        speedL = m_speedPatternValue;
-        speedR = m_speedPatternValue / 2;
-      } else if (angleTurn < -2) {
-        speedL = m_speedPatternValue / 2;
-        speedR = m_speedPatternValue;
-      } else {
-        speedL = m_speedPatternValue;
-        speedR = m_speedPatternValue;
-      }
+      speedL = m_speedPatternValue;
+      speedR = m_speedPatternValue;
     }
     break;
     case P_GOFORWARDSLOW:
     {
-      if (angleTurn > 2) {
-        speedL = 1;
-        speedR = 0;
-      } else if (angleTurn < -2) {
-        speedL = 0;
-        speedR = 1;
-      } else {
-        speedL = 1;
-        speedR = 1;
-      }
-    }
-    break;
-    case P_STANDGO:
-    {
-      if (angleTurn > 2) {
-        speedL = 1;
-        speedR = -1;
-      } else if (angleTurn < -2) {
-        speedL = -1;
-        speedR = 1;
-      } else {
-        speedL = 0;
-        speedR = 0;
-      }
-    }
-    case P_GOBACK:
-    {
-      speedL = -1;
-      speedR = -1;
-    }
-    case P_GOBACKLEFT:
-    {
-      speedL = -1;
-      speedR = 0;
-    }
-    case P_GOBACKRIGHT:
-    {
-      speedL = 0;
-      speedR = -1;
-    }
-    case P_STANDGOLEFT:
-    {
-      speedL = -1;
+      speedL = 1;
       speedR = 1;
     }
     break;
-    case P_STANDGORIGHT:
+    case P_GOBACK:
+    case P_GOBACKLEFT:
+    case P_GOBACKRIGHT:
     {
-      speedL = 1;
+      speedL = -1;
       speedR = -1;
     }
-    break;
     break;
     default:
     {
@@ -188,6 +125,8 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     case P_STANDGO:
     case P_STANDGOLEFT:
     case P_STANDGORIGHT:
+    case P_STANDGOSHIFTLEFT:
+    case P_STANDGOSHIFTRIGHT:
     case P_GOFORWARDSLOW:
     case P_GOBACK:
     case P_GOBACKLEFT:
@@ -199,6 +138,8 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
     case P_GOFORWARD:
     case P_GOLEFT:
     case P_GORIGHT:
+    case P_GOSHIFTLEFT:
+    case P_GOSHIFTRIGHT:
     {
       walkLiftHight = m_legPatternLift * m_liftHighPatternMultiplier;
     }
@@ -373,6 +314,26 @@ void printPatternName(unsigned char currentTaskItem) {
     case P_DISABLEINPUTS:
     {
       Serial.println(" P_DISABLEINPUTS ");
+    }
+    break;
+    case P_STANDGOSHIFTLEFT:
+    {
+      Serial.println(" P_STANDGOSHIFTLEFT ");
+    }
+    break;
+    case P_STANDGOSHIFTRIGHT:
+    {
+      Serial.println(" P_STANDGOSHIFTRIGHT ");
+    }
+    break;
+    case P_GOSHIFTLEFT:
+    {
+      Serial.println(" P_GOSHIFTLEFT ");
+    }
+    break;
+    case P_GOSHIFTRIGHT:
+    {
+      Serial.println(" P_GOSHIFTRIGHT ");
     }
     break;
     case P_DODOWN:

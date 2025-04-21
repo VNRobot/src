@@ -109,6 +109,18 @@ void _setWalkBackRightTask(void) {
   currentTask[12] = P_DONE;
 }
 
+// set shift right task
+void _setWalkShiftRightTask(void) {
+  currentTask[0] = P_GOSHIFTRIGHT;
+  currentTask[1] = P_DONE;
+}
+
+// set shift left task
+void _setWalkShiftLeftTask(void) {
+  currentTask[0] = P_GOSHIFTLEFT;
+  currentTask[1] = P_DONE;
+}
+
 // set Turn right task
 void _setWalkTurnRightTask(void) {
   currentTask[0] = P_GORIGHT;
@@ -132,7 +144,7 @@ void _setWalkTurnLeftTask(void) {
 // set stand Turn right task
 void _setStandTurnRightTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGORIGHT; 
+  currentTask[1] = P_STANDGOSHIFTRIGHT; 
   currentTask[2] = P_STANDGORIGHT;
   currentTask[3] = P_STANDGORIGHT;
   currentTask[4] = P_STANDGORIGHT;
@@ -145,7 +157,7 @@ void _setStandTurnRightTask(void) {
 // set stand Turn left task
 void _setStandTurnLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGOLEFT; 
+  currentTask[1] = P_STANDGOSHIFTLEFT; 
   currentTask[2] = P_STANDGOLEFT;
   currentTask[3] = P_STANDGOLEFT;
   currentTask[4] = P_STANDGOLEFT;
@@ -158,7 +170,7 @@ void _setStandTurnLeftTask(void) {
 // set stand Turn right sharp task
 void _setStandTurnRight2Task(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGORIGHT; 
+  currentTask[1] = P_STANDGOSHIFTRIGHT; 
   currentTask[2] = P_STANDGORIGHT; 
   currentTask[3] = P_STANDGORIGHT;
   currentTask[4] = P_STANDGORIGHT; 
@@ -174,7 +186,7 @@ void _setStandTurnRight2Task(void) {
 // set stand Turn left sharp task
 void _setStandTurnLeft2Task(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGOLEFT; 
+  currentTask[1] = P_STANDGOSHIFTLEFT; 
   currentTask[2] = P_STANDGOLEFT; 
   currentTask[3] = P_STANDGOLEFT;
   currentTask[4] = P_STANDGOLEFT; 
@@ -257,6 +269,12 @@ void applyTask(unsigned char task) {
     case GOBACKRIGHT_TASK:
       _setWalkBackRightTask();
     break;
+    case GOSHIFTRIGHT_TASK:
+      _setWalkShiftRightTask();
+    break;
+    case GOSHIFTLEFT_TASK:
+      _setWalkShiftLeftTask();
+    break;
     case GOTURNRIGHT_TASK:
       _setWalkTurnRightTask();
     break;
@@ -337,6 +355,12 @@ void printTaskname(unsigned char task) {
     break;
     case GOBACKRIGHT_TASK:
       Serial.println(F(" GOBACKRIGHT_TASK "));
+    break;
+    case GOSHIFTRIGHT_TASK:
+      Serial.println(F(" GOSHIFTRIGHT_TASK "));
+    break;
+    case GOSHIFTLEFT_TASK:
+      Serial.println(F(" GOSHIFTLEFT_TASK "));
     break;
     case GOTURNRIGHT_TASK:
       Serial.println(F(" GOTURNRIGHT_TASK "));
