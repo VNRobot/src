@@ -81,11 +81,15 @@ void _setWalkBackLeftTask(void) {
   currentTask[1] = P_STANDGO;
   currentTask[2] = P_GOBACK;
   currentTask[3] = P_GOBACKLEFT;
-  currentTask[4] = P_STANDGOLEFT; 
-  currentTask[5] = P_RESETDIRECTION;
-  currentTask[6] = P_ENABLEINPUTS;
-  currentTask[7] = P_STANDGO;
-  currentTask[8] = P_DONE;
+  currentTask[4] = P_GOBACKLEFT;
+  currentTask[5] = P_STANDGO;
+  currentTask[6] = P_STANDGOLEFT; 
+  currentTask[7] = P_STANDGOLEFT;
+  currentTask[8] = P_STANDGOLEFT; 
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_ENABLEINPUTS;
+  currentTask[11] = P_STANDGO;
+  currentTask[12] = P_DONE;
 }
 
 // set walk back right task
@@ -94,61 +98,93 @@ void _setWalkBackRightTask(void) {
   currentTask[1] = P_STANDGO;
   currentTask[2] = P_GOBACK;
   currentTask[3] = P_GOBACKRIGHT;
-  currentTask[4] = P_STANDGORIGHT; 
+  currentTask[4] = P_GOBACKRIGHT;
+  currentTask[5] = P_STANDGO;
+  currentTask[6] = P_STANDGORIGHT; 
+  currentTask[7] = P_STANDGORIGHT;
+  currentTask[8] = P_STANDGORIGHT; 
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_ENABLEINPUTS;
+  currentTask[11] = P_STANDGO;
+  currentTask[12] = P_DONE;
+}
+
+// set Turn right task
+void _setWalkTurnRightTask(void) {
+  currentTask[0] = P_GORIGHT;
+  currentTask[1] = P_RESETDIRECTION;
+  currentTask[2] = P_GOFORWARD;
+  currentTask[3] = P_GOFORWARD;
+  currentTask[4] = P_RESTOREDIRECTION;
+  currentTask[5] = P_DONE;
+}
+
+// set Turn left task
+void _setWalkTurnLeftTask(void) {
+  currentTask[0] = P_GOLEFT;
+  currentTask[1] = P_RESETDIRECTION;
+  currentTask[2] = P_GOFORWARD;
+  currentTask[3] = P_GOFORWARD;
+  currentTask[4] = P_RESTOREDIRECTION;
+  currentTask[5] = P_DONE;
+}
+
+// set stand Turn right task
+void _setStandTurnRightTask(void) {
+  currentTask[0] = P_DISABLEINPUTS;
+  currentTask[1] = P_STANDGORIGHT; 
+  currentTask[2] = P_STANDGORIGHT;
+  currentTask[3] = P_STANDGORIGHT;
+  currentTask[4] = P_STANDGORIGHT;
   currentTask[5] = P_RESETDIRECTION;
   currentTask[6] = P_ENABLEINPUTS;
   currentTask[7] = P_STANDGO;
   currentTask[8] = P_DONE;
 }
 
-// set Turn right task
-void _setWalkTurnRightTask(void) {
-  currentTask[0] = P_GORIGHT;
-  currentTask[1] = P_DONE;
-}
-
-// set Turn left task
-void _setWalkTurnLeftTask(void) {
-  currentTask[0] = P_GOLEFT;
-  currentTask[1] = P_DONE;
-}
-
-// set stand Turn right task
-void _setStandTurnRightTask(void) {
-  currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGORIGHT;
-  currentTask[2] = P_RESETDIRECTION;
-  currentTask[3] = P_ENABLEINPUTS;
-  currentTask[4] = P_DONE;
-}
-
 // set stand Turn left task
 void _setStandTurnLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_STANDGOLEFT;
-  currentTask[2] = P_RESETDIRECTION;
-  currentTask[3] = P_ENABLEINPUTS;
-  currentTask[4] = P_DONE;
+  currentTask[1] = P_STANDGOLEFT; 
+  currentTask[2] = P_STANDGOLEFT;
+  currentTask[3] = P_STANDGOLEFT;
+  currentTask[4] = P_STANDGOLEFT;
+  currentTask[5] = P_RESETDIRECTION;
+  currentTask[6] = P_ENABLEINPUTS;
+  currentTask[7] = P_STANDGO;
+  currentTask[8] = P_DONE;
 }
 
 // set stand Turn right sharp task
 void _setStandTurnRight2Task(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_STANDGORIGHT; 
-  currentTask[2] = P_STANDGORIGHT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
+  currentTask[2] = P_STANDGORIGHT; 
+  currentTask[3] = P_STANDGORIGHT;
+  currentTask[4] = P_STANDGORIGHT; 
+  currentTask[5] = P_STANDGORIGHT;
+  currentTask[6] = P_STANDGORIGHT; 
+  currentTask[7] = P_STANDGORIGHT;
+  currentTask[8] = P_RESETDIRECTION;
+  currentTask[9] = P_ENABLEINPUTS;
+  currentTask[10] = P_STANDGO;
+  currentTask[11] = P_DONE;
 }
 
 // set stand Turn left sharp task
 void _setStandTurnLeft2Task(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_STANDGOLEFT; 
-  currentTask[2] = P_STANDGOLEFT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
+  currentTask[2] = P_STANDGOLEFT; 
+  currentTask[3] = P_STANDGOLEFT;
+  currentTask[4] = P_STANDGOLEFT; 
+  currentTask[5] = P_STANDGOLEFT;
+  currentTask[6] = P_STANDGOLEFT; 
+  currentTask[7] = P_STANDGOLEFT;
+  currentTask[8] = P_RESETDIRECTION;
+  currentTask[9] = P_ENABLEINPUTS;
+  currentTask[10] = P_STANDGO;
+  currentTask[11] = P_DONE;
 }
 
 // set walk task
@@ -174,11 +210,11 @@ void _setStandTask(void) {
   currentTask[4] = P_END;
 }
 
-// set recover left task
+// set bend left task
 void _setRecoverLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWN;
-  currentTask[2] = P_DODOWN;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DOSTAND;
   currentTask[3] = P_RECOVERLEFT;
   currentTask[4] = P_DOSTAND;
   currentTask[5] = P_DOSTAND;
@@ -188,11 +224,11 @@ void _setRecoverLeftTask(void) {
   currentTask[9] = P_STANDGO;
   currentTask[10] = P_DONE;
 }
-// set recover right task
+// set bend right task
 void _setRecoverRightTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
-  currentTask[1] = P_DODOWN;
-  currentTask[2] = P_DODOWN;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DOSTAND;
   currentTask[3] = P_RECOVERRIGHT;
   currentTask[4] = P_DOSTAND;
   currentTask[5] = P_DOSTAND;

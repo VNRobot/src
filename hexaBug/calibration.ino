@@ -82,7 +82,7 @@ short _getCurrent3Inputs(void) {
 void _calibrateMotor1(motors * calibrationSet, short current) {
   if (calibrationCounter == 0) {
     // set initial leg calibration
-    calibrationSet->motor1 = -30;
+    calibrationSet->motor1 = -20;
     calibrationCounter ++;
   } else {
     if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
@@ -95,7 +95,7 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
     } else {
       calibrationSet->motor1 ++;
       if (calibrationSet->motor1 > 30) {
-        calibrationSet->motor1 = -30;
+        calibrationSet->motor1 = -20;
       }
     }
   }
@@ -104,7 +104,7 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
 void _calibrateMotor2(motors * calibrationSet, short current) {
   if (calibrationCounter == 0) {
     // set initial leg calibration
-    calibrationSet->motor2 = -30;
+    calibrationSet->motor2 = -20;
     calibrationCounter ++;
   } else {
     if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
@@ -117,7 +117,7 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
     } else {
       calibrationSet->motor2 ++;
       if (calibrationSet->motor2 > 30) {
-        calibrationSet->motor2 = -30;
+        calibrationSet->motor2 = -20;
       }
     }
   }
@@ -130,7 +130,7 @@ bool doCalibration(allMotors * calibrationData) {
   deviceMode = CALIBRATION_INFO;
   // do loop
   while (true) {
-    setServo(*calibrationData, 90, 90);
+    setServo(*calibrationData, 0, 0);
     delay(100);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
@@ -173,18 +173,18 @@ bool doCalibration(allMotors * calibrationData) {
         Serial.println(F("CALIBRATION_START"));
         deviceMode = CALIBRATION_AUTO;
         // set initial leg calibration
-        calibrationData->m.sl.motor1 = -30;
-        calibrationData->m.sl.motor2 = -30;
-        calibrationData->m.sr.motor1 = -30;
-        calibrationData->m.sr.motor2 = -30;
-        calibrationData->m.fl.motor1 = -30;
-        calibrationData->m.fl.motor2 = -30;
-        calibrationData->m.fr.motor1 = -30;
-        calibrationData->m.fr.motor2 = -30;
-        calibrationData->m.rl.motor1 = -30;
-        calibrationData->m.rl.motor2 = -30;
-        calibrationData->m.rr.motor1 = -30;
-        calibrationData->m.rr.motor2 = -30;
+        calibrationData->m.sl.motor1 = -20;
+        calibrationData->m.sl.motor2 = -20;
+        calibrationData->m.sr.motor1 = -20;
+        calibrationData->m.sr.motor2 = -20;
+        calibrationData->m.fl.motor1 = -20;
+        calibrationData->m.fl.motor2 = -20;
+        calibrationData->m.fr.motor1 = -20;
+        calibrationData->m.fr.motor2 = -20;
+        calibrationData->m.rl.motor1 = -20;
+        calibrationData->m.rl.motor2 = -20;
+        calibrationData->m.rr.motor1 = -20;
+        calibrationData->m.rr.motor2 = -20;
         calibrationCounter = 0;
         calibrationStage = 0;
       }
