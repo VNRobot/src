@@ -152,7 +152,7 @@ unsigned char m_normalInputDistance = 50; //cm
 unsigned char m_legPatternLift = 2;
 // set fast walking leg lift value. 1 or 2
 char m_liftHighPatternMultiplier = 2;
-// center position in the pattern array. center point is 35
+// center position in the pattern array. center point is 48
 char m_forwardCenterServo = 48; // bigger the number more weight on front
 // set fast walking speed. 1 or 2
 char m_speedPatternValue = 2;
@@ -169,66 +169,65 @@ bool _readButtonPress(void) {
   return buffer;
 }
 
+// init hardware
+void initHardware(short initAngle, short setAngle) {
+  // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
+  initServo(calibrationData, initAngle, initAngle);
+  delay(200);
+  setServo(calibrationData, setAngle, setAngle);
+  delay(200);
+  // init digital sensors
+  initInputs();
+  updateInputs(0, sensorsEnabled);
+  // init gyro MPU6050 using I2C
+  initGyro();
+  delay(200);
+  resetGyro();
+  delay(20);
+}
+
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
-  // init digital sensors
-  initInputs();
-  // read all sensors
-  updateInputs(0, sensorsEnabled);
-  // init gyro MPU6050 using I2C
-  // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  delay(400);
-  // init gyro require horizontal position
-  initGyro();
-  // check for Mode button press or not calibrated
+  // check for Mode button press or if not calibrated
   if (_readButtonPress() || (m_versionEeprom != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
-    // set motors values with clear calibration data
-    initServo(calibrationData, 45, 45);
-    setServo(calibrationData, 90, 90);
+    // init hardware
+    initHardware(45, 90);
     // do calibration
     if (doCalibration(& calibrationData)) {
       writeCalibrationEeprom(calibrationData);
       writeSoftwareVersionEeprom(m_versionEeprom);
       delay(6000);
     }
+    // disable motors
     detachServo(calibrationData);
-    delay(500);
-  }
-  // normal operation
-  // load calibration if available
-  if (m_versionEeprom == readSoftwareVersionEeprom()) {
+  } else {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
+    // init hardware
+    initHardware(20, 45);
+    // demo mode activated when hand is placed 5cm from sensors during the boot
+    if (checkForDemoModeInputs()) {
+      // demo mode
+      Serial.println(F("Entering demo mode"));
+      applyTask(DEMO_TASK);
+    } else {
+      // explore mode
+      Serial.println(F("Entering explore mode"));
+      applyTask(BEGIN_TASK);
+    }
+    // update gyro readings
+    gyroState = updateGyro(sequenceCounter);
+    // load task and pattern
+    setCenter(patternNow, 0);
+    setPattern(patternNow, 0);
+    sequenceCounter = updateCountPatterns();
   }
-  // demo mode activated when hand is placed 5cm from sensors during the boot
-  if (checkForDemoModeInputs()) {
-    // demo mode
-    Serial.println(F("Entering demo mode"));
-    applyTask(DEMO_TASK);
-    // disable sensors in demo mmode
-  } else {
-    Serial.println(F("Entering explore mode"));
-    applyTask(BEGIN_TASK);
-  }
-  // set motors values after calibration
-  initServo(calibrationData, 20, 20);
-  setServo(calibrationData, 45, 45);
-  delay(200);
-  // reset gyro
-  resetGyro();
-  delay(200);
-  // update gyro readings
-  gyroState = updateGyro(sequenceCounter);
-  // load task and pattern
-  setCenter(patternNow, 0);
-  setPattern(patternNow, 0);
-  sequenceCounter = updateCountPatterns();
 }
 
 // the loop function runs over and over again forever
