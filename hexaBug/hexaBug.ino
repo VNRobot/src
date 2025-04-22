@@ -132,11 +132,11 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 14;
+unsigned char m_timeDelay = 36;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
-bool m_pitchBallanceEnabled = true;
+bool m_pitchBallanceEnabled = false;
 // forward ballance flag
 bool m_forwardBallanceEnabled = false;
 // auto calibration enabled
@@ -150,7 +150,7 @@ unsigned short m_maxInputCurrent = 2500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
 // leg lift when walking. actual angle m_legPatternLift * 4 * m_liftHighPatternMultiplier
-unsigned char m_legPatternLift = 4;
+unsigned char m_legPatternLift = 12;
 // set fast walking leg lift value. 1 or 2
 char m_liftHighPatternMultiplier = 2;
 // center position in the pattern array. center point is 48

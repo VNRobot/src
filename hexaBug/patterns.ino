@@ -8,8 +8,8 @@ Robot legs motion patterns
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
 // lifting pattern value * 4
-char m1Lift[36]       = {-4,-4,-4,-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4,-4};
-char m2Lift[36]       = {-4,-4,-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4,-4,-4};
+char m1Lift[36]       = {-4,-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4};
+char m2Lift[36]       = {-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4,-4};
 char mLiftToGo[36]    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1,-2,-4};
 char mLiftToStand[36] = {-4,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // walking pointers
@@ -90,26 +90,65 @@ void setPattern(unsigned char currentTaskItem, char angleTurn) {
   // set walk speed
   switch (taskItemBuffer) {
     case P_GOLEFT:
-    case P_GORIGHT:
     case P_GOSHIFTLEFT:
+    {
+      speedL = m_speedPatternValue / 2;
+      speedR = m_speedPatternValue;
+    }
+    break;
+    case P_GORIGHT:
     case P_GOSHIFTRIGHT:
+    {
+      speedL = m_speedPatternValue;
+      speedR = m_speedPatternValue / 2;
+    }
+    break;
     case P_GOFORWARD:
     {
       speedL = m_speedPatternValue;
       speedR = m_speedPatternValue;
+      if (angleTurn > 2) {
+        speedR /= 2;
+      } else if (angleTurn < -2) {
+        speedL /= 2;
+      }
     }
     break;
     case P_GOFORWARDSLOW:
     {
       speedL = 1;
       speedR = 1;
+      if (angleTurn > 2) {
+        speedR /= 2;
+      } else if (angleTurn < -2) {
+        speedL /= 2;
+      }
     }
     break;
     case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
     {
       speedL = -1;
+      speedR = -1;
+    }
+    break;
+    case P_GOBACKLEFT:
+    {
+      speedL = -1;
+      speedR = 0;
+    }
+    break;
+    case P_GOBACKRIGHT:
+    {
+      speedL = 0;
+      speedR = -1;
+    }
+    break;
+    case P_STANDGO:
+    if (angleTurn > 2) {
+      speedL = 1;
+      speedR = -1;
+    } else if (angleTurn < -2) {
+      speedL = 1;
       speedR = -1;
     }
     break;
