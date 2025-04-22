@@ -81,16 +81,13 @@ struct motors {
   char motor2;
 };
 // legs motors structure
-struct legMotors {
+struct allMotors {
+  motors sw;
   motors st;
   motors fl;
   motors fr;
   motors rl;
   motors rr;
-};
-// all motors structure
-struct allMotors {
-  legMotors m;
 };
 // acc and gyro data structure
 typedef struct accRoll {
@@ -104,7 +101,7 @@ typedef struct accRoll {
 } accRoll;
 
 // motors calibration values for 10 motors
-allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // inputs state
 unsigned char inputState = 0;
 // gyro state
@@ -143,7 +140,7 @@ bool m_autoCalibrationEnabled = true;
 // calibration current
 unsigned short m_calibrationCurrent = 640; //ma
 // software version hardcoded. should be changed manually
-unsigned char m_versionEeprom = 51;
+unsigned char m_versionEeprom = 53;
 // maximal pair of legs current
 unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
