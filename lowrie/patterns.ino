@@ -7,18 +7,14 @@ Robot legs motion patterns
 
 // points to currentSequence for every leg
 unsigned char mainCounter = 0;
-// lifting pattern value * 4
-char m1Lift[36]       = {-4,-4,-4,-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4,-4};
-char m2Lift[36]       = {-4,-4,-4,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-4,-4,-4};
-char mLiftToGo[36]    = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-1,-2,-4};
-char mLiftToStand[36] = {-4,-2,-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// walking pointers
-char mWalk[36]        = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
+// lifting pattern value
+char mLiftToGo[36]    = {  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-8,-16};
+char mLiftToStand[36] = {-16,-8,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0};
 // recovering patterns
 char mRecoverLiftDown[36] = {-15,-30,-45,-60,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-60,-45,-30,-15,  0,  0, 0};
 char mRecoverLiftUp[36]   = { 15, 30, 45, 45, 45, 45, 45, 45, 45, 45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-30,-15,  0,  0, 0};
 
-// motors values for 10 motors
+// motors values for 12 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 allMotors motorLift = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg timing phase
@@ -28,22 +24,17 @@ unsigned char counterRL = 0;
 unsigned char counterRR = 0;
 // task item
 unsigned char taskItemBuffer;
-// walk speed can be: -1, 0, 1, 2
-char speedL = 0;
-char speedR = 0;
-// walk lift value
-char walkLiftHight = 0;
 
 // linear legs lift
-void _addLinearLift(char * seftSide, char * rightSide, char FL, char FR, char RL, char RR) {
-  motorLift.fl.motor1 += seftSide[mainCounter] * FL;
-  motorLift.fl.motor2 += seftSide[mainCounter] * FL;
-  motorLift.fr.motor1 += rightSide[mainCounter] * FR;
-  motorLift.fr.motor2 += rightSide[mainCounter] * FR;
-  motorLift.rl.motor1 += seftSide[mainCounter] * RL;
-  motorLift.rl.motor2 += seftSide[mainCounter] * RL;
-  motorLift.rr.motor1 += rightSide[mainCounter] * RR;
-  motorLift.rr.motor2 += rightSide[mainCounter] * RR;
+void _addLinearLift(char * leftSide, char * rightSide, char FL, char FR, char RL, char RR) {
+  motorLift.fl.motor1 = leftSide[mainCounter] * FL;
+  motorLift.fl.motor2 = leftSide[mainCounter] * FL;
+  motorLift.fr.motor1 = rightSide[mainCounter] * FR;
+  motorLift.fr.motor2 = rightSide[mainCounter] * FR;
+  motorLift.rl.motor1 = leftSide[mainCounter] * RL;
+  motorLift.rl.motor2 = leftSide[mainCounter] * RL;
+  motorLift.rr.motor1 = rightSide[mainCounter] * RR;
+  motorLift.rr.motor2 = rightSide[mainCounter] * RR;
 }
 
 // update servo motors values
@@ -71,108 +62,41 @@ unsigned char updateCountPatterns(void) {
 }
 
 // get next sequence
-void setPattern(unsigned char currentTaskItem, char angleTurn) {
+void setPattern(unsigned char currentTaskItem) {
   // remember current pattern
   taskItemBuffer = currentTaskItem;
-  // set walk speed
-  switch (taskItemBuffer) {
-    case P_GOLEFT:
-    case P_GORIGHT:
-    case P_GOSHIFTLEFT:
-    case P_GOSHIFTRIGHT:
-    case P_GOFORWARD:
-    {
-      speedL = m_speedPatternValue;
-      speedR = m_speedPatternValue;
-    }
-    break;
-    case P_GOFORWARDSLOW:
-    {
-      speedL = 1;
-      speedR = 1;
-    }
-    break;
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    {
-      speedL = -1;
-      speedR = -1;
-    }
-    break;
-    default:
-    {
-      speedL = 0;
-      speedR = 0;
-    }
-    break;
-  }
-  // set walking leg lift
-  switch (taskItemBuffer) {
-    case P_STANDGO:
-    case P_STANDGOLEFT:
-    case P_STANDGORIGHT:
-    case P_STANDGOSHIFTLEFT:
-    case P_STANDGOSHIFTRIGHT:
-    case P_GOFORWARDSLOW:
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    {
-      walkLiftHight = m_legPatternLift;
-    }
-    break;
-    case P_GOFORWARD:
-    case P_GOLEFT:
-    case P_GORIGHT:
-    case P_GOSHIFTLEFT:
-    case P_GOSHIFTRIGHT:
-    {
-      walkLiftHight = m_legPatternLift * m_liftHighPatternMultiplier;
-    }
-    break;
-    default:
-    {
-      walkLiftHight = 0;
-    }
-    break;
-  }
 }
 
-// get servo motor points
+// get servo motor steps
 allMotors getWalkPatterns(void) {
-  motorValue.fl.motor1 = mWalk[counterFL] * speedL;
-  motorValue.fl.motor2 = mWalk[counterFL] * speedL;
-  motorValue.fr.motor1 = mWalk[counterFR] * speedR;
-  motorValue.fr.motor2 = mWalk[counterFR] * speedR;
-  motorValue.rl.motor1 = mWalk[counterRL] * speedL;
-  motorValue.rl.motor2 = mWalk[counterRL] * speedL;
-  motorValue.rr.motor1 = mWalk[counterRR] * speedR;
-  motorValue.rr.motor2 = mWalk[counterRR] * speedR;
+  motors legSet;
+  legSet = getWalkStep(counterFL);
+  motorValue.fl.motor1 = legSet.motor1;
+  motorValue.fl.motor2 = legSet.motor2;
+  legSet = getWalkStep(counterFR);
+  motorValue.fr.motor1 = legSet.motor1;
+  motorValue.fr.motor2 = legSet.motor2;
+  legSet = getWalkStep(counterRL);
+  motorValue.rl.motor1 = legSet.motor1;
+  motorValue.rl.motor2 = legSet.motor2;
+  legSet = getWalkStep(counterRR);
+  motorValue.rr.motor1 = legSet.motor1;
+  motorValue.rr.motor2 = legSet.motor2;
   return motorValue;
 }
 
 // get servo motors values for lift
 allMotors getLiftPatterns(void) {
-  // set motors angle values
-  motorLift.fl.motor1 = m1Lift[counterFL] * walkLiftHight;
-  motorLift.fl.motor2 = m2Lift[counterFL] * walkLiftHight;
-  motorLift.fr.motor1 = m1Lift[counterFR] * walkLiftHight;
-  motorLift.fr.motor2 = m2Lift[counterFR] * walkLiftHight;
-  motorLift.rl.motor1 = m1Lift[counterRL] * walkLiftHight;
-  motorLift.rl.motor2 = m2Lift[counterRL] * walkLiftHight;
-  motorLift.rr.motor1 = m1Lift[counterRR] * walkLiftHight;
-  motorLift.rr.motor2 = m2Lift[counterRR] * walkLiftHight;
   // add linear lift
   switch (taskItemBuffer) {
     case P_STANDTOGO:
     {
-      _addLinearLift(mLiftToGo, mLiftToGo, 4, 0, 0, 4);
+      _addLinearLift(mLiftToGo, mLiftToGo, 1, 0, 0, 1);
     }
     break;
     case P_GOTOSTAND:
     {
-      _addLinearLift(mLiftToStand, mLiftToStand, 4, 0, 0, 4);
+      _addLinearLift(mLiftToStand, mLiftToStand, 1, 0, 0, 1);
     }
     break;
     case P_RECOVERLEFT:
@@ -186,6 +110,17 @@ allMotors getLiftPatterns(void) {
     }
     break;
     default:
+    {
+      // set motors angle values
+      motorLift.fl.motor1 = 0;
+      motorLift.fl.motor2 = 0;
+      motorLift.fr.motor1 = 0;
+      motorLift.fr.motor2 = 0;
+      motorLift.rl.motor1 = 0;
+      motorLift.rl.motor2 = 0;
+      motorLift.rr.motor1 = 0;
+      motorLift.rr.motor2 = 0;
+    }
     break;
   }
   return motorLift;
