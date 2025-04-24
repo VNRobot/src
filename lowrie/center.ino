@@ -25,7 +25,6 @@ void setCenter(unsigned char currentPattern, char angleTurn) {
   switch (centerPatternBuffer) {
     case P_STANDGO:
     case P_GOFORWARD:
-    case P_GOFORWARDSLOW:
     {
       // remember turn angle
       centerTurnF = angleTurn;

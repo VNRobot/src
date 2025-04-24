@@ -44,7 +44,7 @@ void _setDemoTask(void) {
   currentTask[27] = P_STANDGO;
   currentTask[28] = P_STANDGO;
   currentTask[29] = P_ENABLEINPUTS;
-  currentTask[30] = P_GOFORWARDSLOW;
+  currentTask[30] = P_GOFORWARD;
   currentTask[31] = P_DONE;
 }
 
@@ -61,7 +61,7 @@ void _setBeginTask(void) {
   currentTask[8] = P_STANDGO;
   currentTask[9] = P_STANDGO;
   currentTask[10] = P_ENABLEINPUTS;
-  currentTask[11] = P_GOFORWARDSLOW;
+  currentTask[11] = P_GOFORWARD;
   currentTask[12] = P_DONE;
 }
 

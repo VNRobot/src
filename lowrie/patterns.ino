@@ -166,11 +166,6 @@ void printPatternName(unsigned char currentTaskItem) {
       Serial.println(" P_GOFORWARD ");
     }
     break;
-    case P_GOFORWARDSLOW:
-    {
-      Serial.println(" P_GOFORWARDSLOW ");
-    }
-    break;
     case P_GOLEFT:
     {
       Serial.println(" P_GOLEFT ");

@@ -14,7 +14,6 @@ enum rPatterns {
   P_STANDGOLEFT,
   P_STANDGORIGHT,
   P_GOFORWARD,
-  P_GOFORWARDSLOW,
   P_GOLEFT,
   P_GORIGHT,
   P_GOBACK,
@@ -258,7 +257,6 @@ void loop() {
     switch (patternNow) {
       case P_STANDGO:
       case P_GOFORWARD:
-      case P_GOFORWARDSLOW:
       {
         setCenter(patternNow, getDirectionCorrectionGyro());
         setSteps(patternNow);
