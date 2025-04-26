@@ -14,7 +14,6 @@ enum rPatterns {
   P_STANDGOLEFT,
   P_STANDGORIGHT,
   P_GOFORWARD,
-  P_GOFORWARDSLOW,
   P_GOLEFT,
   P_GORIGHT,
   P_GOBACK,
@@ -81,17 +80,13 @@ struct motors {
   char motor2;
 };
 // legs motors structure
-struct legMotors {
+struct allMotors {
+  motors sw;
+  motors st;
   motors fl;
   motors fr;
-  motors sl;
-  motors sr;
   motors rl;
   motors rr;
-};
-// all motors structure
-struct allMotors {
-  legMotors m;
 };
 // acc and gyro data structure
 typedef struct accRoll {
@@ -132,7 +127,7 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 36;
+unsigned char m_timeDelay = 14;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
@@ -149,14 +144,8 @@ unsigned char m_versionEeprom = 91;
 unsigned short m_maxInputCurrent = 2500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// leg lift when walking. actual angle m_legPatternLift * 4 * m_liftHighPatternMultiplier
-unsigned char m_legPatternLift = 12;
-// set fast walking leg lift value. 1 or 2
-char m_liftHighPatternMultiplier = 2;
 // center position in the pattern array. center point is 48
 char m_forwardCenterServo = 48; // bigger the number more weight on front
-// set fast walking speed. 1 or 2
-char m_speedPatternValue = 2;
 //----------------------------------------------------------
 
 // read button press in blocking mode
@@ -225,7 +214,8 @@ void setup() {
     // update gyro readings
     gyroState = updateGyro(sequenceCounter);
     // load task and pattern
-    setPattern(patternNow, 0);
+    setSteps(patternNow, 0);
+    setPattern(patternNow);
     sequenceCounter = updateCountPatterns();
   }
 }
@@ -266,9 +256,9 @@ void loop() {
     switch (patternNow) {
       case P_STANDGO:
       case P_GOFORWARD:
-      case P_GOFORWARDSLOW:
       {
-        setPattern(patternNow, getDirectionCorrectionGyro());
+        setSteps(patternNow, getDirectionCorrectionGyro());
+        setPattern(patternNow);
         doCycle();
       }
       break;
@@ -309,7 +299,8 @@ void loop() {
       break;
       default:
       {
-        setPattern(patternNow, 0);
+        setSteps(patternNow, 0);
+        setPattern(patternNow);
         doCycle();
       }
       break;
@@ -333,7 +324,7 @@ void doCycle(void) {
     // update ballance
     gyroState = updateGyro(sequenceCounter);
     updateStaticBallanceServo(getStaticBallance(gyroState, sequenceCounter));
-    setFowardBallanceServo(getForwardBallance(gyroState));
+    setFowardBallanceSteps(getForwardBallance(gyroState));
   } else {
     // update static ballance
     updateStaticBallanceServo(getStaticBallance(updateGyro(sequenceCounter), sequenceCounter));

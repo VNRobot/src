@@ -67,18 +67,18 @@ allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
       }
     }
   }
-  legUp.m.fl.motor1 = -correctRollL - correctPitchF;
-  legUp.m.fl.motor2 = -correctRollL - correctPitchF;
-  legUp.m.fr.motor1 = -correctRollR - correctPitchF;
-  legUp.m.fr.motor2 = -correctRollR - correctPitchF;
-  legUp.m.sl.motor1 = -correctRollL;
-  legUp.m.sl.motor2 = -correctRollL;
-  legUp.m.sr.motor1 = -correctRollR;
-  legUp.m.sr.motor2 = -correctRollR;
-  legUp.m.rl.motor1 = -correctRollL - correctPitchR;
-  legUp.m.rl.motor2 = -correctRollL - correctPitchR;
-  legUp.m.rr.motor1 = -correctRollR - correctPitchR;
-  legUp.m.rr.motor2 = -correctRollR - correctPitchR;
+  legUp.fl.motor1 = -correctRollL - correctPitchF;
+  legUp.fl.motor2 = -correctRollL - correctPitchF;
+  legUp.fr.motor1 = -correctRollR - correctPitchF;
+  legUp.fr.motor2 = -correctRollR - correctPitchF;
+  legUp.sw.motor1 = -correctRollL;
+  legUp.sw.motor2 = -correctRollL;
+  legUp.st.motor1 = -correctRollR;
+  legUp.st.motor2 = -correctRollR;
+  legUp.rl.motor1 = -correctRollL - correctPitchR;
+  legUp.rl.motor2 = -correctRollL - correctPitchR;
+  legUp.rr.motor1 = -correctRollR - correctPitchR;
+  legUp.rr.motor2 = -correctRollR - correctPitchR;
   return legUp;
 }
 
