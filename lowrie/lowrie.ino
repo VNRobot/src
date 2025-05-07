@@ -144,8 +144,8 @@ unsigned char m_versionEeprom = 53;
 unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// center position in the pattern array. center point is 24
-char m_forwardCenterServo = 24; // bigger the number more weight on front
+// center position in the pattern array. center point is 22
+char m_forwardCenterServo = 22; // bigger the number more weight on front
 //----------------------------------------------------------
 
 // read button press in blocking mode
