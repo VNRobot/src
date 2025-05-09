@@ -127,7 +127,7 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 14;
+unsigned char m_timeDelay = 20;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
@@ -141,11 +141,11 @@ unsigned short m_calibrationCurrent = 960; //ma
 // software version hardcoded. should be changed manually
 unsigned char m_versionEeprom = 91;
 // maximal pair of legs current
-unsigned short m_maxInputCurrent = 2500; //ma
+unsigned short m_maxInputCurrent = 2000; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// center position in the pattern array. center point is 48
-char m_forwardCenterServo = 48; // bigger the number more weight on front
+// center position in the pattern array. center point is 22
+char m_forwardCenterServo = 22; // bigger the number more weight on front
 //----------------------------------------------------------
 
 // read button press in blocking mode

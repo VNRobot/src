@@ -263,10 +263,40 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   if (analogValueInputs.current3 > m_maxInputCurrent) {
     return IN_HIGH_CURRENT_3;
   }
-  // check sensors
+  // both sensors normal
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
     return IN_NORMAL;
   }
+  // both sensors blocked
+  if ((sLeft == SEN_BLOCK) && (sRight == SEN_BLOCK)) {
+    if (analogValueInputs.left > analogValueInputs.right) {
+      turnLeft = false;
+      return IN_WALL_FRONTRIGHT;
+    } else {
+      turnLeft = true;
+      return IN_WALL_FRONTRIGHT;
+    } 
+  }
+  // both sensors wall or both sensors edge
+  if (((sLeft == SEN_WALL) && (sRight == SEN_WALL)) || ((sLeft == SEN_EDGE) && (sRight == SEN_EDGE))) {
+    if (turnLeft) {
+      return IN_WALL_FRONTRIGHT;
+    } else {
+      return IN_WALL_FRONTLEFT;
+    }
+  }
+  // both sensors obstacle
+  if ((sLeft == SEN_OBSTACLE) && (sRight == SEN_OBSTACLE)) {
+    if (analogValueInputs.left > analogValueInputs.right) {
+      turnLeft = true;
+      return IN_OBSTACLE_FRONTRIGHT;
+    } else {
+      turnLeft = false;
+      return IN_OBSTACLE_FRONTLEFT;
+    } 
+  }
+  //SEN_EDGE, SEN_OBSTACLE, SEN_WALL, SEN_BLOCK, SEN_NORMAL
+  // right is normal
   if (sRight == SEN_NORMAL) {
     // only left side obstacle
     turnLeft = false;
@@ -274,12 +304,14 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
       turnLeft = true;
       return IN_WALL_RIGHT;
     }
-    if (sLeft == SEN_WALL) {
+    if ((sLeft == SEN_WALL) || (sLeft == SEN_EDGE)) {
       return IN_WALL_LEFT;
     } else {
+      //SEN_OBSTACLE
       return IN_OBSTACLE_LEFT;
     }
   }
+  // left is normal
   if (sLeft == SEN_NORMAL) {
     // only right side obstacle
     turnLeft = true;
@@ -287,49 +319,37 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
       turnLeft = false;
       return IN_WALL_LEFT;
     }
-    if (sRight == SEN_WALL) {
+    if ((sRight == SEN_WALL) || (sRight == SEN_EDGE)) {
       return IN_WALL_RIGHT;
     } else {
       //SEN_OBSTACLE
       return IN_OBSTACLE_RIGHT;
     }
   }
-  // both sensors obstacle or edge
-  if ((sLeft == SEN_EDGE) || (sRight == SEN_EDGE)) {
-    if (turnLeft) {
-      return IN_WALL_FRONTRIGHT;
-    } else {
-      return IN_WALL_FRONTLEFT;
-    }
+  //SEN_EDGE, SEN_OBSTACLE, SEN_WALL, SEN_BLOCK
+  if (sLeft == SEN_BLOCK) {
+    turnLeft = true;
+    return IN_WALL_FRONTRIGHT;
   }
-  // both sensors obstacle and blocked
-  if ((sLeft == SEN_BLOCK) || (sRight == SEN_BLOCK)) {
-    if (turnLeft) {
-      return IN_WALL_FRONTRIGHT;
-    } else {
-      return IN_WALL_FRONTLEFT;
-    }
+  if (sRight == SEN_BLOCK) {
+    turnLeft = false;
+    return IN_WALL_FRONTLEFT;
   }
-  // both sensors wall or obstacle
+  //SEN_EDGE, SEN_OBSTACLE, SEN_WALL
+  if ((sLeft == SEN_WALL) || (sLeft == SEN_EDGE)) {
+    turnLeft = false;
+    return IN_WALL_FRONTLEFT;
+  }
+  if ((sRight == SEN_WALL) || (sRight == SEN_EDGE)) {
+    turnLeft = true;
+    return IN_WALL_FRONTRIGHT;
+  }
+  // should not go here
   if (analogValueInputs.left > analogValueInputs.right) {
     turnLeft = true;
   } else {
     turnLeft = false;
   } 
-  if ((sLeft == SEN_WALL) || (sRight == SEN_WALL)) {
-    if (turnLeft) {
-      return IN_WALL_FRONTRIGHT;
-    } else {
-      return IN_WALL_FRONTLEFT;
-    }
-  } else {
-    if (turnLeft) {
-      return IN_OBSTACLE_FRONTRIGHT;
-    } else {
-      return IN_OBSTACLE_FRONTLEFT;
-    }
-  }
-  // normal
   return IN_NORMAL;
 }
 
