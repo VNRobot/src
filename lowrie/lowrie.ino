@@ -168,7 +168,7 @@ void initHardware(short initAngle, short setAngle) {
   delay(200);
   // init digital sensors
   initInputs();
-  updateInputs(0, sensorsEnabled);
+  updateInputs(0, sensorsEnabled, 0);
   // init gyro MPU6050 using I2C
   initGyro();
   delay(200);
@@ -321,7 +321,7 @@ void doCycle(void) {
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
   // read proximity sensors
-  inputState = updateInputs(sequenceCounter, sensorsEnabled);
+  inputState = updateInputs(sequenceCounter, sensorsEnabled, getDirectionGyro());
   // update gyro readings
   if (sequenceCounter == 0) {
     // update ballance

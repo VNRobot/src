@@ -69,7 +69,7 @@ void initInputs(void) {
 }
 
 // read and remember analog sensors readings
-unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
+unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, char direction) {
   // read analog inputs
   analogRawInputs.battery = (unsigned short)analogRead(A6);
   analogRawInputs.current1 = (unsigned short)analogRead(A7);
@@ -117,7 +117,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
   analogValueInputs.left = (unsigned short)((1600000 / analogRawInputs.right) / analogRawInputs.right);
   //
   if (sequenceCount == 0) {
-    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right));
+    allStateInputs = _statusInputs(getSensorState(analogValueInputs.left), getSensorState(analogValueInputs.right), direction);
     //
     if (sensorsEnabled) {
       if (allStateInputsOld != allStateInputs) {
@@ -246,7 +246,7 @@ unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defa
 }
 
 // status of inputs
-unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
+unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char direction) {
   // battery low 6500
   if (analogValueInputs.battery < 6500) {
     return IN_LOW_BATTERY;
@@ -265,6 +265,14 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   }
   // both sensors normal
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
+    if (direction > 50) {
+      turnLeft = false;
+      return IN_WALL_FRONTLEFT;
+    }
+    if (direction < -50) {
+      turnLeft = true;
+      return IN_WALL_FRONTRIGHT;
+    }
     return IN_NORMAL;
   }
   // both sensors blocked
