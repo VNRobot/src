@@ -131,7 +131,7 @@ bool doCalibration(allMotors * calibrationData) {
   // do loop
   while (true) {
     setServo(*calibrationData, 90, 90);
-    delay(100);
+    delay(200);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
       modePressed = true;

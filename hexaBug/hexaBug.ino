@@ -32,6 +32,8 @@ enum rPatterns {
   P_DODOWN,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
+  P_SHORTDELAY,
+  P_LONGDELAY,
   P_END
 };
 // tasks
@@ -146,6 +148,8 @@ unsigned short m_maxInputCurrent = 2000; //ma
 unsigned char m_normalInputDistance = 50; //cm
 // center position in the pattern array. center point is 22
 char m_forwardCenterServo = 22; // bigger the number more weight on front
+// sensors enabled
+unsigned char m_sensorsInputsEnabled = true;
 //----------------------------------------------------------
 
 // read button press in blocking mode
@@ -295,6 +299,16 @@ void loop() {
       {
         // disable motors
         detachServo(calibrationData);
+      }
+      break;
+      case P_SHORTDELAY:
+      {
+        m_timeDelay = 20; //30;
+      }
+      break;
+      case P_LONGDELAY:
+      {
+        m_timeDelay = 30; //60;
       }
       break;
       default:

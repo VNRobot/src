@@ -136,26 +136,30 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled) {
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (m_normalInputDistance * 4)) { // no edge
-    if (input > (m_normalInputDistance / 6)) { // not blocked
-      if (input > (m_normalInputDistance / 3)) { // no wall
-        if (input > (m_normalInputDistance / 2)) { // no obstacle
-          return SEN_NORMAL;
+  if (m_sensorsInputsEnabled) {
+    if (input < (m_normalInputDistance * 4)) { // no edge
+      if (input > (m_normalInputDistance / 6)) { // not blocked
+        if (input > (m_normalInputDistance / 3)) { // no wall
+          if (input > (m_normalInputDistance / 2)) { // no obstacle
+            return SEN_NORMAL;
+          } else {
+            // obstacle
+            return SEN_OBSTACLE;
+          }
         } else {
-          // obstacle
-          return SEN_OBSTACLE;
+          // wall
+          return SEN_WALL;
         }
       } else {
-        // wall
-        return SEN_WALL;
+        // blocked
+        return SEN_BLOCK;
       }
     } else {
-      // blocked
-      return SEN_BLOCK;
+      // edge
+      return SEN_EDGE;
     }
   } else {
-    // edge
-    return SEN_EDGE;
+    return SEN_NORMAL;
   }
 }
 
