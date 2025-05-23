@@ -17,13 +17,6 @@ char mRecoverLiftUp[36]   = { 15, 30, 45, 45, 45, 45, 45, 45, 45, 45,-45,-45,-45
 // motors values for 12 motors
 allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 allMotors motorLift = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// leg timing phase
-unsigned char counterFL = 0;
-unsigned char counterFR = 0;
-unsigned char counterSL = 0;
-unsigned char counterSR = 0;
-unsigned char counterRL = 0;
-unsigned char counterRR = 0;
 // task item
 unsigned char taskItemBuffer;
 
@@ -50,27 +43,6 @@ unsigned char updateCountPatterns(void) {
   if (mainCounter >= m_fullCycle) {
     mainCounter = 0;
   }
-  counterFL = mainCounter + m_halfCycle + m_halfCycle / 2;
-  if (counterFL >= m_fullCycle) {
-    counterFL -= m_fullCycle;
-  }
-  counterFR = mainCounter + m_halfCycle / 2;
-  if (counterFR >= m_fullCycle) {
-    counterFR -= m_fullCycle;
-  }
-  counterSL = mainCounter + m_halfCycle / 4;
-  if (counterSL >= m_fullCycle) {
-    counterSL -= m_fullCycle;
-  }
-  counterSR = mainCounter + m_halfCycle + m_halfCycle / 4;
-  if (counterSR >= m_fullCycle) {
-    counterSR -= m_fullCycle;
-  }
-  counterRL = mainCounter + m_halfCycle;
-  if (counterRL >= m_fullCycle) {
-    counterRL -= m_fullCycle;
-  }
-  counterRR = mainCounter;
   return mainCounter;
 }
 
@@ -83,22 +55,22 @@ void setPattern(unsigned char currentTaskItem) {
 // get servo motor steps
 allMotors getWalkPatterns(void) {
   motors legSet;
-  legSet = getWalkStepL(counterSL);
+  legSet = getWalkStepSL();
   motorValue.sw.motor1 = legSet.motor1;
   motorValue.sw.motor2 = legSet.motor2;
-  legSet = getWalkStepR(counterSR);
+  legSet = getWalkStepSR();
   motorValue.st.motor1 = legSet.motor1;
   motorValue.st.motor2 = legSet.motor2;
-  legSet = getWalkStepL(counterFL);
+  legSet = getWalkStepFL();
   motorValue.fl.motor1 = legSet.motor1;
   motorValue.fl.motor2 = legSet.motor2;
-  legSet = getWalkStepR(counterFR);
+  legSet = getWalkStepFR();
   motorValue.fr.motor1 = legSet.motor1;
   motorValue.fr.motor2 = legSet.motor2;
-  legSet = getWalkStepL(counterRL);
+  legSet = getWalkStepRL();
   motorValue.rl.motor1 = legSet.motor1;
   motorValue.rl.motor2 = legSet.motor2;
-  legSet = getWalkStepR(counterRR);
+  legSet = getWalkStepRR();
   motorValue.rr.motor1 = legSet.motor1;
   motorValue.rr.motor2 = legSet.motor2;
   return motorValue;

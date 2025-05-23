@@ -4,7 +4,15 @@ Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs steps
 */
-
+// leg timing phase
+struct phase {
+  unsigned char FL;
+  unsigned char FR;
+  unsigned char SL;
+  unsigned char SR;
+  unsigned char RL;
+  unsigned char RR;
+};
 // array size
 char arraySize = 43;
 // walking 43 points. center point is 22
@@ -23,6 +31,8 @@ char m2LiftH2[43]   = {  97,   93,   90,   86,   83,   79,   76,   73,   70,   6
 // lift high flags. 2 - lift high, 1 - lift, 0 - walk
 //char mLiftHFlag[36]   = { 3, 3,  3,  3,  2,  1,  1,  1,  1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 3};
 char mLiftHFlag[36]     = { 3, 3,  3,  3,  2,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3};
+// touch map
+char mTouchFlag[36]     = { 0, 0,  0,  0,  0,  2,  2,  1,  1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0};
 // walking pointers
 char mPointWalk[36]     = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
 char mPointWalkSlow[36] = { 0,-3, -6, -8, -7, -7, -6, -6, -5,-5,-4,-4,-3,-3,-2,-2,-1,-1, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 6, 3};
@@ -36,6 +46,36 @@ bool walkingMode = false;
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
+// leg phase
+phase legPhase = {0, 0, 0, 0, 0, 0};
+// legset touched
+touch touchState = {false, false, false};
+touch holeState = {false, false, false};
+
+// update legs phases
+void updatePhaseSteps(unsigned char mainCounter) {
+  legPhase.FL = mainCounter + m_halfCycle + m_halfCycle / 2;
+  if (legPhase.FL >= m_fullCycle) {
+    legPhase.FL -= m_fullCycle;
+  }
+  legPhase.FR = mainCounter + m_halfCycle / 2;
+  if (legPhase.FR >= m_fullCycle) {
+    legPhase.FR -= m_fullCycle;
+  }
+  legPhase.SL = mainCounter + m_halfCycle / 4;
+  if (legPhase.SL >= m_fullCycle) {
+    legPhase.SL -= m_fullCycle;
+  }
+  legPhase.SR = mainCounter + m_halfCycle + m_halfCycle / 4;
+  if (legPhase.SR >= m_fullCycle) {
+    legPhase.SR -= m_fullCycle;
+  }
+  legPhase.RL = mainCounter + m_halfCycle;
+  if (legPhase.RL >= m_fullCycle) {
+    legPhase.RL -= m_fullCycle;
+  }
+  legPhase.RR = mainCounter;
+}
 
 // set forward ballance value
 void setFowardBallanceSteps(char ballanceValue) {
@@ -122,13 +162,29 @@ motors _setWalkStep(char pointBuffer, unsigned char counter, char speedValue) {
 motors getWalkStep(unsigned char counter) {
   return _setWalkStep(_getPoint(counter, speed), counter, speed);
 }
-// get servo motor walk values left side
-motors getWalkStepL(unsigned char counter) {
-  return _setWalkStep(_getPoint(counter, speedL), counter, speedL);
+// get servo motor walk values FL
+motors getWalkStepFL(void) {
+  return _setWalkStep(_getPoint(legPhase.FL, speedL), legPhase.FL, speedL);
 }
-// get servo motor walk values right side
-motors getWalkStepR(unsigned char counter) {
-  return _setWalkStep(_getPoint(counter, speedR), counter, speedR);
+// get servo motor walk values FR
+motors getWalkStepFR(void) {
+  return _setWalkStep(_getPoint(legPhase.FR, speedR), legPhase.FR, speedR);
+}
+// get servo motor walk values SL
+motors getWalkStepSL(void) {
+  return _setWalkStep(_getPoint(legPhase.SL, speedL), legPhase.SL, speedL);
+}
+// get servo motor walk values SR
+motors getWalkStepSR(void) {
+  return _setWalkStep(_getPoint(legPhase.SR, speedR), legPhase.SR, speedR);
+}
+// get servo motor walk values RL
+motors getWalkStepRL(void) {
+  return _setWalkStep(_getPoint(legPhase.RL, speedL), legPhase.RL, speedL);
+}
+// get servo motor walk values RR
+motors getWalkStepRR(void) {
+  return _setWalkStep(_getPoint(legPhase.RR, speedR), legPhase.RR, speedR);
 }
 
 // set mode and speed
@@ -241,4 +297,11 @@ void setSteps(unsigned char currentPattern, char angleTurn) {
     }
     break;
   }
+}
+
+bool updateSurfaceSteps(touch touchIn) {
+  return true;
+  // mTouchFlag  legPhase.FL  legPhase.FR  touchState.set1  holeState.set1  touchIn.set1
+  //  mTouchFlag[legPhase.FL] = mTouchFlag[legPhase.FR]
+  // 0 - lifted, 1 - down, 2 - unknown
 }

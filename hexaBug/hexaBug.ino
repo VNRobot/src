@@ -100,6 +100,12 @@ typedef struct accRoll {
   unsigned char rollMaxTime;
   unsigned char stateGyro;
 } accRoll;
+// touch with 3k resistor
+struct touch {
+  bool set1;
+  bool set2;
+  bool set3;
+};
 
 // motors calibration values for 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -149,7 +155,7 @@ unsigned char m_normalInputDistance = 50; //cm
 // center position in the pattern array. center point is 22
 char m_forwardCenterServo = 22; // bigger the number more weight on front
 // sensors enabled
-unsigned char m_sensorsInputsEnabled = true;
+unsigned char m_sensorsInputsEnabled = false;
 //----------------------------------------------------------
 
 // read button press in blocking mode
@@ -221,6 +227,7 @@ void setup() {
     setSteps(patternNow, 0);
     setPattern(patternNow);
     sequenceCounter = updateCountPatterns();
+    updatePhaseSteps(sequenceCounter);
   }
 }
 
@@ -303,12 +310,12 @@ void loop() {
       break;
       case P_SHORTDELAY:
       {
-        m_timeDelay = 20; //30;
+        m_timeDelay = 30;
       }
       break;
       case P_LONGDELAY:
       {
-        m_timeDelay = 30; //60;
+        m_timeDelay = 60;
       }
       break;
       default:
@@ -329,8 +336,12 @@ void doCycle(void) {
   // update servo motors values, move motors
   updateServo(calibrationData, getWalkPatterns(), getLiftPatterns());
   delay(m_timeDelay);
+  bool stepsClear = updateSurfaceSteps(updateTouchInputs());
   // update motor pattern point
-  sequenceCounter = updateCountPatterns();
+  if (stepsClear) {
+    sequenceCounter = updateCountPatterns();
+  }
+  updatePhaseSteps(sequenceCounter);
   // read proximity sensors
   inputState = updateInputs(sequenceCounter, sensorsEnabled);
   // update gyro readings
