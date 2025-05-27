@@ -7,6 +7,23 @@ Main file
 
 #include <Servo.h>
 
+// input state
+enum inState {
+  IN_LOW_BATTERY,
+  IN_HIGH_CURRENT_1,
+  IN_HIGH_CURRENT_2,
+  IN_HIGH_CURRENT_3,
+  IN_WALL_FRONTLEFT,
+  IN_WALL_FRONTRIGHT,
+  IN_WALL_LEFT,
+  IN_WALL_RIGHT,
+  IN_OBSTACLE_FRONTLEFT,
+  IN_OBSTACLE_FRONTRIGHT,
+  IN_OBSTACLE_LEFT,
+  IN_OBSTACLE_RIGHT,
+  IN_NORMAL             
+};
+
 // patterns
 enum rPatterns {
   P_DOSTAND,
@@ -109,6 +126,11 @@ struct motors {
   char motor1;
   char motor2;
 };
+// structure for one leg data
+struct leg {
+  short hight;
+  short shift;
+};
 // legs motors structure
 struct allMotors {
   motors sw;
@@ -117,6 +139,13 @@ struct allMotors {
   motors fr;
   motors rl;
   motors rr;
+};
+// legs motors structure
+struct allLegs {
+  leg fl;
+  leg fr;
+  leg rl;
+  leg rr;
 };
 // acc and gyro data structure
 typedef struct accRoll {
@@ -129,26 +158,24 @@ typedef struct accRoll {
   unsigned char stateGyro;
 } accRoll;
 
-// motors calibration values for 10 motors
+// motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// inputs state
-unsigned char inputState = 0;
+// inputs state defined in inState
+unsigned char inputState = IN_NORMAL;
 // gyro state
 accRoll gyroState;
-// sequence counter
+// sequence counter 0 to m_fullCycle - 1
 unsigned char sequenceCounter = 0;
-// current pattern
+// current pattern defined in rPatterns
 unsigned char patternNow = P_DOSTAND;
-// enable sensors flag
+// enable sensors flag toggled by P_ENABLEINPUTS and P_DISABLEINPUTS
 bool sensorsEnabled = false;
-// default task
+// default task from rTasks
 unsigned char defaultTask = GO_TASK;
 // current task
 unsigned char taskNow = STAND_TASK;
 // next task
 unsigned char taskNext = STAND_TASK;
-// new task
-unsigned char _newTask = BEGIN_TASK;
 // variable for temporary use
 unsigned char i;
 //-------------global variables---------------------------
@@ -157,25 +184,23 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 12;
+unsigned char m_timeDelay = 8;
 // roll ballance flag
 bool m_rollBallanceEnabled = false;
 // pitch ballance flag
 bool m_pitchBallanceEnabled = false;
 // forward ballance flag
-bool m_forwardBallanceEnabled = true;
-// auto calibration enabled
-bool m_autoCalibrationEnabled = false;
-// calibration current
-unsigned short m_calibrationCurrent = 640; //ma
+bool m_forwardBallanceEnabled = false;
 // software version hardcoded. should be changed manually
 unsigned char m_versionEeprom = 53;
 // maximal pair of legs current
 unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
-// center position in the pattern array. center point is 22
-char m_forwardCenterServo = 22; // bigger the number more weight on front
+// center position in the leg forward shift
+char m_forwardCenterBallance = 0; // bigger the number more weight on front
+// default height in mm
+short m_defaultHight = 125;
 //----------------------------------------------------------
 
 // read button press in blocking mode
@@ -208,14 +233,15 @@ void setup() {
   } else {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
-    // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-    initServo(calibrationData, 20, 20);
+    // init servo motors hight in mm
+    initServo(calibrationData, 80);
     delay(200);
-    setServo(calibrationData, 45, 45);
+    setServo(calibrationData, m_defaultHight);
     delay(200);
     // init digital sensors
     initInputs();
-    updateInputs(0, sensorsEnabled, 0);
+    // update inputs direction is 0
+    updateInputs(sequenceCounter, sensorsEnabled, 0);
     // init gyro MPU6050 using I2C
     initGyro();
     delay(200);
@@ -233,10 +259,9 @@ void setup() {
     }
     // update gyro readings
     gyroState = updateGyro(sequenceCounter);
-    // load task and pattern
+    // load task and pattern. direction is 0
     setCenter(patternNow, 0);
-    setSteps(patternNow);
-    setPattern(patternNow);
+    setPattern(patternNow, 0);
     sequenceCounter = updateCountPatterns();
   }
 }
@@ -251,7 +276,7 @@ void loop() {
       // apply new task
       applyTask(taskNow);
       // debug print
-      printTaskname(taskNow);
+      //printTaskname(taskNow);
       // get new task pattern
       patternNow = getPatternInTask();
     } else {
@@ -279,8 +304,7 @@ void loop() {
       case P_GOFORWARD:
       {
         setCenter(patternNow, getDirectionCorrectionGyro());
-        setSteps(patternNow);
-        setPattern(patternNow);
+        setPattern(patternNow, getDirectionCorrectionGyro());
         doCycle();
       }
       break;
@@ -322,8 +346,7 @@ void loop() {
       default:
       {
         setCenter(patternNow, 0);
-        setSteps(patternNow);
-        setPattern(patternNow);
+        setPattern(patternNow, 0);
         doCycle();
       }
       break;
@@ -336,7 +359,8 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateServo(calibrationData, getWalkPatterns(), getLiftPatterns(), getValueCenter(sequenceCounter));
+  updateCenterServo(calibrationData, getValueCenter(sequenceCounter));
+  updateLegsServo(calibrationData, getWalkPatterns());
   delay(m_timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
@@ -347,7 +371,6 @@ void doCycle(void) {
     // update ballance
     gyroState = updateGyro(sequenceCounter);
     updateStaticBallanceServo(getStaticBallance(gyroState, sequenceCounter));
-    setFowardBallanceSteps(getForwardBallance(gyroState));
   } else {
     // update static ballance
     updateStaticBallanceServo(getStaticBallance(updateGyro(sequenceCounter), sequenceCounter));

@@ -5,36 +5,149 @@ Arduino nano
 Robot legs motion patterns
 */
 
-// points to currentSequence for every leg
-unsigned char mainCounter = 0;
-// lifting pattern value
-char mLiftToGo[36]    = {  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,-4,-8,-16};
-char mLiftToStand[36] = {-16,-8,-4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  0};
-// recovering patterns
-char mRecoverLiftDown[36] = {-15,-30,-45,-60,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-75,-60,-45,-30,-15,  0,  0, 0};
-char mRecoverLiftUp[36]   = { 15, 30, 45, 45, 45, 45, 45, 45, 45, 45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-45,-30,-15,  0,  0, 0};
-
-// motors values for 12 motors
-allMotors motorValue = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-allMotors motorLift = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg timing phase
-unsigned char counterFL = 0;
-unsigned char counterFR = 0;
-unsigned char counterRL = 0;
-unsigned char counterRR = 0;
-// task item
-unsigned char taskItemBuffer;
+struct phase {
+  unsigned char FL;
+  unsigned char FR;
+  unsigned char RL;
+  unsigned char RR;
+};
 
-// linear legs lift
-void _addLinearLift(char * leftSide, char * rightSide, char FL, char FR, char RL, char RR) {
-  motorLift.fl.motor1 = leftSide[mainCounter] * FL;
-  motorLift.fl.motor2 = leftSide[mainCounter] * FL;
-  motorLift.fr.motor1 = rightSide[mainCounter] * FR;
-  motorLift.fr.motor2 = rightSide[mainCounter] * FR;
-  motorLift.rl.motor1 = leftSide[mainCounter] * RL;
-  motorLift.rl.motor2 = leftSide[mainCounter] * RL;
-  motorLift.rr.motor1 = rightSide[mainCounter] * RR;
-  motorLift.rr.motor2 = rightSide[mainCounter] * RR;
+// main counter
+unsigned char mainCounter = 0;
+// leg values for 4 legs
+allLegs legsValue = {125, 0, 125, 0, 125, 0, 125, 0};
+// leg phase
+phase legPhase = {0, 0, 0, 0};
+// walking mode
+bool walkingMode = false;
+// speed
+char speed = 0;
+char speedL = 0;
+char speedR = 0;
+// touch map
+//char mTouchFlag[36]     = { 0, 0,  0,  0,  0,  2,  2,  1,  1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0};
+// walk and lift
+char mLiftHFlag[36]     = { 3, 3,  3,  3,  2,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3};
+char mPointWalk[36]     = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
+short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 30, 30, 30, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 125};
+short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
+// leg speed const
+char speedConst = 2;
+// pattern item buffer
+unsigned char taskItemBuffer = P_DOSTAND;
+
+// get next sequence, mode and speed
+void setPattern(unsigned char currentPattern, char angleTurn) {
+  taskItemBuffer = currentPattern;
+  // set mode
+  switch (currentPattern) {
+    case P_STANDGO:
+    {
+      speed = 0;
+      speedL = speed;
+      speedR = speed;
+      if (angleTurn > 4) {
+        speedL = 1;
+        speedR = -1;
+      } else if (angleTurn < -4) {
+        speedL = -1;
+        speedR = 1;
+      }
+      walkingMode = true;
+    }
+    break;
+    case P_STANDGOLEFT:
+    case P_STANDGOSHIFTLEFT:
+    {
+      speed = 0;
+      speedL = -1;
+      speedR = 1;
+      walkingMode = true;
+    }
+    break;
+    case P_STANDGORIGHT:
+    case P_STANDGOSHIFTRIGHT:
+    {
+      speed = 0;
+      speedL = 1;
+      speedR = -1;
+      walkingMode = true;
+    }
+    break;
+    case P_GOFORWARD:
+    {
+      // increase speed
+      if (speed < 2) {
+        speed ++;
+      }
+      speedL = speed;
+      speedR = speed;
+      if (angleTurn > 4) {
+        speedR = speedL - 1;
+      } else if (angleTurn < -4) {
+        speedL = speedR - 1;
+      }
+      walkingMode = true;
+    }
+    break;
+    case P_GOLEFT:
+    case P_GOSHIFTLEFT:
+    {
+      // increase speed
+      if (speed < 2) {
+        speed ++;
+      }
+      speedL = speed - 1;
+      speedR = speed;
+      walkingMode = true;
+    }
+    break;
+    case P_GORIGHT:
+    case P_GOSHIFTRIGHT:
+    {
+      // increase speed
+      if (speed < 2) {
+        speed ++;
+      }
+      speedL = speed;
+      speedR = speed - 1;
+      walkingMode = true;
+    }
+    break;
+    case P_GOBACK:
+    {
+      speed = -1;
+      speedL = speed;
+      speedR = speed;
+      walkingMode = true;
+    }
+    break;
+    case P_GOBACKLEFT:
+    {
+      speed = -1;
+      speedL = -1;
+      speedR = 0;
+      walkingMode = true;
+    }
+    break;
+    case P_GOBACKRIGHT:
+    {
+      speed = -1;
+      speedL = 0;
+      speedR = -1;
+      walkingMode = true;
+    }
+    break;
+    default:
+    {
+      speed = 0;
+      speedL = speed;
+      speedR = speed;
+      walkingMode = false;
+    }
+    break;
+  }
 }
 
 // update servo motors values
@@ -44,225 +157,149 @@ unsigned char updateCountPatterns(void) {
   if (mainCounter >= m_fullCycle) {
     mainCounter = 0;
   }
-  // FL
-  counterFL = mainCounter;
-  // FR
-  counterFR = mainCounter + m_halfCycle;
-  if (counterFR >= m_fullCycle) {
-    counterFR -= m_fullCycle;
+  legPhase.FL = mainCounter;
+  legPhase.FR = mainCounter + m_halfCycle;
+  if (legPhase.FR >= m_fullCycle) {
+    legPhase.FR -= m_fullCycle;
   }
-  // RL
-  counterRL = mainCounter + m_halfCycle;
-  if (counterRL >= m_fullCycle) {
-    counterRL -= m_fullCycle;
-  }
-  // RR
-  counterRR = mainCounter;
+  legPhase.RL = legPhase.FR;
+  legPhase.RR = legPhase.FL;
   return mainCounter;
 }
 
-// get next sequence
-void setPattern(unsigned char currentTaskItem) {
-  // remember current pattern
-  taskItemBuffer = currentTaskItem;
-}
-
 // get servo motor steps
-allMotors getWalkPatterns(void) {
-  motors legSet;
-  legSet = getWalkStep(counterFL);
-  motorValue.fl.motor1 = legSet.motor1;
-  motorValue.fl.motor2 = legSet.motor2;
-  legSet = getWalkStep(counterFR);
-  motorValue.fr.motor1 = legSet.motor1;
-  motorValue.fr.motor2 = legSet.motor2;
-  legSet = getWalkStep(counterRL);
-  motorValue.rl.motor1 = legSet.motor1;
-  motorValue.rl.motor2 = legSet.motor2;
-  legSet = getWalkStep(counterRR);
-  motorValue.rr.motor1 = legSet.motor1;
-  motorValue.rr.motor2 = legSet.motor2;
-  return motorValue;
-}
-
-// get servo motors values for lift
-allMotors getLiftPatterns(void) {
-  // add linear lift
+allLegs getWalkPatterns(void) {
+  leg legSetL;
+  leg legSetR;
   switch (taskItemBuffer) {
     case P_STANDTOGO:
-    {
-      _addLinearLift(mLiftToGo, mLiftToGo, 1, 0, 0, 1);
-    }
-    break;
     case P_GOTOSTAND:
     {
-      _addLinearLift(mLiftToStand, mLiftToStand, 1, 0, 0, 1);
+      legSetL.hight = m_defaultHight;
+      legSetL.shift = 0;
+      legSetR.hight = m_defaultHight;
+      legSetR.shift = 0;
+      legsValue.fl.hight = legSetL.hight;
+      legsValue.fl.shift = legSetL.shift;
+      legsValue.fr.hight = legSetR.hight;
+      legsValue.fr.shift = legSetR.shift;
+      legsValue.rl.hight = legSetL.hight;
+      legsValue.rl.shift = legSetL.shift;
+      legsValue.rr.hight = legSetR.hight;
+      legsValue.rr.shift = legSetR.shift;
     }
     break;
     case P_RECOVERLEFT:
     {
-      _addLinearLift(mRecoverLiftDown, mRecoverLiftUp, 1, 1, 1, 1);
+      legSetL.hight = mRecoverDown[mainCounter];
+      legSetL.shift = 0;
+      legSetR.hight = mRecoverUp[mainCounter];
+      legSetR.shift = 0;
+      legsValue.fl.hight = legSetL.hight;
+      legsValue.fl.shift = legSetL.shift;
+      legsValue.fr.hight = legSetR.hight;
+      legsValue.fr.shift = legSetR.shift;
+      legsValue.rl.hight = legSetL.hight;
+      legsValue.rl.shift = legSetL.shift;
+      legsValue.rr.hight = legSetR.hight;
+      legsValue.rr.shift = legSetR.shift;
     }
     break;
     case P_RECOVERRIGHT:
     {
-      _addLinearLift(mRecoverLiftUp ,mRecoverLiftDown, 1, 1, 1, 1);
+      legSetL.hight = mRecoverUp[mainCounter];
+      legSetL.shift = 0;
+      legSetR.hight = mRecoverDown[mainCounter];
+      legSetR.shift = 0;
+      legsValue.fl.hight = legSetL.hight;
+      legsValue.fl.shift = legSetL.shift;
+      legsValue.fr.hight = legSetR.hight;
+      legsValue.fr.shift = legSetR.shift;
+      legsValue.rl.hight = legSetL.hight;
+      legsValue.rl.shift = legSetL.shift;
+      legsValue.rr.hight = legSetR.hight;
+      legsValue.rr.shift = legSetR.shift;
     }
     break;
     default:
     {
-      // set motors angle values
-      motorLift.fl.motor1 = 0;
-      motorLift.fl.motor2 = 0;
-      motorLift.fr.motor1 = 0;
-      motorLift.fr.motor2 = 0;
-      motorLift.rl.motor1 = 0;
-      motorLift.rl.motor2 = 0;
-      motorLift.rr.motor1 = 0;
-      motorLift.rr.motor2 = 0;
+      legSetL = _getWalkStep(legPhase.FL, speedL);
+      legsValue.fl.hight = legSetL.hight;
+      legsValue.fl.shift = legSetL.shift;
+      legSetR = _getWalkStep(legPhase.FR, speedR);
+      legsValue.fr.hight = legSetR.hight;
+      legsValue.fr.shift = legSetR.shift;
+      legSetL = _getWalkStep(legPhase.RL, speedL);
+      legsValue.rl.hight = legSetL.hight;
+      legsValue.rl.shift = legSetL.shift;
+      legSetR = _getWalkStep(legPhase.RR, speedR);
+      legsValue.rr.hight = legSetR.hight;
+      legsValue.rr.shift = legSetR.shift;
     }
     break;
   }
-  return motorLift;
+  return legsValue;
 }
 
-/*
-// print sequence name
-void printPatternName(unsigned char currentTaskItem) {
-  // get new sequence array
-  switch (currentTaskItem) {
-    case P_DOSTAND:
-    {
-      Serial.println(" P_DOSTAND ");
+// set walk step value
+leg _getWalkStep(unsigned char counter, char speedValue) {
+  short lift = 0;
+  short shift = 0;
+  // motors values for 2 motors
+  leg legStep = {0, 0};
+  if (walkingMode) {
+    switch (mLiftHFlag[counter]) {
+      case 0:
+      {
+        lift = 0;
+      }
+      break;
+      case 1:
+      {
+        lift = 5;
+      }
+      break;
+      case 2:
+      {
+        lift = 15;
+      }
+      break;
+      case 3:
+      {
+        if (speedValue == 2) {
+        lift = 35;
+        } else {
+        lift = 25;
+        }
+      }
+      break;
+      default:
+      break;
     }
-    break;
-    case P_STANDTOGO:
-    {
-      Serial.println(" P_STANDTOGO ");
+    switch (speedValue) {
+      case -1:
+      {
+        shift =  - mPointWalk[counter];
+      }
+      break;
+      case 1:
+      {
+        shift = mPointWalk[counter];
+      }
+      break;
+      case 2:
+      {
+        shift = mPointWalk[counter] * 2;
+      }
+      break;
+      default:
+      break;
     }
-    break;
-    case P_GOTOSTAND:
-    {
-      Serial.println(" P_GOTOSTAND ");
-    }
-    break;
-    case P_STANDGO:
-    {
-      Serial.println(" P_STANDGO ");
-    }
-    break;
-    case P_STANDGOLEFT:
-    {
-      Serial.println(" P_STANDGOLEFT ");
-    }
-    break;
-    case P_STANDGORIGHT:
-    {
-      Serial.println(" P_STANDGORIGHT ");
-    }
-    break;
-    case P_GOFORWARD:
-    {
-      Serial.println(" P_GOFORWARD ");
-    }
-    break;
-    case P_GOLEFT:
-    {
-      Serial.println(" P_GOLEFT ");
-    }
-    break;
-    case P_GORIGHT:
-    {
-      Serial.println(" P_GORIGHT ");
-    }
-    break;
-    case P_GOBACK:
-    {
-      Serial.println(" P_GOBACK ");
-    }
-    break;
-    case P_GOBACKLEFT:
-    {
-      Serial.println(" P_GOBACKLEFT ");
-    }
-    break;
-    case P_GOBACKRIGHT:
-    {
-      Serial.println(" P_GOBACKRIGHT ");
-    }
-    break;
-    case P_DONE:
-    {
-      Serial.println(" P_DONE ");
-    }
-    break;
-    case P_END:
-    {
-      Serial.println(" P_END ");
-    }
-    break;
-    case P_RESETDIRECTION:
-    {
-      Serial.println(" P_RESETDIRECTION ");
-    }
-    case P_RESETGIRO:
-    {
-      Serial.println(" P_RESETGIRO ");
-    }
-    break;
-    case P_RESTOREDIRECTION:
-    {
-      Serial.println(" P_RESTOREDIRECTION ");
-    }
-    break;
-    case P_ENABLEINPUTS:
-    {
-      Serial.println(" P_ENABLEINPUTS ");
-    }
-    break;
-    case P_DISABLEINPUTS:
-    {
-      Serial.println(" P_DISABLEINPUTS ");
-    }
-    break;
-    case P_STANDGOSHIFTLEFT:
-    {
-      Serial.println(" P_STANDGOSHIFTLEFT ");
-    }
-    break;
-    case P_STANDGOSHIFTRIGHT:
-    {
-      Serial.println(" P_STANDGOSHIFTRIGHT ");
-    }
-    break;
-    case P_GOSHIFTLEFT:
-    {
-      Serial.println(" P_GOSHIFTLEFT ");
-    }
-    break;
-    case P_GOSHIFTRIGHT:
-    {
-      Serial.println(" P_GOSHIFTRIGHT ");
-    }
-    break;
-    case P_DODOWN:
-    {
-      Serial.println(" P_DODOWN ");
-    }
-    break;
-    case P_RECOVERLEFT:
-    {
-      Serial.println(" P_RECOVERLEFT ");
-    }
-    break;
-    case P_RECOVERRIGHT:
-    {
-      Serial.println(" P_RECOVERRIGHT ");
-    }
-    break;
-    default:
-      Serial.println(" unknown pattern ");
-    break;
+    legStep.hight = m_defaultHight - lift;
+    legStep.shift = shift * speedConst;
+  } else {
+    legStep.hight = m_defaultHight;
+    legStep.shift = 0;
   }
+  return legStep;
 }
-*/

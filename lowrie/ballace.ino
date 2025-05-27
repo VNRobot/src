@@ -6,7 +6,7 @@ Robot static and dynamic ballance
 */
 
 // static ballance
-allMotors legUp = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+allLegs legUp = {0, 0, 0, 0, 0, 0, 0, 0};
 // position correction
 char correctRollL  = 0;
 char correctRollR  = 0;
@@ -18,7 +18,7 @@ char centerAbsoluteMax = 12;
 // static forward ballance
 char centerForward = centerAbsolute;
 
-allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
+allLegs getStaticBallance(accRoll gyroState, unsigned char sCounter) {
   // roll
   if (m_rollBallanceEnabled) {
     if (gyroState.accAngleX < -8) {
@@ -67,14 +67,14 @@ allMotors getStaticBallance(accRoll gyroState, unsigned char sCounter) {
       }
     }
   }
-  legUp.fl.motor1 = -correctRollL - correctPitchF;
-  legUp.fl.motor2 = -correctRollL - correctPitchF;
-  legUp.fr.motor1 = -correctRollR - correctPitchF;
-  legUp.fr.motor2 = -correctRollR - correctPitchF;
-  legUp.rl.motor1 = -correctRollL - correctPitchR;
-  legUp.rl.motor2 = -correctRollL - correctPitchR;
-  legUp.rr.motor1 = -correctRollR - correctPitchR;
-  legUp.rr.motor2 = -correctRollR - correctPitchR;
+  //legUp.fl.motor1 = -correctRollL - correctPitchF;
+  //legUp.fl.motor2 = -correctRollL - correctPitchF;
+  //legUp.fr.motor1 = -correctRollR - correctPitchF;
+  //legUp.fr.motor2 = -correctRollR - correctPitchF;
+  //legUp.rl.motor1 = -correctRollL - correctPitchR;
+  //legUp.rl.motor2 = -correctRollL - correctPitchR;
+  //legUp.rr.motor1 = -correctRollR - correctPitchR;
+  //legUp.rr.motor2 = -correctRollR - correctPitchR;
   return legUp;
 }
 

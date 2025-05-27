@@ -28,23 +28,6 @@ enum senState {
   SEN_NORMAL = 4
 };
 
-// input state
-enum inState {
-  IN_LOW_BATTERY,
-  IN_HIGH_CURRENT_1,
-  IN_HIGH_CURRENT_2,
-  IN_HIGH_CURRENT_3,
-  IN_WALL_FRONTLEFT,
-  IN_WALL_FRONTRIGHT,
-  IN_WALL_LEFT,
-  IN_WALL_RIGHT,
-  IN_OBSTACLE_FRONTLEFT,
-  IN_OBSTACLE_FRONTRIGHT,
-  IN_OBSTACLE_LEFT,
-  IN_OBSTACLE_RIGHT,
-  IN_NORMAL             
-};
-
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
 // turn left or right decision

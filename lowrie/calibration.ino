@@ -16,6 +16,10 @@ enum calMode {
   CALIBRATION_DONE = 6
 };
 
+// auto calibration enabled
+bool autoCalibrationEnabled = false;
+// calibration current
+unsigned short calibrationCurrent = 640; //ma
 // calibration counter
 unsigned char calibrationCounter = 0;
 // calibration stage
@@ -87,9 +91,9 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
     calibrationSet->motor1 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
+      if ((current > calibrationCurrent) && autoCalibrationEnabled) {
         calibrationSet->motor1 -= 15;
       }
       calibrationCounter = 0;
@@ -109,9 +113,9 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
     calibrationSet->motor2 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
+    if ((modePressed) || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
       modePressed = false;
-      if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
+      if ((current > calibrationCurrent) && autoCalibrationEnabled) {
         calibrationSet->motor2 -= 15;
       }
       calibrationCounter = 0;
@@ -135,28 +139,28 @@ bool doCalibration(allMotors * calibrationData) {
   m_servo_st_2.write(90);
   delay(100);
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  m_servo_fl_1.write(limitMotorValue(90 - 30 + 45));
+  m_servo_fl_1.write(90 - 30 + 45);
   delay(100);
   m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  m_servo_fr_1.write(limitMotorValue(90 + 30 - 45));
+  m_servo_fr_1.write(90 + 30 - 45);
   delay(100);
   m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  m_servo_rl_1.write(limitMotorValue(90 - 30 + 45));
+  m_servo_rl_1.write(90 - 30 + 45);
   delay(100);
   m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  m_servo_rr_1.write(limitMotorValue(90 + 30 - 45));
+  m_servo_rr_1.write(90 + 30 - 45);
   delay(100);
   m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  m_servo_fl_2.write(limitMotorValue(90 + 30 - 45));
+  m_servo_fl_2.write(90 + 30 - 45);
   delay(100);
   m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  m_servo_fr_2.write(limitMotorValue(90 - 30 + 45));
+  m_servo_fr_2.write(90 - 30 + 45);
   delay(100);
   m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  m_servo_rl_2.write(limitMotorValue(90 + 30 - 45));
+  m_servo_rl_2.write(90 + 30 - 45);
   delay(100);
   m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  m_servo_rr_2.write(limitMotorValue(90 - 30 + 45));
+  m_servo_rr_2.write(90 - 30 + 45);
   delay(100);
   Serial.println(F("Start calibration"));
   // set calibration mode
@@ -235,9 +239,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
+          if (modePressed || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
             modePressed = false;
-            if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
+            if ((current > calibrationCurrent) && autoCalibrationEnabled) {
               calibrationData->st.motor1 -= 25;
             }
             calibrationCounter = 0;
@@ -261,9 +265,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > m_calibrationCurrent) && m_autoCalibrationEnabled)) {
+          if (modePressed || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
             modePressed = false;
-            if ((current > m_calibrationCurrent) && m_autoCalibrationEnabled) {
+            if ((current > calibrationCurrent) && autoCalibrationEnabled) {
               calibrationData->st.motor2 -= 25;
             }
             calibrationCounter = 0;
