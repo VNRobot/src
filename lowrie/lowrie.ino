@@ -5,6 +5,8 @@ Arduino nano
 Main file
 */
 
+#include <Servo.h>
+
 // patterns
 enum rPatterns {
   P_DOSTAND,
@@ -74,6 +76,34 @@ enum gState {
   GYRO_FOLLING_FRONT,
   GYRO_FOLLING_BACK 
 };
+// pin numbers for servo motors
+enum dPinsServo {
+  SW1_MOTOR = 2,
+  SW2_MOTOR = 3,
+  ST1_MOTOR = 4,
+  ST2_MOTOR = 5,
+  FL1_MOTOR = 6,
+  FL2_MOTOR = 7,
+  FR1_MOTOR = 8,
+  FR2_MOTOR = 9,
+  RL1_MOTOR = 10,
+  RL2_MOTOR = 11,
+  RR1_MOTOR = 12,
+  RR2_MOTOR = 13
+};
+// init servo library
+//Servo m_servo_sw_1;
+//Servo m_servo_sw_2;
+Servo m_servo_st_1;
+Servo m_servo_st_2;
+Servo m_servo_fl_1;
+Servo m_servo_fl_2;
+Servo m_servo_fr_1;
+Servo m_servo_fr_2;
+Servo m_servo_rl_1;
+Servo m_servo_rl_2;
+Servo m_servo_rr_1;
+Servo m_servo_rr_2;
 // structure for one leg motors
 struct motors {
   char motor1;
@@ -159,23 +189,6 @@ bool _readButtonPress(void) {
   return buffer;
 }
 
-// init hardware
-void initHardware(short initAngle, short setAngle) {
-  // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
-  initServo(calibrationData, initAngle, initAngle);
-  delay(200);
-  setServo(calibrationData, setAngle, setAngle);
-  delay(200);
-  // init digital sensors
-  initInputs();
-  updateInputs(0, sensorsEnabled, 0);
-  // init gyro MPU6050 using I2C
-  initGyro();
-  delay(200);
-  resetGyro();
-  delay(20);
-}
-
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
@@ -186,21 +199,28 @@ void setup() {
   if (_readButtonPress() || (m_versionEeprom != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
-    // init hardware
-    initHardware(45, 90);
     // do calibration
     if (doCalibration(& calibrationData)) {
       writeCalibrationEeprom(calibrationData);
       writeSoftwareVersionEeprom(m_versionEeprom);
       delay(6000);
     }
-    // disable motors
-    detachServo(calibrationData);
   } else {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
-    // init hardware
-    initHardware(20, 45);
+    // init servo motors into 0 - horizontal, 90 - vertical. increase angle lifting robot
+    initServo(calibrationData, 20, 20);
+    delay(200);
+    setServo(calibrationData, 45, 45);
+    delay(200);
+    // init digital sensors
+    initInputs();
+    updateInputs(0, sensorsEnabled, 0);
+    // init gyro MPU6050 using I2C
+    initGyro();
+    delay(200);
+    resetGyro();
+    delay(20);
     // demo mode activated when hand is placed 5cm from sensors during the boot
     if (checkForDemoModeInputs()) {
       // demo mode
