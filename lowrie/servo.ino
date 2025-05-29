@@ -150,7 +150,7 @@ void updateLegsServo(allMotors calibration, allLegs legValue) {
   m_servo_rr_2.write(_limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.rr.hight + staticBallance.rr.hight, legValue.rr.shift + staticBallance.rr.shift)  + calibration.rr.motor2)));
 }
 
-void updateStaticBallanceServo(allLegs cBallance) {
+void updateBallanceServo(allLegs cBallance) {
   staticBallance.fl.hight = cBallance.fl.hight;
   staticBallance.fl.shift = cBallance.fl.shift;
   staticBallance.fr.hight = cBallance.fr.hight;

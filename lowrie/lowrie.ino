@@ -51,6 +51,8 @@ enum rPatterns {
   P_DODOWN,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
+  P_SHORTDELAY,
+  P_LONGDELAY,
   P_END
 };
 // tasks
@@ -157,6 +159,19 @@ typedef struct accRoll {
   unsigned char rollMaxTime;
   unsigned char stateGyro;
 } accRoll;
+// leg timing phase. main RR
+struct phase {
+  unsigned char FL;
+  unsigned char FR;
+  unsigned char RL;
+  unsigned char RR;
+};
+// touch with 3k resistor
+struct touch {
+  bool set1;
+  bool set2;
+  bool set3;
+};
 
 // motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -165,7 +180,7 @@ unsigned char inputState = IN_NORMAL;
 // gyro state
 accRoll gyroState;
 // sequence counter 0 to m_fullCycle - 1
-unsigned char sequenceCounter = 0;
+phase sequenceCounter = {0, 0, 0, 0};
 // current pattern defined in rPatterns
 unsigned char patternNow = P_DOSTAND;
 // enable sensors flag toggled by P_ENABLEINPUTS and P_DISABLEINPUTS
@@ -184,13 +199,21 @@ unsigned char m_fullCycle = 36;
 // half cycle
 unsigned char m_halfCycle = 18;
 // main time delay in the loop in msec
-unsigned char m_timeDelay = 8;
-// roll ballance flag
+unsigned char timeDelay = 8;
+// roll ballance enable flag
 bool m_rollBallanceEnabled = false;
-// pitch ballance flag
+// pitch ballance enable flag
 bool m_pitchBallanceEnabled = false;
-// forward ballance flag
+// forward ballance enable flag
 bool m_forwardBallanceEnabled = false;
+// touch enable flag
+bool m_touchBallanceEnabled = false;
+// sensors enabled flag
+bool m_sensorsInputsEnabled = true;
+// center mototor enabled
+bool centerMotorsEnabled = true;
+// step steering enabled
+bool m_stepSteeringEnabled = false;
 // software version hardcoded. should be changed manually
 unsigned char m_versionEeprom = 53;
 // maximal pair of legs current
@@ -241,7 +264,7 @@ void setup() {
     // init digital sensors
     initInputs();
     // update inputs direction is 0
-    updateInputs(sequenceCounter, sensorsEnabled, 0);
+    updateInputs(sequenceCounter.RR, sensorsEnabled, 0);
     // init gyro MPU6050 using I2C
     initGyro();
     delay(200);
@@ -258,9 +281,11 @@ void setup() {
       applyTask(BEGIN_TASK);
     }
     // update gyro readings
-    gyroState = updateGyro(sequenceCounter);
+    gyroState = updateGyro(sequenceCounter.RR);
     // load task and pattern. direction is 0
-    setCenter(patternNow, 0);
+    if (centerMotorsEnabled) {
+      setCenter(patternNow, 0);
+    }
     setPattern(patternNow, 0);
     sequenceCounter = updateCountPatterns();
   }
@@ -268,7 +293,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  if (sequenceCounter == 0) {
+  if (sequenceCounter.RR == 0) {
     // check emergency task
     taskNext = getHighPriorityTaskByInputs(gyroState, inputState);
     if ((taskNext != DEFAULT_TASK) && (taskNow != taskNext)) {
@@ -303,7 +328,9 @@ void loop() {
       case P_STANDGO:
       case P_GOFORWARD:
       {
-        setCenter(patternNow, getDirectionCorrectionGyro());
+        if (centerMotorsEnabled) {
+          setCenter(patternNow, getDirectionCorrectionGyro());
+        }
         setPattern(patternNow, getDirectionCorrectionGyro());
         doCycle();
       }
@@ -343,9 +370,21 @@ void loop() {
         detachServo(calibrationData);
       }
       break;
+      case P_SHORTDELAY:
+      {
+        timeDelay = 8;
+      }
+      break;
+      case P_LONGDELAY:
+      {
+        timeDelay = 12;
+      }
+      break;
       default:
       {
-        setCenter(patternNow, 0);
+        if (centerMotorsEnabled) {
+          setCenter(patternNow, 0);
+        }
         setPattern(patternNow, 0);
         doCycle();
       }
@@ -359,20 +398,15 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateCenterServo(calibrationData, getValueCenter(sequenceCounter));
+  if (centerMotorsEnabled) {
+    updateCenterServo(calibrationData, getValueCenter(sequenceCounter.RR));
+  }
   updateLegsServo(calibrationData, getWalkPatterns());
-  delay(m_timeDelay);
+  delay(timeDelay);
   // update motor pattern point
   sequenceCounter = updateCountPatterns();
   // read proximity sensors
-  inputState = updateInputs(sequenceCounter, sensorsEnabled, getDirectionGyro());
-  // update gyro readings
-  if (sequenceCounter == 0) {
-    // update ballance
-    gyroState = updateGyro(sequenceCounter);
-    updateStaticBallanceServo(getStaticBallance(gyroState, sequenceCounter));
-  } else {
-    // update static ballance
-    updateStaticBallanceServo(getStaticBallance(updateGyro(sequenceCounter), sequenceCounter));
-  }
+  inputState = updateInputs(sequenceCounter.RR, sensorsEnabled, getDirectionGyro());
+  // update gyro readings and ballance
+  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.RR), sequenceCounter, getTouchInputs()));
 }

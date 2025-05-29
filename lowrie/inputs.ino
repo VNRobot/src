@@ -46,6 +46,8 @@ struct aSensors {
 // analog input values array
 aSensors analogRawInputs = {0, 0, 0, 0, 0, 0}; // raw values
 aSensors analogValueInputs = {6500, 0, 0, 0, 0, 0}; // processed values
+// touch data
+touch legTouch = {true, true, true};
 
 // init inputs
 void initInputs(void) {
@@ -65,28 +67,34 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, cha
   if (analogRawInputs.current1 > analogRawInputs.battery) {
     analogRawInputs.current1 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current1 > (analogRawInputs.battery - analogRawInputs.current1) * 8) {
-    analogValueInputs.current1 -= 50;
-  } else {
-    analogValueInputs.current1 += 50;
+  if (analogRawInputs.current1 > 512) { // devides 2.36  880/373 or * 19 instead of 8
+    if (analogValueInputs.current1 > (analogRawInputs.battery - analogRawInputs.current1) * 8) {
+      analogValueInputs.current1 -= 50;
+    } else {
+      analogValueInputs.current1 += 50;
+    }
   }
   // 2
   if (analogRawInputs.current2 > analogRawInputs.battery) {
     analogRawInputs.current2 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current2 > (analogRawInputs.battery - analogRawInputs.current2) * 8) {
-    analogValueInputs.current2 -= 50;
-  } else {
-    analogValueInputs.current2 += 50;
+  if (analogRawInputs.current2 > 512) {
+    if (analogValueInputs.current2 > (analogRawInputs.battery - analogRawInputs.current2) * 8) {
+      analogValueInputs.current2 -= 50;
+    } else {
+      analogValueInputs.current2 += 50;
+    }
   }
   // 3
   if (analogRawInputs.current3 > analogRawInputs.battery) {
     analogRawInputs.current3 = analogRawInputs.battery;
   }
-  if (analogValueInputs.current3 > (analogRawInputs.battery - analogRawInputs.current3) * 8) {
-    analogValueInputs.current3 -= 50;
-  } else {
-    analogValueInputs.current3 += 50;
+  if (analogRawInputs.current3 > 512) {
+    if (analogValueInputs.current3 > (analogRawInputs.battery - analogRawInputs.current3) * 8) {
+      analogValueInputs.current3 -= 50;
+    } else {
+      analogValueInputs.current3 += 50;
+    }
   }
   // battery in mV
   if (analogValueInputs.battery > analogRawInputs.battery * 25 / 3) {
@@ -117,28 +125,57 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, cha
   return allStateInputs;
 }
 
+// update touch state
+touch getTouchInputs(void) {
+  analogRawInputs.current1 = (unsigned short)analogRead(A7);
+  analogRawInputs.current2 = (unsigned short)analogRead(A3);
+  analogRawInputs.current3 = (unsigned short)analogRead(A2);
+  if (analogRawInputs.current1 > 512) {
+    legTouch.set1 = false;
+  } else {
+    legTouch.set1 = true;
+  }
+  // 2
+  if (analogRawInputs.current2 > 512) {
+    legTouch.set2 = false;
+  } else {
+    legTouch.set2 = true;
+  }
+  // 3
+  if (analogRawInputs.current3 > 512) {
+    legTouch.set3 = false;
+  } else {
+    legTouch.set3 = true;
+  }
+  return legTouch;
+}
+
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (input < (m_normalInputDistance * 3)) { // no edge
-    if (input > (m_normalInputDistance / 6)) { // not blocked
-      if (input > (m_normalInputDistance / 3)) { // no wall
-        if (input > (m_normalInputDistance / 2)) { // no obstacle
-          return SEN_NORMAL;
+  if (m_sensorsInputsEnabled) {
+    if (input < (m_normalInputDistance * 3)) { // no edge
+      if (input > (m_normalInputDistance / 6)) { // not blocked
+        if (input > (m_normalInputDistance / 3)) { // no wall
+          if (input > (m_normalInputDistance / 2)) { // no obstacle
+            return SEN_NORMAL;
+          } else {
+            // obstacle
+            return SEN_OBSTACLE;
+          }
         } else {
-          // obstacle
-          return SEN_OBSTACLE;
+          // wall
+          return SEN_WALL;
         }
       } else {
-        // wall
-        return SEN_WALL;
+        // blocked
+        return SEN_BLOCK;
       }
     } else {
-      // blocked
-      return SEN_BLOCK;
+      // edge
+      return SEN_EDGE;
     }
   } else {
-    // edge
-    return SEN_EDGE;
+    return SEN_NORMAL;
   }
 }
 
