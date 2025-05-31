@@ -195,7 +195,7 @@ accRoll updateGyro(unsigned char sequenceCount) {
     if (stateGyroOld != accAverageValue.stateGyro) {
       stateGyroOld = accAverageValue.stateGyro;
       // debug print
-      _printGyro(accAverageValue.stateGyro);
+      //_printGyro(accAverageValue.stateGyro);
     }
     // debug print
     //  _printLineGyro();
@@ -339,7 +339,7 @@ void _printLineGyro(struct acc data) {
   Serial.print(" r ");
   Serial.println((int)gyroData.roll);
 }
-*/
+
 // print gyro values
 void _printGyro(unsigned char state) {
   // print gyro status
@@ -393,3 +393,4 @@ void _printGyro(unsigned char state) {
       Serial.println(F(" Wrong gyro state "));
   }
 }
+*/

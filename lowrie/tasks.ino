@@ -341,7 +341,7 @@ unsigned char getNextPatternInTask(void) {
 unsigned char getPatternInTask(void) {
   return currentTask[currentTaskPoint];
 }
-
+/*
 // print task  name
 void printTaskname(unsigned char task) {
   switch (task) {
@@ -405,3 +405,4 @@ void printTaskname(unsigned char task) {
   }
   currentTaskPoint = 0;
 }
+*/

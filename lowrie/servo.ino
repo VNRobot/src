@@ -6,7 +6,7 @@ Operates servo motors
 */
 
 // static ballance
-allLegs staticBallance = {0, 0, 0, 0, 0, 0, 0, 0};
+allLegs staticBallance = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // motors attached flag
 bool attached = false;
 // motors init values
@@ -44,6 +44,12 @@ void _moveLinearServo(allMotors calibration, short hi1, short hi2) {
       doLoop = false;
     }
     char mValue = _calculateMotorAngle((int)hi1, 0);
+    if (m_motorsCount == 12) {
+      m_servo_hl_1.write(_limitMotorValue(90 - 30 + mValue + calibration.hl.motor1));
+      m_servo_hl_2.write(_limitMotorValue(90 + 30 - mValue - calibration.hl.motor2));
+      m_servo_hr_1.write(_limitMotorValue(90 + 30 - mValue - calibration.hr.motor1));
+      m_servo_hr_2.write(_limitMotorValue(90 - 30 + mValue + calibration.hr.motor2));
+    }
     m_servo_fl_1.write(_limitMotorValue(90 - 30 + mValue + calibration.fl.motor1));
     m_servo_fl_2.write(_limitMotorValue(90 + 30 - mValue - calibration.fl.motor2));
     m_servo_fr_1.write(_limitMotorValue(90 + 30 - mValue - calibration.fr.motor1));
@@ -52,7 +58,7 @@ void _moveLinearServo(allMotors calibration, short hi1, short hi2) {
     m_servo_rl_2.write(_limitMotorValue(90 + 30 - mValue - calibration.rl.motor2));
     m_servo_rr_1.write(_limitMotorValue(90 + 30 - mValue - calibration.rr.motor1));
     m_servo_rr_2.write(_limitMotorValue(90 - 30 + mValue + calibration.rr.motor2));
-    delay(30);
+    delay(20);
   }
 }
 
@@ -71,12 +77,27 @@ void initServo(allMotors calibration, short hight) {
   hightInitValue = hight;
   char calM = _calculateMotorAngle((int)hightInitValue, 0);
   // init motors one by one
-  m_servo_st_1.attach(ST1_MOTOR, 500, 2500);
-  m_servo_st_1.write(90 - calibration.st.motor1);
-  delay(100);
-  m_servo_st_2.attach(ST2_MOTOR, 500, 2500);
-  m_servo_st_2.write(90 - calibration.st.motor2);
-  delay(100);
+  if (m_motorsCount == 12) {
+    m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
+    m_servo_hl_1.write(_limitMotorValue(90 - 30 + calM + calibration.hl.motor1));
+    delay(100);
+    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
+    m_servo_hr_1.write(_limitMotorValue(90 + 30 - calM - calibration.hr.motor1));
+    delay(100);
+    m_servo_hl_2.attach(HL2_MOTOR, 500, 2500);
+    m_servo_hl_2.write(_limitMotorValue(90 + 30 - calM - calibration.hl.motor2));
+    delay(100);
+    m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
+    m_servo_hr_2.write(_limitMotorValue(90 - 30 + calM + calibration.hr.motor2));
+    delay(100);
+  } else if (m_motorsCount == 10) {
+    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
+    m_servo_hr_1.write(90 - calibration.hr.motor1);
+    delay(100);
+    m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
+    m_servo_hr_2.write(90 - calibration.hr.motor2);
+    delay(100);
+  }
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
   m_servo_fl_1.write(_limitMotorValue(90 - 30 + calM + calibration.fl.motor1));
   delay(100);
@@ -108,8 +129,13 @@ void initServo(allMotors calibration, short hight) {
 void detachServo(allMotors calibration) {
   if (attached) {
     _moveLinearServo(calibration, hightSetValue, hightInitValue);
-    m_servo_st_1.detach();
-    m_servo_st_2.detach();
+    if (m_motorsCount == 12) {
+      m_servo_hl_1.detach();
+      m_servo_hl_2.detach();
+    } else if (m_motorsCount >= 10) {
+      m_servo_hr_1.detach();
+      m_servo_hr_2.detach();
+    }
     m_servo_fl_1.detach();
     m_servo_fr_1.detach();
     m_servo_rl_1.detach();
@@ -127,19 +153,29 @@ void detachServo(allMotors calibration) {
 void setServo(allMotors calibration, short hight) {
   hightSetValue = hight;
   // set motors values after calibration
-  m_servo_st_1.write(90 - calibration.st.motor1);
-  m_servo_st_2.write(90 - calibration.st.motor2);
+  if (m_motorsCount == 10) {
+    m_servo_hr_1.write(90 - calibration.hr.motor1);
+    m_servo_hr_2.write(90 - calibration.hr.motor2);
+  }
   _moveLinearServo(calibration, hightInitValue, hightSetValue);
 }
 
 // move center motors.
 void updateCenterServo(allMotors calibration, motors centerMotors) {
-  m_servo_st_1.write(_limitMotorValue(90 - (centerMotors.motor1 + calibration.st.motor1)));
-  m_servo_st_2.write(_limitMotorValue(90 - (centerMotors.motor2 + calibration.st.motor2)));
+  if (m_motorsCount == 10) {
+    m_servo_hr_1.write(_limitMotorValue(90 - (centerMotors.motor1 + calibration.hr.motor1)));
+    m_servo_hr_2.write(_limitMotorValue(90 - (centerMotors.motor2 + calibration.hr.motor2)));
+  }
 }
 
 // move leg motors.
 void updateLegsServo(allMotors calibration, allLegs legValue) {
+  if (m_motorsCount == 12) {
+    m_servo_hl_1.write(_limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, -legValue.hl.shift - staticBallance.hl.shift) + calibration.hl.motor1)));
+    m_servo_hl_2.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, legValue.hl.shift + staticBallance.hl.shift)  + calibration.hl.motor2)));
+    m_servo_hr_1.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, -legValue.hr.shift - staticBallance.hr.shift) + calibration.hr.motor1)));
+    m_servo_hr_2.write(_limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, legValue.hr.shift + staticBallance.hr.shift)  + calibration.hr.motor2)));
+  }
   m_servo_fl_1.write(_limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, -legValue.fl.shift - staticBallance.fl.shift) + calibration.fl.motor1)));
   m_servo_fl_2.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, legValue.fl.shift + staticBallance.fl.shift)  + calibration.fl.motor2)));
   m_servo_fr_1.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.fr.hight + staticBallance.fr.hight, -legValue.fr.shift - staticBallance.fr.shift) + calibration.fr.motor1)));
@@ -151,6 +187,12 @@ void updateLegsServo(allMotors calibration, allLegs legValue) {
 }
 
 void updateBallanceServo(allLegs cBallance) {
+  if (m_motorsCount == 12) {
+    staticBallance.hl.hight = cBallance.hl.hight;
+    staticBallance.hl.shift = cBallance.hl.shift;
+    staticBallance.hr.hight = cBallance.hr.hight;
+    staticBallance.hr.shift = cBallance.hr.shift;
+  }
   staticBallance.fl.hight = cBallance.fl.hight;
   staticBallance.fl.shift = cBallance.fl.shift;
   staticBallance.fr.hight = cBallance.fr.hight;

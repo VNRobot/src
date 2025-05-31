@@ -114,7 +114,7 @@ unsigned char updateInputs(unsigned char sequenceCount, bool sensorsEnabled, cha
       if (allStateInputsOld != allStateInputs) {
         allStateInputsOld = allStateInputs;
         // debug print
-        _printInputs(allStateInputs);
+        //_printInputs(allStateInputs);
       }
     }
     // debug print
@@ -414,7 +414,7 @@ void _printLineInputs(void) {
   Serial.print(F(" right "));
   Serial.println((int)analogValueInputs.right);
 }
-*/
+
 // print inputs
 void _printInputs(int state) {
   // print input state
@@ -462,3 +462,4 @@ void _printInputs(int state) {
       Serial.println(F(" Wrong inputs state "));
   }
 }
+*/
