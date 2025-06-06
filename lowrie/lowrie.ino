@@ -227,7 +227,7 @@ unsigned short m_maxInputCurrent = 1500; //ma
 // normal distance sensor beam to ground
 unsigned char m_normalInputDistance = 50; //cm
 // center position in the leg forward shift
-char m_forwardCenterBallance = 0; // bigger the number more weight on front
+char forwardCenterBallance = 0; // bigger the number more weight on front
 // default height in mm
 short m_defaultHight = 125;
 //----------------------------------------------------------
@@ -263,9 +263,9 @@ void setup() {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
     // init servo motors hight in mm
-    initServo(calibrationData, 80);
+    initServo(calibrationData, 80, 0);
     delay(200);
-    setServo(calibrationData, m_defaultHight);
+    setServo(calibrationData, m_defaultHight, forwardCenterBallance);
     delay(200);
     // init digital sensors
     initInputs();
@@ -414,5 +414,5 @@ void doCycle(void) {
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.rr, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
-  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs()));
+  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs(), getWalkingMode()), forwardCenterBallance);
 }

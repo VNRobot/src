@@ -23,9 +23,14 @@ char mPointWalk[36]     = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-
 short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 30, 30, 30, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 125};
 short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
 // leg speed const
-char speedConst = 2;
+char speedConst = 3;
 // pattern item buffer
 unsigned char taskItemBuffer = P_DOSTAND;
+
+// get walking mode
+bool getWalkingMode(void) {
+  return walkingMode;
+}
 
 // get next sequence, mode and speed
 void setPattern(unsigned char currentPattern, char angleTurn) {
