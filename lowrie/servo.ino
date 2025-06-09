@@ -53,7 +53,7 @@ void _moveLinearServo(allMotors calibration, short hi2, char fw2) {
     }
     char mValue1 = _calculateMotorAngle((int)hightSetValue, -(int)forwardSetValue);
     char mValue2 = _calculateMotorAngle((int)hightSetValue, (int)forwardSetValue);
-    if (m_motorsCount == 12) {
+    if (m_init.motorsCount == 12) {
       m_servo_hl_1.write(_limitMotorValue(90 - 30 + mValue1 + calibration.hl.motor1));
       m_servo_hl_2.write(_limitMotorValue(90 + 30 - mValue2 - calibration.hl.motor2));
       m_servo_hr_1.write(_limitMotorValue(90 + 30 - mValue1 - calibration.hr.motor1));
@@ -88,7 +88,7 @@ void initServo(allMotors calibration, short hight, char forward) {
   char calM1 = _calculateMotorAngle((int)hight, -(int)forward);
   char calM2 = _calculateMotorAngle((int)hight, (int)forward);
   // init motors one by one
-  if (m_motorsCount == 12) {
+  if (m_init.motorsCount == 12) {
     m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
     m_servo_hl_1.write(_limitMotorValue(90 - 30 + calM1 + calibration.hl.motor1));
     delay(100);
@@ -101,7 +101,7 @@ void initServo(allMotors calibration, short hight, char forward) {
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
     m_servo_hr_2.write(_limitMotorValue(90 - 30 + calM2 + calibration.hr.motor2));
     delay(100);
-  } else if (m_motorsCount == 10) {
+  } else if (m_init.motorsCount == 10) {
     m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
     m_servo_hr_1.write(90 - calibration.hr.motor1);
     delay(100);
@@ -140,10 +140,10 @@ void initServo(allMotors calibration, short hight, char forward) {
 void detachServo(allMotors calibration) {
   if (attached) {
     _moveLinearServo(calibration, hightInitValue, forwardInitValue);
-    if (m_motorsCount == 12) {
+    if (m_init.motorsCount == 12) {
       m_servo_hl_1.detach();
       m_servo_hl_2.detach();
-    } else if (m_motorsCount >= 10) {
+    } else if (m_init.motorsCount >= 10) {
       m_servo_hr_1.detach();
       m_servo_hr_2.detach();
     }
@@ -163,7 +163,7 @@ void detachServo(allMotors calibration) {
 // set servo motors
 void setServo(allMotors calibration, short hight, char forward) {
   // set motors values after calibration
-  if (m_motorsCount == 10) {
+  if (m_init.motorsCount == 10) {
     m_servo_hr_1.write(90 - calibration.hr.motor1);
     m_servo_hr_2.write(90 - calibration.hr.motor2);
   }
@@ -172,7 +172,7 @@ void setServo(allMotors calibration, short hight, char forward) {
 
 // move center motors.
 void updateCenterServo(allMotors calibration, motors centerMotors) {
-  if (m_motorsCount == 10) {
+  if (m_init.motorsCount == 10) {
     m_servo_hr_1.write(_limitMotorValue(90 - (centerMotors.motor1 + calibration.hr.motor1)));
     m_servo_hr_2.write(_limitMotorValue(90 - (centerMotors.motor2 + calibration.hr.motor2)));
   }
@@ -180,7 +180,7 @@ void updateCenterServo(allMotors calibration, motors centerMotors) {
 
 // move leg motors.
 void updateLegsServo(allMotors calibration, allLegs legValue) {
-  if (m_motorsCount == 12) {
+  if (m_init.motorsCount == 12) {
     m_servo_hl_1.write(_limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, -legValue.hl.shift - staticBallance.hl.shift) + calibration.hl.motor1)));
     m_servo_hl_2.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, legValue.hl.shift + staticBallance.hl.shift)  + calibration.hl.motor2)));
     m_servo_hr_1.write(_limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, -legValue.hr.shift - staticBallance.hr.shift) + calibration.hr.motor1)));
@@ -197,7 +197,7 @@ void updateLegsServo(allMotors calibration, allLegs legValue) {
 }
 
 void updateBallanceServo(allLegs cBallance, char forwardCenter) {
-  if (m_motorsCount == 12) {
+  if (m_init.motorsCount == 12) {
     staticBallance.hl.hight = cBallance.hl.hight;
     staticBallance.hl.shift = forwardCenter + cBallance.hl.shift;
     staticBallance.hr.hight = cBallance.hr.hight;

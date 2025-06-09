@@ -13,7 +13,7 @@ allLegs legsValue = {125, 0, 125, 0, 125, 0, 125, 0, 125, 0, 125, 0};
 phase legPhase = {0, 0, 0, 0, 0, 0};
 // walking mode
 bool walkingMode = false;
-// speed
+// speed relative value from -1 to 2
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
@@ -22,8 +22,6 @@ char mLiftHFlag[36]     = { 3, 3,  3,  3,  2,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 
 char mPointWalk[36]     = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
 short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 30, 30, 30, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 125};
 short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
-// leg speed const
-char speedConst = 3;
 // pattern item buffer
 unsigned char taskItemBuffer = P_DOSTAND;
 
@@ -143,7 +141,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     }
     break;
   }
-  if (!m_stepSteeringEnabled) {
+  if (!m_init.stepSteeringEnabled) {
     speedL = speed;
     speedR = speed;
   }
@@ -153,38 +151,33 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
 phase updateCountPatterns(void) {
   // update sequence shift 
   mainCounter ++;
-  if (mainCounter >= m_fullCycle) {
+  if (mainCounter >= m_init.fullCycle) {
     mainCounter = 0;
   }
-  if (m_motorsCount == 12) {
+  // rear legs
+  legPhase.rr = mainCounter;
+  legPhase.rl = legPhase.rr + m_init.halfCycle;
+  legPhase.fl = mainCounter + m_init.shiftCycle; 
+  legPhase.fr = legPhase.fl + m_init.halfCycle;
+  if (m_init.motorsCount == 12) {
     // 12 motors
-    legPhase.rr = mainCounter;
-    legPhase.hl = mainCounter + m_halfCycle / 4;
-    legPhase.fr = mainCounter + m_halfCycle / 2;
-    legPhase.rl = legPhase.rr + m_halfCycle;
-    legPhase.hr = legPhase.hl + m_halfCycle;
-    legPhase.fl = legPhase.fr + m_halfCycle;
-    if (legPhase.hl >= m_fullCycle) {
-      legPhase.hl -= m_fullCycle;
+    legPhase.hr = mainCounter + m_init.shiftCycle * 2;
+    legPhase.hl = legPhase.hr + m_init.halfCycle;
+    if (legPhase.hl >= m_init.fullCycle) {
+      legPhase.hl -= m_init.fullCycle;
     }
-    if (legPhase.hr >= m_fullCycle) {
-      legPhase.hr -= m_fullCycle;
+    if (legPhase.hr >= m_init.fullCycle) {
+      legPhase.hr -= m_init.fullCycle;
     }
-  } else {
-    // 8 or 10 motors
-    legPhase.rr = mainCounter;
-    legPhase.fl = mainCounter; // add m_halfCycle / 2 for async walk
-    legPhase.fr = legPhase.fl + m_halfCycle;
-    legPhase.rl = legPhase.rr + m_halfCycle;
   }
-  if (legPhase.fl >= m_fullCycle) {
-    legPhase.fl -= m_fullCycle;
+  if (legPhase.fl >= m_init.fullCycle) {
+    legPhase.fl -= m_init.fullCycle;
   }
-  if (legPhase.fr >= m_fullCycle) {
-    legPhase.fr -= m_fullCycle;
+  if (legPhase.fr >= m_init.fullCycle) {
+    legPhase.fr -= m_init.fullCycle;
   }
-  if (legPhase.rl >= m_fullCycle) {
-    legPhase.rl -= m_fullCycle;
+  if (legPhase.rl >= m_init.fullCycle) {
+    legPhase.rl -= m_init.fullCycle;
   }
   // no need for rr
   return legPhase;
@@ -213,7 +206,7 @@ allLegs getWalkPatterns(void) {
     case P_STANDTOGO:
     case P_GOTOSTAND:
     {
-      _setLegsValuesBySide(m_defaultHight, 0, m_defaultHight, 0);
+      _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
     }
     break;
     case P_RECOVERLEFT:
@@ -229,7 +222,7 @@ allLegs getWalkPatterns(void) {
     default:
     {
       if (walkingMode) {
-        if (m_motorsCount == 12) {
+        if (m_init.motorsCount == 12) {
           legSet = _getWalkStep(legPhase.hl, speedL);
           legsValue.hl.hight = legSet.hight;
           legsValue.hl.shift = legSet.shift;
@@ -250,7 +243,7 @@ allLegs getWalkPatterns(void) {
         legsValue.rr.hight = legSet.hight;
         legsValue.rr.shift = legSet.shift;
       } else {
-        _setLegsValuesBySide(m_defaultHight, 0, m_defaultHight, 0);
+        _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
       }
     }
     break;
@@ -312,7 +305,7 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
     default:
     break;
   }
-  legStep.hight = m_defaultHight - lift;
-  legStep.shift = shift * speedConst;
+  legStep.hight = m_init.defaultHight - lift;
+  legStep.shift = shift * m_init.speedMuliplier;
   return legStep;
 }

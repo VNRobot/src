@@ -152,11 +152,11 @@ touch getTouchInputs(void) {
 
 // process distances
 unsigned char getSensorState(unsigned short input) {
-  if (m_sensorsInputsEnabled) {
-    if (input < (m_normalInputDistance * 3)) { // no edge
-      if (input > (m_normalInputDistance / 6)) { // not blocked
-        if (input > (m_normalInputDistance / 3)) { // no wall
-          if (input > (m_normalInputDistance / 2)) { // no obstacle
+  if (m_init.sensorsInputsEnabled) {
+    if (input < (m_init.normalInputDistance * 3)) { // no edge
+      if (input > (m_init.normalInputDistance / 6)) { // not blocked
+        if (input > (m_init.normalInputDistance / 3)) { // no wall
+          if (input > (m_init.normalInputDistance / 2)) { // no obstacle
             return SEN_NORMAL;
           } else {
             // obstacle
@@ -272,15 +272,15 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char 
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > m_maxInputCurrent) {
+  if (analogValueInputs.current1 > m_init.maxInputCurrent) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > m_maxInputCurrent) {
+  if (analogValueInputs.current2 > m_init.maxInputCurrent) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > m_maxInputCurrent) {
+  if (analogValueInputs.current3 > m_init.maxInputCurrent) {
     return IN_HIGH_CURRENT_3;
   }
   // both sensors normal

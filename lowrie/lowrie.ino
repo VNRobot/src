@@ -176,6 +176,28 @@ struct touch {
   bool set2;
   bool set3;
 };
+// acc and gyro data structure
+typedef struct robotSetup {
+  unsigned char versionEeprom; // software version hardcoded. should be changed manually
+  unsigned char motorsCount; // motors count
+  unsigned char fullCycle; // main pattern counter
+  unsigned char halfCycle;
+  unsigned char shiftCycle;
+  unsigned char timeDelayShort;
+  unsigned char timeDelayLong;
+  unsigned short maxInputCurrent; // maximal pair of legs current
+  unsigned char normalInputDistance; // normal distance sensor beam to ground
+  short defaultHight; // default height in mm
+  char forwardCenterBallance; // center position in the leg forward shift // bigger the number more weight on front
+  char speedMuliplier; // walking speed multipier max = 3
+  bool rollBallanceEnabled; // roll ballance enable flag
+  bool pitchBallanceEnabled; // pitch ballance enable flag
+  bool forwardBallanceEnabled; // forward ballance enable flag
+  bool touchBallanceEnabled; // touch enable flag
+  bool sensorsInputsEnabled; // sensors enabled flag
+  bool centerMotorsEnabled; // center mototor enabled
+  bool stepSteeringEnabled; // step steering enabled
+} robotSetup;
 
 // motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -198,39 +220,22 @@ unsigned char taskNext = STAND_TASK;
 // variable for temporary use
 unsigned char i;
 //-------------global variables---------------------------
-// motors count
-unsigned char m_motorsCount = 10;
-// full cycle
-unsigned char m_fullCycle = 36;
-// half cycle
-unsigned char m_halfCycle = 18;
-// main time delay in the loop in msec
-unsigned char timeDelay = 8;
-// roll ballance enable flag
-bool m_rollBallanceEnabled = false;
-// pitch ballance enable flag
-bool m_pitchBallanceEnabled = false;
-// forward ballance enable flag
-bool m_forwardBallanceEnabled = false;
-// touch enable flag
-bool m_touchBallanceEnabled = false;
-// sensors enabled flag
-bool m_sensorsInputsEnabled = true;
-// center mototor enabled
-bool centerMotorsEnabled = true;
-// step steering enabled
-bool m_stepSteeringEnabled = false;
-// software version hardcoded. should be changed manually
-unsigned char m_versionEeprom = 54;
-// maximal pair of legs current
-unsigned short m_maxInputCurrent = 1500; //ma
-// normal distance sensor beam to ground
-unsigned char m_normalInputDistance = 50; //cm
-// center position in the leg forward shift
-char forwardCenterBallance = 0; // bigger the number more weight on front
-// default height in mm
-short m_defaultHight = 125;
+// init data structure
+// 10 motors small robot
+//        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
+//robotSetup m_init = {54,           10,         36,       18,       0,         8,             8,            1500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
+// 12 motors small robot
+//        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
+//robotSetup m_init = {54,           12,         36,       18,       4,         8,             12,           1500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
+// 8 motors big robot
+//        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
+robotSetup m_init = {54,            8,         36,       18,       0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
+// 12 motors big robot
+//        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
+//robotSetup m_init = {54,           12,         36,       18,       4,         30,            60,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
 //----------------------------------------------------------
+// main time delay in the loop in msec
+unsigned char timeDelay = m_init.timeDelayShort;
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -250,13 +255,13 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // check for Mode button press or if not calibrated
-  if (_readButtonPress() || (m_versionEeprom != readSoftwareVersionEeprom())) {
+  if (_readButtonPress() || (m_init.versionEeprom != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // do calibration
     if (doCalibration(& calibrationData)) {
       writeCalibrationEeprom(calibrationData);
-      writeSoftwareVersionEeprom(m_versionEeprom);
+      writeSoftwareVersionEeprom(m_init.versionEeprom);
       delay(6000);
     }
   } else {
@@ -265,7 +270,7 @@ void setup() {
     // init servo motors hight in mm
     initServo(calibrationData, 80, 0);
     delay(200);
-    setServo(calibrationData, m_defaultHight, forwardCenterBallance);
+    setServo(calibrationData, m_init.defaultHight, m_init.forwardCenterBallance);
     delay(200);
     // init digital sensors
     initInputs();
@@ -289,7 +294,7 @@ void setup() {
     // update gyro readings
     gyroState = updateGyro(sequenceCounter.rr);
     // load task and pattern. direction is 0
-    if (centerMotorsEnabled) {
+    if (m_init.centerMotorsEnabled) {
       setCenter(patternNow, 0);
     }
     setPattern(patternNow, 0);
@@ -334,7 +339,7 @@ void loop() {
       case P_STANDGO:
       case P_GOFORWARD:
       {
-        if (centerMotorsEnabled) {
+        if (m_init.centerMotorsEnabled) {
           setCenter(patternNow, getDirectionCorrectionGyro());
         }
         setPattern(patternNow, getDirectionCorrectionGyro());
@@ -378,17 +383,17 @@ void loop() {
       break;
       case P_SHORTDELAY:
       {
-        timeDelay = 8;
+        timeDelay = m_init.timeDelayShort;
       }
       break;
       case P_LONGDELAY:
       {
-        timeDelay = 12;
+        timeDelay = m_init.timeDelayLong;
       }
       break;
       default:
       {
-        if (centerMotorsEnabled) {
+        if (m_init.centerMotorsEnabled) {
           setCenter(patternNow, 0);
         }
         setPattern(patternNow, 0);
@@ -404,7 +409,7 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  if (centerMotorsEnabled) {
+  if (m_init.centerMotorsEnabled) {
     updateCenterServo(calibrationData, getValueCenter(sequenceCounter.rr));
   }
   updateLegsServo(calibrationData, getWalkPatterns());
@@ -414,5 +419,5 @@ void doCycle(void) {
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.rr, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
-  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs(), getWalkingMode()), forwardCenterBallance);
+  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
 }
