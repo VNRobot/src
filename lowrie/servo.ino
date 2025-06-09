@@ -14,6 +14,8 @@ short hightInitValue = 0;
 short hightSetValue = 0;
 char forwardInitValue = 0;
 char forwardSetValue = 0;
+// center motors direction
+bool centerMotorReverse = true;
 
 // calculate motor angles
 char _calculateMotorAngle(int Hval, int Sval) {
@@ -103,10 +105,18 @@ void initServo(allMotors calibration, short hight, char forward) {
     delay(100);
   } else if (m_init.motorsCount == 10) {
     m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
-    m_servo_hr_1.write(90 - calibration.hr.motor1);
+    if (centerMotorReverse) {
+      m_servo_hr_1.write(90 + calibration.hr.motor1);
+    } else {
+      m_servo_hr_1.write(90 - calibration.hr.motor1);
+    }
     delay(100);
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
-    m_servo_hr_2.write(90 - calibration.hr.motor2);
+    if (centerMotorReverse) {
+      m_servo_hr_2.write(90 + calibration.hr.motor2);
+    } else {
+      m_servo_hr_2.write(90 - calibration.hr.motor2);
+    }
     delay(100);
   }
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
@@ -164,8 +174,13 @@ void detachServo(allMotors calibration) {
 void setServo(allMotors calibration, short hight, char forward) {
   // set motors values after calibration
   if (m_init.motorsCount == 10) {
-    m_servo_hr_1.write(90 - calibration.hr.motor1);
-    m_servo_hr_2.write(90 - calibration.hr.motor2);
+    if (centerMotorReverse) {
+      m_servo_hr_1.write(90 + calibration.hr.motor1);
+      m_servo_hr_2.write(90 + calibration.hr.motor2);
+    } else {
+      m_servo_hr_1.write(90 - calibration.hr.motor1);
+      m_servo_hr_2.write(90 - calibration.hr.motor2);
+    }
   }
   _moveLinearServo(calibration, hight, forward);
 }
@@ -173,8 +188,13 @@ void setServo(allMotors calibration, short hight, char forward) {
 // move center motors.
 void updateCenterServo(allMotors calibration, motors centerMotors) {
   if (m_init.motorsCount == 10) {
-    m_servo_hr_1.write(_limitMotorValue(90 - (centerMotors.motor1 + calibration.hr.motor1)));
-    m_servo_hr_2.write(_limitMotorValue(90 - (centerMotors.motor2 + calibration.hr.motor2)));
+    if (centerMotorReverse) {
+      m_servo_hr_1.write(_limitMotorValue(90 + (centerMotors.motor1 + calibration.hr.motor1)));
+      m_servo_hr_2.write(_limitMotorValue(90 + (centerMotors.motor2 + calibration.hr.motor2)));
+    } else {
+      m_servo_hr_1.write(_limitMotorValue(90 - (centerMotors.motor1 + calibration.hr.motor1)));
+      m_servo_hr_2.write(_limitMotorValue(90 - (centerMotors.motor2 + calibration.hr.motor2)));
+    }
   }
 }
 
