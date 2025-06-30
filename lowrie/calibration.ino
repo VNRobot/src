@@ -131,6 +131,10 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
 
 // calibration process starts here
 bool doCalibration(allMotors * calibrationData) {
+  initGyro();
+  delay(200);
+  resetGyro();
+  delay(20);
   // init motors one by one
   if (m_init.motorsCount == 12) {
     m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
