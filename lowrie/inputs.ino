@@ -345,19 +345,19 @@ void _printInputs(int state) {
 // status of inputs
 unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
   // battery low 6500
-  if (analogValueInputs.battery < 6500) {
+  if (analogValueInputs.battery < 5700) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
-  if (analogValueInputs.current1 > 1500) {
+  if (analogValueInputs.current1 > 2000) {
     return IN_HIGH_CURRENT_1;
   }
   // motor 2 current too high
-  if (analogValueInputs.current2 > 1500) {
+  if (analogValueInputs.current2 > 2000) {
     return IN_HIGH_CURRENT_2;
   }
   // motor 3 current too high
-  if (analogValueInputs.current3 > 1500) {
+  if (analogValueInputs.current3 > 2000) {
     return IN_HIGH_CURRENT_3;
   }
   // touch
@@ -446,9 +446,9 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight) {
 // check for demo mode
 bool checkForDemoModeInputs(void) {
     // sensors are blocked 500 ~ 5cm
-    if (analogInputs.left > 400 || analogInputs.right > 400) {
-        return true;
-    }
+    //if (analogInputs.left > 400 || analogInputs.right > 400) {
+    //    return true;
+    //}
     return false;
 }
 
