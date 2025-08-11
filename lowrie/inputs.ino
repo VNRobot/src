@@ -268,7 +268,7 @@ unsigned char getNormalTaskByInputs(unsigned char inputState, unsigned char defa
 // status of inputs
 unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char direction) {
   // battery low 6500
-  if (analogValueInputs.battery < 6500) {
+  if (analogValueInputs.battery < 6000) {
     return IN_LOW_BATTERY;
   }
   // motor 1 current too high
@@ -379,15 +379,6 @@ unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char 
     turnLeft = false;
   } 
   return IN_NORMAL;
-}
-
-// check for demo mode
-bool checkForDemoModeInputs(void) {
-    // sensors are blocked 500 ~ 5cm
-    if (analogRawInputs.left > 400 || analogRawInputs.right > 400) {
-        return true;
-    }
-    return false;
 }
 
 // check mode button pressed

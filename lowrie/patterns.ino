@@ -17,8 +17,8 @@ bool walkingMode = false;
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
-// walk and lift
-char mLiftHFlag[36]     = { 3, 3,  3,  3,  2,  1,  0,  0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3};
+// walk and lift                                                                         -
+char mLiftHFlag[36]     = {35, 35,35, 35, 10,  5,  0,  0,  0, 0, 0, 0, 0, 0,-2,-4,-4,-4,-4,-4,-4,-4,-4,-4,-2, 0, 0, 0, 0, 0, 0, 0, 0,15,30,35};
 char mPointWalk[36]     = { 0,-5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
 short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 30, 30, 30, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 125};
 short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
@@ -148,7 +148,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
 }
 
 // update servo motors values
-phase updateCountPatterns(void) {
+phase updateCountPatterns(unsigned char legShift) {
   // update sequence shift 
   mainCounter ++;
   if (mainCounter >= m_init.fullCycle) {
@@ -157,11 +157,11 @@ phase updateCountPatterns(void) {
   // rear legs
   legPhase.rr = mainCounter;
   legPhase.rl = legPhase.rr + m_init.halfCycle;
-  legPhase.fl = mainCounter + m_init.shiftCycle; 
+  legPhase.fl = mainCounter + legShift; 
   legPhase.fr = legPhase.fl + m_init.halfCycle;
   if (m_init.motorsCount == 12) {
     // 12 motors
-    legPhase.hr = mainCounter + m_init.shiftCycle * 2;
+    legPhase.hr = mainCounter + legShift * 2;
     legPhase.hl = legPhase.hr + m_init.halfCycle;
     if (legPhase.hl >= m_init.fullCycle) {
       legPhase.hl -= m_init.fullCycle;
@@ -253,38 +253,9 @@ allLegs getWalkPatterns(void) {
 
 // set walk step value
 leg _getWalkStep(unsigned char counter, char speedValue) {
-  short lift = 0;
   short shift = 0;
   // leg step values
   leg legStep = {0, 0};
-  switch (mLiftHFlag[counter]) {
-    case 0:
-    {
-      lift = 0;
-    }
-    break;
-    case 1:
-    {
-      lift = 5;
-    }
-    break;
-    case 2:
-    {
-      lift = 15;
-    }
-    break;
-    case 3:
-    {
-      if (speedValue == 2) {
-      lift = 35;
-      } else {
-      lift = 25;
-      }
-    }
-    break;
-    default:
-    break;
-  }
   // forward shift
   switch (speedValue) {
     case -1:
@@ -305,7 +276,7 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
     default:
     break;
   }
-  legStep.hight = m_init.defaultHight - lift;
+  legStep.hight = m_init.defaultHight - mLiftHFlag[counter];
   legStep.shift = shift * m_init.speedMuliplier;
   return legStep;
 }

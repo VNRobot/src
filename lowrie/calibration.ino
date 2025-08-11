@@ -17,7 +17,7 @@ enum calMode {
 };
 
 // auto calibration enabled
-bool autoCalibrationEnabled = false;
+bool autoCalibrationEnabled = true;
 // calibration current
 unsigned short calibrationCurrent = 640; //ma
 // calibration counter

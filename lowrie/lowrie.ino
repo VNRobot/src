@@ -71,7 +71,6 @@ enum rTasks {
   STAND_TASK,
   GOSHIFTRIGHT_TASK,
   GOSHIFTLEFT_TASK,
-  DEMO_TASK,
   DOWN_TASK,
   RECOVER_LEFT_TASK,
   RECOVER_RIGHT_TASK,
@@ -226,7 +225,7 @@ unsigned char i;
 //robotSetup m_init = {54,           10,         36,       18,       0,         8,             8,            1500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
 // 12 motors small robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-robotSetup m_init = {54,           12,         36,       18,       4,         8,             12,           1500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
+robotSetup m_init = {54,           12,         36,       18,       4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
 // 8 motors big robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
 //robotSetup m_init = {54,            8,         36,       18,       0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
@@ -239,6 +238,8 @@ robotSetup m_init = {54,           12,         36,       18,       4,         8,
 //----------------------------------------------------------
 // main time delay in the loop in msec
 unsigned char timeDelay = m_init.timeDelayShort;
+unsigned char legShift = m_init.shiftCycle;
+unsigned char legShiftTemp = legShift;
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -271,7 +272,7 @@ void setup() {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
     // init servo motors hight in mm
-    initServo(calibrationData, 80, 0);
+    initServo(calibrationData, 70, 0);
     delay(200);
     setServo(calibrationData, m_init.defaultHight, m_init.forwardCenterBallance);
     delay(200);
@@ -284,16 +285,9 @@ void setup() {
     delay(200);
     resetGyro();
     delay(20);
-    // demo mode activated when hand is placed 5cm from sensors during the boot
-    if (checkForDemoModeInputs()) {
-      // demo mode
-      Serial.println(F("Entering demo mode"));
-      applyTask(DEMO_TASK);
-    } else {
-      // explore mode
-      Serial.println(F("Entering explore mode"));
-      applyTask(BEGIN_TASK);
-    }
+    // explore mode
+    Serial.println(F("Entering explore mode"));
+    applyTask(BEGIN_TASK);
     // update gyro readings
     gyroState = updateGyro(sequenceCounter.rr);
     // load task and pattern. direction is 0
@@ -301,7 +295,7 @@ void setup() {
       setCenter(patternNow, 0);
     }
     setPattern(patternNow, 0);
-    sequenceCounter = updateCountPatterns();
+    sequenceCounter = updateCountPatterns(legShiftTemp);
   }
 }
 
@@ -346,6 +340,7 @@ void loop() {
           setCenter(patternNow, getDirectionCorrectionGyro());
         }
         setPattern(patternNow, getDirectionCorrectionGyro());
+        updateLegShift();
         doCycle();
       }
       break;
@@ -387,11 +382,13 @@ void loop() {
       case P_SHORTDELAY:
       {
         timeDelay = m_init.timeDelayShort;
+        legShift = m_init.shiftCycle;
       }
       break;
       case P_LONGDELAY:
       {
         timeDelay = m_init.timeDelayLong;
+        legShift = 0;
       }
       break;
       default:
@@ -400,6 +397,7 @@ void loop() {
           setCenter(patternNow, 0);
         }
         setPattern(patternNow, 0);
+        updateLegShift();
         doCycle();
       }
       break;
@@ -418,9 +416,18 @@ void doCycle(void) {
   updateLegsServo(calibrationData, getWalkPatterns());
   delay(timeDelay);
   // update motor pattern point
-  sequenceCounter = updateCountPatterns();
+  sequenceCounter = updateCountPatterns(legShiftTemp);
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.rr, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
   updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
+}
+
+// update leg shift
+void updateLegShift(void) {
+  if (legShiftTemp < legShift) {
+    legShiftTemp ++;
+  } else if (legShiftTemp > legShift) {
+    legShiftTemp --;
+  }
 }
