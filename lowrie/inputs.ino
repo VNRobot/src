@@ -45,7 +45,7 @@ struct aSensors {
 
 // analog input values array
 aSensors analogRawInputs = {0, 0, 0, 0, 0, 0}; // raw values
-aSensors analogValueInputs = {6500, 0, 0, 0, 0, 0}; // processed values
+aSensors analogValueInputs = {6000, 0, 0, 0, 0, 0}; // processed values
 // touch data
 touch legTouch = {true, true, true};
 
@@ -153,7 +153,7 @@ touch getTouchInputs(void) {
 // process distances
 unsigned char getSensorState(unsigned short input) {
   if (m_init.sensorsInputsEnabled) {
-    if (input < (m_init.normalInputDistance * 3)) { // no edge
+    if (input < (m_init.normalInputDistance * 4)) { // no edge
       if (input > (m_init.normalInputDistance / 6)) { // not blocked
         if (input > (m_init.normalInputDistance / 3)) { // no wall
           if (input > (m_init.normalInputDistance / 2)) { // no obstacle

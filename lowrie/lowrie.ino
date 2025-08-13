@@ -420,7 +420,8 @@ void doCycle(void) {
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.rr, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
-  updateBallanceServo(getStaticBallance(updateGyro(sequenceCounter.rr), sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
+  gyroState = updateGyro(sequenceCounter.rr);
+  updateBallanceServo(getStaticBallance(gyroState, sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
 }
 
 // update leg shift
