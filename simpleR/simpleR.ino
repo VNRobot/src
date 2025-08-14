@@ -135,15 +135,13 @@ bool _readButtonPress(void) {
 
 // runs once on boot or reset
 void setup() {
+  delay(2000);
   // Start serial for debugging
   Serial.begin(9600);
   Serial.println(F("Device started"));
   // init proximity sensors
   initInputs();
   updateInputs(0, sensorLeftEnabled, sensorRightEnabled, 0);
-  // init gyro MPU6050 using I2C
-  delay(500);
-  initGyro();
   // check for Mode button press or not calibrated
   if (_readButtonPress() || (getSoftwareVersionEeprom() != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
@@ -172,8 +170,11 @@ void setup() {
   applyTask(BEGIN_TASK);
   // set motors values after calibration
   setServo(& m_calibration, 50, 50);
-  delay(200);
+  // init gyro MPU6050 using I2C
+  delay(500);
+  initGyro();
   // reset gyro
+  delay(200);
   resetGyro();
   delay(200);
   // update gyro readings
