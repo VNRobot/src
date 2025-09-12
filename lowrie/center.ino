@@ -16,11 +16,33 @@ char centerTurnF = 0;
 char centerTurnR = 0;
 //
 motors valueCenter = {0, 0};
+// center motor default. range: -40 50
+char centerDefault = 0;
 
-// get next sequence
-void setCenter(unsigned char currentPattern, char angleTurn) {
+// set center value return legs steering flag
+bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultTarget) {
   // remember current pattern
   centerPatternBuffer = currentPattern;
+  // remember center default target
+  if (centerDefaultTarget > centerDefault) {
+    if ((centerDefaultTarget - centerDefault) > 10) {
+      centerDefault += 10;
+    } else {
+      centerDefault = centerDefaultTarget;
+    }
+  }
+  if (centerDefaultTarget < centerDefault) {
+    if ((centerDefault - centerDefaultTarget) > 10) {
+      centerDefault -= 10;
+    } else {
+      centerDefault = centerDefaultTarget;
+    }
+  }
+  if ((centerDefault > 30) || (centerDefault < -20)) {
+    centerTurnF = 0;
+    centerTurnR = 0;
+    return true;
+  }
   // set turn angle
   switch (centerPatternBuffer) {
     case P_STANDGO:
@@ -68,6 +90,7 @@ void setCenter(unsigned char currentPattern, char angleTurn) {
     }
     break;
   }
+  return false;
 }
 
 // get servo motors values
@@ -77,8 +100,8 @@ motors getValueCenter(unsigned char counter) {
     valueCenter.motor1 = mRecoverCenter[counter];
     valueCenter.motor2 = mRecoverCenter[counter];
   } else {
-    valueCenter.motor1 = centerTurnF / mCenter[counter];
-    valueCenter.motor2 = centerTurnR / mCenter[counter];
+    valueCenter.motor1 = centerDefault + centerTurnF / mCenter[counter];
+    valueCenter.motor2 = centerDefault + centerTurnR / mCenter[counter];
   }
   return valueCenter;
 }

@@ -53,6 +53,8 @@ enum rPatterns {
   P_RECOVERRIGHT,
   P_SHORTDELAY,
   P_LONGDELAY,
+  P_CRAWLSTART,
+  P_CRAWLSTOP,
   P_END
 };
 // tasks
@@ -222,10 +224,10 @@ unsigned char i;
 // init data structure
 // 10 motors small robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           10,         36,       18,       0,         8,             8,            1500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
+robotSetup m_init = {54,           10,         36,       18,       0,         8,             8,            1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
 // 12 motors small robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-robotSetup m_init = {54,           12,         36,       18,       4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
+//robotSetup m_init = {54,           12,         36,       18,       4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
 // 8 motors big robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
 //robotSetup m_init = {54,            8,         36,       18,       0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
@@ -236,10 +238,12 @@ robotSetup m_init = {54,           12,         36,       18,       4,         14
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
 //robotSetup m_init = {54,           12,         36,       18,       4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true};
 //----------------------------------------------------------
+//m_init.stepSteeringEnabled = !m_init.centerMotorsEnabled;
 // main time delay in the loop in msec
 unsigned char timeDelay = m_init.timeDelayShort;
 unsigned char legShift = m_init.shiftCycle;
 unsigned char legShiftTemp = legShift;
+char centerDefaultValue = 0;
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -292,7 +296,7 @@ void setup() {
     gyroState = updateGyro(sequenceCounter.rr);
     // load task and pattern. direction is 0
     if (m_init.centerMotorsEnabled) {
-      setCenter(patternNow, 0);
+      setCenter(patternNow, 0, 0);
     }
     setPattern(patternNow, 0);
     sequenceCounter = updateCountPatterns(legShiftTemp);
@@ -337,7 +341,7 @@ void loop() {
       case P_GOFORWARD:
       {
         if (m_init.centerMotorsEnabled) {
-          setCenter(patternNow, getDirectionCorrectionGyro());
+          m_init.stepSteeringEnabled = setCenter(patternNow, getDirectionCorrectionGyro(), centerDefaultValue);
         }
         setPattern(patternNow, getDirectionCorrectionGyro());
         updateLegShift();
@@ -379,6 +383,16 @@ void loop() {
         detachServo(calibrationData);
       }
       break;
+      case P_CRAWLSTART:
+      {
+        centerDefaultValue = 50;
+      }
+      break;
+      case P_CRAWLSTOP:
+      {
+        centerDefaultValue = 0;
+      }
+      break;
       case P_SHORTDELAY:
       {
         timeDelay = m_init.timeDelayShort;
@@ -394,7 +408,7 @@ void loop() {
       default:
       {
         if (m_init.centerMotorsEnabled) {
-          setCenter(patternNow, 0);
+          setCenter(patternNow, 0, centerDefaultValue);
         }
         setPattern(patternNow, 0);
         updateLegShift();

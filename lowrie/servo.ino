@@ -14,8 +14,8 @@ short hightInitValue = 0;
 short hightSetValue = 0;
 char forwardInitValue = 0;
 char forwardSetValue = 0;
-// center motors direction
-bool centerMotorReverse = true;
+// center motors direction. false for lowrie 1.1
+bool centerMotorReverse = false;
 
 // calculate motor angles
 char _calculateMotorAngle(int Hval, int Sval) {
