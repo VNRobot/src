@@ -96,6 +96,14 @@ enum gState {
   GYRO_FOLLING_FRONT,
   GYRO_FOLLING_BACK 
 };
+// robot state
+enum rState {
+  ROBOT_NORM,
+  ROBOT_CRAWL,
+  ROBOT_LEFT,
+  ROBOT_RIGHT,
+  ROBOT_HALT
+};
 // pin numbers for servo motors
 enum dPinsServo {
   HL1_MOTOR = 2,
@@ -199,6 +207,19 @@ typedef struct robotSetup {
   bool centerMotorsEnabled; // center mototor enabled
   bool stepSteeringEnabled; // step steering enabled
 } robotSetup;
+// robot state structure
+typedef struct robotState {
+  unsigned char robotStateNow;
+  unsigned char shiftCycleNow;
+  unsigned char timeDelayNow;
+  short legHightNow;
+  short legLiftNow;
+  char rollBallanceNow;
+  char pitchBallanceNow;
+  char forwardBallanceNow; // bigger the number more weight on front
+  char centerMotorValueNow;
+  bool stepSteeringNow;
+} robotState;
 
 // motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -238,12 +259,8 @@ robotSetup m_init = {54,           10,         36,       18,       0,         8,
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
 //robotSetup m_init = {54,           12,         36,       18,       4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true};
 //----------------------------------------------------------
-//m_init.stepSteeringEnabled = !m_init.centerMotorsEnabled;
-// main time delay in the loop in msec
-unsigned char timeDelay = m_init.timeDelayShort;
-unsigned char legShift = m_init.shiftCycle;
-unsigned char legShiftTemp = legShift;
-char centerDefaultValue = 0;
+// robot state          robotStateNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow
+robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         35,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -299,7 +316,7 @@ void setup() {
       setCenter(patternNow, 0, 0);
     }
     setPattern(patternNow, 0);
-    sequenceCounter = updateCountPatterns(legShiftTemp);
+    sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow);
   }
 }
 
@@ -341,10 +358,9 @@ void loop() {
       case P_GOFORWARD:
       {
         if (m_init.centerMotorsEnabled) {
-          m_init.stepSteeringEnabled = setCenter(patternNow, getDirectionCorrectionGyro(), centerDefaultValue);
+          m_robotState.stepSteeringNow = setCenter(patternNow, getDirectionCorrectionGyro(), m_robotState.centerMotorValueNow);
         }
         setPattern(patternNow, getDirectionCorrectionGyro());
-        updateLegShift();
         doCycle();
       }
       break;
@@ -385,33 +401,32 @@ void loop() {
       break;
       case P_CRAWLSTART:
       {
-        centerDefaultValue = 50;
+        m_robotState.centerMotorValueNow = 50;
       }
       break;
       case P_CRAWLSTOP:
       {
-        centerDefaultValue = 0;
+        m_robotState.centerMotorValueNow = 0;
       }
       break;
       case P_SHORTDELAY:
       {
-        timeDelay = m_init.timeDelayShort;
-        legShift = m_init.shiftCycle;
+        m_robotState.timeDelayNow = m_init.timeDelayShort;
+        m_robotState.shiftCycleNow = m_init.shiftCycle;
       }
       break;
       case P_LONGDELAY:
       {
-        timeDelay = m_init.timeDelayLong;
-        legShift = 0;
+        m_robotState.timeDelayNow = m_init.timeDelayLong;
+        m_robotState.shiftCycleNow = 0;
       }
       break;
       default:
       {
         if (m_init.centerMotorsEnabled) {
-          setCenter(patternNow, 0, centerDefaultValue);
+          setCenter(patternNow, 0, m_robotState.centerMotorValueNow);
         }
         setPattern(patternNow, 0);
-        updateLegShift();
         doCycle();
       }
       break;
@@ -428,21 +443,12 @@ void doCycle(void) {
     updateCenterServo(calibrationData, getValueCenter(sequenceCounter.rr));
   }
   updateLegsServo(calibrationData, getWalkPatterns());
-  delay(timeDelay);
+  delay(m_robotState.timeDelayNow);
   // update motor pattern point
-  sequenceCounter = updateCountPatterns(legShiftTemp);
+  sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow);
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.rr, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
   gyroState = updateGyro(sequenceCounter.rr);
   updateBallanceServo(getStaticBallance(gyroState, sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
-}
-
-// update leg shift
-void updateLegShift(void) {
-  if (legShiftTemp < legShift) {
-    legShiftTemp ++;
-  } else if (legShiftTemp > legShift) {
-    legShiftTemp --;
-  }
 }

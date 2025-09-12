@@ -24,6 +24,8 @@ short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,
 short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
 // pattern item buffer
 unsigned char taskItemBuffer = P_DOSTAND;
+// legshift temp value for transition
+unsigned char legShiftTemp = m_robotState.shiftCycleNow;
 
 // get walking mode
 bool getWalkingMode(void) {
@@ -141,7 +143,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     }
     break;
   }
-  if (!m_init.stepSteeringEnabled) {
+  if (!m_robotState.stepSteeringNow) {
     speedL = speed;
     speedR = speed;
   }
@@ -153,15 +155,21 @@ phase updateCountPatterns(unsigned char legShift) {
   mainCounter ++;
   if (mainCounter >= m_init.fullCycle) {
     mainCounter = 0;
+    // update shift
+    if (legShiftTemp < legShift) {
+      legShiftTemp ++;
+    } else if (legShiftTemp > legShift) {
+      legShiftTemp --;
+    }
   }
   // rear legs
   legPhase.rr = mainCounter;
   legPhase.rl = legPhase.rr + m_init.halfCycle;
-  legPhase.fl = mainCounter + legShift; 
+  legPhase.fl = mainCounter + legShiftTemp; 
   legPhase.fr = legPhase.fl + m_init.halfCycle;
   if (m_init.motorsCount == 12) {
     // 12 motors
-    legPhase.hr = mainCounter + legShift * 2;
+    legPhase.hr = mainCounter + legShiftTemp * 2;
     legPhase.hl = legPhase.hr + m_init.halfCycle;
     if (legPhase.hl >= m_init.fullCycle) {
       legPhase.hl -= m_init.fullCycle;
