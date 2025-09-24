@@ -245,7 +245,7 @@ unsigned char i;
 // init data structure
 // 10 motors small robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-robotSetup m_init = {54,           10,         36,       18,       0,         8,             8,            1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
+robotSetup m_init = {54,           10,         36,       18,       0,         8,              8,            1800,           42,                 130,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
 // 12 motors small robot
 //        m_init.    versionEeprom motorsCount fullCycle halfCycle shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
 //robotSetup m_init = {54,           12,         36,       18,       4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
@@ -260,7 +260,11 @@ robotSetup m_init = {54,           10,         36,       18,       0,         8,
 //robotSetup m_init = {54,           12,         36,       18,       4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true};
 //----------------------------------------------------------
 // robot state          robotStateNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow
-robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         35,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
+robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
+// servo motor value
+short m_motorAngleValue[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// motor enabled flag
+bool m_motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -294,18 +298,18 @@ void setup() {
     readCalibrationEeprom(& calibrationData);
     // init servo motors hight in mm
     initServo(calibrationData, 70, 0);
-    delay(200);
+    doPWMServo(200);
     setServo(calibrationData, m_init.defaultHight, m_init.forwardCenterBallance);
-    delay(200);
+    doPWMServo(200);
     // init digital sensors
     initInputs();
     // update inputs direction is 0
     updateInputs(sequenceCounter.rr, sensorsEnabled, 0);
     // init gyro MPU6050 using I2C
     initGyro();
-    delay(200);
+    doPWMServo(200);
     resetGyro();
-    delay(20);
+    doPWMServo(20);
     // explore mode
     Serial.println(F("Entering explore mode"));
     applyTask(BEGIN_TASK);
@@ -402,11 +406,13 @@ void loop() {
       case P_CRAWLSTART:
       {
         m_robotState.centerMotorValueNow = 50;
+        m_robotState.legLiftNow = 80;
       }
       break;
       case P_CRAWLSTOP:
       {
         m_robotState.centerMotorValueNow = 0;
+        m_robotState.legLiftNow = 40;
       }
       break;
       case P_SHORTDELAY:
@@ -443,7 +449,7 @@ void doCycle(void) {
     updateCenterServo(calibrationData, getValueCenter(sequenceCounter.rr));
   }
   updateLegsServo(calibrationData, getWalkPatterns());
-  delay(m_robotState.timeDelayNow);
+  doPWMServo(m_robotState.timeDelayNow);
   // update motor pattern point
   sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow);
   // read proximity sensors

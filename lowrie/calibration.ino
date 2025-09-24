@@ -34,11 +34,11 @@ short current = 0;
 // get current of center motors
 short _getCurrent1Inputs(void) {
   current = analogRead(A6) - analogRead(A7);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A7);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A7);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A7);
   current *= 2;
   //Serial.print(F(" current1 "));
@@ -52,11 +52,11 @@ short _getCurrent1Inputs(void) {
 // get current of front motors
 short _getCurrent2Inputs(void) {
   current = analogRead(A6) - analogRead(A3);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A3);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A3);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A3);
   current *= 2;
   //Serial.print(F(" current2 "));
@@ -70,11 +70,11 @@ short _getCurrent2Inputs(void) {
 // get current of rear motors
 short _getCurrent3Inputs(void) {
   current = analogRead(A6) - analogRead(A2);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A2);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A2);
-  delay(20);
+  doPWMServo(20);
   current += analogRead(A6) - analogRead(A2);
   current *= 2;
   //Serial.print(F(" current3 "));
@@ -137,78 +137,106 @@ bool doCalibration(allMotors * calibrationData) {
   delay(20);
   // init motors one by one
   if (m_init.motorsCount == 12) {
+    //pinMode(HL1_MOTOR, OUTPUT);
+    m_motorEnabled[0] = true;
+    m_motorAngleValue[0] = _limitMotorValue(90 - 30 + 45);
     m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
-    m_servo_hl_1.write(90 - 30 + 45);
-    delay(100);
+    doPWMServo(0);
+    //pinMode(HR1_MOTOR, OUTPUT);
+    m_motorEnabled[2] = true;
+    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 45);
+    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
+    doPWMServo(100);
+    //pinMode(HL2_MOTOR, OUTPUT);
+    m_motorEnabled[1] = true;
+    m_motorAngleValue[1] = _limitMotorValue(90 + 30 - 45);
     m_servo_hl_2.attach(HL2_MOTOR, 500, 2500);
-    m_servo_hl_2.write(90 + 30 - 45);
-    delay(100);
-    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
-    m_servo_hr_1.write(90 + 30 - 45);
-    delay(100);
+    doPWMServo(100);
+    //pinMode(HR2_MOTOR, OUTPUT);
+    m_motorEnabled[3] = true;
+    m_motorAngleValue[3] = _limitMotorValue(90 - 30 + 45);
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
-    m_servo_hr_2.write(90 - 30 + 45);
-    delay(100);
+    doPWMServo(100);
   } else if (m_init.motorsCount == 10) {
+    //pinMode(HR1_MOTOR, OUTPUT);
+    m_motorEnabled[2] = true;
+    m_motorAngleValue[2] = _limitMotorValue(90);
     m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
-    m_servo_hr_1.write(90);
-    delay(100);
+    doPWMServo(100);
+    //pinMode(HR2_MOTOR, OUTPUT);
+    m_motorEnabled[3] = true;
+    m_motorAngleValue[3] = _limitMotorValue(90);
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
-    m_servo_hr_2.write(90);
-    delay(100);
+    doPWMServo(100);
   }
+  //pinMode(FL1_MOTOR, OUTPUT);
+  m_motorEnabled[4] = true;
+  m_motorAngleValue[4] = _limitMotorValue(90 - 30 + 45);
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  m_servo_fl_1.write(90 - 30 + 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(FR1_MOTOR, OUTPUT);
+  m_motorEnabled[6] = true;
+  m_motorAngleValue[6] = _limitMotorValue(90 + 30 - 45);
   m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  m_servo_fr_1.write(90 + 30 - 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(RL1_MOTOR, OUTPUT);
+  m_motorEnabled[8] = true;
+  m_motorAngleValue[8] = _limitMotorValue(90 - 30 + 45);
   m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  m_servo_rl_1.write(90 - 30 + 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(RR1_MOTOR, OUTPUT);
+  m_motorEnabled[10] = true;
+  m_motorAngleValue[10] = _limitMotorValue(90 + 30 - 45);
   m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  m_servo_rr_1.write(90 + 30 - 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(FL2_MOTOR, OUTPUT);
+  m_motorEnabled[5] = true;
+  m_motorAngleValue[5] = _limitMotorValue(90 + 30 - 45);
   m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  m_servo_fl_2.write(90 + 30 - 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(FR2_MOTOR, OUTPUT);
+  m_motorEnabled[7] = true;
+  m_motorAngleValue[7] = _limitMotorValue(90 - 30 + 45);
   m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  m_servo_fr_2.write(90 - 30 + 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(RL2_MOTOR, OUTPUT);
+  m_motorEnabled[9] = true;
+  m_motorAngleValue[9] = _limitMotorValue(90 + 30 - 45);
   m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  m_servo_rl_2.write(90 + 30 - 45);
-  delay(100);
+  doPWMServo(100);
+  //pinMode(RR2_MOTOR, OUTPUT);
+  m_motorEnabled[11] = true;
+  m_motorAngleValue[11] = _limitMotorValue(90 - 30 + 45);
   m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  m_servo_rr_2.write(90 - 30 + 45);
-  delay(100);
+  doPWMServo(100);
   Serial.println(F("Start calibration"));
   // set calibration mode
   deviceMode = CALIBRATION_INFO;
   // do loop
   while (true) {
     if (m_init.motorsCount == 12) {
-      m_servo_hl_1.write(90 - 30 + 90 + calibrationData->hl.motor1);
-      m_servo_hl_2.write(90 + 30 - 90 - calibrationData->hl.motor2);
-      m_servo_hr_1.write(90 + 30 - 90 - calibrationData->hr.motor1);
-      m_servo_hr_2.write(90 - 30 + 90 + calibrationData->hr.motor2);
+      m_motorAngleValue[0] = _limitMotorValue(90 - 30 + 90 + calibrationData->hl.motor1);
+      m_motorAngleValue[1] = _limitMotorValue(90 + 30 - 90 - calibrationData->hl.motor2);
+      m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 90 - calibrationData->hr.motor1);
+      m_motorAngleValue[3] = _limitMotorValue(90 - 30 + 90 + calibrationData->hr.motor2);
     } else if (m_init.motorsCount == 10) {
-      m_servo_hr_1.write(90 - calibrationData->hr.motor1);
-      m_servo_hr_2.write(90 - calibrationData->hr.motor2);
+      m_motorAngleValue[2] = _limitMotorValue(90 - calibrationData->hr.motor1);
+      m_motorAngleValue[3] = _limitMotorValue(90 - calibrationData->hr.motor2);
     }
-    m_servo_fl_1.write(90 - 30 + 90 + calibrationData->fl.motor1);
-    m_servo_fl_2.write(90 + 30 - 90 - calibrationData->fl.motor2);
-    m_servo_fr_1.write(90 + 30 - 90 - calibrationData->fr.motor1);
-    m_servo_fr_2.write(90 - 30 + 90 + calibrationData->fr.motor2);
-    m_servo_rl_1.write(90 - 30 + 90 + calibrationData->rl.motor1);
-    m_servo_rl_2.write(90 + 30 - 90 - calibrationData->rl.motor2);
-    m_servo_rr_1.write(90 + 30 - 90 - calibrationData->rr.motor1);
-    m_servo_rr_2.write(90 - 30 + 90 + calibrationData->rr.motor2);
-    delay(200);
+    m_motorAngleValue[4] = _limitMotorValue(90 - 30 + 90 + calibrationData->fl.motor1);
+    m_motorAngleValue[5] = _limitMotorValue(90 + 30 - 90 - calibrationData->fl.motor2);
+    m_motorAngleValue[6] = _limitMotorValue(90 + 30 - 90 - calibrationData->fr.motor1);
+    m_motorAngleValue[7] = _limitMotorValue(90 - 30 + 90 + calibrationData->fr.motor2);
+    m_motorAngleValue[8] = _limitMotorValue(90 - 30 + 90 + calibrationData->rl.motor1);
+    m_motorAngleValue[9] = _limitMotorValue(90 + 30 - 90 - calibrationData->rl.motor2);
+    m_motorAngleValue[10] = _limitMotorValue(90 + 30 - 90 - calibrationData->rr.motor1);
+    m_motorAngleValue[11] = _limitMotorValue(90 - 30 + 90 + calibrationData->rr.motor2);
+    doPWMServo(200);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
       modePressed = true;
       while (analogRead(A6) < 400) {
-        delay(100);
+        doPWMServo(100);
       }
     }
     // 
@@ -237,7 +265,7 @@ bool doCalibration(allMotors * calibrationData) {
         Serial.print((int)_getCurrent2Inputs());
         Serial.print(F(" rear "));
         Serial.println((int)_getCurrent3Inputs());
-        delay(500);
+        doPWMServo(500);
       }
       break;
       case CALIBRATION_START: 
@@ -422,13 +450,25 @@ bool doCalibration(allMotors * calibrationData) {
       { 
         Serial.println(F("Done. Please wait."));
         if (m_init.motorsCount == 12) {
+          m_motorEnabled[0] = false;
+          m_motorEnabled[1] = false;
           m_servo_hl_1.detach();
           m_servo_hl_2.detach();
         }
         if (m_init.motorsCount >= 10) {
+          m_motorEnabled[2] = false;
+          m_motorEnabled[3] = false;
           m_servo_hr_1.detach();
           m_servo_hr_2.detach();
         }
+        m_motorEnabled[4] = false;
+        m_motorEnabled[6] = false;
+        m_motorEnabled[8] = false;
+        m_motorEnabled[10] = false;
+        m_motorEnabled[5] = false;
+        m_motorEnabled[7] = false;
+        m_motorEnabled[9] = false;
+        m_motorEnabled[11] = false;
         m_servo_fl_1.detach();
         m_servo_fr_1.detach();
         m_servo_rl_1.detach();
