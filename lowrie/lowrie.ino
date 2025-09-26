@@ -263,8 +263,6 @@ robotSetup m_init = {54,           10,         36,       18,       0,         8,
 robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
 // servo motor value
 short m_motorAngleValue[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// motor enabled flag
-bool m_motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -297,7 +295,8 @@ void setup() {
     // read values by using pointer to struct
     readCalibrationEeprom(& calibrationData);
     // init servo motors hight in mm
-    initServo(calibrationData, 70, 0);
+    initValueServo(calibrationData, 70, 0);
+    initServo();
     doPWMServo(200);
     setServo(calibrationData, m_init.defaultHight, m_init.forwardCenterBallance);
     doPWMServo(200);
@@ -400,7 +399,8 @@ void loop() {
       case P_DODOWN:
       {
         // disable motors
-        detachServo(calibrationData);
+        detachPrepareServo(calibrationData);
+        detachServo();
       }
       break;
       case P_CRAWLSTART:

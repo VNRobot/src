@@ -20,6 +20,11 @@ char forwardInitValue = 0;
 char forwardSetValue = 0;
 // center motors direction. false for lowrie 1.1
 bool centerMotorReverse = false;
+// motor enabled flag
+bool motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
+// timer counter state
+short timeCounter = 0;
+short timeCounterEnd = 20000; // usec
 
 // calculate motor angles
 char _calculateMotorAngle(int Hval, int Sval) {
@@ -88,119 +93,130 @@ short _limitMotorValue(short mAngle) {
 }
 
 // init servo motors
-void initServo(allMotors calibration, short hight, char forward) {
+void initValueServo(allMotors calibration, short hight, char forward) {
   hightInitValue = hight;
   forwardInitValue = forward;
   char calM1 = _calculateMotorAngle((int)hight, -(int)forward);
   char calM2 = _calculateMotorAngle((int)hight, (int)forward);
+  // set motors value
+  if (m_init.motorsCount == 12) {
+    m_motorAngleValue[0] = _limitMotorValue(90 - 30 + calM1 + calibration.hl.motor1);
+    m_motorAngleValue[1] = _limitMotorValue(90 + 30 - calM2 - calibration.hl.motor2);
+    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - calM1 - calibration.hr.motor1);
+    m_motorAngleValue[3] = _limitMotorValue(90 - 30 + calM2 + calibration.hr.motor2);
+  } else if (m_init.motorsCount == 10) {
+    if (centerMotorReverse) {
+      m_motorAngleValue[2] = _limitMotorValue(90 + calibration.hr.motor1);
+      m_motorAngleValue[3] = _limitMotorValue(90 + calibration.hr.motor2);
+    } else {
+      m_motorAngleValue[2] = _limitMotorValue(90 - calibration.hr.motor1);
+      m_motorAngleValue[3] = _limitMotorValue(90 - calibration.hr.motor2);
+    }
+  }
+  m_motorAngleValue[4] = _limitMotorValue(90 - 30 + calM1 + calibration.fl.motor1);
+  m_motorAngleValue[6] = _limitMotorValue(90 + 30 - calM1 - calibration.fr.motor1);
+  m_motorAngleValue[8] = _limitMotorValue(90 - 30 + calM1 + calibration.rl.motor1);
+  m_motorAngleValue[10] = _limitMotorValue(90 + 30 - calM1 - calibration.rr.motor1);
+  m_motorAngleValue[5] = _limitMotorValue(90 + 30 - calM2 - calibration.fl.motor2);
+  m_motorAngleValue[7] = _limitMotorValue(90 - 30 + calM2 + calibration.fr.motor2);
+  m_motorAngleValue[9] = _limitMotorValue(90 + 30 - calM2 - calibration.rl.motor2);
+  m_motorAngleValue[11] = _limitMotorValue(90 - 30 + calM2 + calibration.rr.motor2);
+}
+
+// init servo motors
+void initServo(void) {
   // init motors one by one
   if (m_init.motorsCount == 12) {
     //pinMode(HL1_MOTOR, OUTPUT);
-    m_motorEnabled[0] = true;
-    m_motorAngleValue[0] = _limitMotorValue(90 - 30 + calM1 + calibration.hl.motor1);
     m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
+    motorEnabled[0] = true;
     doPWMServo(100);
     //pinMode(HR1_MOTOR, OUTPUT);
-    m_motorEnabled[2] = true;
-    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - calM1 - calibration.hr.motor1);
     m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
+    motorEnabled[2] = true;
     doPWMServo(100);
     //pinMode(HL2_MOTOR, OUTPUT);
-    m_motorEnabled[1] = true;
-    m_motorAngleValue[1] = _limitMotorValue(90 + 30 - calM2 - calibration.hl.motor2);
     m_servo_hl_2.attach(HL2_MOTOR, 500, 2500);
+    motorEnabled[1] = true;
     doPWMServo(100);
     //pinMode(HR2_MOTOR, OUTPUT);
-    m_motorEnabled[3] = true;
-    m_motorAngleValue[3] = _limitMotorValue(90 - 30 + calM2 + calibration.hr.motor2);
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
+    motorEnabled[3] = true;
     doPWMServo(100);
   } else if (m_init.motorsCount == 10) {
     //pinMode(HR1_MOTOR, OUTPUT);
-    m_motorEnabled[2] = true;
-    if (centerMotorReverse) {
-      m_motorAngleValue[2] = _limitMotorValue(90 + calibration.hr.motor1);
-    } else {
-      m_motorAngleValue[2] = _limitMotorValue(90 - calibration.hr.motor1);
-    }
     m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
+    motorEnabled[2] = true;
     doPWMServo(100);
     //pinMode(HR2_MOTOR, OUTPUT);
-    m_motorEnabled[3] = true;
-    if (centerMotorReverse) {
-      m_motorAngleValue[3] = _limitMotorValue(90 + calibration.hr.motor2);
-    } else {
-      m_motorAngleValue[3] = _limitMotorValue(90 - calibration.hr.motor2);
-    }
     m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
+    motorEnabled[3] = true;
     doPWMServo(100);
   }
   //pinMode(FL1_MOTOR, OUTPUT);
-  m_motorEnabled[4] = true;
-  m_motorAngleValue[4] = _limitMotorValue(90 - 30 + calM1 + calibration.fl.motor1);
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
+  motorEnabled[4] = true;
   doPWMServo(100);
   //pinMode(FR1_MOTOR, OUTPUT);
-  m_motorEnabled[6] = true;
-  m_motorAngleValue[6] = _limitMotorValue(90 + 30 - calM1 - calibration.fr.motor1);
   m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
+  motorEnabled[6] = true;
   doPWMServo(100);
   //pinMode(RL1_MOTOR, OUTPUT);
-  m_motorEnabled[8] = true;
-  m_motorAngleValue[8] = _limitMotorValue(90 - 30 + calM1 + calibration.rl.motor1);
   m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
+  motorEnabled[8] = true;
   doPWMServo(100);
   //pinMode(RR1_MOTOR, OUTPUT);
-  m_motorEnabled[10] = true;
-  m_motorAngleValue[10] = _limitMotorValue(90 + 30 - calM1 - calibration.rr.motor1);
   m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
+  motorEnabled[10] = true;
   doPWMServo(100);
   //pinMode(FL2_MOTOR, OUTPUT);
-  m_motorEnabled[5] = true;
-  m_motorAngleValue[5] = _limitMotorValue(90 + 30 - calM2 - calibration.fl.motor2);
   m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
+  motorEnabled[5] = true;
   doPWMServo(100);
   //pinMode(FR2_MOTOR, OUTPUT);
-  m_motorEnabled[7] = true;
-  m_motorAngleValue[7] = _limitMotorValue(90 - 30 + calM2 + calibration.fr.motor2);
   m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
+  motorEnabled[7] = true;
   doPWMServo(100);
   //pinMode(RL2_MOTOR, OUTPUT);
-  m_motorEnabled[9] = true;
-  m_motorAngleValue[9] = _limitMotorValue(90 + 30 - calM2 - calibration.rl.motor2);
   m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
+  motorEnabled[9] = true;
   doPWMServo(100);
   //pinMode(RR2_MOTOR, OUTPUT);
-  m_motorEnabled[11] = true;
-  m_motorAngleValue[11] = _limitMotorValue(90 - 30 + calM2 + calibration.rr.motor2);
   m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
+  motorEnabled[11] = true;
   doPWMServo(100);
   attached = true;
-  }
+}
 
-// attach wings
-void detachServo(allMotors calibration) {
+// prepare detach
+void detachPrepareServo(allMotors calibration) {
   if (attached) {
     _moveLinearServo(calibration, hightInitValue, forwardInitValue);
+  }
+}
+
+// detach hardware
+void detachServo(void) {
+  if (attached) {
     if (m_init.motorsCount == 12) {
-      m_motorEnabled[0] = false;
-      m_motorEnabled[1] = false;
+      motorEnabled[0] = false;
+      motorEnabled[1] = false;
       m_servo_hl_1.detach();
       m_servo_hl_2.detach();
     } else if (m_init.motorsCount >= 10) {
-      m_motorEnabled[2] = false;
-      m_motorEnabled[3] = false;
+      motorEnabled[2] = false;
+      motorEnabled[3] = false;
       m_servo_hr_1.detach();
       m_servo_hr_2.detach();
     }
-    m_motorEnabled[4] = false;
-    m_motorEnabled[6] = false;
-    m_motorEnabled[8] = false;
-    m_motorEnabled[10] = false;
-    m_motorEnabled[5] = false;
-    m_motorEnabled[7] = false;
-    m_motorEnabled[9] = false;
-    m_motorEnabled[11] = false;
+    motorEnabled[4] = false;
+    motorEnabled[6] = false;
+    motorEnabled[8] = false;
+    motorEnabled[10] = false;
+    motorEnabled[5] = false;
+    motorEnabled[7] = false;
+    motorEnabled[9] = false;
+    motorEnabled[11] = false;
     m_servo_fl_1.detach();
     m_servo_fr_1.detach();
     m_servo_rl_1.detach();
@@ -262,38 +278,85 @@ void updateLegsServo(allMotors calibration, allLegs legValue) {
 
 // do servo pwm cycle 500, 2500
 void doPWMServo(short pulseCount) {
-  if (m_init.motorsCount == 12) {
+  // time keeping
+  //if (timeCounter >= timeCounterEnd) {
+  //  timeCounter = pulseCount * 1000;
+  //}
+
+  // start pulse
+  //delayMicroseconds(500);
+
+  // center pulse
+  //delayMicroseconds(1000);
+
+  if (motorEnabled[0]) {
     m_servo_hl_1.write(m_motorAngleValue[0]);
+  }
+  if (motorEnabled[1]) {
     m_servo_hl_2.write(m_motorAngleValue[1]);
   }
-  if (m_init.motorsCount >= 10) {
+  if (motorEnabled[2]) {
     m_servo_hr_1.write(m_motorAngleValue[2]);
+  }
+  if (motorEnabled[3]) {
     m_servo_hr_2.write(m_motorAngleValue[3]);
   }
-  m_servo_fl_1.write(m_motorAngleValue[4]);
-  m_servo_fl_2.write(m_motorAngleValue[5]);
-  m_servo_fr_1.write(m_motorAngleValue[6]);
-  m_servo_fr_2.write(m_motorAngleValue[7]);
-  m_servo_rl_1.write(m_motorAngleValue[8]);
-  m_servo_rl_2.write(m_motorAngleValue[9]);
-  m_servo_rr_1.write(m_motorAngleValue[10]);
-  m_servo_rr_2.write(m_motorAngleValue[11]);
+  if (motorEnabled[4]) {
+    m_servo_fl_1.write(m_motorAngleValue[4]);
+  }
+  if (motorEnabled[5]) {
+    m_servo_fl_2.write(m_motorAngleValue[5]);
+  }
+  if (motorEnabled[6]) {
+    m_servo_fr_1.write(m_motorAngleValue[6]);
+  }
+  if (motorEnabled[7]) {
+    m_servo_fr_2.write(m_motorAngleValue[7]);
+  }
+  if (motorEnabled[8]) {
+    m_servo_rl_1.write(m_motorAngleValue[8]);
+  }
+  if (motorEnabled[9]) {
+    m_servo_rl_2.write(m_motorAngleValue[9]);
+  }
+  if (motorEnabled[10]) {
+    m_servo_rr_1.write(m_motorAngleValue[10]);
+  }
+  if (motorEnabled[11]) {
+    m_servo_rr_2.write(m_motorAngleValue[11]);
+  }
+
+  // center pulse
+  //delayMicroseconds(18500);
+  //delay(20);
 
   if (pulseCount > 0) {
     delay(pulseCount);
   }
 
   /*
+  HL1_MOTOR = 2,
+  HL2_MOTOR = 3,
+  HR1_MOTOR = 4,
+  HR2_MOTOR = 5,
+  FL1_MOTOR = 6,
+  FL2_MOTOR = 7,
+  FR1_MOTOR = 8,
+  FR2_MOTOR = 9,
+  RL1_MOTOR = 10,
+  RL2_MOTOR = 11,
+  RR1_MOTOR = 12,
+  RR2_MOTOR = 13
   //for (pulse = 0; pulse++; pulse < pulseCount) {
     // set all to high
     for (motorNumber = 0; motorNumber++; motorNumber < 12) {
-      if (m_motorEnabled[motorNumber]) {
+      if (motorEnabled[motorNumber]) {
         //digitalWrite(motorNumber + 2, HIGH);
       }
     }
     delay(2);
     for (motorNumber = 0; motorNumber++; motorNumber < 12) {
-      if (m_motorEnabled[motorNumber]) {
+      if (motorEnabled[motorNumber]) {
         //digitalWrite(motorNumber + 2, LOW);
       }
     }
@@ -304,7 +367,7 @@ void doPWMServo(short pulseCount) {
     // check end of pulse
     for (angle = 0; angle++; angle < 181) {
       for (motorNumber = 0; motorNumber++; motorNumber < 12) {
-        if (m_motorEnabled[motorNumber]) {
+        if (motorEnabled[motorNumber]) {
           if (m_motorAngleValue[motorNumber] == angle) {
             digitalWrite(motorNumber + 2, LOW);
           }

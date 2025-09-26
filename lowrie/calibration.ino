@@ -135,80 +135,26 @@ bool doCalibration(allMotors * calibrationData) {
   delay(200);
   resetGyro();
   delay(20);
-  // init motors one by one
+  // set motors value
   if (m_init.motorsCount == 12) {
-    //pinMode(HL1_MOTOR, OUTPUT);
-    m_motorEnabled[0] = true;
     m_motorAngleValue[0] = _limitMotorValue(90 - 30 + 45);
-    m_servo_hl_1.attach(HL1_MOTOR, 500, 2500);
-    doPWMServo(0);
-    //pinMode(HR1_MOTOR, OUTPUT);
-    m_motorEnabled[2] = true;
-    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 45);
-    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
-    doPWMServo(100);
-    //pinMode(HL2_MOTOR, OUTPUT);
-    m_motorEnabled[1] = true;
     m_motorAngleValue[1] = _limitMotorValue(90 + 30 - 45);
-    m_servo_hl_2.attach(HL2_MOTOR, 500, 2500);
-    doPWMServo(100);
-    //pinMode(HR2_MOTOR, OUTPUT);
-    m_motorEnabled[3] = true;
+    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 45);
     m_motorAngleValue[3] = _limitMotorValue(90 - 30 + 45);
-    m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
-    doPWMServo(100);
   } else if (m_init.motorsCount == 10) {
-    //pinMode(HR1_MOTOR, OUTPUT);
-    m_motorEnabled[2] = true;
     m_motorAngleValue[2] = _limitMotorValue(90);
-    m_servo_hr_1.attach(HR1_MOTOR, 500, 2500);
-    doPWMServo(100);
-    //pinMode(HR2_MOTOR, OUTPUT);
-    m_motorEnabled[3] = true;
     m_motorAngleValue[3] = _limitMotorValue(90);
-    m_servo_hr_2.attach(HR2_MOTOR, 500, 2500);
-    doPWMServo(100);
   }
-  //pinMode(FL1_MOTOR, OUTPUT);
-  m_motorEnabled[4] = true;
   m_motorAngleValue[4] = _limitMotorValue(90 - 30 + 45);
-  m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(FR1_MOTOR, OUTPUT);
-  m_motorEnabled[6] = true;
   m_motorAngleValue[6] = _limitMotorValue(90 + 30 - 45);
-  m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(RL1_MOTOR, OUTPUT);
-  m_motorEnabled[8] = true;
   m_motorAngleValue[8] = _limitMotorValue(90 - 30 + 45);
-  m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(RR1_MOTOR, OUTPUT);
-  m_motorEnabled[10] = true;
   m_motorAngleValue[10] = _limitMotorValue(90 + 30 - 45);
-  m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(FL2_MOTOR, OUTPUT);
-  m_motorEnabled[5] = true;
   m_motorAngleValue[5] = _limitMotorValue(90 + 30 - 45);
-  m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(FR2_MOTOR, OUTPUT);
-  m_motorEnabled[7] = true;
   m_motorAngleValue[7] = _limitMotorValue(90 - 30 + 45);
-  m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(RL2_MOTOR, OUTPUT);
-  m_motorEnabled[9] = true;
   m_motorAngleValue[9] = _limitMotorValue(90 + 30 - 45);
-  m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  doPWMServo(100);
-  //pinMode(RR2_MOTOR, OUTPUT);
-  m_motorEnabled[11] = true;
   m_motorAngleValue[11] = _limitMotorValue(90 - 30 + 45);
-  m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  doPWMServo(100);
+  // init servo
+  initServo();
   Serial.println(F("Start calibration"));
   // set calibration mode
   deviceMode = CALIBRATION_INFO;
@@ -449,34 +395,8 @@ bool doCalibration(allMotors * calibrationData) {
       case CALIBRATION_DONE:
       { 
         Serial.println(F("Done. Please wait."));
-        if (m_init.motorsCount == 12) {
-          m_motorEnabled[0] = false;
-          m_motorEnabled[1] = false;
-          m_servo_hl_1.detach();
-          m_servo_hl_2.detach();
-        }
-        if (m_init.motorsCount >= 10) {
-          m_motorEnabled[2] = false;
-          m_motorEnabled[3] = false;
-          m_servo_hr_1.detach();
-          m_servo_hr_2.detach();
-        }
-        m_motorEnabled[4] = false;
-        m_motorEnabled[6] = false;
-        m_motorEnabled[8] = false;
-        m_motorEnabled[10] = false;
-        m_motorEnabled[5] = false;
-        m_motorEnabled[7] = false;
-        m_motorEnabled[9] = false;
-        m_motorEnabled[11] = false;
-        m_servo_fl_1.detach();
-        m_servo_fr_1.detach();
-        m_servo_rl_1.detach();
-        m_servo_rr_1.detach();
-        m_servo_fl_2.detach();
-        m_servo_fr_2.detach();
-        m_servo_rl_2.detach();
-        m_servo_rr_2.detach();
+        // disable motors
+        detachServo();
         return true;
       }
       break;
