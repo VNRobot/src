@@ -86,7 +86,11 @@ void _readWire(float * regData, unsigned char code) {
   Wire.beginTransmission(0x68);
   Wire.write(code);
   Wire.endTransmission(false);
+#ifdef BOARD_ESP32
+  Wire.requestFrom((uint8_t)0x68, (size_t)6, true);
+#else
   Wire.requestFrom(0x68, 6, true);
+#endif
   regData[0] = Wire.read() << 8 | Wire.read();
   regData[1] = Wire.read() << 8 | Wire.read();
   regData[2] = Wire.read() << 8 | Wire.read();

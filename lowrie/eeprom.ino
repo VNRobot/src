@@ -7,10 +7,23 @@ Read and write eeprom for software version and calibration data
 
 #include <EEPROM.h>
 
+#define EEPROM_SIZE 13
+
+void initEEPROM(void) {
+#ifdef BOARD_ESP32
+  EEPROM.begin(EEPROM_SIZE);
+#endif
+}
+
 // write software version to eeprom
 void writeSoftwareVersionEeprom(unsigned char _version) {
   // software version address is 0
+#ifdef BOARD_ESP32
+  EEPROM.write(0, _version);
+  EEPROM.commit();
+#else
   EEPROM.update(0, _version);
+#endif
 }
 
 // read software version from eeprom
@@ -22,6 +35,21 @@ unsigned char readSoftwareVersionEeprom() {
 // write calibration to eeprom
 void writeCalibrationEeprom(allMotors calibration) {
   // calibration address is 1 to 12
+#ifdef BOARD_ESP32
+  EEPROM.write(1, (unsigned char)(calibration.hl.motor1 + 128));
+  EEPROM.write(2, (unsigned char)(calibration.hl.motor2 + 128));
+  EEPROM.write(3, (unsigned char)(calibration.hr.motor1 + 128));
+  EEPROM.write(4, (unsigned char)(calibration.hr.motor2 + 128));
+  EEPROM.write(5, (unsigned char)(calibration.fl.motor1 + 128));
+  EEPROM.write(6, (unsigned char)(calibration.fl.motor2 + 128));
+  EEPROM.write(7, (unsigned char)(calibration.fr.motor1 + 128));
+  EEPROM.write(8, (unsigned char)(calibration.fr.motor2 + 128));
+  EEPROM.write(9, (unsigned char)(calibration.rl.motor1 + 128));
+  EEPROM.write(10, (unsigned char)(calibration.rl.motor2 + 128));
+  EEPROM.write(11, (unsigned char)(calibration.rr.motor1 + 128));
+  EEPROM.write(12, (unsigned char)(calibration.rr.motor2 + 128));
+  EEPROM.commit();
+#else
   EEPROM.update(1, (unsigned char)(calibration.hl.motor1 + 128));
   EEPROM.update(2, (unsigned char)(calibration.hl.motor2 + 128));
   EEPROM.update(3, (unsigned char)(calibration.hr.motor1 + 128));
@@ -34,6 +62,7 @@ void writeCalibrationEeprom(allMotors calibration) {
   EEPROM.update(10, (unsigned char)(calibration.rl.motor2 + 128));
   EEPROM.update(11, (unsigned char)(calibration.rr.motor1 + 128));
   EEPROM.update(12, (unsigned char)(calibration.rr.motor2 + 128));
+#endif
 }
 
 // read calibration from eeprom

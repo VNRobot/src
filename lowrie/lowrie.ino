@@ -5,7 +5,7 @@ Arduino nano
 Main file
 */
 
-#include <Servo.h>
+//#define BOARD_ESP32
 
 // input state
 enum inState {
@@ -104,34 +104,6 @@ enum rState {
   ROBOT_RIGHT,
   ROBOT_HALT
 };
-// pin numbers for servo motors
-enum dPinsServo {
-  HL1_MOTOR = 2,
-  HL2_MOTOR = 3,
-  HR1_MOTOR = 4,
-  HR2_MOTOR = 5,
-  FL1_MOTOR = 6,
-  FL2_MOTOR = 7,
-  FR1_MOTOR = 8,
-  FR2_MOTOR = 9,
-  RL1_MOTOR = 10,
-  RL2_MOTOR = 11,
-  RR1_MOTOR = 12,
-  RR2_MOTOR = 13
-};
-// init servo library
-Servo m_servo_hl_1;
-Servo m_servo_hl_2;
-Servo m_servo_hr_1;
-Servo m_servo_hr_2;
-Servo m_servo_fl_1;
-Servo m_servo_fl_2;
-Servo m_servo_fr_1;
-Servo m_servo_fr_2;
-Servo m_servo_rl_1;
-Servo m_servo_rl_2;
-Servo m_servo_rr_1;
-Servo m_servo_rr_2;
 // structure for one leg motors
 struct motors {
   char motor1;
@@ -281,6 +253,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
+  initEEPROM();
   // check for Mode button press or if not calibrated
   if (_readButtonPress() || (m_init.versionEeprom != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
