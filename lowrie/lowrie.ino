@@ -5,8 +5,6 @@ Arduino nano
 Main file
 */
 
-//#define BOARD_ESP32
-
 // input state
 enum inState {
   IN_LOW_BATTERY,

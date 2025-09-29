@@ -5,11 +5,7 @@ Arduino nano
 Operates servo motors
 */
 
-#ifdef BOARD_ESP32
-#include <ESP32Servo.h>
-#else
 #include <Servo.h>
-#endif
 
 // pin numbers for servo motors
 enum dPinsServo {
