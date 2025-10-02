@@ -153,7 +153,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
 phase updateCountPatterns(unsigned char legShift) {
   // update sequence shift 
   mainCounter ++;
-  if (mainCounter >= m_init.fullCycle) {
+  if (mainCounter >= m_fullCycle) {
     mainCounter = 0;
     // update shift
     if (legShiftTemp < legShift) {
@@ -164,28 +164,28 @@ phase updateCountPatterns(unsigned char legShift) {
   }
   // rear legs
   legPhase.rr = mainCounter;
-  legPhase.rl = legPhase.rr + m_init.halfCycle;
+  legPhase.rl = legPhase.rr + m_halfCycle;
   legPhase.fl = mainCounter + legShiftTemp; 
-  legPhase.fr = legPhase.fl + m_init.halfCycle;
+  legPhase.fr = legPhase.fl + m_halfCycle;
   if (m_init.motorsCount == 12) {
     // 12 motors
     legPhase.hr = mainCounter + legShiftTemp * 2;
-    legPhase.hl = legPhase.hr + m_init.halfCycle;
-    if (legPhase.hl >= m_init.fullCycle) {
-      legPhase.hl -= m_init.fullCycle;
+    legPhase.hl = legPhase.hr + m_halfCycle;
+    if (legPhase.hl >= m_fullCycle) {
+      legPhase.hl -= m_fullCycle;
     }
-    if (legPhase.hr >= m_init.fullCycle) {
-      legPhase.hr -= m_init.fullCycle;
+    if (legPhase.hr >= m_fullCycle) {
+      legPhase.hr -= m_fullCycle;
     }
   }
-  if (legPhase.fl >= m_init.fullCycle) {
-    legPhase.fl -= m_init.fullCycle;
+  if (legPhase.fl >= m_fullCycle) {
+    legPhase.fl -= m_fullCycle;
   }
-  if (legPhase.fr >= m_init.fullCycle) {
-    legPhase.fr -= m_init.fullCycle;
+  if (legPhase.fr >= m_fullCycle) {
+    legPhase.fr -= m_fullCycle;
   }
-  if (legPhase.rl >= m_init.fullCycle) {
-    legPhase.rl -= m_init.fullCycle;
+  if (legPhase.rl >= m_fullCycle) {
+    legPhase.rl -= m_fullCycle;
   }
   // no need for rr
   return legPhase;

@@ -144,7 +144,7 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
   // fix slow drift
-  if ((sequenceCount == 0) || (sequenceCount == m_init.halfCycle)) {
+  if ((sequenceCount == 0) || (sequenceCount == m_halfCycle)) {
     if (gyroData.gyroAngleX > 0) {
       gyroData.gyroAngleX --;
     } else if (gyroData.gyroAngleX < 0) {

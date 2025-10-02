@@ -54,7 +54,6 @@ char forwardSetValue = 0;
 bool centerMotorReverse = false;
 // motor enabled flag
 bool motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
-// timer counter state
 
 // calculate motor angles
 char _calculateMotorAngle(int Hval, int Sval) {

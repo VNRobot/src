@@ -85,13 +85,13 @@ void _updatePitch(int angleY, unsigned char sCounter) {
 void _updateForwardBallance(accRoll gyroState) {
   if (gyroState.rollMax - gyroState.rollMin > 2) {
     // body rolls
-    if ((gyroState.rollMinTime < m_init.halfCycle) && (gyroState.rollMaxTime > m_init.halfCycle - 1)) {
+    if ((gyroState.rollMinTime < m_halfCycle) && (gyroState.rollMaxTime > m_halfCycle - 1)) {
       // front is too heavy
       if (centerForward > -20) {
         centerForward --;
       }
     }
-    if ((gyroState.rollMinTime > m_init.halfCycle - 1) && (gyroState.rollMaxTime < m_init.halfCycle)) {
+    if ((gyroState.rollMinTime > m_halfCycle - 1) && (gyroState.rollMaxTime < m_halfCycle)) {
       // rear is too heavy
       if (centerForward < 20) {
         centerForward ++;
