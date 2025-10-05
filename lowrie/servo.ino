@@ -55,23 +55,55 @@ bool centerMotorReverse = false;
 // motor enabled flag
 bool motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 
-// calculate motor angles
-char _calculateMotorAngle(int Hval, int Sval) {
-  // calculate Lvalue and angles
+// calculate motor 1 and motor 2 angles
+char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   float Lval = (float)Hval;
-  float AngleC = 0;
-  float AngleB = 0;
   float AngleA = 0;
-  Sval -= 16;
-  Lval = sqrt(Hval * Hval + Sval * Sval);
-  AngleC = (acos(Hval / Lval) * 180) / 3.14;
-  if (Sval < 0) {
-    AngleC = -AngleC;
+  float AngleB = 0;
+  float AngleC = 0;
+  float AngleX = 0;
+  float AngleY = 0;
+  if (m_init.motorVertical) {
+    if (motorNum == 1) {
+      // bottom motor
+      Lval = sqrt(Hval * Hval + Sval * Sval);
+      AngleC = (acos(Hval / Lval) * 180) / 3.14;
+      if (Sval < 0) {
+        AngleC = -AngleC;
+      }
+      //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
+      AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
+      AngleA = 90 - AngleB - AngleC;
+      return 90 - (char)AngleA;
+    } else {
+      // top motor
+      Lval = sqrt(Hval * Hval + Sval * Sval);
+      AngleC = (acos(Hval / Lval) * 180) / 3.14;
+      if (Sval < 0) {
+        AngleC = -AngleC;
+      }
+      //AngleY = (acos((Lval * Lval + 100 * 100 - 70 * 70) / (2 * Lval * 100)) * 180) / 3.14;
+      AngleY = (acos((Lval * Lval + 5100) / (Lval * 200)) * 180) / 3.14;
+      AngleX = 90 + AngleC - AngleY;
+      return 90 - (char)AngleX;
+    }
+  } else {
+    // for first motor mirror shift
+    if (motorNum == 1) {
+      Sval = -Sval;
+    }
+    // calculate Lvalue and angles
+    Sval -= 16;
+    Lval = sqrt(Hval * Hval + Sval * Sval);
+    AngleC = (acos(Hval / Lval) * 180) / 3.14;
+    if (Sval < 0) {
+      AngleC = -AngleC;
+    }
+    //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
+    AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
+    AngleA = 90 - AngleB - AngleC;
+    return (char)AngleA;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
-  AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
-  AngleA = 90 - AngleB - AngleC;
-  return (char)AngleA;
 }
 
 // linear motor move
@@ -91,8 +123,8 @@ void _moveLinearServo(allMotors calibration, short hi2, char fw2) {
     if ((forwardSetValue == fw2) && (hightSetValue == hi2)) {
       doLoop = false;
     }
-    char mValue1 = _calculateMotorAngle((int)hightSetValue, -(int)forwardSetValue);
-    char mValue2 = _calculateMotorAngle((int)hightSetValue, (int)forwardSetValue);
+    char mValue1 = _calculateMotorAngle((int)hightSetValue, (int)forwardSetValue, 1);
+    char mValue2 = _calculateMotorAngle((int)hightSetValue, (int)forwardSetValue, 2);
     if (m_init.motorsCount == 12) {
       m_motorAngleValue[0] = _limitMotorValue(90 - 30 + mValue1 + calibration.hl.motor1);
       m_motorAngleValue[1] = _limitMotorValue(90 + 30 - mValue2 - calibration.hl.motor2);
@@ -125,8 +157,10 @@ short _limitMotorValue(short mAngle) {
 void initValueServo(allMotors calibration, short hight, char forward) {
   hightInitValue = hight;
   forwardInitValue = forward;
-  char calM1 = _calculateMotorAngle((int)hight, -(int)forward);
-  char calM2 = _calculateMotorAngle((int)hight, (int)forward);
+  hightSetValue = hight;
+  forwardSetValue = forward;
+  char calM1 = _calculateMotorAngle((int)hight, (int)forward, 1);
+  char calM2 = _calculateMotorAngle((int)hight, (int)forward, 2);
   // set motors value
   if (m_init.motorsCount == 12) {
     m_motorAngleValue[0] = _limitMotorValue(90 - 30 + calM1 + calibration.hl.motor1);
@@ -251,19 +285,19 @@ void updateCenterServo(allMotors calibration, motors centerMotors) {
 // move leg motors.
 void updateLegsServo(allMotors calibration, allLegs legValue) {
   if (m_init.motorsCount == 12) {
-    m_motorAngleValue[0] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, -legValue.hl.shift - staticBallance.hl.shift) + calibration.hl.motor1));
-    m_motorAngleValue[1] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, legValue.hl.shift + staticBallance.hl.shift) + calibration.hl.motor2));
-    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, -legValue.hr.shift - staticBallance.hr.shift) + calibration.hr.motor1));
-    m_motorAngleValue[3] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, legValue.hr.shift + staticBallance.hr.shift)  + calibration.hr.motor2));
+    m_motorAngleValue[0] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, legValue.hl.shift + staticBallance.hl.shift, 1) + calibration.hl.motor1));
+    m_motorAngleValue[1] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.hl.hight + staticBallance.hl.hight, legValue.hl.shift + staticBallance.hl.shift, 2) + calibration.hl.motor2));
+    m_motorAngleValue[2] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, legValue.hr.shift + staticBallance.hr.shift, 1) + calibration.hr.motor1));
+    m_motorAngleValue[3] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.hr.hight + staticBallance.hr.hight, legValue.hr.shift + staticBallance.hr.shift, 2)  + calibration.hr.motor2));
   }
-  m_motorAngleValue[4] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, -legValue.fl.shift - staticBallance.fl.shift) + calibration.fl.motor1));
-  m_motorAngleValue[5] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, legValue.fl.shift + staticBallance.fl.shift)  + calibration.fl.motor2));
-  m_motorAngleValue[6] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.fr.hight + staticBallance.fr.hight, -legValue.fr.shift - staticBallance.fr.shift) + calibration.fr.motor1));
-  m_motorAngleValue[7] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.fr.hight + staticBallance.fr.hight, legValue.fr.shift + staticBallance.fr.shift)  + calibration.fr.motor2));
-  m_motorAngleValue[8] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.rl.hight + staticBallance.rl.hight, -legValue.rl.shift - staticBallance.rl.shift) + calibration.rl.motor1));
-  m_motorAngleValue[9] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.rl.hight + staticBallance.rl.hight, legValue.rl.shift + staticBallance.rl.shift)  + calibration.rl.motor2));
-  m_motorAngleValue[10] = _limitMotorValue(90 + 30 - (_calculateMotorAngle(legValue.rr.hight + staticBallance.rr.hight, -legValue.rr.shift - staticBallance.rr.shift) + calibration.rr.motor1));
-  m_motorAngleValue[11] = _limitMotorValue(90 - 30 + (_calculateMotorAngle(legValue.rr.hight + staticBallance.rr.hight, legValue.rr.shift + staticBallance.rr.shift)  + calibration.rr.motor2));
+  m_motorAngleValue[4] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, legValue.fl.shift + staticBallance.fl.shift, 1) + calibration.fl.motor1));
+  m_motorAngleValue[5] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.fl.hight + staticBallance.fl.hight, legValue.fl.shift + staticBallance.fl.shift, 2)  + calibration.fl.motor2));
+  m_motorAngleValue[6] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.fr.hight + staticBallance.fr.hight, legValue.fr.shift + staticBallance.fr.shift, 1) + calibration.fr.motor1));
+  m_motorAngleValue[7] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.fr.hight + staticBallance.fr.hight, legValue.fr.shift + staticBallance.fr.shift, 2)  + calibration.fr.motor2));
+  m_motorAngleValue[8] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.rl.hight + staticBallance.rl.hight, legValue.rl.shift + staticBallance.rl.shift, 1) + calibration.rl.motor1));
+  m_motorAngleValue[9] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.rl.hight + staticBallance.rl.hight, legValue.rl.shift + staticBallance.rl.shift, 2)  + calibration.rl.motor2));
+  m_motorAngleValue[10] = _limitMotorValue(120 - (_calculateMotorAngle(legValue.rr.hight + staticBallance.rr.hight, legValue.rr.shift + staticBallance.rr.shift, 1) + calibration.rr.motor1));
+  m_motorAngleValue[11] = _limitMotorValue(60 + (_calculateMotorAngle(legValue.rr.hight + staticBallance.rr.hight, legValue.rr.shift + staticBallance.rr.shift, 2)  + calibration.rr.motor2));
 }
 
 // do servo pwm cycle 500, 2500

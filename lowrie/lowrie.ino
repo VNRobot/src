@@ -174,6 +174,7 @@ typedef struct robotSetup {
   bool sensorsInputsEnabled; // sensors enabled flag
   bool centerMotorsEnabled; // center mototor enabled
   bool stepSteeringEnabled; // step steering enabled
+  bool motorVertical; // vertical configuration of motors
 } robotSetup;
 // robot state structure
 typedef struct robotState {
@@ -215,20 +216,20 @@ unsigned char i;
 //-------------global variables---------------------------
 // init data structure
 // 10 motors small robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-robotSetup m_init = {54,           10,         0,         10,             10,           1800,           42,                 130,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
+//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
+robotSetup m_init = {54,           10,         0,         8,             8,            1800,           42,                 130,         0,                    2,             false,              false,               false,                 false,               true,                true,               false,              false};
 // 12 motors small robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           12,         4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
+//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
+//robotSetup m_init = {54,           12,         4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true,            false};
 // 8 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,            8,         0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
+//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
+//robotSetup m_init = {54,            8,         0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true,             false};
 // 10 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           10,         0,         20,            20,           2500,           50,                 125,         5,                    2,             false,              false,               false,                 false,               true,                true,               false};
+//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
+//robotSetup m_init = {54,           10,         0,         20,            20,           2500,           50,                 125,         5,                    2,             false,              false,               false,                 false,               true,                true,               false,            false};
 // 12 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           12,         4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true};
+//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
+//robotSetup m_init = {54,           12,         4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true,             false};
 //----------------------------------------------------------
 // robot state          robotStateNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow
 robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
