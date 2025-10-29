@@ -153,10 +153,10 @@ touch getTouchInputs(void) {
 // process distances
 unsigned char getSensorState(unsigned short input) {
   if (m_init.sensorsInputsEnabled) {
-    if (input < (m_init.normalInputDistance * 4)) { // no edge
-      if (input > (m_init.normalInputDistance / 6)) { // not blocked
-        if (input > (m_init.normalInputDistance / 3)) { // no wall
-          if (input > (m_init.normalInputDistance / 2)) { // no obstacle
+    if (input < (m_robotState.inputDistanceNow * 4)) { // no edge
+      if (input > (m_robotState.inputDistanceNow / 6)) { // not blocked
+        if (input > (m_robotState.inputDistanceNow / 3)) { // no wall
+          if (input > (m_robotState.inputDistanceNow / 2)) { // no obstacle
             return SEN_NORMAL;
           } else {
             // obstacle

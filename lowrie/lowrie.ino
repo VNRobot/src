@@ -53,6 +53,9 @@ enum rPatterns {
   P_LONGDELAY,
   P_CRAWLSTART,
   P_CRAWLSTOP,
+  P_SWIMSTART,
+  P_SWIMSTOP,
+  P_REPEAT,
   P_END
 };
 // tasks
@@ -188,11 +191,12 @@ typedef struct robotState {
   char forwardBallanceNow; // bigger the number more weight on front
   char centerMotorValueNow;
   bool stepSteeringNow;
+  unsigned char inputDistanceNow;
 } robotState;
 
 // main pattern counter
 unsigned char m_fullCycle = 36; 
-unsigned char m_halfCycle = 18;
+unsigned char m_halfCycle = m_fullCycle / 2;
 // motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // inputs state defined in inState
@@ -213,6 +217,8 @@ unsigned char taskNow = STAND_TASK;
 unsigned char taskNext = STAND_TASK;
 // variable for temporary use
 unsigned char i;
+// center motor direction max angle. for lowrie is 10
+unsigned char m_maxCenterTurn = 30;
 //-------------global variables---------------------------
 // init data structure
 // 10 motors small robot
@@ -226,13 +232,13 @@ robotSetup m_init = {54,           10,         0,         8,             8,     
 //robotSetup m_init = {54,            8,         0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true,             false};
 // 10 motors big robot
 //        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
-//robotSetup m_init = {54,           10,         0,         20,            20,           2500,           50,                 125,         5,                    2,             false,              false,               false,                 false,               true,                true,               false,            false};
+//robotSetup m_init = {54,           10,         0,         30,            40,           2500,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false,              false};
 // 12 motors big robot
 //        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled motorVertical;
-//robotSetup m_init = {54,           12,         4,         30,            60,           2500,           50,                 125,         10,                   2,             false,              false,               false,                 false,               true,                false,              true,             false};
+//robotSetup m_init = {54,           12,         0,         30,            40,           2500,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true,               false};
 //----------------------------------------------------------
-// robot state          robotStateNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow
-robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled};
+// robot state          robotStateNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow  inputDistanceNow
+robotState m_robotState = {ROBOT_NORM, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled, m_init.normalInputDistance / 2};
 // servo motor value
 short m_motorAngleValue[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -380,12 +386,24 @@ void loop() {
       {
         m_robotState.centerMotorValueNow = 50;
         m_robotState.legLiftNow = 80;
+        m_robotState.inputDistanceNow = m_init.normalInputDistance / 2;
       }
       break;
       case P_CRAWLSTOP:
       {
         m_robotState.centerMotorValueNow = 0;
         m_robotState.legLiftNow = 40;
+        m_robotState.inputDistanceNow = m_init.normalInputDistance;
+      }
+      break;
+      case P_SWIMSTART:
+      {
+        m_halfCycle = 0;
+      }
+      break;
+      case P_SWIMSTOP:
+      {
+        m_halfCycle = m_fullCycle / 2;
       }
       break;
       case P_SHORTDELAY:

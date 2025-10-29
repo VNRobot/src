@@ -246,11 +246,11 @@ char getDirectionGyro(void) {
 // get walking direction correction from gyroscope
 char getDirectionCorrectionGyro(void) {
   // maximal direction correction is 5
-  if (gyroData.yaw > 10) {
-    return 10;
+  if (gyroData.yaw > m_maxCenterTurn / 4) {
+    return m_maxCenterTurn / 4;
   }
-  if (gyroData.yaw < -10) {
-    return -10;
+  if (gyroData.yaw < -m_maxCenterTurn / 4) {
+    return -m_maxCenterTurn / 4;
   }
   return (char)(gyroData.yaw);
 }

@@ -25,20 +25,20 @@ bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultT
   centerPatternBuffer = currentPattern;
   // remember center default target
   if (centerDefaultTarget > centerDefault) {
-    if ((centerDefaultTarget - centerDefault) > 10) {
-      centerDefault += 10;
+    if ((centerDefaultTarget - centerDefault) > m_maxCenterTurn) {
+      centerDefault += m_maxCenterTurn;
     } else {
       centerDefault = centerDefaultTarget;
     }
   }
   if (centerDefaultTarget < centerDefault) {
-    if ((centerDefault - centerDefaultTarget) > 10) {
-      centerDefault -= 10;
+    if ((centerDefault - centerDefaultTarget) > m_maxCenterTurn) {
+      centerDefault -= m_maxCenterTurn;
     } else {
       centerDefault = centerDefaultTarget;
     }
   }
-  if ((centerDefault > 30) || (centerDefault < -20)) {
+  if ((centerDefault > m_maxCenterTurn) || (centerDefault < -m_maxCenterTurn)) {
     centerTurnF = 0;
     centerTurnR = 0;
     return true;
@@ -57,30 +57,30 @@ bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultT
     case P_GOLEFT:
     case P_GOBACKLEFT:
     {
-      centerTurnF = -20;
-      centerTurnR = -20;
+      centerTurnF = -m_maxCenterTurn;
+      centerTurnR = -m_maxCenterTurn;
     }
     break;
     case P_STANDGORIGHT:
     case P_GORIGHT:
     case P_GOBACKRIGHT:
     {
-      centerTurnF = 20;
-      centerTurnR = 20;
+      centerTurnF = m_maxCenterTurn;
+      centerTurnR = m_maxCenterTurn;
     }
     break;
     case P_STANDGOSHIFTLEFT:
     case P_GOSHIFTLEFT:
     {
-      centerTurnF = -20;
-      centerTurnR = 20;
+      centerTurnF = -m_maxCenterTurn;
+      centerTurnR = m_maxCenterTurn;
     }
     break;
     case P_STANDGOSHIFTRIGHT:
     case P_GOSHIFTRIGHT:
     {
-      centerTurnF = 20;
-      centerTurnR = -20;
+      centerTurnF = m_maxCenterTurn;
+      centerTurnR = -m_maxCenterTurn;
     }
     break;
     default:

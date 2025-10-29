@@ -58,34 +58,22 @@ bool motorEnabled[12] = {false, false, false, false, false, false, false, false,
 // calculate motor 1 and motor 2 angles
 char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   float Lval = (float)Hval;
-  float AngleA = 0;
   float AngleB = 0;
   float AngleC = 0;
-  float AngleX = 0;
-  float AngleY = 0;
   if (m_init.motorVertical) {
+    Lval = sqrt(Hval * Hval + Sval * Sval);
+    AngleC = (acos(Hval / Lval) * 180) / 3.14;
+    if (Sval < 0) {
+      AngleC = -AngleC;
+    }
+    //AngleB = (acos(Lval / (2 * 70)) * 180) / 3.14;
+    AngleB = (acos(Lval / 140) * 180) / 3.14;
     if (motorNum == 1) {
       // bottom motor
-      Lval = sqrt(Hval * Hval + Sval * Sval);
-      AngleC = (acos(Hval / Lval) * 180) / 3.14;
-      if (Sval < 0) {
-        AngleC = -AngleC;
-      }
-      //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
-      AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
-      AngleA = 90 - AngleB - AngleC;
-      return 90 - (char)AngleA;
+      return (char)(AngleB + AngleC);
     } else {
       // top motor
-      Lval = sqrt(Hval * Hval + Sval * Sval);
-      AngleC = (acos(Hval / Lval) * 180) / 3.14;
-      if (Sval < 0) {
-        AngleC = -AngleC;
-      }
-      //AngleY = (acos((Lval * Lval + 100 * 100 - 70 * 70) / (2 * Lval * 100)) * 180) / 3.14;
-      AngleY = (acos((Lval * Lval + 5100) / (Lval * 200)) * 180) / 3.14;
-      AngleX = 90 + AngleC - AngleY;
-      return 90 - (char)AngleX;
+      return (char)(AngleB - AngleC);
     }
   } else {
     // for first motor mirror shift
@@ -101,8 +89,7 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
     }
     //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
     AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
-    AngleA = 90 - AngleB - AngleC;
-    return (char)AngleA;
+    return (char)(90 - AngleB - AngleC);
   }
 }
 

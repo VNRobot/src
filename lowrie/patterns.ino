@@ -212,8 +212,14 @@ allLegs getWalkPatterns(void) {
   leg legSet;
   switch (taskItemBuffer) {
     case P_STANDTOGO:
+    {
+      m_robotState.inputDistanceNow = m_init.normalInputDistance;
+      _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
+    }
+    break;
     case P_GOTOSTAND:
     {
+      m_robotState.inputDistanceNow = m_init.normalInputDistance / 2;
       _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
     }
     break;
