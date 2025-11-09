@@ -38,7 +38,7 @@ bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultT
       centerDefault = centerDefaultTarget;
     }
   }
-  if ((centerDefault > m_maxCenterTurn) || (centerDefault < -m_maxCenterTurn)) {
+  if ((centerDefault > m_maxCenterTurn * 2) || (centerDefault < -m_maxCenterTurn * 2)) {
     centerTurnF = 0;
     centerTurnR = 0;
     return true;

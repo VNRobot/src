@@ -24,21 +24,23 @@ void _setBeginTask(void) {
   currentTask[4] = P_STANDTOGO;
   currentTask[5] = P_STANDGO;
   currentTask[6] = P_REPEAT;
-  currentTask[7] = P_LONGDELAY;
-  currentTask[8] = P_GOFORWARD;
-  currentTask[9] = P_REPEAT;
-  currentTask[10] = P_CRAWLSTART;
-  currentTask[11] = P_REPEAT;
+  currentTask[7] = P_GOFORWARD;
+  currentTask[8] = P_REPEAT;
+  currentTask[9] = P_CRAWLSTART;
+  currentTask[10] = P_LONGDELAY;
+  currentTask[11] = P_GOFORWARD;
   currentTask[12] = P_REPEAT;
-  currentTask[13] = P_SWIMSTART;
-  currentTask[14] = P_REPEAT;
-  currentTask[15] = P_REPEAT;
+  currentTask[13] = P_REPEAT;
+  currentTask[14] = P_SWIMSTART;
+  currentTask[15] = P_GOFORWARD;
   currentTask[16] = P_REPEAT;
-  currentTask[17] = P_SWIMSTOP;
+  currentTask[17] = P_REPEAT;
   currentTask[18] = P_REPEAT;
-  currentTask[19] = P_CRAWLSTOP;
-  currentTask[20] = P_REPEAT;
-  currentTask[21] = P_DONE;
+  currentTask[19] = P_SWIMSTOP;
+  currentTask[20] = P_CRAWLSTOP;
+  currentTask[21] = P_SHORTDELAY;
+  currentTask[22] = P_GOFORWARD;
+  currentTask[23] = P_DONE;
 }
 
 // set down task
@@ -274,7 +276,9 @@ void applyTask(unsigned char task) {
     default:
     break;
   }
+  repeatCounter = 0;
   currentTaskPoint = 0;
+  patternInTaskBuffer = currentTask[currentTaskPoint];
 }
 
 // get next pattern in task
@@ -282,35 +286,25 @@ unsigned char getNextPatternInTask(void) {
   // update task point to the next pattern
   if (currentTask[currentTaskPoint] == P_DONE) {
     // task is done. do nothing
+    patternInTaskBuffer = P_DONE;
+    return patternInTaskBuffer;
+  }
+  if ((currentTask[currentTaskPoint] == P_REPEAT) && (repeatCounter < repeatCounterEnd)) {
+    // update repeat counter
+    repeatCounter ++;
+    return patternInTaskBuffer;
+  } 
+  // generic pattern
+  repeatCounter = 0;
+  currentTaskPoint ++;
+  if (currentTask[currentTaskPoint] != P_REPEAT) {
     patternInTaskBuffer = currentTask[currentTaskPoint];
-  } else {
-    if (currentTask[currentTaskPoint] == P_REPEAT) {
-      // do repeat
-      if (repeatCounter < repeatCounterEnd) {
-        // update repeat counter
-        repeatCounter ++;
-      } else {
-        repeatCounter = 0;
-        currentTaskPoint ++;
-        patternInTaskBuffer = currentTask[currentTaskPoint];
-      }
-    } else {
-      // generic pattern
-      currentTaskPoint ++;
-      repeatCounter = 0;
-      patternInTaskBuffer = currentTask[currentTaskPoint];
-    }
   }
   return patternInTaskBuffer;
 }
 
 // get pattern in task
 unsigned char getPatternInTask(void) {
-  if (currentTaskPoint == 0) {
-    if (currentTask[currentTaskPoint] != P_REPEAT) {
-      patternInTaskBuffer = currentTask[currentTaskPoint];
-    }
-  }
   return patternInTaskBuffer;
 }
 /*

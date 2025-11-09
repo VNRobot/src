@@ -17,11 +17,13 @@ bool walkingMode = false;
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
-// walk and lift                                                                         -
-char mLiftHFlag[36]     = { 1,  1,  1,  1,  3,  5, 10, 10, 10,10,10,10,10,10,20,80,80,80,80,80,80,80,80,80,20,10,10,10,10,10,10,10,10, 2, 1, 1};
-char mPointWalk[36]     = { 0, -5,-10,-15,-14,-13,-12,-11,-10,-9,-8,-7,-6,-5,-4,-3,-2,-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,10, 5};
-short mRecoverDown[36] = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 30, 30, 30, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 125};
-short mRecoverUp[36]   = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 90, 100, 110, 120, 125};
+// walk and lift                                                                                                 -
+short mLiftHFlag[36]       = {  1,  1,  1,  1,  3,  5,  10,  10,  10,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10, 10, 10, 10,  10,  10,   2,  1,   1};
+char mPointWalk[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
+short mLiftHFlagSwim[36]   = {  1,  1,  1,  1,  1,  1,   1,   1,   1,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10,  2,  1,  1,   1,   1,   1,  1,   1};
+char mPointWalkSwim[36]    = {  0, -2, -4, -6, -8,-10, -12, -14, -16, -18, -16, -14, -12, -10,  -8,  -6,  -4,  -2,   0,   2,   4,   6,   8,  10, 12, 14, 16, 18, 16, 14, 12,  10,   8,   6,  4,   2};
+short mRecoverDown[36]     = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 40, 50, 60, 70, 80,  90, 100, 110,120, 125};
+short mRecoverUp[36]       = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,  80,  80,  80,  80, 80, 80, 80, 80, 80, 80, 80,  90, 100, 110,120, 125};
 // pattern item buffer
 unsigned char taskItemBuffer = P_DOSTAND;
 // legshift temp value for transition
@@ -274,23 +276,39 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   switch (speedValue) {
     case -1:
     {
-      shift =  - mPointWalk[counter];
+      if (m_robotState.smoothNow) {
+        shift =  - mPointWalkSwim[counter];
+      } else {
+        shift =  - mPointWalk[counter];
+      }
     }
     break;
     case 1:
     {
-      shift = mPointWalk[counter];
+      if (m_robotState.smoothNow) {
+        shift = mPointWalkSwim[counter];
+      } else {
+        shift = mPointWalk[counter];
+      }
     }
     break;
     case 2:
     {
-      shift = mPointWalk[counter] * 2;
+      if (m_robotState.smoothNow) {
+         shift = mPointWalkSwim[counter] * 2;
+     } else {
+        shift = mPointWalk[counter] * 2;
+      }
     }
     break;
     default:
     break;
   }
-  legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
+  if (m_robotState.smoothNow) {
+    legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlagSwim[counter]);
+  } else {
+    legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
+  }
   legStep.shift = shift * m_init.speedMuliplier;
   return legStep;
 }
