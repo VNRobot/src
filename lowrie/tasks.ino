@@ -23,24 +23,9 @@ void _setBeginTask(void) {
   currentTask[3] = P_RESETGIRO;
   currentTask[4] = P_STANDTOGO;
   currentTask[5] = P_STANDGO;
-  currentTask[6] = P_REPEAT;
+  currentTask[6] = P_STANDGO;
   currentTask[7] = P_GOFORWARD;
-  currentTask[8] = P_REPEAT;
-  currentTask[9] = P_CRAWLSTART;
-  currentTask[10] = P_LONGDELAY;
-  currentTask[11] = P_GOFORWARD;
-  currentTask[12] = P_REPEAT;
-  currentTask[13] = P_REPEAT;
-  currentTask[14] = P_SWIMSTART;
-  currentTask[15] = P_GOFORWARD;
-  currentTask[16] = P_REPEAT;
-  currentTask[17] = P_REPEAT;
-  currentTask[18] = P_REPEAT;
-  currentTask[19] = P_SWIMSTOP;
-  currentTask[20] = P_CRAWLSTOP;
-  currentTask[21] = P_SHORTDELAY;
-  currentTask[22] = P_GOFORWARD;
-  currentTask[23] = P_DONE;
+  currentTask[8] = P_DONE;
 }
 
 // set down task

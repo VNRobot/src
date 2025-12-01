@@ -60,6 +60,8 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   float Lval = (float)Hval;
   float AngleB = 0;
   float AngleC = 0;
+  // not in use for now
+  /*
   if (m_init.motorVertical) {
     Lval = sqrt(Hval * Hval + Sval * Sval);
     AngleC = (acos(Hval / Lval) * 180) / 3.14;
@@ -75,22 +77,22 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
       // top motor
       return (char)(AngleB - AngleC);
     }
-  } else {
-    // for first motor mirror shift
-    if (motorNum == 1) {
-      Sval = -Sval;
-    }
-    // calculate Lvalue and angles
-    Sval -= 16;
-    Lval = sqrt(Hval * Hval + Sval * Sval);
-    AngleC = (acos(Hval / Lval) * 180) / 3.14;
-    if (Sval < 0) {
-      AngleC = -AngleC;
-    }
-    //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
-    AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
-    return (char)(90 - AngleB - AngleC);
   }
+  */
+  // for first motor mirror shift
+  if (motorNum == 1) {
+    Sval = -Sval;
+  }
+  // calculate Lvalue and angles
+  Sval -= 16;
+  Lval = sqrt(Hval * Hval + Sval * Sval);
+  AngleC = (acos(Hval / Lval) * 180) / 3.14;
+  if (Sval < 0) {
+    AngleC = -AngleC;
+  }
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;
+  AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
+  return (char)(90 - AngleB - AngleC);
 }
 
 // linear motor move

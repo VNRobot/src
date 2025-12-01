@@ -10,7 +10,7 @@ unsigned char mainCounter = 0;
 // leg values for 4 legs
 allLegs legsValue = {125, 0, 125, 0, 125, 0, 125, 0, 125, 0, 125, 0};
 // leg phase
-phase legPhase = {0, 0, 0, 0, 0, 0};
+phase legPhase = {0, 0, 0, 0, 0, 0, 0};
 // walking mode
 bool walkingMode = false;
 // speed relative value from -1 to 2
@@ -20,8 +20,13 @@ char speedR = 0;
 // walk and lift                                                                                                 -
 short mLiftHFlag[36]       = {  1,  1,  1,  1,  3,  5,  10,  10,  10,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10, 10, 10, 10,  10,  10,   2,  1,   1};
 char mPointWalk[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
+// ino
+short mLiftHFlagIno[36]       = {  1,  1,  1,  1, 10, 10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10, 10, 10, 10, 10, 10, 10, 10,  10,  10,  10,  1,   1};
+char mPointWalkIno[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
+// swim
 short mLiftHFlagSwim[36]   = {  1,  1,  1,  1,  1,  1,   1,   1,   1,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10,  2,  1,  1,   1,   1,   1,  1,   1};
 char mPointWalkSwim[36]    = {  0, -2, -4, -6, -8,-10, -12, -14, -16, -18, -16, -14, -12, -10,  -8,  -6,  -4,  -2,   0,   2,   4,   6,   8,  10, 12, 14, 16, 18, 16, 14, 12,  10,   8,   6,  4,   2};
+// recover
 short mRecoverDown[36]     = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 40, 50, 60, 70, 80,  90, 100, 110,120, 125};
 short mRecoverUp[36]       = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,  80,  80,  80,  80, 80, 80, 80, 80, 80, 80, 80,  90, 100, 110,120, 125};
 // pattern item buffer
@@ -164,15 +169,24 @@ phase updateCountPatterns(unsigned char legShift) {
       legShiftTemp --;
     }
   }
-  // rear legs
-  legPhase.rr = mainCounter;
-  legPhase.rl = legPhase.rr + m_halfCycle;
-  legPhase.fl = mainCounter + legShiftTemp; 
-  legPhase.fr = legPhase.fl + m_halfCycle;
+  legPhase.m = mainCounter;
+  if (m_robotState.robotStateNow == ROBOT_INO) {
+    // ino walk
+    legPhase.rr = mainCounter;
+    legPhase.rl = legPhase.rr + m_robotState.halfCycleNow;
+    legPhase.fl = mainCounter + legShift; 
+    legPhase.fr = legPhase.fl + m_robotState.halfCycleNow;
+  } else {
+    // regular walk
+    legPhase.rr = mainCounter;
+    legPhase.rl = legPhase.rr + m_robotState.halfCycleNow;
+    legPhase.fl = mainCounter + legShiftTemp; 
+    legPhase.fr = legPhase.fl + m_robotState.halfCycleNow;
+  }
   if (m_init.motorsCount == 12) {
     // 12 motors
     legPhase.hr = mainCounter + legShiftTemp * 2;
-    legPhase.hl = legPhase.hr + m_halfCycle;
+    legPhase.hl = legPhase.hr + m_robotState.halfCycleNow;
     if (legPhase.hl >= m_fullCycle) {
       legPhase.hl -= m_fullCycle;
     }
@@ -188,6 +202,9 @@ phase updateCountPatterns(unsigned char legShift) {
   }
   if (legPhase.rl >= m_fullCycle) {
     legPhase.rl -= m_fullCycle;
+  }
+  if (legPhase.rr >= m_fullCycle) {
+    legPhase.rr -= m_fullCycle;
   }
   // no need for rr
   return legPhase;
@@ -276,38 +293,54 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   switch (speedValue) {
     case -1:
     {
-      if (m_robotState.smoothNow) {
+      if (m_robotState.robotStateNow == ROBOT_SWIM) {
         shift =  - mPointWalkSwim[counter];
       } else {
-        shift =  - mPointWalk[counter];
+        if (m_robotState.robotStateNow == ROBOT_INO) {
+          shift =  - mPointWalkIno[counter];
+        } else {
+          shift =  - mPointWalk[counter];
+        }
       }
     }
     break;
     case 1:
     {
-      if (m_robotState.smoothNow) {
+      if (m_robotState.robotStateNow == ROBOT_SWIM) {
         shift = mPointWalkSwim[counter];
       } else {
-        shift = mPointWalk[counter];
+        if (m_robotState.robotStateNow == ROBOT_INO) {
+          shift = mPointWalkIno[counter];
+        } else {
+          shift = mPointWalk[counter];
+        }
       }
     }
     break;
     case 2:
     {
-      if (m_robotState.smoothNow) {
+      if (m_robotState.robotStateNow == ROBOT_SWIM) {
          shift = mPointWalkSwim[counter] * 2;
-     } else {
-        shift = mPointWalk[counter] * 2;
+      } else {
+        if (m_robotState.robotStateNow == ROBOT_INO) {
+          shift = mPointWalkIno[counter] * 2;
+        } else {
+          shift = mPointWalk[counter] * 2;
+        }
       }
     }
     break;
     default:
     break;
   }
-  if (m_robotState.smoothNow) {
+  if (m_robotState.robotStateNow == ROBOT_SWIM) {
     legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlagSwim[counter]);
   } else {
-    legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
+    if (m_robotState.robotStateNow == ROBOT_INO) {
+      legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlagIno[counter]);
+    } else {
+      legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
+    }
   }
   legStep.shift = shift * m_init.speedMuliplier;
   return legStep;
