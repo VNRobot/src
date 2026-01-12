@@ -17,6 +17,16 @@ struct surface {
 // touch map 0 - lifted, 1 - touched, 2 - any, 3 - reset
 char mTouchFlag[36]     = { 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 0};
 //char mLiftHFlag[36]   = { 3, 3, 3, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3};
+//----------------configuration flags-----------------
+// roll ballance enable flag
+bool rollBallanceEnabled = false;
+// pitch ballance enable flag 
+bool pitchBallanceEnabled = false;
+// forward ballance enable flag
+bool forwardBallanceEnabled = false; 
+// touch enable flag
+bool touchBallanceEnabled = false; 
+//----------------------------------------------------
 
 // ballance correction
 allLegs legCorrect = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -85,13 +95,13 @@ void _updatePitch(int angleY, unsigned char sCounter) {
 void _updateForwardBallance(accRoll gyroState) {
   if (gyroState.rollMax - gyroState.rollMin > 2) {
     // body rolls
-    if ((gyroState.rollMinTime < m_fullCycle / 2) && (gyroState.rollMaxTime > m_fullCycle / 2 - 1)) {
+    if ((gyroState.rollMinTime < SERVO_HALF_CYCLE) && (gyroState.rollMaxTime > SERVO_HALF_CYCLE - 1)) {
       // front is too heavy
       if (centerForward > -20) {
         centerForward --;
       }
     }
-    if ((gyroState.rollMinTime > m_fullCycle / 2 - 1) && (gyroState.rollMaxTime < m_fullCycle / 2)) {
+    if ((gyroState.rollMinTime > SERVO_HALF_CYCLE - 1) && (gyroState.rollMaxTime < SERVO_HALF_CYCLE)) {
       // rear is too heavy
       if (centerForward < 20) {
         centerForward ++;
@@ -168,19 +178,19 @@ void _updateTouch(phase sCounter, touch touchInputs) {
 
 allLegs getStaticBallance(accRoll gyroState, phase sCounter, touch touchInputs, bool walkingMode) {
   // roll
-  if (m_init.rollBallanceEnabled) {
-    _updateRoll(gyroState.accAngleX, sCounter.rr);
+  if (rollBallanceEnabled) {
+    _updateRoll(gyroState.accAngleX, sCounter.m);
   }
   // pitch
-  if (m_init.pitchBallanceEnabled) {
-    _updatePitch(gyroState.accAngleY, sCounter.rr);
+  if (pitchBallanceEnabled) {
+    _updatePitch(gyroState.accAngleY, sCounter.m);
   }
   // forward ballance
-  if (m_init.forwardBallanceEnabled && sCounter.rr == 0 && walkingMode) {
+  if (forwardBallanceEnabled && sCounter.m == 0 && walkingMode) {
     _updateForwardBallance(gyroState);
   }
   // touch inputs
-  if (m_init.touchBallanceEnabled && walkingMode) {
+  if (touchBallanceEnabled && walkingMode) {
     _updateTouch(sCounter, touchInputs);
   }
   if (m_init.motorsCount == 12) {

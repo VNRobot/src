@@ -16,10 +16,6 @@ enum calMode {
   CALIBRATION_DONE = 6
 };
 
-// auto calibration enabled
-bool autoCalibrationEnabled = true;
-// calibration current
-unsigned short calibrationCurrent = 640; //ma
 // calibration counter
 unsigned char calibrationCounter = 0;
 // calibration stage
@@ -91,9 +87,9 @@ void _calibrateMotor1(motors * calibrationSet, short current) {
     calibrationSet->motor1 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
+    if ((modePressed) || (current > CALIBRATION_CURRENT)) {
       modePressed = false;
-      if ((current > calibrationCurrent) && autoCalibrationEnabled) {
+      if (current > CALIBRATION_CURRENT) {
         calibrationSet->motor1 -= 15;
       }
       calibrationCounter = 0;
@@ -113,9 +109,9 @@ void _calibrateMotor2(motors * calibrationSet, short current) {
     calibrationSet->motor2 = -30;
     calibrationCounter ++;
   } else {
-    if ((modePressed) || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
+    if ((modePressed) || (current > CALIBRATION_CURRENT)) {
       modePressed = false;
-      if ((current > calibrationCurrent) && autoCalibrationEnabled) {
+      if (current > CALIBRATION_CURRENT) {
         calibrationSet->motor2 -= 15;
       }
       calibrationCounter = 0;
@@ -137,22 +133,22 @@ bool doCalibration(allMotors * calibrationData) {
   delay(20);
   // set motors value
   if (m_init.motorsCount == 12) {
-    m_motorAngleValue[0] = _limitMotorValue(90 - 30 + 45);
-    m_motorAngleValue[1] = _limitMotorValue(90 + 30 - 45);
-    m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 45);
-    m_motorAngleValue[3] = _limitMotorValue(90 - 30 + 45);
+    m_motorAngleValue[0] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
+    m_motorAngleValue[1] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+    m_motorAngleValue[2] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+    m_motorAngleValue[3] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
   } else if (m_init.motorsCount == 10) {
     m_motorAngleValue[2] = _limitMotorValue(90);
     m_motorAngleValue[3] = _limitMotorValue(90);
   }
-  m_motorAngleValue[4] = _limitMotorValue(90 - 30 + 45);
-  m_motorAngleValue[6] = _limitMotorValue(90 + 30 - 45);
-  m_motorAngleValue[8] = _limitMotorValue(90 - 30 + 45);
-  m_motorAngleValue[10] = _limitMotorValue(90 + 30 - 45);
-  m_motorAngleValue[5] = _limitMotorValue(90 + 30 - 45);
-  m_motorAngleValue[7] = _limitMotorValue(90 - 30 + 45);
-  m_motorAngleValue[9] = _limitMotorValue(90 + 30 - 45);
-  m_motorAngleValue[11] = _limitMotorValue(90 - 30 + 45);
+  m_motorAngleValue[4] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[5] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[6] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[7] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[8] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[9] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[10] = _limitMotorValue(90 - (MOTOR_CORRECTION + 45));
+  m_motorAngleValue[11] = _limitMotorValue(90 + (MOTOR_CORRECTION + 45));
   // init servo
   initServo();
   Serial.println(F("Start calibration"));
@@ -161,22 +157,22 @@ bool doCalibration(allMotors * calibrationData) {
   // do loop
   while (true) {
     if (m_init.motorsCount == 12) {
-      m_motorAngleValue[0] = _limitMotorValue(90 - 30 + 90 + calibrationData->hl.motor1);
-      m_motorAngleValue[1] = _limitMotorValue(90 + 30 - 90 - calibrationData->hl.motor2);
-      m_motorAngleValue[2] = _limitMotorValue(90 + 30 - 90 - calibrationData->hr.motor1);
-      m_motorAngleValue[3] = _limitMotorValue(90 - 30 + 90 + calibrationData->hr.motor2);
+      m_motorAngleValue[0] = _limitMotorValue(90 + calibrationData->hl.motor1 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+      m_motorAngleValue[1] = _limitMotorValue(90 - calibrationData->hl.motor2 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+      m_motorAngleValue[2] = _limitMotorValue(90 - calibrationData->hr.motor1 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+      m_motorAngleValue[3] = _limitMotorValue(90 + calibrationData->hr.motor2 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
     } else if (m_init.motorsCount == 10) {
       m_motorAngleValue[2] = _limitMotorValue(90 - calibrationData->hr.motor1);
       m_motorAngleValue[3] = _limitMotorValue(90 - calibrationData->hr.motor2);
     }
-    m_motorAngleValue[4] = _limitMotorValue(90 - 30 + 90 + calibrationData->fl.motor1);
-    m_motorAngleValue[5] = _limitMotorValue(90 + 30 - 90 - calibrationData->fl.motor2);
-    m_motorAngleValue[6] = _limitMotorValue(90 + 30 - 90 - calibrationData->fr.motor1);
-    m_motorAngleValue[7] = _limitMotorValue(90 - 30 + 90 + calibrationData->fr.motor2);
-    m_motorAngleValue[8] = _limitMotorValue(90 - 30 + 90 + calibrationData->rl.motor1);
-    m_motorAngleValue[9] = _limitMotorValue(90 + 30 - 90 - calibrationData->rl.motor2);
-    m_motorAngleValue[10] = _limitMotorValue(90 + 30 - 90 - calibrationData->rr.motor1);
-    m_motorAngleValue[11] = _limitMotorValue(90 - 30 + 90 + calibrationData->rr.motor2);
+    m_motorAngleValue[4] = _limitMotorValue(90 + calibrationData->fl.motor1 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[5] = _limitMotorValue(90 - calibrationData->fl.motor2 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[6] = _limitMotorValue(90 - calibrationData->fr.motor1 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[7] = _limitMotorValue(90 + calibrationData->fr.motor2 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[8] = _limitMotorValue(90 + calibrationData->rl.motor1 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[9] = _limitMotorValue(90 - calibrationData->rl.motor2 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[10] = _limitMotorValue(90 - calibrationData->rr.motor1 - (MOTOR_CORRECTION + CALIBRATION_ANGLE));
+    m_motorAngleValue[11] = _limitMotorValue(90 + calibrationData->rr.motor2 + (MOTOR_CORRECTION + CALIBRATION_ANGLE));
     doPWMServo(200);
     if (analogRead(A6) < 400) {
       Serial.println(F("Button pressed"));
@@ -201,7 +197,7 @@ bool doCalibration(allMotors * calibrationData) {
         Serial.print(F(" Right eye "));
         Serial.print((int)((1600000 / analogRead(A1)) / analogRead(A1)));
         Serial.print(F(" Direction "));
-        Serial.print((int)getDirectionCorrectionGyro());
+        Serial.print((int)getDirectionCorrectionGyro(50));
         // motors current
         Serial.print(F(" Battery  "));
         Serial.print((int)analogRead(A6));
@@ -251,9 +247,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
+          if (modePressed || (current > CALIBRATION_CURRENT)) {
             modePressed = false;
-            if ((current > calibrationCurrent) && autoCalibrationEnabled) {
+            if (current > CALIBRATION_CURRENT) {
               calibrationData->hr.motor1 -= 25;
             }
             calibrationCounter = 0;
@@ -277,9 +273,9 @@ bool doCalibration(allMotors * calibrationData) {
         } else {
           // read current or button
           current = _getCurrent1Inputs();
-          if (modePressed || ((current > calibrationCurrent) && autoCalibrationEnabled)) {
+          if (modePressed || (current > CALIBRATION_CURRENT)) {
             modePressed = false;
-            if ((current > calibrationCurrent) && autoCalibrationEnabled) {
+            if (current > CALIBRATION_CURRENT) {
               calibrationData->hr.motor2 -= 25;
             }
             calibrationCounter = 0;

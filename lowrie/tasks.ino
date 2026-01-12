@@ -21,11 +21,12 @@ void _setBeginTask(void) {
   currentTask[1] = P_SHORTDELAY;
   currentTask[2] = P_DOSTAND;
   currentTask[3] = P_RESETGIRO;
-  currentTask[4] = P_STANDTOGO;
-  currentTask[5] = P_STANDGO;
+  currentTask[4] = P_NORMALSTART;
+  currentTask[5] = P_STANDTOGO;
   currentTask[6] = P_STANDGO;
-  currentTask[7] = P_GOFORWARD;
-  currentTask[8] = P_DONE;
+  currentTask[7] = P_STANDGO;
+  currentTask[8] = P_GOFORWARD;
+  currentTask[9] = P_DONE;
 }
 
 // set down task
@@ -204,6 +205,20 @@ void _setRecoverRightTask(void) {
   currentTask[10] = P_DONE;
 }
 
+void _setFlipTask(void) {
+  currentTask[0] = P_DISABLEINPUTS;
+  currentTask[1] = P_GOTOSTAND;
+  currentTask[2] = P_DOSTAND;
+  currentTask[3] = P_DOFLIP;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_RESETGIRO;
+  currentTask[6] = P_STANDTOGO;
+  currentTask[7] = P_ENABLEINPUTS;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = P_DONE;
+
+}
+
 // set task by name
 void applyTask(unsigned char task) {
   switch (task) {
@@ -257,6 +272,9 @@ void applyTask(unsigned char task) {
     break;
     case RECOVER_RIGHT_TASK:
       _setRecoverRightTask();
+    break;
+    case FLIP_TASK:
+      _setFlipTask();
     break;
     default:
     break;

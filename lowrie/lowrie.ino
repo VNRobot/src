@@ -5,6 +5,30 @@ Arduino nano
 Main file
 */
 
+// software version hardcoded. should be changed manually
+#define ROBOT_VERSION 55
+// main servo pattern counter end
+#define SERVO_FULL_CYCLE 36
+#define SERVO_HALF_CYCLE 18
+// motor angle correction for lowrie -30
+#define MOTOR_CORRECTION  0 //-30
+// calibration motor angle 90 - vertical, 0 - horizontal
+#define CALIBRATION_ANGLE 0 //90
+// calibration current in ma default 640 or 2000 to disable
+#define CALIBRATION_CURRENT 2000 //64
+// center position in the leg forward shift // bigger the number more weight on front
+#define FORWARD_BALLANCE_SHIFT 14 // 0
+// center motors direction. -1 for lowrie 1.1
+#define CENTER_MOTOR_DIRECTION -1 //1
+// center motor direction max angle. for lowrie is 10
+#define CENTER_MAX_TURN 10
+// nalf distance between motors in mm
+#define BETWEEN_MOTORS 30 //16
+// low battery level in mv
+#define LOW_BATTERY 6000
+// input grounded 0 - 1023
+#define INPUT_GROUNDED 400
+
 // input state
 enum inState {
   IN_LOW_BATTERY,
@@ -43,7 +67,7 @@ enum rPatterns {
   P_DODOWN,
   P_RECOVERLEFT,
   P_RECOVERRIGHT,
-  
+  P_DOFLIP,
   P_DONE,
   P_RESETDIRECTION,
   P_RESTOREDIRECTION,
@@ -78,6 +102,7 @@ enum rTasks {
   DOWN_TASK,
   RECOVER_LEFT_TASK,
   RECOVER_RIGHT_TASK,
+  FLIP_TASK,
   DEFAULT_TASK
 };
 // gyro state
@@ -161,7 +186,6 @@ struct touch {
 };
 // acc and gyro data structure
 typedef struct robotSetup {
-  unsigned char versionEeprom; // software version hardcoded. should be changed manually
   unsigned char motorsCount; // motors count
   unsigned char shiftCycle;
   unsigned char timeDelayShort;
@@ -169,15 +193,6 @@ typedef struct robotSetup {
   unsigned short maxInputCurrent; // maximal pair of legs current
   unsigned char normalInputDistance; // normal distance sensor beam to ground
   short defaultHight; // default height in mm
-  char forwardCenterBallance; // center position in the leg forward shift // bigger the number more weight on front
-  char speedMuliplier; // walking speed multipier max = 3
-  bool rollBallanceEnabled; // roll ballance enable flag
-  bool pitchBallanceEnabled; // pitch ballance enable flag
-  bool forwardBallanceEnabled; // forward ballance enable flag
-  bool touchBallanceEnabled; // touch enable flag
-  bool sensorsInputsEnabled; // sensors enabled flag
-  bool centerMotorsEnabled; // center mototor enabled
-  bool stepSteeringEnabled; // step steering enabled
 } robotSetup;
 // robot state structure
 typedef struct robotState {
@@ -187,28 +202,22 @@ typedef struct robotState {
   unsigned char timeDelayNow;
   short legHightNow;
   short legLiftNow;
-  char rollBallanceNow;
-  char pitchBallanceNow;
-  char forwardBallanceNow; // bigger the number more weight on front
   char centerMotorValueNow;
   bool stepSteeringNow;
   unsigned char inputDistanceNow;
+  char speedMuliplierNow; // walking speed multipier max = 4 for ino
 } robotState;
 
-// main pattern counter
-unsigned char m_fullCycle = 36; 
 // motors calibration values for optional 12 motors
 allMotors calibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // inputs state defined in inState
 unsigned char inputState = IN_NORMAL;
 // gyro state
 accRoll gyroState;
-// sequence counter 0 to m_fullCycle - 1
+// sequence counter 0 to SERVO_FULL_CYCLE - 1
 phase sequenceCounter = {0, 0, 0, 0, 0, 0, 0};
 // current pattern defined in rPatterns
 unsigned char patternNow = P_DOSTAND;
-// enable sensors flag toggled by P_ENABLEINPUTS and P_DISABLEINPUTS
-bool sensorsEnabled = false;
 // default task from rTasks
 unsigned char defaultTask = GO_TASK;
 // current task
@@ -217,33 +226,33 @@ unsigned char taskNow = STAND_TASK;
 unsigned char taskNext = STAND_TASK;
 // variable for temporary use
 unsigned char i;
-// center motor direction max angle. for lowrie is 10
-unsigned char m_maxCenterTurn = 10;
-//-------------global variables---------------------------
-// init data structure
-// 8 motors small robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           8,          8,         60,            60,           1800,           42,                 100,         0,                    4,             false,              false,               false,                 false,               false,                false,              true};
-// 10 motors small robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-robotSetup m_init = {54,           10,         0,         8,             8,            1800,           42,                 130,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
-// 12 motors small robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           12,         4,         14,             16,           1800,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
-// 8 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,            8,         0,         20,            20,           2500,           50,                 125,         0,                    2,             false,              false,               false,                 false,               false,               false,              true};
-// 10 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           10,         0,         30,            40,           2500,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                true,               false};
-// 12 motors big robot
-//        m_init.    versionEeprom motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight forwardCenterBallance speedMuliplier rollBallanceEnabled pitchBallanceEnabled forwardBallanceEnabled touchBallanceEnabled sensorsInputsEnabled centerMotorsEnabled stepSteeringEnabled;
-//robotSetup m_init = {54,           12,         0,         30,            40,           2500,           42,                 125,         0,                    2,             false,              false,               false,                 false,               true,                false,              true};
-//----------------------------------------------------------
-// robot state          robotStateNow     halfCycleNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  rollBallanceNow  pitchBallanceNow  forwardBallanceNow  centerMotorValueNow             stepSteeringNow  inputDistanceNow
-robotState m_robotState = {ROBOT_NORM, m_fullCycle / 2, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,               0,                0,                  0,                   0, m_init.stepSteeringEnabled, m_init.normalInputDistance / 2};
+//---------------global variables---------------------------
 // servo motor value
 short m_motorAngleValue[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// init data structure
+//        m_init.    motorsCount shiftCycle timeDelayShort timeDelayLong maxInputCurrent normalInputDistance defaultHight;
+// 8 motors small turtle robot
+robotSetup m_init = {8,          0,         8,            10,           1800,           50,                 120};
+// 8 motors small inline robot
+//robotSetup m_init = {8,          8,         60,            60,           1800,           42,                 100};
+// 10 motors small robot
+//robotSetup m_init = {10,         0,         8,             8,            1800,           42,                 130};
+// 12 motors small robot
+//robotSetup m_init = {12,         4,         14,             16,          1800,           42,                 125};
+// 8 motors big robot
+//robotSetup m_init = {8,          0,         20,            20,           2500,           50,                 125};
+// 10 motors big robot
+//robotSetup m_init = {10,         0,         30,            40,           2500,           42,                 125};
+// 12 motors big robot
+//robotSetup m_init = {12,         0,         30,            40,           2500,           42,                 125};
+//----------------------------------------------------------
+//
+//------------------------dynamic state---------------------
+// robot state          robotStateNow      halfCycleNow      shiftCycleNow           timeDelayNow          legHightNow  legLiftNow  centerMotorValueNow  stepSteeringNow  inputDistanceNow speedMuliplierNow
+robotState m_robotState = {ROBOT_NORM, SERVO_HALF_CYCLE, m_init.shiftCycle, m_init.timeDelayShort, m_init.defaultHight,         40,                   0,            true, m_init.normalInputDistance / 2,  2};
+// enable sensors flag toggled by P_ENABLEINPUTS and P_DISABLEINPUTS
+bool sensorsEnabled = false;
+//----------------------------------------------------------
 
 // read button press in blocking mode
 // return true when pressed and released
@@ -264,13 +273,13 @@ void setup() {
   delay(200);
   initEEPROM();
   // check for Mode button press or if not calibrated
-  if (_readButtonPress() || (m_init.versionEeprom != readSoftwareVersionEeprom())) {
+  if (_readButtonPress() || (ROBOT_VERSION != readSoftwareVersionEeprom())) {
     // factory mode is used for legs calibration
     Serial.println(F("Entering factory mode"));
     // do calibration
     if (doCalibration(& calibrationData)) {
       writeCalibrationEeprom(calibrationData);
-      writeSoftwareVersionEeprom(m_init.versionEeprom);
+      writeSoftwareVersionEeprom(ROBOT_VERSION);
       delay(6000);
     }
   } else {
@@ -280,7 +289,7 @@ void setup() {
     initValueServo(calibrationData, 70, 0);
     initServo();
     doPWMServo(200);
-    setServo(calibrationData, m_init.defaultHight, m_init.forwardCenterBallance);
+    setServo(calibrationData, m_init.defaultHight);
     doPWMServo(200);
     // init digital sensors
     initInputs();
@@ -297,11 +306,11 @@ void setup() {
     // update gyro readings
     gyroState = updateGyro(sequenceCounter.m);
     // load task and pattern. direction is 0
-    if (m_init.centerMotorsEnabled) {
+    if (m_init.motorsCount == 10) {
       setCenter(patternNow, 0, 0);
     }
     setPattern(patternNow, 0);
-    sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow);
+    sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow, SERVO_FULL_CYCLE);
   }
 }
 
@@ -342,10 +351,10 @@ void loop() {
       case P_STANDGO:
       case P_GOFORWARD:
       {
-        if (m_init.centerMotorsEnabled) {
-          m_robotState.stepSteeringNow = setCenter(patternNow, getDirectionCorrectionGyro(), m_robotState.centerMotorValueNow);
+        if (m_init.motorsCount == 10) {
+          m_robotState.stepSteeringNow = setCenter(patternNow, getDirectionGyro(), m_robotState.centerMotorValueNow);
         }
-        setPattern(patternNow, getDirectionCorrectionGyro());
+        setPattern(patternNow, getDirectionGyro());
         doCycle();
       }
       break;
@@ -374,6 +383,11 @@ void loop() {
         sensorsEnabled = true;
       }
       break;
+      case P_DOFLIP:
+      {
+        doFlipServo(20);
+        setServo(calibrationData, m_init.defaultHight);
+      }
       case P_REPEAT:
       case P_DONE:
       // do nothing
@@ -391,11 +405,12 @@ void loop() {
         m_robotState.centerMotorValueNow = 50;
         m_robotState.legLiftNow = 100;
         m_robotState.inputDistanceNow = m_init.normalInputDistance / 2;
-        m_robotState.halfCycleNow = m_fullCycle / 2;
+        m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
         m_robotState.robotStateNow = ROBOT_CRAWL;
         m_robotState.legHightNow = m_init.defaultHight;
         m_robotState.shiftCycleNow = m_init.shiftCycle;
-        m_init.speedMuliplier = 2;
+        m_robotState.speedMuliplierNow = 2;
+        m_robotState.timeDelayNow = m_init.timeDelayLong;
       }
       break;
       case P_SWIMSTART:
@@ -407,7 +422,8 @@ void loop() {
         m_robotState.robotStateNow = ROBOT_SWIM;
         m_robotState.legHightNow = 150;
         m_robotState.shiftCycleNow = m_init.shiftCycle;
-        m_init.speedMuliplier = 2;
+        m_robotState.speedMuliplierNow = 2;
+        m_robotState.timeDelayNow = m_init.timeDelayLong * 2;
       }
       break;
       case P_INOSTART:
@@ -415,11 +431,12 @@ void loop() {
         m_robotState.centerMotorValueNow = 0;
         m_robotState.legLiftNow = 80;
         m_robotState.inputDistanceNow = m_init.normalInputDistance;
-        m_robotState.halfCycleNow = m_fullCycle / 2;
+        m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
         m_robotState.robotStateNow = ROBOT_INO;
         m_robotState.legHightNow = 100;
         m_robotState.shiftCycleNow = 8;
-        m_init.speedMuliplier = 4;
+        m_robotState.speedMuliplierNow = 4;
+        m_robotState.timeDelayNow = m_init.timeDelayLong * 5;
       }
       break;
       case P_NORMALSTART:
@@ -427,11 +444,12 @@ void loop() {
         m_robotState.centerMotorValueNow = 0;
         m_robotState.legLiftNow = 40;
         m_robotState.inputDistanceNow = m_init.normalInputDistance;
-        m_robotState.halfCycleNow = m_fullCycle / 2;
+        m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
         m_robotState.robotStateNow = ROBOT_NORM;
         m_robotState.legHightNow = m_init.defaultHight;
         m_robotState.shiftCycleNow = m_init.shiftCycle;
-        m_init.speedMuliplier = 2;
+        m_robotState.speedMuliplierNow = 2;
+        m_robotState.timeDelayNow = m_init.timeDelayShort;
       }
       break;
       case P_SHORTDELAY:
@@ -453,7 +471,7 @@ void loop() {
       break;
       default:
       {
-        if (m_init.centerMotorsEnabled) {
+        if (m_init.motorsCount == 10) {
           setCenter(patternNow, 0, m_robotState.centerMotorValueNow);
         }
         setPattern(patternNow, 0);
@@ -469,16 +487,16 @@ void loop() {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  if (m_init.centerMotorsEnabled) {
+  if (m_init.motorsCount == 10) {
     updateCenterServo(calibrationData, getValueCenter(sequenceCounter.m));
   }
   updateLegsServo(calibrationData, getWalkPatterns());
   doPWMServo(m_robotState.timeDelayNow);
   // update motor pattern point
-  sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow);
+  sequenceCounter = updateCountPatterns(m_robotState.shiftCycleNow, SERVO_FULL_CYCLE);
   // read proximity sensors
   inputState = updateInputs(sequenceCounter.m, sensorsEnabled, getDirectionGyro());
   // update gyro readings and ballance
   gyroState = updateGyro(sequenceCounter.m);
-  updateBallanceServo(getStaticBallance(gyroState, sequenceCounter, getTouchInputs(), getWalkingMode()), m_init.forwardCenterBallance);
+  updateBallanceServo(getStaticBallance(gyroState, sequenceCounter, getTouchInputs(), getWalkingMode()));
 }

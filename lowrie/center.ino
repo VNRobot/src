@@ -21,24 +21,31 @@ char centerDefault = 0;
 
 // set center value return legs steering flag
 bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultTarget) {
+  // maximal direction correction is 5
+  if (angleTurn > CENTER_MAX_TURN / 2) {
+    angleTurn = CENTER_MAX_TURN / 2;
+  }
+  if (angleTurn < -CENTER_MAX_TURN / 2) {
+    angleTurn = -CENTER_MAX_TURN / 2;
+  }
   // remember current pattern
   centerPatternBuffer = currentPattern;
   // remember center default target
   if (centerDefaultTarget > centerDefault) {
-    if ((centerDefaultTarget - centerDefault) > m_maxCenterTurn) {
-      centerDefault += m_maxCenterTurn;
+    if ((centerDefaultTarget - centerDefault) > CENTER_MAX_TURN) {
+      centerDefault += CENTER_MAX_TURN;
     } else {
       centerDefault = centerDefaultTarget;
     }
   }
   if (centerDefaultTarget < centerDefault) {
-    if ((centerDefault - centerDefaultTarget) > m_maxCenterTurn) {
-      centerDefault -= m_maxCenterTurn;
+    if ((centerDefault - centerDefaultTarget) > CENTER_MAX_TURN) {
+      centerDefault -= CENTER_MAX_TURN;
     } else {
       centerDefault = centerDefaultTarget;
     }
   }
-  if ((centerDefault > m_maxCenterTurn * 2) || (centerDefault < -m_maxCenterTurn * 2)) {
+  if ((centerDefault > CENTER_MAX_TURN * 2) || (centerDefault < -CENTER_MAX_TURN * 2)) {
     centerTurnF = 0;
     centerTurnR = 0;
     return true;
@@ -57,30 +64,30 @@ bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultT
     case P_GOLEFT:
     case P_GOBACKLEFT:
     {
-      centerTurnF = -m_maxCenterTurn;
-      centerTurnR = -m_maxCenterTurn;
+      centerTurnF = -CENTER_MAX_TURN;
+      centerTurnR = -CENTER_MAX_TURN;
     }
     break;
     case P_STANDGORIGHT:
     case P_GORIGHT:
     case P_GOBACKRIGHT:
     {
-      centerTurnF = m_maxCenterTurn;
-      centerTurnR = m_maxCenterTurn;
+      centerTurnF = CENTER_MAX_TURN;
+      centerTurnR = CENTER_MAX_TURN;
     }
     break;
     case P_STANDGOSHIFTLEFT:
     case P_GOSHIFTLEFT:
     {
-      centerTurnF = -m_maxCenterTurn;
-      centerTurnR = m_maxCenterTurn;
+      centerTurnF = -CENTER_MAX_TURN;
+      centerTurnR = CENTER_MAX_TURN;
     }
     break;
     case P_STANDGOSHIFTRIGHT:
     case P_GOSHIFTRIGHT:
     {
-      centerTurnF = m_maxCenterTurn;
-      centerTurnR = -m_maxCenterTurn;
+      centerTurnF = CENTER_MAX_TURN;
+      centerTurnR = -CENTER_MAX_TURN;
     }
     break;
     default:

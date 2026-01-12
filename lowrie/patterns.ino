@@ -157,10 +157,10 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
 }
 
 // update servo motors values
-phase updateCountPatterns(unsigned char legShift) {
+phase updateCountPatterns(unsigned char legShift, unsigned char fullCycle) {
   // update sequence shift 
   mainCounter ++;
-  if (mainCounter >= m_fullCycle) {
+  if (mainCounter >= fullCycle) {
     mainCounter = 0;
     // update shift
     if (legShiftTemp < legShift) {
@@ -187,24 +187,24 @@ phase updateCountPatterns(unsigned char legShift) {
     // 12 motors
     legPhase.hr = mainCounter + legShiftTemp * 2;
     legPhase.hl = legPhase.hr + m_robotState.halfCycleNow;
-    if (legPhase.hl >= m_fullCycle) {
-      legPhase.hl -= m_fullCycle;
+    if (legPhase.hl >= fullCycle) {
+      legPhase.hl -= fullCycle;
     }
-    if (legPhase.hr >= m_fullCycle) {
-      legPhase.hr -= m_fullCycle;
+    if (legPhase.hr >= fullCycle) {
+      legPhase.hr -= fullCycle;
     }
   }
-  if (legPhase.fl >= m_fullCycle) {
-    legPhase.fl -= m_fullCycle;
+  if (legPhase.fl >= fullCycle) {
+    legPhase.fl -= fullCycle;
   }
-  if (legPhase.fr >= m_fullCycle) {
-    legPhase.fr -= m_fullCycle;
+  if (legPhase.fr >= fullCycle) {
+    legPhase.fr -= fullCycle;
   }
-  if (legPhase.rl >= m_fullCycle) {
-    legPhase.rl -= m_fullCycle;
+  if (legPhase.rl >= fullCycle) {
+    legPhase.rl -= fullCycle;
   }
-  if (legPhase.rr >= m_fullCycle) {
-    legPhase.rr -= m_fullCycle;
+  if (legPhase.rr >= fullCycle) {
+    legPhase.rr -= fullCycle;
   }
   // no need for rr
   return legPhase;
@@ -342,6 +342,6 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
       legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
     }
   }
-  legStep.shift = shift * m_init.speedMuliplier;
+  legStep.shift = shift * m_robotState.speedMuliplierNow;
   return legStep;
 }
