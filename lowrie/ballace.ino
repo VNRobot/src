@@ -4,10 +4,8 @@ Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot static and dynamic ballance
 */
-
+/*
 struct surface {
-  char hl;
-  char hr;
   char fl;
   char fr;
   char rl;
@@ -29,7 +27,7 @@ bool touchBallanceEnabled = false;
 //----------------------------------------------------
 
 // ballance correction
-allLegs legCorrect = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+allLegs legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
 // heignt position correction
 char correctRollL  = 0;
 char correctRollR  = 0;
@@ -39,7 +37,7 @@ char correctPitch = 0;
 // forward ballance
 char centerForward = 0;
 // surface levels
-surface surfacelevel = {0, 0, 0, 0, 0, 0};
+surface surfacelevel = {0, 0, 0, 0};
 // surface level step multiplier
 char surfacelevelStep = 10; // mm
 char surfacelevelMax = 50; // mm
@@ -131,22 +129,9 @@ char _updateSurfaceLevel(char level, unsigned char counter, bool touch) {
 }
 
 // update touch
-void _updateTouch(phase sCounter, touch touchInputs) {
+void _updateTouch(phase sCounter) {
   // head equilize
-  /*
-  if (m_init.motorsCount == 12) {
-    if ((surfacelevel.hl < 0) && (surfacelevel.hr < 0)) {
-      surfacelevel.hl ++;
-      surfacelevel.hr ++;
-    }
-    if ((surfacelevel.hl > 0) && (surfacelevel.hr > 0)) {
-      surfacelevel.hl --;
-      surfacelevel.hr --;
-    }
-  }
-    */
   // front equilize
-  /*
   if (surfacelevel.fl < 0 && surfacelevel.fr < 0) {
     surfacelevel.fl ++;
     surfacelevel.fr ++;
@@ -164,19 +149,14 @@ void _updateTouch(phase sCounter, touch touchInputs) {
     surfacelevel.rl --;
     surfacelevel.rr --;
   }
-    */
   // check and conpensate touch
-  if (m_init.motorsCount == 12) {
-    //surfacelevel.hl = _updateSurfaceLevel(surfacelevel.hl, sCounter.hl, touchInputs.set1);
-    //surfacelevel.hr = _updateSurfaceLevel(surfacelevel.hr, sCounter.hr, touchInputs.set2);
-  }
   surfacelevel.fl = _updateSurfaceLevel(surfacelevel.fl, sCounter.fl, touchInputs.set1);
   surfacelevel.fr = _updateSurfaceLevel(surfacelevel.fr, sCounter.fr, touchInputs.set2);
   //surfacelevel.rl = _updateSurfaceLevel(surfacelevel.rl, sCounter.rl, touchInputs.set3);
   //surfacelevel.rr = _updateSurfaceLevel(surfacelevel.rr, sCounter.rr, touchInputs.set3);
 }
 
-allLegs getStaticBallance(accRoll gyroState, phase sCounter, touch touchInputs, bool walkingMode) {
+allLegs getStaticBallance(accRoll gyroState, phase sCounter, bool walkingMode) {
   // roll
   if (rollBallanceEnabled) {
     _updateRoll(gyroState.accAngleX, sCounter.m);
@@ -193,12 +173,6 @@ allLegs getStaticBallance(accRoll gyroState, phase sCounter, touch touchInputs, 
   if (touchBallanceEnabled && walkingMode) {
     _updateTouch(sCounter, touchInputs);
   }
-  if (m_init.motorsCount == 12) {
-    legCorrect.hl.hight = correctRollL + surfacelevel.hl;
-    legCorrect.hl.shift = correctPitch + centerForward;
-    legCorrect.hr.hight = correctRollR + surfacelevel.hr;
-    legCorrect.hr.shift = correctPitch + centerForward;
-  }
   legCorrect.fl.hight = correctRollL + surfacelevel.fl;
   legCorrect.fl.shift = correctPitch + centerForward;
   legCorrect.fr.hight = correctRollR + surfacelevel.fr;
@@ -209,3 +183,4 @@ allLegs getStaticBallance(accRoll gyroState, phase sCounter, touch touchInputs, 
   legCorrect.rr.shift = correctPitch + centerForward;
   return legCorrect;
 }
+*/

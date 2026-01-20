@@ -28,7 +28,6 @@ typedef struct acc {
 gyro gyroData = {0, 0, 0, 0, 0, 0, 0};
 acc accDataOld1 = {0, 0};
 acc accDataOld2 = {0, 0};
-accRoll accAverageValue = {0, 0, 0, 0, 0, 0, GYRO_NORM};
 
 // acceleration errors
 float AccErrorX = 0;
@@ -122,7 +121,7 @@ void initGyro() {
 }
 
 // read gyroscope and accelerometer data
-accRoll updateGyro(unsigned char sequenceCount) {
+void updateGyro(void) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
@@ -144,7 +143,7 @@ accRoll updateGyro(unsigned char sequenceCount) {
   gyroData.roll = (int)(0.96 * gyroData.gyroAngleX + 0.04 * gyroData.accAngleX);
   gyroData.pitch = (int)(0.96 * gyroData.gyroAngleY + 0.04 * gyroData.accAngleY);
   // fix slow drift
-  if ((sequenceCount == 0) || (sequenceCount == SERVO_HALF_CYCLE)) {
+  if ((m_sequenceCounter.m == 0) || (m_sequenceCounter.m == SERVO_HALF_CYCLE)) {
     if (gyroData.gyroAngleX > 0) {
       gyroData.gyroAngleX --;
     } else if (gyroData.gyroAngleX < 0) {
@@ -158,8 +157,8 @@ accRoll updateGyro(unsigned char sequenceCount) {
   }
   // end fix slow drift
   // 
-  accAverageValue.accAngleX = ((int)gyroData.accAngleX + accDataOld1.accAngleX + accDataOld2.accAngleX + accAverageValue.accAngleX + 2) / 4;
-  accAverageValue.accAngleY = ((int)gyroData.accAngleY + accDataOld1.accAngleY + accDataOld2.accAngleY + accAverageValue.accAngleY + 2) / 4;
+  m_gyroState.accAngleX = ((int)gyroData.accAngleX + accDataOld1.accAngleX + accDataOld2.accAngleX + m_gyroState.accAngleX + 2) / 4;
+  m_gyroState.accAngleY = ((int)gyroData.accAngleY + accDataOld1.accAngleY + accDataOld2.accAngleY + m_gyroState.accAngleY + 2) / 4;
   //
   accDataOld2.accAngleX = accDataOld1.accAngleX;
   accDataOld2.accAngleY = accDataOld1.accAngleY;
@@ -168,12 +167,12 @@ accRoll updateGyro(unsigned char sequenceCount) {
   accDataOld1.accAngleY = (int)gyroData.accAngleY;
   //
   // walk cycle related operations
-  if (sequenceCount == 0) {
+  if (m_sequenceCounter.m == 0) {
     // start of walk cycle
-    accAverageValue.rollMin = rollMinBuffer;
-    accAverageValue.rollMax = rollMaxBuffer;
-    accAverageValue.rollMinTime = rollMinTimeBuffer;
-    accAverageValue.rollMaxTime = rollMaxTimeBuffer;
+    m_gyroState.rollMin = rollMinBuffer;
+    m_gyroState.rollMax = rollMaxBuffer;
+    m_gyroState.rollMinTime = rollMinTimeBuffer;
+    m_gyroState.rollMaxTime = rollMaxTimeBuffer;
     rollMinBuffer = gyroData.roll;
     rollMaxBuffer = gyroData.roll;
     rollMinTimeBuffer = 0;
@@ -182,25 +181,24 @@ accRoll updateGyro(unsigned char sequenceCount) {
     // find max and min roll
     if (gyroData.roll > rollMaxBuffer) {
       rollMaxBuffer = gyroData.roll;
-      rollMaxTimeBuffer = sequenceCount;
+      rollMaxTimeBuffer = m_sequenceCounter.m;
     }
     if (gyroData.roll < rollMinBuffer) {
       rollMinBuffer = gyroData.roll;
-      rollMinTimeBuffer = sequenceCount;
+      rollMinTimeBuffer = m_sequenceCounter.m;
     }
   }
   // end walk cycle related operations
-  if (sequenceCount == 0) {
-    accAverageValue.stateGyro = _statusGyro();
-    if (stateGyroOld != accAverageValue.stateGyro) {
-      stateGyroOld = accAverageValue.stateGyro;
+  if (m_sequenceCounter.m == 0) {
+    m_gyroState.stateGyro = _statusGyro();
+    if (stateGyroOld != m_gyroState.stateGyro) {
+      stateGyroOld = m_gyroState.stateGyro;
       // debug print
-      //_printGyro(accAverageValue.stateGyro);
+      //_printGyro(m_gyroState.stateGyro);
     }
     // debug print
     //  _printLineGyro();
   }
-  return accAverageValue;
 }
 
 // reset gyro data
@@ -216,13 +214,13 @@ void resetGyro(void) {
   accDataOld2.accAngleX = accDataOld1.accAngleX;
   accDataOld2.accAngleY = accDataOld1.accAngleY;
   //
-  accAverageValue.accAngleX = accDataOld2.accAngleX;
-  accAverageValue.accAngleY = accDataOld2.accAngleY;
-  accAverageValue.rollMin = 0;
-  accAverageValue.rollMax = 0;
-  accAverageValue.rollMinTime = 0;
-  accAverageValue.rollMaxTime = 0;
-  accAverageValue.stateGyro = GYRO_NORM;
+  m_gyroState.accAngleX = accDataOld2.accAngleX;
+  m_gyroState.accAngleY = accDataOld2.accAngleY;
+  m_gyroState.rollMin = 0;
+  m_gyroState.rollMax = 0;
+  m_gyroState.rollMinTime = 0;
+  m_gyroState.rollMaxTime = 0;
+  m_gyroState.stateGyro = GYRO_NORM;
 }
 
 // correct horizontal direction
@@ -240,18 +238,6 @@ void restoreDirectionGyro(void) {
 
 // get direction from gyroscope
 char getDirectionGyro(void) {
-  return (char)(gyroData.yaw);
-}
-
-// get walking direction correction from gyroscope
-char getDirectionCorrectionGyro(unsigned char maxCenterTurn) {
-  // maximal direction correction is 5
-  if (gyroData.yaw > maxCenterTurn / 2) {
-    return maxCenterTurn / 2;
-  }
-  if (gyroData.yaw < -maxCenterTurn / 2) {
-    return -maxCenterTurn / 2;
-  }
   return (char)(gyroData.yaw);
 }
 
