@@ -1,9 +1,47 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot static and dynamic ballance
 */
+
+/*
+robot body size
+lenght 146 mm
+width 120
+default hight 125 mm
+when bend 15 deg
+bend value 36 mm
+forward shift 30 mm weight to back
+*/
+
+// bend forward hight
+short bendForwardHight = 0;
+// bend forward shift
+short bendForwardShift = 0;
+
+void setBendBallance(short bendHight, short bendShift) {
+  m_legCorrect.fl.hight = -bendHight;
+  m_legCorrect.fr.hight = -bendHight;
+  m_legCorrect.rl.hight = bendHight;
+  m_legCorrect.rr.hight = bendHight;
+  bendForwardHight = bendHight;
+  m_legCorrect.fl.shift = -bendShift;
+  m_legCorrect.fr.shift = -bendShift;
+  m_legCorrect.rl.shift = -bendShift;
+  m_legCorrect.rr.shift = -bendShift;
+  bendForwardShift = -bendShift;
+}
+
+void updateBallance(void) {
+}
+
+
+
+
+
+
+
 /*
 struct surface {
   char fl;

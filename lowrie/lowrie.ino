@@ -18,8 +18,6 @@ Main file
 // main servo pattern counter end
 #define SERVO_FULL_CYCLE        36
 #define SERVO_HALF_CYCLE        18
-// center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
 // main time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              8
 // low hight in mm. upper arm is horizontal
@@ -30,6 +28,14 @@ Main file
 #define LEG_LIFT                40
 // normal input sensors distance in sm
 #define NORMAL_DISTANCE         50
+// center position in the leg forward shift. bigger the number more weight on front
+#define FORWARD_BALLANCE_SHIFT  0
+// bend forward parameters
+#define BEND_HIGHT              36 // 36 is 15 deg
+#define BEND_SHIFT              28 // shift forward for ballance
+#define BEND_ANGLE              15 // deg
+#define BEND_DIVIDER            6  // 4. sin 15 deg is 0.25
+
 
 // input state
 enum inState {
@@ -72,6 +78,7 @@ enum rPatterns {
   P_RESETGIRO,
   P_ENABLEINPUTS,
   P_DISABLEINPUTS,
+  P_BENDSTART,
   P_CRAWLSTART,
   P_SWIMSTART,
   P_INOSTART,
@@ -123,7 +130,8 @@ enum rState {
   ROBOT_NORM,
   ROBOT_CRAWL,
   ROBOT_SWIM,
-  ROBOT_INO
+  ROBOT_INO,
+  ROBOT_BEND
 };
 // structure for one leg motors
 struct motors {
@@ -180,6 +188,7 @@ typedef struct robotState {
   short legLiftNow;
   char speedMuliplierNow;
   char flipStateNow;
+  bool edgeEnabled;
 } robotState;
 
 //---------------global variables---------------------------
@@ -201,18 +210,13 @@ robotState m_robotState = {
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow;
-  1                        // char flipStateNow;
+  1,                       // char flipStateNow;
+  false                     // edgeEnabled
 };
 // gyro state
-accRoll m_gyroState = {
-  0,        //int accAngleX;
-  0,        //int accAngleY;
-  0,        //int rollMin;
-  0,        //int rollMax;
-  0,        //unsigned char rollMinTime;
-  0,        //unsigned char rollMaxTime;
-  GYRO_NORM //unsigned char stateGyro;
-};
+accRoll m_gyroState = {0, 0, 0, 0, 0, 0, GYRO_NORM};
+// ballance correction
+allLegs m_legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
 
 // current pattern defined in rPatterns
@@ -245,10 +249,6 @@ void setup() {
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
-    setServo(HIGHT_DEFAULT);
-    doPWMServo(200);
-    setServo(HIGHT_LOW);
-    doPWMServo(2000);
     setServo(HIGHT_DEFAULT);
     doPWMServo(200);
     // init digital sensors
@@ -342,7 +342,12 @@ void loop() {
       break;
       case P_DOFLIP:
       {
-        doFlipServo();
+        // do flip
+        if (m_robotState.flipStateNow == 1) {
+          m_robotState.flipStateNow = -1;
+        } else {
+          m_robotState.flipStateNow = 1;
+        }
       }
       case P_REPEAT:
       case P_DONE:
@@ -366,6 +371,8 @@ void loop() {
         m_robotState.shiftCycleNow = 0;
         m_robotState.speedMuliplierNow = 2;
         m_robotState.timeDelayNow = TIME_DELAY;
+        m_robotState.edgeEnabled = false;
+        setBendBallance(0, 0);
       }
       break;
       case P_SWIMSTART:
@@ -378,6 +385,8 @@ void loop() {
         m_robotState.shiftCycleNow = 0;
         m_robotState.speedMuliplierNow = 2;
         m_robotState.timeDelayNow = TIME_DELAY * 2;
+        m_robotState.edgeEnabled = false;
+        setBendBallance(0, 0);
       }
       break;
       case P_INOSTART:
@@ -390,6 +399,8 @@ void loop() {
         m_robotState.shiftCycleNow = 8;
         m_robotState.speedMuliplierNow = 4;
         m_robotState.timeDelayNow = TIME_DELAY * 5;
+        m_robotState.edgeEnabled = false;
+        setBendBallance(0, 0);
       }
       break;
       case P_NORMALSTART:
@@ -402,6 +413,22 @@ void loop() {
         m_robotState.shiftCycleNow = 0;
         m_robotState.speedMuliplierNow = 2;
         m_robotState.timeDelayNow = TIME_DELAY;
+        m_robotState.edgeEnabled = false;
+        setBendBallance(0, 0);
+      }
+      break;
+      case P_BENDSTART:
+      {
+        m_robotState.legLiftNow = LEG_LIFT / 2;
+        m_robotState.inputDistanceNow = NORMAL_DISTANCE;
+        m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
+        m_robotState.robotStateNow = ROBOT_BEND;
+        m_robotState.legHightNow = HIGHT_DEFAULT;
+        m_robotState.shiftCycleNow = 0;
+        m_robotState.speedMuliplierNow = 2;
+        m_robotState.timeDelayNow = TIME_DELAY;
+        m_robotState.edgeEnabled = true;
+        setBendBallance(BEND_HIGHT, BEND_SHIFT);
       }
       break;
       default:
@@ -427,6 +454,7 @@ void doCycle(void) {
   m_robotState.inputStateNow = updateInputs(getDirectionGyro());
   // update gyro readings
   updateGyro();
-  // update ballance
-  //updateBallanceServo(getStaticBallance(m_gyroState, getTouchInputs(), getWalkingMode()));
+  // update ballance and bend
+  updateBallance();
+  updateBallanceServo();
 }

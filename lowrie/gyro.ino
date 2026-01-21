@@ -1,5 +1,5 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 use MPU6050 to read gyroscope and accelerometer

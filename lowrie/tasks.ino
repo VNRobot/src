@@ -1,5 +1,5 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 List of tasks. Every task contains movement patterns.
@@ -24,9 +24,12 @@ void _setBeginTask(void) {
   currentTask[4] = P_NORMALSTART;
   currentTask[5] = P_STANDTOGO;
   currentTask[6] = P_STANDGO;
-  currentTask[7] = P_STANDGO;
-  currentTask[8] = P_GOFORWARD;
-  currentTask[9] = P_DONE;
+  currentTask[7] = P_GOFORWARD;
+  currentTask[8] = P_REPEAT;
+  currentTask[9] = P_GOFORWARD;
+  currentTask[10] = P_BENDSTART;
+  currentTask[11] = P_GOFORWARD;
+  currentTask[12] = P_DONE;
 }
 
 // set down task
@@ -45,9 +48,10 @@ void _setWalkBackLeftTask(void) {
   currentTask[1] = P_STANDGO;
   currentTask[2] = P_GOBACKLEFT;
   currentTask[3] = P_GOBACKLEFT;
-  currentTask[4] = P_RESETDIRECTION;
-  currentTask[5] = P_ENABLEINPUTS;
-  currentTask[6] = P_DONE;
+  currentTask[4] = P_GOBACKLEFT;
+  currentTask[5] = P_RESETDIRECTION;
+  currentTask[6] = P_ENABLEINPUTS;
+  currentTask[7] = P_DONE;
 }
 
 // set walk back right task
@@ -56,9 +60,10 @@ void _setWalkBackRightTask(void) {
   currentTask[1] = P_STANDGO;
   currentTask[2] = P_GOBACKRIGHT;
   currentTask[3] = P_GOBACKRIGHT;
-  currentTask[4] = P_RESETDIRECTION;
-  currentTask[5] = P_ENABLEINPUTS;
-  currentTask[6] = P_DONE;
+  currentTask[4] = P_GOBACKRIGHT;
+  currentTask[5] = P_RESETDIRECTION;
+  currentTask[6] = P_ENABLEINPUTS;
+  currentTask[7] = P_DONE;
 }
 
 // set Turn right task
@@ -82,9 +87,10 @@ void _setStandTurnRightTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_STANDGORIGHT;
   currentTask[2] = P_STANDGORIGHT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
+  currentTask[3] = P_STANDGORIGHT;
+  currentTask[4] = P_RESETDIRECTION;
+  currentTask[5] = P_ENABLEINPUTS;
+  currentTask[6] = P_DONE;
 }
 
 // set stand Turn left task
@@ -92,9 +98,10 @@ void _setStandTurnLeftTask(void) {
   currentTask[0] = P_DISABLEINPUTS;
   currentTask[1] = P_STANDGOLEFT;
   currentTask[2] = P_STANDGOLEFT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_ENABLEINPUTS;
-  currentTask[5] = P_DONE;
+  currentTask[3] = P_STANDGOLEFT;
+  currentTask[4] = P_RESETDIRECTION;
+  currentTask[5] = P_ENABLEINPUTS;
+  currentTask[6] = P_DONE;
 }
 
 // set stand Turn right sharp task

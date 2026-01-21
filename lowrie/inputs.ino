@@ -1,5 +1,5 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Gets analog inputs
@@ -27,15 +27,6 @@ enum senState {
   SEN_BLOCK = 3,
   SEN_NORMAL = 4
 };
-
-//----------------configuration flags-----------------
-// edge detection enabled
-bool edgeEnabled = false;
-// current sensor enabled
-bool currentEnabled = false;
-// low battery sensor enabled
-bool voltageEnabled = false;
-//----------------------------------------------------
 
 unsigned char allStateInputs = IN_NORMAL;
 unsigned char allStateInputsOld = IN_NORMAL;
@@ -178,7 +169,7 @@ unsigned char getSensorState(unsigned short input) {
       }
     } else {
       // edge
-      if (edgeEnabled) {
+      if (m_robotState.edgeEnabled) {
         return SEN_EDGE;
       } else {
         return SEN_NORMAL;
@@ -274,21 +265,17 @@ unsigned char getNormalTaskByInputs(unsigned char defaultTask) {
 
 // status of inputs
 unsigned char _statusInputs( unsigned short sLeft,  unsigned short sRight, char direction) {
-  if (voltageEnabled) {
-    // battery low
-    if (analogValueInputs.battery < LOW_BATTERY) {
-      return IN_LOW_BATTERY;
-    }
+  // battery low
+  if (analogValueInputs.battery < LOW_BATTERY) {
+    return IN_LOW_BATTERY;
   }
-  if (currentEnabled) {
-    // motor 2 current too high
-    if (analogValueInputs.current2 > MAX_CURRENT) {
-      return IN_HIGH_CURRENT_F;
-    }
-    // motor 3 current too high
-    if (analogValueInputs.current3 > MAX_CURRENT) {
-      return IN_HIGH_CURRENT_R;
-    }
+  // motor 2 current too high
+  if (analogValueInputs.current2 > MAX_CURRENT) {
+    return IN_HIGH_CURRENT_F;
+  }
+  // motor 3 current too high
+  if (analogValueInputs.current3 > MAX_CURRENT) {
+    return IN_HIGH_CURRENT_R;
   }
   // both sensors normal
   if ((sLeft == SEN_NORMAL) && (sRight == SEN_NORMAL)) {
