@@ -49,10 +49,10 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
       speed = 0;
       speedL = speed;
       speedR = speed;
-      if (angleTurn > 4) {
+      if (angleTurn < -4) {
         speedL = 1;
         speedR = 0; //-1;
-      } else if (angleTurn < -4) {
+      } else if (angleTurn > 4) {
         speedL = 0; //-1;
         speedR = 1;
       }
@@ -83,9 +83,9 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
       }
       speedL = speed;
       speedR = speed;
-      if (angleTurn > 4) {
+      if (angleTurn < -4) {
         speedR = speedL - 1;
-      } else if (angleTurn < -4) {
+      } else if (angleTurn > 4) {
         speedL = speedR - 1;
       }
       walkingMode = true;

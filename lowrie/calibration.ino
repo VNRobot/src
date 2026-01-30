@@ -5,8 +5,6 @@ Arduino nano
 motors calibration
 */
 
-#include <EEPROM.h>
-
 // device mode enumerator
 enum calMode {
   CALIBRATION_INFO = 0,
@@ -40,7 +38,7 @@ bool rightSoftwareVersionEeprom() {
 
 // write calibration to eeprom
 void writeCalibrationEeprom(void) {
-  // calibration address is 1 to 12
+  // calibration address is 1 to 8
   EEPROM.update(1, (unsigned char)(m_calibrationData.fl.motor1 + 128));
   EEPROM.update(2, (unsigned char)(m_calibrationData.fl.motor2 + 128));
   EEPROM.update(3, (unsigned char)(m_calibrationData.fr.motor1 + 128));
@@ -57,8 +55,6 @@ void writeCalibrationEeprom(void) {
   EEPROM.update(0, ROBOT_VERSION);
 #endif
 }
-
-
 /*
 // get current of first set of outputs
 short _getCurrent1Inputs(void) {
@@ -211,7 +207,7 @@ bool doCalibration(void) {
         Serial.print(F(" Right eye "));
         Serial.print((int)((1600000 / analogRead(A1)) / analogRead(A1)));
         Serial.print(F(" Direction "));
-        Serial.print((int)getDirectionGyro());
+        Serial.print(m_gyroState.direction);
         // motors current
         Serial.print(F(" Battery mv "));
         Serial.print((int)analogRead(A6));

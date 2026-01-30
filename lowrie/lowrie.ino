@@ -5,12 +5,15 @@ Arduino nano
 Main file
 */
 
+#include <EEPROM.h>
+
 // software version hardcoded. should be changed manually
 #define ROBOT_VERSION           77
 // calibration current in ma default 640 or 2000 to disable
 #define CALIBRATION_CURRENT     2000
 // maximal pair of legs current in ma 2000 to disable
-#define MAX_CURRENT             2000
+#define MAX_CURRENT             1000
+#define MIN_CURRENT             100
 // low battery level in mv
 #define LOW_BATTERY             6000
 // input grounded 0 - 1023
@@ -27,7 +30,7 @@ Main file
 // normal leg lift in mm
 #define LEG_LIFT                40
 // normal input sensors distance in sm
-#define NORMAL_DISTANCE         50
+#define NORMAL_DISTANCE         80
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
 // bend forward parameters
@@ -36,12 +39,8 @@ Main file
 #define BEND_ANGLE              15 // deg
 #define BEND_DIVIDER            6  // 4. sin 15 deg is 0.25
 
-
 // input state
 enum inState {
-  IN_LOW_BATTERY,
-  IN_HIGH_CURRENT_F,
-  IN_HIGH_CURRENT_R,
   IN_WALL_FRONTLEFT,
   IN_WALL_FRONTRIGHT,
   IN_WALL_LEFT,
@@ -52,7 +51,13 @@ enum inState {
   IN_OBSTACLE_RIGHT,
   IN_NORMAL             
 };
-
+// current state
+enum cState {
+  C_LOW_BATTERY,
+  C_HIGH_CURRENT,
+  C_LOW_CURRENT,
+  C_NORMAL             
+};
 // patterns
 enum rPatterns {
   P_DOSTAND,
@@ -76,14 +81,16 @@ enum rPatterns {
   P_RESETDIRECTION,
   P_RESTOREDIRECTION,
   P_RESETGIRO,
-  P_ENABLEINPUTS,
-  P_DISABLEINPUTS,
   P_BENDSTART,
   P_CRAWLSTART,
   P_SWIMSTART,
   P_INOSTART,
   P_NORMALSTART,
   P_REPEAT,
+  P_GETCURRENT,
+  P_SETPRIORITY_HIGH,
+  P_SETPRIORITY_NORM,
+  P_SETPRIORITY_LOW,
   P_END
 };
 // tasks
@@ -109,21 +116,21 @@ enum rTasks {
 // gyro state
 enum gState {
   GYRO_NORM,
-  GYRO_SHAKEN,
-  GYRO_SWIM,
   GYRO_UPSIDEDOWN,
-  GYRO_HIT_SIDE,
-  GYRO_HIT_FRONT,
   GYRO_FELL_LEFT,
   GYRO_FELL_RIGHT,
   GYRO_FELL_FRONT,
   GYRO_FELL_BACK,
-  GYRO_DOWN_HILL,
-  GYRO_UP_HILL,
   GYRO_FOLLING_LEFT,
   GYRO_FOLLING_RIGHT,
   GYRO_FOLLING_FRONT,
   GYRO_FOLLING_BACK 
+};
+// task priority
+enum tPriority {
+  PRIORITY_HIGH,
+  PRIORITY_NORM,
+  PRIORITY_LOW,
 };
 // robot state
 enum rState {
@@ -159,12 +166,15 @@ struct allLegs {
 };
 // acc and gyro data structure
 typedef struct accRoll {
-  int accAngleX;
-  int accAngleY;
+  int accRollX;                 // roll       right - positive   -90 0 90 upsidedown also 0
+  int accPitchY;                // pitch      up - positive   -90 0 90 upsidedown also 0
+  int gyroRollX;                // roll       count turning
+  int gyroPitchY;               // pitch      count turning
   int rollMin;
   int rollMax;
   unsigned char rollMinTime;
   unsigned char rollMaxTime;
+  int direction;                // direction  turn right - positive
   unsigned char stateGyro;
 } accRoll;
 // leg timing phase. main m
@@ -180,6 +190,7 @@ typedef struct robotState {
   bool sensorsEnabledNow;
   unsigned char inputDistanceNow;
   unsigned char inputStateNow;
+  unsigned char currentStateNow;
   unsigned char robotStateNow;
   unsigned char halfCycleNow;
   unsigned char shiftCycleNow;
@@ -189,6 +200,7 @@ typedef struct robotState {
   char speedMuliplierNow;
   char flipStateNow;
   bool edgeEnabled;
+  unsigned char taskPriorityNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -200,9 +212,10 @@ short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
 robotState m_robotState = {
-  false,                   // bool sensorsEnabledNow;
+  true,                    // bool sensorsEnabledNow; *** for debugging only
   NORMAL_DISTANCE / 2,     // unsigned char inputDistanceNow;
   IN_NORMAL,               // unsigned char inputStateNow;
+  C_NORMAL,                // unsigned char currentStateNow;
   ROBOT_NORM,              // unsigned char robotStateNow;
   SERVO_HALF_CYCLE,        // unsigned char halfCycleNow;
   0,                       // unsigned char shiftCycleNow;
@@ -211,14 +224,18 @@ robotState m_robotState = {
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow;
   1,                       // char flipStateNow;
-  false                     // edgeEnabled
+  false,                   // edgeEnabled;
+  PRIORITY_LOW             // taskPriorityNow;
 };
 // gyro state
-accRoll m_gyroState = {0, 0, 0, 0, 0, 0, GYRO_NORM};
+accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // ballance correction
 allLegs m_legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
-
+// enable low current reading
+bool lowCurrentEnabled = false;
+// servo cycle is done flag
+bool cycleDone = true;
 // current pattern defined in rPatterns
 unsigned char patternNow = P_DOSTAND;
 // default task from rTasks
@@ -243,18 +260,23 @@ void setup() {
   // init gyro MPU6050 using I2C
   initGyro();
   doPWMServo(200);
+  updateGyro();
+  doPWMServo(20);
   resetGyro();
   doPWMServo(20);
-  // update gyro readings
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
     setServo(HIGHT_DEFAULT);
     doPWMServo(200);
+    // init current readings
+    initCurrent();
     // init digital sensors
     initInputs();
-    // update inputs direction is 0
-    updateInputs(0);
+    // update current readings
+    updateCurrent(false);
+    // read proximity sensors
+    updateInputs();
     // explore mode
     Serial.println(F("Entering explore mode"));
     applyTask(BEGIN_TASK);
@@ -264,47 +286,83 @@ void setup() {
   }
 }
 
+// set new task and new pattern
+void setTaskAndPattern(void) {
+  if (patternNow == P_END) {
+    // this is the end. do nothing
+    delay(10);
+    return;
+  }
+  // not high priority or end of high priority task
+  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (patternNow == P_DONE)) {
+    // override with high priority task
+    taskNext = getHighPriorityTask();
+    if (taskNext == DEFAULT_TASK) {
+      taskNext = taskNow;
+    } else {
+      applyTask(taskNext);
+      patternNow = getPatternInTask();
+      return;
+    }
+  }
+  // any priority end of task
+  if (patternNow == P_DONE) {
+    // check for normal priority
+    taskNext = getNormalTask();
+    if (taskNext == DEFAULT_TASK) {
+      taskNext = defaultTask;
+    }
+    applyTask(taskNext);
+    patternNow = getPatternInTask();
+    return;
+  }
+  // get next pattern
+  patternNow = getNextPatternInTask();
+}
+
+// set motors and read sensors
+void doCycle(void) {
+  // update servo motors values, move motors
+  updateLegsServo(getWalkPatterns());
+  doPWMServo(m_robotState.timeDelayNow);
+  cycleDone = true;
+}
+
 // the loop function runs over and over again forever
 void loop() {
-  if (m_sequenceCounter.m == 0) {
-    // check emergency task
-    taskNext = getHighPriorityTaskByInputs();
-    if ((taskNext != DEFAULT_TASK) && (taskNow != taskNext)) {
-      taskNow = taskNext;
-      // apply new task
-      applyTask(taskNow);
-      // debug print
-      //printTaskname(taskNow);
-      // get new task pattern
-      patternNow = getPatternInTask();
-    } else {
-      // check for normal task end
-      if ((patternNow == P_DONE) || (((patternNow == P_STANDGO) || (patternNow == P_GOFORWARD)) && (m_robotState.sensorsEnabledNow))) {
-        // get next task
-        taskNow = getNormalTaskByInputs(defaultTask);
-        // apply new task
-        applyTask(taskNow);
-        // debug print
-        //printTaskname(taskNow);
-        // get new task pattern
-        patternNow = getPatternInTask();
-      } else {
-        if (patternNow != P_END) {
-          // get next pattern
-          patternNow = getNextPatternInTask();
-        }
-      }
+  if (cycleDone) {
+    // runs only after delay
+    cycleDone = false;
+    // update motor pattern point
+    updateCountPatterns();
+    // update gyro readings
+    updateGyro();
+    // update current readings
+    updateCurrent(lowCurrentEnabled);
+    // read proximity sensors
+    updateInputs();
+    // once in a pattern after delay
+    if (m_sequenceCounter.m == 0) {
+      lowCurrentEnabled = false;
+      //printInputsDebug();
+      //printCurrentStateDebug();
+      //printLineGyroDebug();
+      //printRollGyroDebug();
     }
-    // debug print
-    // printPatternName(patternNow);
+    // update ballance and bend
+    updateBallance();
+    updateBallanceServo();
+  }
+  // once in a pattern
+  if (m_sequenceCounter.m == 0) {
+    // set new task and next pattern
+    setTaskAndPattern();
+    if (taskNow != taskNext) {
+      taskNow = taskNext;
+      //printTaskNameDebug(taskNow); // DEBUG
+    }
+    //printPatternNameDebug(patternNow); // DEBUG
     switch (patternNow) {
-      case P_STANDGO:
-      case P_GOFORWARD:
-      {
-        setPattern(patternNow, getDirectionGyro());
-        doCycle();
-      }
-      break;
       case P_RESETDIRECTION:
       {
         resetDirectionGyro();
@@ -318,16 +376,6 @@ void loop() {
       case P_RESTOREDIRECTION:
       {
         restoreDirectionGyro();
-      }
-      break;
-      case P_DISABLEINPUTS:
-      {
-        m_robotState.sensorsEnabledNow = false;
-      }
-      break;
-      case P_ENABLEINPUTS:
-      {
-        m_robotState.sensorsEnabledNow = true;
       }
       break;
       case P_DOLOW:
@@ -359,6 +407,26 @@ void loop() {
         // disable motors
         setServo(HIGHT_LOW);
         detachServo();
+      }
+      break;
+      case P_GETCURRENT:
+      {
+        lowCurrentEnabled = true;
+      }
+      break;
+      case P_SETPRIORITY_HIGH:
+      {
+        m_robotState.taskPriorityNow = PRIORITY_HIGH;
+      }
+      break;
+      case P_SETPRIORITY_NORM:
+      {
+        m_robotState.taskPriorityNow = PRIORITY_NORM;
+      }
+      break;
+      case P_SETPRIORITY_LOW:
+      {
+        m_robotState.taskPriorityNow = PRIORITY_LOW;
       }
       break;
       case P_CRAWLSTART:
@@ -398,7 +466,7 @@ void loop() {
         m_robotState.legHightNow = HIGHT_DEFAULT - 30;
         m_robotState.shiftCycleNow = 8;
         m_robotState.speedMuliplierNow = 4;
-        m_robotState.timeDelayNow = TIME_DELAY * 5;
+        m_robotState.timeDelayNow = TIME_DELAY * 6;
         m_robotState.edgeEnabled = false;
         setBendBallance(0, 0);
       }
@@ -431,30 +499,23 @@ void loop() {
         setBendBallance(BEND_HIGHT, BEND_SHIFT);
       }
       break;
+      case P_STANDGO:
+      case P_GOFORWARD:
+      { // set pattern with direction correction
+        setPattern(patternNow, m_gyroState.direction);
+        doCycle();
+      }
+      break;
       default:
       {
+        // set pattern without direction correction
         setPattern(patternNow, 0);
         doCycle();
       }
       break;
     }
   } else {
+    // cycle in the middle of pattern
     doCycle();
   }
-}
-
-// set motors and read sensors
-void doCycle(void) {
-  // update servo motors values, move motors
-  updateLegsServo(getWalkPatterns());
-  doPWMServo(m_robotState.timeDelayNow);
-  // update motor pattern point
-  updateCountPatterns();
-  // read proximity sensors
-  m_robotState.inputStateNow = updateInputs(getDirectionGyro());
-  // update gyro readings
-  updateGyro();
-  // update ballance and bend
-  updateBallance();
-  updateBallanceServo();
 }
