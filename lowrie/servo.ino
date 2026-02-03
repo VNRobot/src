@@ -31,23 +31,21 @@ Servo m_servo_rr_2;
 
 // static ballance
 allLegs staticBallance = {0, 0, 0, 0, 0, 0, 0, 0};
-// temp values
-short angle = 0;
-unsigned char pulse = 0;
-unsigned char motorNumber = 0;
 // motors attached flag
 bool attached = false;
 // motors init values
 short hightSetValue = 0;
 char forwardSetValue = 0;
-// motor enabled flag
-bool motorEnabled[12] = {false, false, false, false, false, false, false, false, false, false, false, false};
 
 // calculate motor 1 and motor 2 angles
 char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
-  //
-  if (m_robotState.robotStateNow == ROBOT_BEND) {
-    Hval += Sval / BEND_DIVIDER;
+  // used for run, bend or roll
+  if (m_robotState.surfaceAngleDevider > 0) {
+    // run or bend
+    Hval += Sval / m_robotState.surfaceAngleDevider;
+  } else if (m_robotState.surfaceAngleDevider < 0) {
+    // roll
+    Hval += (Sval * Sval) / m_robotState.surfaceAngleDevider;
   }
   //
   float Lval = (float)Hval;

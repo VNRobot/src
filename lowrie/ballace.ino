@@ -15,22 +15,15 @@ bend value 36 mm
 forward shift 30 mm weight to back
 */
 
-// bend forward hight
-short bendForwardHight = 0;
-// bend forward shift
-short bendForwardShift = 0;
-
 void setBendBallance(short bendHight, short bendShift) {
   m_legCorrect.fl.hight = -bendHight;
   m_legCorrect.fr.hight = -bendHight;
   m_legCorrect.rl.hight = bendHight;
   m_legCorrect.rr.hight = bendHight;
-  bendForwardHight = bendHight;
   m_legCorrect.fl.shift = -bendShift;
   m_legCorrect.fr.shift = -bendShift;
   m_legCorrect.rl.shift = -bendShift;
   m_legCorrect.rr.shift = -bendShift;
-  bendForwardShift = -bendShift;
 }
 
 void updateBallance(void) {

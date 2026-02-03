@@ -62,7 +62,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     case P_STANDGOLEFT:
     {
       speed = 0;
-      speedL = 0; //-1;
+      speedL = -1; //-1;
       speedR = 1;
       walkingMode = true;
     }
@@ -71,7 +71,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     {
       speed = 0;
       speedL = 1;
-      speedR = 0; //-1;
+      speedR = -1; //-1;
       walkingMode = true;
     }
     break;
@@ -115,7 +115,7 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     break;
     case P_GOBACK:
     {
-      speed = -1;
+      speed = -2;
       speedL = speed;
       speedR = speed;
       walkingMode = true;
@@ -123,17 +123,17 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
     break;
     case P_GOBACKLEFT:
     {
-      speed = -1;
-      speedL = -1;
-      speedR = 0;
+      speed = -2;
+      speedL = -2;
+      speedR = -1;
       walkingMode = true;
     }
     break;
     case P_GOBACKRIGHT:
     {
-      speed = -1;
-      speedL = 0;
-      speedR = -1;
+      speed = -2;
+      speedL = -1;
+      speedR = -2;
       walkingMode = true;
     }
     break;

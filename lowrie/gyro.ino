@@ -35,12 +35,20 @@ unsigned long currentTime = 0;
 unsigned long oldTime;
 // buffers to read register into
 float floatBuffer[3];
-float directionOld = 0;
 unsigned char stateGyroOld = GYRO_NORM;
 int rollMinBuffer;
 int rollMaxBuffer;
 unsigned char rollMinTimeBuffer;
 unsigned char rollMaxTimeBuffer;
+// shake parameters
+int shakeNow = 0;
+int shakeOld = 0;
+int rollBuffer = 0;
+int pitchBuffer = 0;
+int directionBuffer = 0;
+// walking direction
+int walkingDirection = 0;
+int walkingDirectionOld = 0;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -134,7 +142,7 @@ void initGyro() {
 }
 
 // fix rotation angle
-float fixAngle(float angle, float limit){
+float _fixAngle(float angle, float limit){
   if (angle > limit) {
     angle -= limit;
   } else if (angle < -limit) {
@@ -184,13 +192,34 @@ void updateGyro(void) {
   // walk cycle related operations
   if (m_sequenceCounter.m == 0) {
     // fix rotation angle value
-    gyroData.gyroRollX  = fixAngle(gyroData.gyroRollX, 180);
-    gyroData.gyroPitchY = fixAngle(gyroData.gyroPitchY, 180);
-    gyroData.direction  = fixAngle(gyroData.direction, 180);
+    gyroData.gyroRollX  = _fixAngle(gyroData.gyroRollX, 180);
+    gyroData.gyroPitchY = _fixAngle(gyroData.gyroPitchY, 180);
+    gyroData.direction  = _fixAngle(gyroData.direction, 180);
     // get gyro data
     m_gyroState.gyroRollX = ((int)gyroData.gyroRollX * 2);
     m_gyroState.gyroPitchY = -((int)gyroData.gyroPitchY * 2);
     m_gyroState.direction =  -((int)gyroData.direction * 2);
+    // shake value
+    shakeOld = shakeNow;
+    if (m_gyroState.gyroRollX > rollBuffer) {
+      shakeNow = m_gyroState.gyroRollX - rollBuffer;
+    } else {
+      shakeNow = rollBuffer - m_gyroState.gyroRollX;
+    }
+    if (m_gyroState.gyroPitchY > pitchBuffer) {
+      shakeNow += m_gyroState.gyroPitchY - pitchBuffer;
+    } else {
+      shakeNow += pitchBuffer - m_gyroState.gyroPitchY;
+    }
+    if (m_gyroState.direction > directionBuffer) {
+      shakeNow += m_gyroState.direction - directionBuffer;
+    } else {
+      shakeNow += directionBuffer - m_gyroState.direction;
+    }
+    // remember position
+    rollBuffer = m_gyroState.gyroRollX;
+    pitchBuffer = m_gyroState.gyroPitchY;
+    directionBuffer = m_gyroState.direction;
     // start of walk cycle
     m_gyroState.rollMin = rollMinBuffer;
     m_gyroState.rollMax = rollMaxBuffer;
@@ -227,26 +256,48 @@ void resetGyro(void) {
   gyroData.gyroRollX = gyroData.accRollX / 2;
   gyroData.gyroPitchY = gyroData.accPitchY / 2;
   gyroData.direction = 0;
+  m_gyroState.direction = 0;
   m_gyroState.rollMin = 0;
   m_gyroState.rollMax = 0;
   m_gyroState.rollMinTime = 0;
   m_gyroState.rollMaxTime = 0;
   m_gyroState.stateGyro = GYRO_NORM;
+  walkingDirectionOld = 0;
+  walkingDirection = 0;
+  shakeOld = 0;
+  shakeNow = 0;
+  rollBuffer = 0;
+  pitchBuffer = 0;
+  directionBuffer = 0;
+}
+
+// get walking direction
+int getDirectionGyro(void) {
+  return m_gyroState.direction - walkingDirection;
+}
+
+// remember horizontal direction
+void setDirectionGyro(void) {
+  walkingDirection = m_gyroState.direction;
+  walkingDirectionOld = walkingDirection;
 }
 
 // correct horizontal direction
 void resetDirectionGyro(void) {
-  directionOld = gyroData.direction;
-  gyroData.direction = 0;
+  walkingDirection = m_gyroState.direction;
 }
 
 // return to old horizontal direction
 void restoreDirectionGyro(void) {
-  gyroData.direction += directionOld;
+  walkingDirection = walkingDirectionOld;
 }
 
 // status of gyro
 unsigned char _statusGyro(void) {
+  // if shaken wait
+  if (shakeNow > (shakeOld * 2)) {
+    return GYRO_SHAKEN;
+  }
   // upside down
   if ((m_gyroState.gyroRollX > 100) || (m_gyroState.gyroRollX < -100)) {
     return GYRO_UPSIDEDOWN;

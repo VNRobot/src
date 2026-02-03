@@ -98,24 +98,30 @@ void _setBeginTask(void) {
 void _setWalkBackLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
   currentTask[1] = P_STANDGO;
-  currentTask[2] = P_GOBACKLEFT;
+  currentTask[2] = P_GOBACK;
   currentTask[3] = P_GOBACKLEFT;
   currentTask[4] = P_GOBACKLEFT;
-  currentTask[5] = P_STANDGO;
-  currentTask[6] = P_RESETDIRECTION;
-  currentTask[7] = P_DONE;
+  currentTask[5] = P_GOBACKLEFT;
+  currentTask[6] = P_GOBACKLEFT;
+  currentTask[7] = P_GOBACKLEFT;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_DONE;
 }
 
 // set walk back right task
 void _setWalkBackRightTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
   currentTask[1] = P_STANDGO;
-  currentTask[2] = P_GOBACKRIGHT;
+  currentTask[2] = P_GOBACK;
   currentTask[3] = P_GOBACKRIGHT;
   currentTask[4] = P_GOBACKRIGHT;
-  currentTask[5] = P_STANDGO;
-  currentTask[6] = P_RESETDIRECTION;
-  currentTask[7] = P_DONE;
+  currentTask[5] = P_GOBACKRIGHT;
+  currentTask[6] = P_GOBACKRIGHT;
+  currentTask[7] = P_GOBACKRIGHT;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = P_RESETDIRECTION;
+  currentTask[10] = P_DONE;
 }
 
 // set stand Turn right task
@@ -168,16 +174,18 @@ void _setStandTurnLeft2Task(void) {
 void _setWalkTurnRightTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GORIGHT;
-  currentTask[2] = P_RESETDIRECTION;
-  currentTask[3] = P_DONE;
+  currentTask[2] = P_GORIGHT;
+  currentTask[3] = P_RESETDIRECTION;
+  currentTask[4] = P_DONE;
 }
 
 // set Turn left task
 void _setWalkTurnLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GOLEFT;
-  currentTask[2] = P_RESETDIRECTION;
-  currentTask[3] = P_DONE;
+  currentTask[2] = P_GOLEFT;
+  currentTask[3] = P_RESETDIRECTION;
+  currentTask[4] = P_DONE;
 }
 
 // set walk task
@@ -316,6 +324,9 @@ unsigned char getHighPriorityTask(void) {
       return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_BACK:
+      return DEFAULT_TASK;
+    break;
+    case GYRO_SHAKEN:
       return DEFAULT_TASK;
     break;
     default:
