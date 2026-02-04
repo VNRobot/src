@@ -27,8 +27,6 @@ char mPointWalkSwim[36]    = {  0, -2, -4, -6, -8,-10, -12, -14, -16, -18, -16, 
 // recover
 short mRecoverDown[36]     = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 40, 50, 60, 70, 80,  90, 100, 110,120, 125};
 short mRecoverUp[36]       = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,  80,  80,  80,  80, 80, 80, 80, 80, 80, 80, 80,  90, 100, 110,120, 125};
-// pattern item buffer
-unsigned char taskItemBuffer = P_DOSTAND;
 // legshift temp value for transition
 unsigned char legShiftTemp = m_robotState.shiftCycleNow;
 // shift between left and right legs
@@ -40,22 +38,14 @@ bool getWalkingMode(void) {
 }
 
 // get next sequence, mode and speed
-void setPattern(unsigned char currentPattern, char angleTurn) {
-  taskItemBuffer = currentPattern;
+void setPattern(void) {
   // set mode
-  switch (currentPattern) {
+  switch (m_robotState.patternNow) {
     case P_STANDGO:
     {
       speed = 0;
       speedL = speed;
       speedR = speed;
-      if (angleTurn < -4) {
-        speedL = 1;
-        speedR = 0; //-1;
-      } else if (angleTurn > 4) {
-        speedL = 0; //-1;
-        speedR = 1;
-      }
       walkingMode = true;
     }
     break;
@@ -83,11 +73,6 @@ void setPattern(unsigned char currentPattern, char angleTurn) {
       }
       speedL = speed;
       speedR = speed;
-      if (angleTurn < -4) {
-        speedR = speedL - 1;
-      } else if (angleTurn > 4) {
-        speedL = speedR - 1;
-      }
       walkingMode = true;
     }
     break;
@@ -203,7 +188,7 @@ void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shift
 // get servo motor steps
 allLegs getWalkPatterns(void) {
   leg legSet;
-  switch (taskItemBuffer) {
+  switch (m_robotState.patternNow) {
     case P_STANDTOGO:
     {
       _setLegsValuesBySide(m_robotState.legHightNow, 0, m_robotState.legHightNow, 0);

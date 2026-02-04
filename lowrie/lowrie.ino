@@ -15,7 +15,8 @@ Main file
 #define MAX_CURRENT             1000
 #define MIN_CURRENT             100
 // low battery level in mv
-#define LOW_BATTERY             6000
+#define LOW_BATTERY             6200
+#define DEAD_BATTERY            6000
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main servo pattern counter end
@@ -53,6 +54,7 @@ enum inState {
 // current state
 enum cState {
   C_LOW_BATTERY,
+  C_DEAD_BATTERY,
   C_HIGH_CURRENT,
   C_LOW_CURRENT,
   C_NORMAL             
@@ -107,7 +109,6 @@ enum rTasks {
   STANDTURNRIGHT2_TASK,
   STANDTURNLEFT2_TASK,
   GO_TASK,
-  STANDGO_TASK,
   STAND_TASK,
   DOWN_TASK,
   RECOVER_LEFT_TASK,
@@ -127,7 +128,9 @@ enum gState {
   GYRO_FOLLING_RIGHT,
   GYRO_FOLLING_FRONT,
   GYRO_FOLLING_BACK,
-  GYRO_SHAKEN
+  GYRO_SHAKEN,
+  GYRO_TURNED_RIGHT,
+  GYRO_TURNED_LEFT
 };
 // task priority
 enum tPriority {
@@ -207,6 +210,8 @@ typedef struct robotState {
   char flipStateNow;
   bool edgeEnabled;
   unsigned char taskPriorityNow;
+  unsigned char patternNow;
+  unsigned char taskNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -232,7 +237,9 @@ robotState m_robotState = {
   0,                       // char surfaceAngleDevider;
   1,                       // char flipStateNow;
   false,                   // edgeEnabled;
-  PRIORITY_LOW             // taskPriorityNow;
+  PRIORITY_LOW,            // taskPriorityNow;
+  P_DOSTAND,               // patternNow
+  STAND_TASK               // taskNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
@@ -243,12 +250,8 @@ allLegs m_legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
 bool lowCurrentEnabled = false;
 // servo cycle is done flag
 bool cycleDone = true;
-// current pattern defined in rPatterns
-unsigned char patternNow = P_DOSTAND;
 // default task from rTasks
 unsigned char defaultTask = GO_TASK;
-// current task
-unsigned char taskNow = STAND_TASK;
 // next task
 unsigned char taskNext = STAND_TASK;
 // variable for temporary use
@@ -288,43 +291,41 @@ void setup() {
     Serial.println(F("Entering explore mode"));
     applyTask(BEGIN_TASK);
     // load task and pattern. direction is 0
-    setPattern(patternNow, 0);
+    setPattern();
     updateCountPatterns();
   }
 }
 
 // set new task and new pattern
 void setTaskAndPattern(void) {
-  if (patternNow == P_END) {
+  if (m_robotState.patternNow == P_END) {
     // this is the end. do nothing
     delay(10);
     return;
   }
   // not high priority or end of high priority task
-  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (patternNow == P_DONE)) {
+  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == P_DONE)) {
     // override with high priority task
     taskNext = getHighPriorityTask();
     if (taskNext == DEFAULT_TASK) {
-      taskNext = taskNow;
+      taskNext = m_robotState.taskNow;
     } else {
       applyTask(taskNext);
-      patternNow = getPatternInTask();
       return;
     }
   }
   // any priority end of task
-  if (patternNow == P_DONE) {
+  if (m_robotState.patternNow == P_DONE) {
     // check for normal priority
     taskNext = getNormalTask();
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
     applyTask(taskNext);
-    patternNow = getPatternInTask();
     return;
   }
-  // get next pattern
-  patternNow = getNextPatternInTask();
+  // set next pattern
+  setNextPatternInTask();
 }
 
 // set motors and read sensors
@@ -364,12 +365,12 @@ void loop() {
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
     setTaskAndPattern();
-    if (taskNow != taskNext) {
-      taskNow = taskNext;
-      //printTaskNameDebug(taskNow); // DEBUG
+    if (m_robotState.taskNow != taskNext) {
+      m_robotState.taskNow = taskNext;
+      //printTaskNameDebug(m_robotState.taskNow); // DEBUG
     }
-    //printPatternNameDebug(patternNow); // DEBUG
-    switch (patternNow) {
+    //printPatternNameDebug(m_robotState.patternNow); // DEBUG
+    switch (m_robotState.patternNow) {
       case P_SETDIRECTION:
       {
         setDirectionGyro();
@@ -546,17 +547,10 @@ void loop() {
         setBendBallance(0, 0);
       }
       break;
-      case P_STANDGO:
-      case P_GOFORWARD:
-      { // set pattern with direction correction
-        setPattern(patternNow, getDirectionGyro());
-        doCycle();
-      }
-      break;
       default:
       {
-        // set pattern without direction correction
-        setPattern(patternNow, 0);
+        // set pattern
+        setPattern();
         doCycle();
       }
       break;

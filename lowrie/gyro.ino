@@ -337,6 +337,12 @@ unsigned char _statusGyro(void) {
   if (m_gyroState.accPitchY > 30) {
     return GYRO_FOLLING_BACK;
   }
+  if (m_gyroState.direction - walkingDirection > 4) {
+    return GYRO_TURNED_RIGHT;
+  }
+  if (m_gyroState.direction - walkingDirection < -4) {
+    return GYRO_TURNED_LEFT;
+  }
   return GYRO_NORM;
 }
 /*
@@ -346,6 +352,12 @@ void _printGyro(void) {
   switch (m_gyroState.stateGyro) {
     case GYRO_NORM:
       Serial.println(F(" GYRO_NORM "));
+    break;
+    case GYRO_TURNED_RIGHT:
+      Serial.println(F(" GYRO_TURNED_RIGHT "));
+    break;
+    case GYRO_TURNED_LEFT:
+      Serial.println(F(" GYRO_TURNED_LEFT "));
     break;
     case GYRO_UPSIDEDOWN:
       Serial.println(F(" GYRO_UPSIDEDOWN "));

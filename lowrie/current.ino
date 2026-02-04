@@ -48,14 +48,17 @@ void updateCurrent(bool lowCurrentEnabled) {
     }
     analogValueCurrent.battery = (batteryV * 25) / 3;
     // get current state
-    if (analogValueCurrent.battery < LOW_BATTERY) {
-      // battery low
-      m_robotState.currentStateNow = C_LOW_BATTERY;
+    if (analogValueCurrent.battery < DEAD_BATTERY) {
+      // battery dead
+      m_robotState.currentStateNow = C_DEAD_BATTERY;
     } else if ((analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
       // motor 2 or 3 current too high
       m_robotState.currentStateNow = C_HIGH_CURRENT;
     } else if ((lowCurrentEnabled) && (analogValueCurrent.current2 < MIN_CURRENT) && (analogValueCurrent.current3 < MIN_CURRENT)) {
       m_robotState.currentStateNow = C_LOW_CURRENT;
+    } else if (analogValueCurrent.battery < LOW_BATTERY) {
+      // battery low
+      m_robotState.currentStateNow = C_LOW_BATTERY;
     } else {
       m_robotState.currentStateNow = C_NORMAL;
     }

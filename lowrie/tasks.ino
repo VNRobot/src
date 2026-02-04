@@ -9,8 +9,6 @@ List of tasks. Every task contains movement patterns.
 unsigned char currentTask[32] = {P_DOSTAND, P_DONE};
 // pattern counter points to currentTask
 unsigned char currentTaskPoint = 0;
-// pattern in task buffer
-unsigned char patternInTaskBuffer = P_DOSTAND;
 // repeat counter
 unsigned char repeatCounter = 0;
 unsigned char repeatCounterEnd = 8;
@@ -174,31 +172,20 @@ void _setStandTurnLeft2Task(void) {
 void _setWalkTurnRightTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GORIGHT;
-  currentTask[2] = P_GORIGHT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_DONE;
+  currentTask[2] = P_DONE;
 }
 
 // set Turn left task
 void _setWalkTurnLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GOLEFT;
-  currentTask[2] = P_GOLEFT;
-  currentTask[3] = P_RESETDIRECTION;
-  currentTask[4] = P_DONE;
+  currentTask[2] = P_DONE;
 }
 
 // set walk task
 void _setWalkTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GOFORWARD;
-  currentTask[2] = P_DONE;
-}
-
-// set standwalk task
-void _setStandWalkTask(void) {
-  currentTask[0] = P_SETPRIORITY_LOW;
-  currentTask[1] = P_STANDGO;
   currentTask[2] = P_DONE;
 }
 
@@ -238,9 +225,6 @@ void applyTask(unsigned char task) {
     case GO_TASK:
       _setWalkTask();
     break;
-    case STANDGO_TASK:
-      _setStandWalkTask();
-    break;
     case STAND_TASK:
       _setStandTask();
     break;
@@ -258,38 +242,33 @@ void applyTask(unsigned char task) {
   }
   repeatCounter = 0;
   currentTaskPoint = 0;
-  patternInTaskBuffer = currentTask[currentTaskPoint];
+  m_robotState.patternNow = currentTask[currentTaskPoint];
 }
 
-// get next pattern in task
-unsigned char getNextPatternInTask(void) {
+// set next pattern in task
+void setNextPatternInTask(void) {
   // update task point to the next pattern
   if (currentTask[currentTaskPoint] == P_DONE) {
     // task is done. do nothing
-    patternInTaskBuffer = P_DONE;
-    return patternInTaskBuffer;
+    m_robotState.patternNow = P_DONE;
+    return;
   }
   if ((currentTask[currentTaskPoint] == P_REPEAT) && (repeatCounter < repeatCounterEnd)) {
     // update repeat counter
     repeatCounter ++;
-    return patternInTaskBuffer;
+    return;
   } 
   // generic pattern
   repeatCounter = 0;
   currentTaskPoint ++;
   if (currentTask[currentTaskPoint] != P_REPEAT) {
-    patternInTaskBuffer = currentTask[currentTaskPoint];
+    m_robotState.patternNow = currentTask[currentTaskPoint];
   }
-  return patternInTaskBuffer;
-}
-
-// get pattern in task
-unsigned char getPatternInTask(void) {
-  return patternInTaskBuffer;
+  return;
 }
 
 unsigned char getHighPriorityTask(void) {
-  if (m_robotState.currentStateNow == C_LOW_BATTERY) {
+  if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
     return DOWN_TASK;
   }
   if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
@@ -365,7 +344,18 @@ unsigned char getNormalTask(void) {
       return GOTURNLEFT_TASK;
     break;
     case IN_NORMAL:
-      return DEFAULT_TASK;
+      {
+        if (m_gyroState.stateGyro == GYRO_TURNED_RIGHT) {
+          return GOTURNLEFT_TASK;
+        }
+        if (m_gyroState.stateGyro == GYRO_TURNED_LEFT) {
+          return GOTURNRIGHT_TASK;
+        }
+        if (m_robotState.currentStateNow == C_LOW_BATTERY) {
+          return DEFAULT_TASK;
+        }
+        return DEFAULT_TASK;
+      }
     break;
     default:
       return DEFAULT_TASK;

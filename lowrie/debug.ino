@@ -42,9 +42,6 @@ void printTaskNameDebug(unsigned char taskNow) {
     case GO_TASK:
       Serial.println(F(" GO_TASK "));
     break;
-    case STANDGO_TASK:
-      Serial.println(F(" STANDGO_TASK "));
-    break;
     case STAND_TASK:
       Serial.println(F(" STAND_TASK "));
     break;
@@ -213,6 +210,9 @@ void printInputsDebug(void) {
 void printCurrentStateDebug(void) {
   // print input state
   switch (m_robotState.currentStateNow) {
+    case C_DEAD_BATTERY:
+      Serial.print(F(" C_DEAD_BATTERY "));
+    break;
     case C_LOW_BATTERY:
       Serial.print(F(" C_LOW_BATTERY "));
     break;
