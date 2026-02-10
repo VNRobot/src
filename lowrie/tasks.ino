@@ -84,12 +84,11 @@ void _setBeginTask(void) {
   currentTask[2] = P_DOSTAND;
   currentTask[3] = P_GETCURRENT;
   currentTask[4] = P_RESETGIRO;
-  currentTask[5] = P_NORMALSTART;
-  currentTask[6] = P_STANDTOGO;
+  currentTask[5] = P_STANDTOGO;
+  currentTask[6] = P_STANDGO;
   currentTask[7] = P_STANDGO;
-  currentTask[8] = P_STANDGO;
-  currentTask[9] = P_GOFORWARD;
-  currentTask[10] = P_DONE;
+  currentTask[8] = P_GOFORWARD;
+  currentTask[9] = P_DONE;
 }
 
 // set walk back left task
@@ -274,9 +273,9 @@ unsigned char getHighPriorityTask(void) {
   if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
     return STAND_TASK;
   }
-  if (m_robotState.currentStateNow == C_LOW_CURRENT) {
-    return FLIP_TASK;
-  }
+  //if (m_robotState.currentStateNow == C_LOW_CURRENT) {
+  //  return FLIP_TASK;
+  //}
   switch (m_gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
       return FLIP_TASK;
@@ -294,10 +293,10 @@ unsigned char getHighPriorityTask(void) {
       return FLIP_TASK;
     break;
     case GYRO_FOLLING_LEFT:
-      return RECOVER_LEFT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_RIGHT:
-      return RECOVER_RIGHT_TASK;
+      return DEFAULT_TASK;
     break;
     case GYRO_FOLLING_FRONT:
       return DEFAULT_TASK;

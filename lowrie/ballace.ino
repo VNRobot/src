@@ -15,25 +15,16 @@ bend value 36 mm
 forward shift 30 mm weight to back
 */
 
-void setBendBallance(short bendHight, short bendShift) {
-  m_legCorrect.fl.hight = -bendHight;
-  m_legCorrect.fr.hight = -bendHight;
-  m_legCorrect.rl.hight = bendHight;
-  m_legCorrect.rr.hight = bendHight;
-  m_legCorrect.fl.shift = -bendShift;
-  m_legCorrect.fr.shift = -bendShift;
-  m_legCorrect.rl.shift = -bendShift;
-  m_legCorrect.rr.shift = -bendShift;
-}
-
 void updateBallance(void) {
+  m_legCorrect.fl.hight = -m_robotState.bendHight;
+  m_legCorrect.fr.hight = -m_robotState.bendHight;
+  m_legCorrect.rl.hight = m_robotState.bendHight;
+  m_legCorrect.rr.hight = m_robotState.bendHight;
+  m_legCorrect.fl.shift = -m_robotState.bendShift;
+  m_legCorrect.fr.shift = -m_robotState.bendShift;
+  m_legCorrect.rl.shift = -m_robotState.bendShift;
+  m_legCorrect.rr.shift = -m_robotState.bendShift;
 }
-
-
-
-
-
-
 
 /*
 struct surface {

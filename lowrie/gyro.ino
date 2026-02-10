@@ -11,8 +11,6 @@ use MPU6050 to read gyroscope and accelerometer
 typedef struct gyro {
   float accRollX;     // roll       right - positive   -90 0 90 upsidedown also 0
   float accPitchY;    // pitch      down - positive   -90 0 90 upsidedown also 0
-  float gyroRollX;    // roll       count turning
-  float gyroPitchY;   // pitch      count turning
   float direction;    // direction  turn left - positive
 } gyro;
 // gyro errors structure
@@ -25,7 +23,7 @@ float GyroErrorZ;
 } errors;
 
 // gyro data
-gyro gyroData = {0, 0, 0, 0, 0};
+gyro gyroData = {0, 0, 0};
 // gyro errors
 errors gyroErrors = {0, 0, 0, 0, 0};
 
@@ -160,6 +158,7 @@ void updateGyro(void) {
   floatBuffer[2] /= 16384.0;
   gyroData.accRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
   gyroData.accPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
+  m_gyroState.accUpsideZ = (int)((floatBuffer[2]) * 100);
   // gyroscope
   oldTime = currentTime;
   currentTime = millis();
@@ -168,48 +167,26 @@ void updateGyro(void) {
   floatBuffer[0] = floatBuffer[0] / 131.0 - gyroErrors.GyroErrorX;
   floatBuffer[1] = floatBuffer[1] / 131.0 - gyroErrors.GyroErrorY;
   floatBuffer[2] = floatBuffer[2] / 131.0 - gyroErrors.GyroErrorZ;
-  gyroData.gyroRollX  += floatBuffer[0] * timeInterval;
-  gyroData.gyroPitchY += floatBuffer[1] * timeInterval;
   gyroData.direction  += floatBuffer[2] * timeInterval;
-  //gyroData.roll = (int)(0.96 * gyroData.gyroRollX + 0.04 * gyroData.accRollX);
-  //gyroData.pitch = (int)(0.96 * gyroData.gyroPitchY + 0.04 * gyroData.accPitchY);
-  // fix slow drift
-  if (m_sequenceCounter.m == 0) {
-    if (gyroData.gyroRollX > gyroData.accRollX / 2) {
-      gyroData.gyroRollX --;
-    } else if (gyroData.gyroRollX < gyroData.accRollX / 2) {
-      gyroData.gyroRollX ++;
-    }
-    if (gyroData.gyroPitchY > gyroData.accPitchY / 2) {
-      gyroData.gyroPitchY --;
-    } else if (gyroData.gyroPitchY < gyroData.accPitchY / 2) {
-      gyroData.gyroPitchY ++;
-    }
-  }
-  // end fix slow drift
   m_gyroState.accRollX =   (int)gyroData.accRollX;
   m_gyroState.accPitchY = -(int)gyroData.accPitchY;
   // walk cycle related operations
   if (m_sequenceCounter.m == 0) {
     // fix rotation angle value
-    gyroData.gyroRollX  = _fixAngle(gyroData.gyroRollX, 180);
-    gyroData.gyroPitchY = _fixAngle(gyroData.gyroPitchY, 180);
     gyroData.direction  = _fixAngle(gyroData.direction, 180);
     // get gyro data
-    m_gyroState.gyroRollX = ((int)gyroData.gyroRollX * 2);
-    m_gyroState.gyroPitchY = -((int)gyroData.gyroPitchY * 2);
     m_gyroState.direction =  -((int)gyroData.direction * 2);
     // shake value
     shakeOld = shakeNow;
-    if (m_gyroState.gyroRollX > rollBuffer) {
-      shakeNow = m_gyroState.gyroRollX - rollBuffer;
+    if (m_gyroState.accRollX > rollBuffer) {
+      shakeNow = m_gyroState.accRollX - rollBuffer;
     } else {
-      shakeNow = rollBuffer - m_gyroState.gyroRollX;
+      shakeNow = rollBuffer - m_gyroState.accRollX;
     }
-    if (m_gyroState.gyroPitchY > pitchBuffer) {
-      shakeNow += m_gyroState.gyroPitchY - pitchBuffer;
+    if (m_gyroState.accPitchY > pitchBuffer) {
+      shakeNow += m_gyroState.accPitchY - pitchBuffer;
     } else {
-      shakeNow += pitchBuffer - m_gyroState.gyroPitchY;
+      shakeNow += pitchBuffer - m_gyroState.accPitchY;
     }
     if (m_gyroState.direction > directionBuffer) {
       shakeNow += m_gyroState.direction - directionBuffer;
@@ -217,8 +194,8 @@ void updateGyro(void) {
       shakeNow += directionBuffer - m_gyroState.direction;
     }
     // remember position
-    rollBuffer = m_gyroState.gyroRollX;
-    pitchBuffer = m_gyroState.gyroPitchY;
+    rollBuffer = m_gyroState.accRollX;
+    pitchBuffer = m_gyroState.accPitchY;
     directionBuffer = m_gyroState.direction;
     // start of walk cycle
     m_gyroState.rollMin = rollMinBuffer;
@@ -253,8 +230,6 @@ void updateGyro(void) {
 
 // reset gyro data
 void resetGyro(void) {
-  gyroData.gyroRollX = gyroData.accRollX / 2;
-  gyroData.gyroPitchY = gyroData.accPitchY / 2;
   gyroData.direction = 0;
   m_gyroState.direction = 0;
   m_gyroState.rollMin = 0;
@@ -299,10 +274,10 @@ unsigned char _statusGyro(void) {
     return GYRO_SHAKEN;
   }
   // upside down
-  if ((m_gyroState.gyroRollX > 100) || (m_gyroState.gyroRollX < -100)) {
+  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
     return GYRO_UPSIDEDOWN;
   }
-  if ((m_gyroState.gyroPitchY > 100) || (m_gyroState.gyroPitchY < -100)) {
+  if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
     return GYRO_UPSIDEDOWN;
   }
   // fell left
@@ -322,19 +297,19 @@ unsigned char _statusGyro(void) {
     return GYRO_FELL_BACK;
   }
   // folling left
-  if (m_gyroState.accRollX < -30) {
+  if (m_gyroState.accRollX < -10) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right
-  if (m_gyroState.accRollX > 30) {
+  if (m_gyroState.accRollX > 10) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front
-  if (m_gyroState.accPitchY < -30) {
+  if (m_gyroState.accPitchY < -10) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back
-  if (m_gyroState.accPitchY > 30) {
+  if (m_gyroState.accPitchY > 10) {
     return GYRO_FOLLING_BACK;
   }
   if (m_gyroState.direction - walkingDirection > 4) {

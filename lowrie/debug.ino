@@ -236,10 +236,8 @@ void printLineGyroDebug(void) {
   Serial.print(m_gyroState.accRollX);
   Serial.print(" aPitch ");
   Serial.print(m_gyroState.accPitchY);
-  Serial.print(" gRoll ");
-  Serial.print(m_gyroState.gyroRollX);
-  Serial.print(" gPitch ");
-  Serial.print(m_gyroState.gyroPitchY);
+  Serial.print(" Z ");
+  Serial.print(m_gyroState.accUpsideZ);
   Serial.print(" direction ");
   Serial.println(m_gyroState.direction);
 }
