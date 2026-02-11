@@ -19,8 +19,8 @@ char speedR = 0;
 short mLiftHFlag[36]       = {  1,  1,  1,  1,  3,  5,  10,  10,  10,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10, 10, 10, 10,  10,  10,   2,  1,   1};
 char mPointWalk[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
 // ino
-short mLiftHFlagIno[36]       = {  1,  1,  1,  1, 10, 10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10, 10, 10, 10, 10, 10, 10, 10,  10,  10,  10,  1,   1};
-char mPointWalkIno[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
+short mLiftHFlagIno[36]    = {  1,  1,  1,  1, 10, 10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  1000,1000,1000,1000,1000,1000,10,  10, 10, 10, 10, 10, 10, 10, 10,  10,  10,  10,  1,   1};
+char mPointWalkIno[36]     = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
 // swim
 short mLiftHFlagSwim[36]   = {  1,  1,  1,  1,  1,  1,   1,   1,   1,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10,  2,  1,  1,   1,   1,   1,  1,   1};
 char mPointWalkSwim[36]    = {  0, -2, -4, -6, -8,-10, -12, -14, -16, -18, -16, -14, -12, -10,  -8,  -6,  -4,  -2,   0,   2,   4,   6,   8,  10, 12, 14, 16, 18, 16, 14, 12,  10,   8,   6,  4,   2};
@@ -142,9 +142,9 @@ void updateCountPatterns(void) {
       halfCycleTemp = m_robotState.halfCycleNow;
       legShiftTemp = m_robotState.shiftCycleNow;
     } else if (legShiftTemp < m_robotState.shiftCycleNow) {
-      legShiftTemp ++;
+      legShiftTemp = m_robotState.shiftCycleNow; //legShiftTemp += 4;
     } else if (legShiftTemp > m_robotState.shiftCycleNow) {
-      legShiftTemp --;
+      legShiftTemp = m_robotState.shiftCycleNow; //legShiftTemp -= 4;
     }
   }
   // update sequence shift 

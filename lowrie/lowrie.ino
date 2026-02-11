@@ -13,7 +13,6 @@ Main file
 #define CALIBRATION_CURRENT     2000
 // maximal pair of legs current in ma 2000 to disable
 #define MAX_CURRENT             1000
-#define MIN_CURRENT             100
 // low battery level in mv
 #define LOW_BATTERY             6200
 #define DEAD_BATTERY            6000
@@ -56,7 +55,6 @@ enum cState {
   C_LOW_BATTERY,
   C_DEAD_BATTERY,
   C_HIGH_CURRENT,
-  C_LOW_CURRENT,
   C_NORMAL             
 };
 // patterns
@@ -84,7 +82,6 @@ enum rPatterns {
   P_RESTOREDIRECTION,
   P_RESETGIRO,
   P_REPEAT,
-  P_GETCURRENT,
   P_SETPRIORITY_HIGH,
   P_SETPRIORITY_NORM,
   P_SETPRIORITY_LOW,
@@ -245,8 +242,6 @@ accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // ballance correction
 allLegs m_legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
-// enable low current reading
-bool lowCurrentEnabled = false;
 // servo cycle is done flag
 bool cycleDone = true;
 // default task from rTasks
@@ -283,7 +278,7 @@ void setup() {
     // init digital sensors
     initInputs();
     // update current readings
-    updateCurrent(false);
+    updateCurrent();
     // read proximity sensors
     updateInputs();
     // explore mode
@@ -349,12 +344,11 @@ void loop() {
     // update gyro readings
     updateGyro();
     // update current readings
-    updateCurrent(lowCurrentEnabled);
+    updateCurrent();
     // read proximity sensors
     updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
-      lowCurrentEnabled = false;
       //printInputsDebug();
       //printCurrentStateDebug();
       //printLineGyroDebug();
@@ -423,11 +417,6 @@ void loop() {
         // disable motors
         setServo(HIGHT_LOW);
         detachServo();
-      }
-      break;
-      case P_GETCURRENT:
-      {
-        lowCurrentEnabled = true;
       }
       break;
       case P_SETPRIORITY_HIGH:

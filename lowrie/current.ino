@@ -18,7 +18,7 @@ struct aCurrent {
 };
 
 // analog input values array
-aCurrent analogValueCurrent = {LOW_BATTERY, MIN_CURRENT, MIN_CURRENT}; // processed values
+aCurrent analogValueCurrent = {LOW_BATTERY, 0, 0}; // processed values
 unsigned int batteryV = 0;
 unsigned int currentF = 0;
 unsigned int currentR = 0;
@@ -28,7 +28,7 @@ void initCurrent(void) {
 }
 
 // read and remember analog current sensors readings
-void updateCurrent(bool lowCurrentEnabled) {
+void updateCurrent(void) {
   // end of previous cycle
   if (m_sequenceCounter.m == 0) {
     // average
@@ -54,8 +54,6 @@ void updateCurrent(bool lowCurrentEnabled) {
     } else if ((analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
       // motor 2 or 3 current too high
       m_robotState.currentStateNow = C_HIGH_CURRENT;
-    } else if ((lowCurrentEnabled) && (analogValueCurrent.current2 < MIN_CURRENT) && (analogValueCurrent.current3 < MIN_CURRENT)) {
-      m_robotState.currentStateNow = C_LOW_CURRENT;
     } else if (analogValueCurrent.battery < LOW_BATTERY) {
       // battery low
       m_robotState.currentStateNow = C_LOW_BATTERY;

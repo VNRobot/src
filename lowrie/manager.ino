@@ -12,7 +12,6 @@ input data
       C_LOW_BATTERY,
       C_DEAD_BATTERY,
       C_HIGH_CURRENT,
-      C_LOW_CURRENT,
       C_NORMAL  
   gyro
     m_gyroState.stateGyro          
@@ -86,7 +85,6 @@ input data
       P_RESTOREDIRECTION,
       P_RESETGIRO,
       P_REPEAT,
-      P_GETCURRENT,
       P_SETPRIORITY_HIGH,
       P_SETPRIORITY_NORM,
       P_SETPRIORITY_LOW,
@@ -270,15 +268,15 @@ void _setRobotState(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      m_robotState.legLiftNow = LEG_LIFT * 2;
+      m_robotState.legLiftNow = LEG_LIFT * 3;
       m_robotState.inputDistanceNow = NORMAL_DISTANCE;
       m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
       m_robotState.robotStateNow = ROBOT_INO;
-      m_robotState.legHightNow = HIGHT_DEFAULT - 30;
+      m_robotState.legHightNow = HIGHT_DEFAULT + 10;
       m_robotState.shiftCycleNow = 8;
-      m_robotState.speedMuliplierNow = 4;
+      m_robotState.speedMuliplierNow = 2;
       m_robotState.surfaceAngleDevider = 0;
-      m_robotState.timeDelayNow = TIME_DELAY * 6;
+      m_robotState.timeDelayNow = TIME_DELAY * 4;
       m_robotState.edgeEnabled = false;
       m_robotState.bendHight = 0;
       m_robotState.bendShift = 0;
@@ -367,9 +365,6 @@ unsigned char _inputsCheck(void) {
   if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
     return ROBOT_NORM;
   }
-  if (m_robotState.currentStateNow == C_LOW_CURRENT) {
-    return ROBOT_NORM;
-  }
    // check gyro state
   switch (m_gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
@@ -394,12 +389,11 @@ unsigned char _inputsCheck(void) {
   return ROBOT_DEFAULT;
 }
 
-
 // do state manager
 void doStateManager(void) {
-  /*
   // check inputs
-  newRobotState = ROBOT_DEFAULT; //_inputsCheck();
+  newRobotState = ROBOT_NORM; //_inputsCheck();
+  /*
   // default task low priority
   if ((m_robotState.taskPriorityNow == PRIORITY_LOW) && (newRobotState == ROBOT_DEFAULT)) {
     // inputs ok.
@@ -413,13 +407,13 @@ void doStateManager(void) {
   if (newRobotState == ROBOT_DEFAULT) {
     newRobotState = m_robotState.robotStateNow;
   }
+    */
   // update state
   old2RobotState = oldRobotState;
   oldRobotState = m_robotState.robotStateNow;
   if (newRobotState != m_robotState.robotStateNow) {
     _setRobotState(newRobotState);
   }
-  */
 }
 
 /*

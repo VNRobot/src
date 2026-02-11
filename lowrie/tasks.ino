@@ -40,10 +40,9 @@ void _setRecoverLeftTask(void) {
   currentTask[5] = P_DOSTAND;
   currentTask[6] = P_SETPRIORITY_NORM;
   currentTask[7] = P_DOSTAND;
-  currentTask[8] = P_GETCURRENT;
-  currentTask[9] = P_STANDTOGO;
-  currentTask[10] = P_STANDGO;
-  currentTask[11] = P_DONE;
+  currentTask[8] = P_STANDTOGO;
+  currentTask[9] = P_STANDGO;
+  currentTask[10] = P_DONE;
 }
 // set bend right task
 void _setRecoverRightTask(void) {
@@ -55,10 +54,9 @@ void _setRecoverRightTask(void) {
   currentTask[5] = P_DOSTAND;
   currentTask[6] = P_SETPRIORITY_NORM;
   currentTask[7] = P_DOSTAND;
-  currentTask[8] = P_GETCURRENT;
-  currentTask[9] = P_STANDTOGO;
-  currentTask[10] = P_STANDGO;
-  currentTask[11] = P_DONE;
+  currentTask[8] = P_STANDTOGO;
+  currentTask[9] = P_STANDGO;
+  currentTask[10] = P_DONE;
 }
 
 void _setFlipTask(void) {
@@ -71,10 +69,9 @@ void _setFlipTask(void) {
   currentTask[6] = P_DOSTAND;
   currentTask[7] = P_SETPRIORITY_NORM;
   currentTask[8] = P_DOSTAND;
-  currentTask[9] = P_GETCURRENT;
-  currentTask[10] = P_STANDTOGO;
-  currentTask[11] = P_STANDGO;
-  currentTask[12] = P_DONE;
+  currentTask[9] = P_STANDTOGO;
+  currentTask[10] = P_STANDGO;
+  currentTask[11] = P_DONE;
 }
 
 // set begin task
@@ -82,13 +79,14 @@ void _setBeginTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
   currentTask[1] = P_DOSTAND;
   currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_GETCURRENT;
-  currentTask[4] = P_RESETGIRO;
-  currentTask[5] = P_STANDTOGO;
-  currentTask[6] = P_STANDGO;
+  currentTask[3] = P_DOSTAND;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_RESETGIRO;
+  currentTask[6] = P_STANDTOGO;
   currentTask[7] = P_STANDGO;
-  currentTask[8] = P_GOFORWARD;
-  currentTask[9] = P_DONE;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = P_GOFORWARD;
+  currentTask[10] = P_DONE;
 }
 
 // set walk back left task
