@@ -95,12 +95,7 @@ input data
 output state
   m_robotState.robotStateNow
     ROBOT_NORM,
-    ROBOT_RUN,
     ROBOT_ROLL,
-    ROBOT_CRAWL,
-    ROBOT_SWIM,
-    ROBOT_INO,
-    ROBOT_BEND
 */
 
 // remember tasks
@@ -231,124 +226,28 @@ unsigned char doTaskManager(unsigned char taskNext) {
 // set robot state
 void _setRobotState(unsigned char newState) {
   switch (newState) {
-    case ROBOT_CRAWL:
-    {
-      m_robotState.legLiftNow = LEG_LIFT * 3;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
-      m_robotState.robotStateNow = ROBOT_CRAWL;
-      m_robotState.legHightNow = HIGHT_DEFAULT - 20;
-      m_robotState.shiftCycleNow = 0;
-      m_robotState.speedMuliplierNow = 2;
-      m_robotState.surfaceAngleDevider = 0;
-      m_robotState.timeDelayNow = TIME_DELAY;
-      m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
-
-    }
-    break;
-    case ROBOT_SWIM:
-    {
-      m_robotState.legLiftNow = LEG_LIFT * 3;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE / 2;
-      m_robotState.halfCycleNow = 0;
-      m_robotState.robotStateNow = ROBOT_SWIM;
-      m_robotState.legHightNow = HIGHT_DEFAULT + 30;
-      m_robotState.shiftCycleNow = 0;
-      m_robotState.speedMuliplierNow = 2;
-      m_robotState.surfaceAngleDevider = 0;
-      m_robotState.timeDelayNow = TIME_DELAY * 2;
-      m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
-    }
-    break;
-    case ROBOT_INO:
-    {
-      m_robotState.legLiftNow = LEG_LIFT * 3;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
-      m_robotState.robotStateNow = ROBOT_INO;
-      m_robotState.legHightNow = HIGHT_DEFAULT + 10;
-      m_robotState.shiftCycleNow = 8;
-      m_robotState.speedMuliplierNow = 2;
-      m_robotState.surfaceAngleDevider = 0;
-      m_robotState.timeDelayNow = TIME_DELAY * 4;
-      m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
-    }
-    break;
     case ROBOT_NORM:
     {
       m_robotState.legLiftNow = LEG_LIFT;
       m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
       m_robotState.robotStateNow = ROBOT_NORM;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.shiftCycleNow = 0;
       m_robotState.speedMuliplierNow = 2;
       m_robotState.surfaceAngleDevider = 0;
       m_robotState.timeDelayNow = TIME_DELAY;
       m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
-    }
-    break;
-    case ROBOT_BEND:
-    {
-      m_robotState.legLiftNow = LEG_LIFT / 2;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE / 2;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
-      m_robotState.robotStateNow = ROBOT_BEND;
-      m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.shiftCycleNow = 0;
-      m_robotState.speedMuliplierNow = 2;
-      m_robotState.surfaceAngleDevider = 6;
-      m_robotState.timeDelayNow = TIME_DELAY;
-      m_robotState.edgeEnabled = true;
-      m_robotState.bendHight = BEND_HIGHT;
-      m_robotState.bendShift = BEND_SHIFT;
-      m_robotState.bendAngle = BEND_ANGLE;
-    }
-    break;
-    case ROBOT_RUN:
-    {
-      m_robotState.legLiftNow = LEG_LIFT;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
-      m_robotState.robotStateNow = ROBOT_RUN;
-      m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.shiftCycleNow = 0;
-      m_robotState.speedMuliplierNow = 2;
-      m_robotState.surfaceAngleDevider = 4;
-      m_robotState.timeDelayNow = TIME_DELAY;
-      m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
     }
     break;
     case ROBOT_ROLL:
     {
       m_robotState.legLiftNow = LEG_LIFT;
       m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.halfCycleNow = SERVO_HALF_CYCLE;
       m_robotState.robotStateNow = ROBOT_ROLL;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.shiftCycleNow = 0;
       m_robotState.speedMuliplierNow = 2;
       m_robotState.surfaceAngleDevider = -4;
       m_robotState.timeDelayNow = TIME_DELAY;
       m_robotState.edgeEnabled = false;
-      m_robotState.bendHight = 0;
-      m_robotState.bendShift = 0;
-      m_robotState.bendAngle = 0;
     }
     break;
     default:
@@ -375,13 +274,13 @@ unsigned char _inputsCheck(void) {
       return ROBOT_NORM;
     break;
     case GYRO_SHAKEN:
-      return ROBOT_INO;
+      return ROBOT_NORM;
     break;
     case GYRO_FOLLING_LEFT:
     case GYRO_FOLLING_RIGHT:
     case GYRO_FOLLING_FRONT:
     case GYRO_FOLLING_BACK:
-      return ROBOT_CRAWL;
+      return ROBOT_NORM;
     break;
     default:
     break;
@@ -393,21 +292,6 @@ unsigned char _inputsCheck(void) {
 void doStateManager(void) {
   // check inputs
   newRobotState = ROBOT_NORM; //_inputsCheck();
-  /*
-  // default task low priority
-  if ((m_robotState.taskPriorityNow == PRIORITY_LOW) && (newRobotState == ROBOT_DEFAULT)) {
-    // inputs ok.
-    if ((m_robotState.robotStateNow == ROBOT_NORM) && (oldRobotState == ROBOT_NORM) && (old2RobotState == ROBOT_NORM)) {
-      newRobotState = ROBOT_BEND;
-    }
-  }
-  if (m_robotState.robotStateNow == ROBOT_BEND) {
-    newRobotState = ROBOT_NORM;
-  }
-  if (newRobotState == ROBOT_DEFAULT) {
-    newRobotState = m_robotState.robotStateNow;
-  }
-    */
   // update state
   old2RobotState = oldRobotState;
   oldRobotState = m_robotState.robotStateNow;
@@ -420,10 +304,5 @@ void doStateManager(void) {
 output state
   m_robotState.robotStateNow
     ROBOT_NORM,
-    ROBOT_RUN,
     ROBOT_ROLL,
-    ROBOT_CRAWL,
-    ROBOT_SWIM,
-    ROBOT_INO,
-    ROBOT_BEND
 */

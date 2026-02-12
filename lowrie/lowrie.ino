@@ -22,21 +22,17 @@ Main file
 #define SERVO_FULL_CYCLE        36
 #define SERVO_HALF_CYCLE        18
 // main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              8
+#define TIME_DELAY              12
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               63
 // normal hight
 #define HIGHT_DEFAULT           125
 // normal leg lift in mm
-#define LEG_LIFT                40
+#define LEG_LIFT                80
 // normal input sensors distance in sm
 #define NORMAL_DISTANCE         72
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
-// bend forward parameters
-#define BEND_HIGHT              36 // 36 is 15 deg
-#define BEND_SHIFT              28 // shift forward for ballance
-#define BEND_ANGLE              15 // deg
 
 // input state
 enum inState {
@@ -131,12 +127,7 @@ enum tPriority {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_RUN,
   ROBOT_ROLL,
-  ROBOT_CRAWL,
-  ROBOT_SWIM,
-  ROBOT_INO,
-  ROBOT_BEND,
   ROBOT_DEFAULT
 };
 // structure for one leg motors
@@ -190,8 +181,6 @@ typedef struct robotState {
   unsigned char inputStateNow;
   unsigned char currentStateNow;
   unsigned char robotStateNow;
-  unsigned char halfCycleNow;
-  unsigned char shiftCycleNow;
   unsigned char timeDelayNow;
   short legHightNow;
   short legLiftNow;
@@ -202,9 +191,6 @@ typedef struct robotState {
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
-  unsigned char bendHight;
-  unsigned char bendShift;
-  unsigned char bendAngle;
 } robotState;
 
 //---------------global variables---------------------------
@@ -221,8 +207,6 @@ robotState m_robotState = {
   IN_NORMAL,               // unsigned char inputStateNow;
   C_NORMAL,                // unsigned char currentStateNow;
   ROBOT_NORM,              // unsigned char robotStateNow;
-  SERVO_HALF_CYCLE,        // unsigned char halfCycleNow;
-  0,                       // unsigned char shiftCycleNow;
   TIME_DELAY,              // unsigned char timeDelayNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
@@ -232,10 +216,7 @@ robotState m_robotState = {
   false,                   // edgeEnabled;
   PRIORITY_LOW,            // taskPriorityNow;
   P_DOSTAND,               // patternNow
-  STAND_TASK,              // taskNow
-  0,                       // bendHight
-  0,                       // bendShift
-  0                        // bendAngle
+  STAND_TASK               // taskNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
@@ -354,7 +335,7 @@ void loop() {
       //printLineGyroDebug();
       //printRollGyroDebug();
     }
-    // update ballance and bend
+    // update ballance
     updateBallance();
     updateBallanceServo();
   }

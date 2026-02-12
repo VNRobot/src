@@ -131,26 +131,8 @@ void printPatternNameDebug(unsigned char patternNow) {
     case P_RESETGIRO:
       Serial.print(F(" P_RESETGIRO "));
     break;
-    case P_BENDSTART:
-      Serial.print(F(" P_BENDSTART "));
-    break;
-    case P_CRAWLSTART:
-      Serial.print(F(" P_CRAWLSTART "));
-    break;
-    case P_SWIMSTART:
-      Serial.print(F(" P_SWIMSTART "));
-    break;
-    case P_INOSTART:
-      Serial.print(F(" P_INOSTART "));
-    break;
-    case P_NORMALSTART:
-      Serial.print(F(" P_NORMALSTART "));
-    break;
     case P_REPEAT:
       Serial.print(F(" P_REPEAT "));
-    break;
-    case P_GETCURRENT:
-      Serial.print(F(" P_GETCURRENT "));
     break;
     case P_SETPRIORITY_HIGH:
       Serial.print(F(" P_SETPRIORITY_HIGH "));

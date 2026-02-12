@@ -5,30 +5,16 @@ Arduino nano
 Robot static and dynamic ballance
 */
 
-/*
-robot body size
-lenght 146 mm
-width 120
-default hight 125 mm
-when bend 15 deg
-bend value 36 mm
-forward shift 30 mm weight to back
-*/
-
 // static forward ballance value
 int staticForward = 0;
 int anglePitch = 0;
-short inoShift[36]    = {5,4,3,2,1,-1,-2,-3,-4,
-                        -5,-4,-3,-2,-1,1,2,3,4,
-                         5,4,3,2,1,-1,-2,-3,-4,
-                        -5,-4,-3,-2,-1,1,2,3,4};
 
 void updateBallance(void) {
   // hight
-  m_legCorrect.fl.hight = -m_robotState.bendHight;
-  m_legCorrect.fr.hight = -m_robotState.bendHight;
-  m_legCorrect.rl.hight = m_robotState.bendHight;
-  m_legCorrect.rr.hight = m_robotState.bendHight;
+  m_legCorrect.fl.hight = 0;
+  m_legCorrect.fr.hight = 0;
+  m_legCorrect.rl.hight = 0;
+  m_legCorrect.rr.hight = 0;
   // forward ballance
   // bigger the number more weight on front
   // pitch up - positive. require more weight on front
@@ -39,17 +25,10 @@ void updateBallance(void) {
   }
   staticForward = (anglePitch * 28) / 15; // 15 deg is 28
   // shift
-  m_legCorrect.fl.shift = staticForward - m_robotState.bendShift;
-  m_legCorrect.fr.shift = staticForward - m_robotState.bendShift;
-  m_legCorrect.rl.shift = staticForward - m_robotState.bendShift;
-  m_legCorrect.rr.shift = staticForward - m_robotState.bendShift;
-  // ino walk
-  if (m_robotState.robotStateNow == ROBOT_INO) {
-    m_legCorrect.fl.shift += inoShift[m_sequenceCounter.m];
-    m_legCorrect.fr.shift += inoShift[m_sequenceCounter.m];
-    m_legCorrect.rl.shift += inoShift[m_sequenceCounter.m];
-    m_legCorrect.rr.shift += inoShift[m_sequenceCounter.m];
-  }
+  m_legCorrect.fl.shift = staticForward;
+  m_legCorrect.fr.shift = staticForward;
+  m_legCorrect.rl.shift = staticForward;
+  m_legCorrect.rr.shift = staticForward;
 }
 
 /*
