@@ -24,15 +24,10 @@ void setPattern(void) {
   // set speed
   switch (m_robotState.patternNow) {
     case P_STANDGO:
-    {
-      speed = 0;
-      walkingMode = true;
-    }
-    break;
     case P_STANDGOLEFT:
     case P_STANDGORIGHT:
     {
-      speed = 1;
+      speed = 0;
       walkingMode = true;
     }
     break;
@@ -40,7 +35,11 @@ void setPattern(void) {
     case P_GOLEFT:
     case P_GORIGHT:
     {
-      speed = 2;
+      if (speed < 1) {
+        speed = 1;
+      } else {
+        speed = 2;
+      }
       walkingMode = true;
     }
     break;
@@ -48,7 +47,11 @@ void setPattern(void) {
     case P_GOBACKLEFT:
     case P_GOBACKRIGHT:
     {
-      speed = -2;
+      if (speed > -1) {
+        speed = -1;
+      } else {
+        speed = -2;
+      }
       walkingMode = true;
     }
     break;
@@ -63,14 +66,14 @@ void setPattern(void) {
   switch (m_robotState.patternNow) {
     case P_STANDGOLEFT:
     {
-      speedL = -speed;
-      speedR = speed;
+      speedL = -speed - 1;
+      speedR = speed + 1;
     }
     break;
     case P_STANDGORIGHT:
     {
-      speedL = speed;
-      speedR = -speed;
+      speedL = speed + 1;
+      speedR = -speed - 1;
     }
     break;
     case P_GOLEFT:
@@ -104,6 +107,7 @@ void setPattern(void) {
     }
     break;
   }
+  m_robotState.speedNow = speed;
 }
 
 // update servo motors values

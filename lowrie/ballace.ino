@@ -5,14 +5,19 @@ Arduino nano
 Robot static and dynamic ballance
 */
 
-// static forward ballance value
-short staticForward = 0;
-short staticForwardTemp = 0;
-short staticForwardMax = 40;
+// ballance enabled flag
 bool ballanceEnabled = true;
+// static forward ballance value
+char staticForward = 0;
+char staticForwardTemp = 0;
+char staticForwardMax = 40;
 // dynamic forward ballance value
-short dynamicForward = 0;
-short dynamicForwardMax = 20;
+char dynamicForward = 0;
+char dynamicForwardMax = 20;
+// speed correction
+char speedCorrection = 0;
+// final forward shift
+char finalForwardShift = 0;
 
 void updateBallance(void) {
   // hight
@@ -25,26 +30,36 @@ void updateBallance(void) {
   // bigger the number more weight on front
   // pitch up - positive. require more weight on front
   if (ballanceEnabled) {
-    staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 15 deg is 28
-    // 
-    if ((staticForward > staticForwardTemp) && (staticForward > -staticForwardMax)) {
-      staticForward --;
-    } else if ((staticForward < staticForwardTemp) && (staticForward < staticForwardMax)) {
-      staticForward ++;
-    }
-    // dynamic ballance
+    // static ballance
+    _updateStaticBallance();
+    // once
     if (m_sequenceCounter.m == 0) {
+      // dynamic ballance
       _updateDynamicBallance();
+      // speed correction
+      speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
     }
-    //
-    m_legCorrect.fl.shift = staticForward + dynamicForward;
-    m_legCorrect.fr.shift = staticForward + dynamicForward;
-    m_legCorrect.rl.shift = staticForward + dynamicForward;
-    m_legCorrect.rr.shift = staticForward + dynamicForward;
+    // correct legs
+    finalForwardShift = staticForward + dynamicForward + speedCorrection;
+    m_legCorrect.fl.shift = finalForwardShift;
+    m_legCorrect.fr.shift = finalForwardShift;
+    m_legCorrect.rl.shift = finalForwardShift;
+    m_legCorrect.rr.shift = finalForwardShift;
   }
 }
 
-// update forward ballance
+// static ballance
+void _updateStaticBallance(void) {
+  staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned // 15 deg is 28
+  // 
+  if ((staticForward > staticForwardTemp) && (staticForward > -staticForwardMax)) {
+    staticForward --;
+  } else if ((staticForward < staticForwardTemp) && (staticForward < staticForwardMax)) {
+    staticForward ++;
+  }
+}
+
+// dynamic ballance
 void _updateDynamicBallance(void) {
   if (m_gyroState.rollMax - m_gyroState.rollMin > 2) {
     // body rolls

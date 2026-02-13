@@ -32,7 +32,7 @@ Main file
 // normal input sensors distance in sm
 #define NORMAL_DISTANCE         72
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  4
+#define FORWARD_BALLANCE_SHIFT  0
 
 // input state
 enum inState {
@@ -185,6 +185,7 @@ typedef struct robotState {
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
+  char speedNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -210,7 +211,8 @@ robotState m_robotState = {
   false,                   // edgeEnabled;
   PRIORITY_LOW,            // taskPriorityNow;
   P_DOSTAND,               // patternNow
-  STAND_TASK               // taskNow
+  STAND_TASK,              // taskNow
+  0                        // speedNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
