@@ -32,7 +32,7 @@ Main file
 // normal input sensors distance in sm
 #define NORMAL_DISTANCE         72
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
+#define FORWARD_BALLANCE_SHIFT  4
 
 // input state
 enum inState {
@@ -56,8 +56,6 @@ enum cState {
 // patterns
 enum rPatterns {
   P_DOSTAND,
-  P_STANDTOGO,
-  P_GOTOSTAND,
   P_STANDGO,
   P_STANDGOLEFT,
   P_STANDGORIGHT,
@@ -69,8 +67,6 @@ enum rPatterns {
   P_GOBACKRIGHT,
   P_DOLOW,
   P_DODOWN,
-  P_RECOVERLEFT,
-  P_RECOVERRIGHT,
   P_DOFLIP,
   P_DONE,
   P_SETDIRECTION,
@@ -97,8 +93,6 @@ enum rTasks {
   GO_TASK,
   STAND_TASK,
   DOWN_TASK,
-  RECOVER_LEFT_TASK,
-  RECOVER_RIGHT_TASK,
   FLIP_TASK,
   DEFAULT_TASK
 };
@@ -156,14 +150,14 @@ struct allLegs {
 };
 // acc and gyro data structure
 typedef struct accRoll {
-  int accRollX;                 // roll       right - positive   -90 0 90 upsidedown also 0
-  int accPitchY;                // pitch      up - positive   -90 0 90 upsidedown also 0
-  int accUpsideZ;               // z          upside down - negative
-  int rollMin;
-  int rollMax;
+  short accRollX;                 // roll       right - positive   -90 0 90 upsidedown also 0
+  short accPitchY;                // pitch      up - positive   -90 0 90 upsidedown also 0
+  short accUpsideZ;               // z          upside down - negative
+  short rollMin;
+  short rollMax;
   unsigned char rollMinTime;
   unsigned char rollMaxTime;
-  int direction;                // direction  turn right - positive
+  short direction;                // direction  turn right - positive
   unsigned char stateGyro;
 } accRoll;
 // leg timing phase. main m
@@ -210,7 +204,7 @@ robotState m_robotState = {
   TIME_DELAY,              // unsigned char timeDelayNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
-  2,                       // char speedMuliplierNow;
+  20,                      // char speedMuliplierNow; 10 - 30
   0,                       // char surfaceAngleDevider;
   1,                       // char flipStateNow;
   false,                   // edgeEnabled;

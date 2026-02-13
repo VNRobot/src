@@ -34,19 +34,19 @@ unsigned long oldTime;
 // buffers to read register into
 float floatBuffer[3];
 unsigned char stateGyroOld = GYRO_NORM;
-int rollMinBuffer;
-int rollMaxBuffer;
+short rollMinBuffer;
+short rollMaxBuffer;
 unsigned char rollMinTimeBuffer;
 unsigned char rollMaxTimeBuffer;
 // shake parameters
-int shakeNow = 0;
-int shakeOld = 0;
-int rollBuffer = 0;
-int pitchBuffer = 0;
-int directionBuffer = 0;
+short shakeNow = 0;
+short shakeOld = 0;
+short rollBuffer = 0;
+short pitchBuffer = 0;
+short directionBuffer = 0;
 // walking direction
-int walkingDirection = 0;
-int walkingDirectionOld = 0;
+short walkingDirection = 0;
+short walkingDirectionOld = 0;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -158,7 +158,7 @@ void updateGyro(void) {
   floatBuffer[2] /= 16384.0;
   gyroData.accRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
   gyroData.accPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
-  m_gyroState.accUpsideZ = (int)((floatBuffer[2]) * 100);
+  m_gyroState.accUpsideZ = (short)((floatBuffer[2]) * 100);
   // gyroscope
   oldTime = currentTime;
   currentTime = millis();
@@ -168,14 +168,14 @@ void updateGyro(void) {
   floatBuffer[1] = floatBuffer[1] / 131.0 - gyroErrors.GyroErrorY;
   floatBuffer[2] = floatBuffer[2] / 131.0 - gyroErrors.GyroErrorZ;
   gyroData.direction  += floatBuffer[2] * timeInterval;
-  m_gyroState.accRollX =   (int)gyroData.accRollX;
-  m_gyroState.accPitchY = -(int)gyroData.accPitchY;
+  m_gyroState.accRollX =   (short)gyroData.accRollX;
+  m_gyroState.accPitchY = -(short)gyroData.accPitchY;
   // walk cycle related operations
   if (m_sequenceCounter.m == 0) {
     // fix rotation angle value
     gyroData.direction  = _fixAngle(gyroData.direction, 180);
     // get gyro data
-    m_gyroState.direction =  -((int)gyroData.direction * 2);
+    m_gyroState.direction =  -((short)gyroData.direction * 2);
     // shake value
     shakeOld = shakeNow;
     if (m_gyroState.accRollX > rollBuffer) {

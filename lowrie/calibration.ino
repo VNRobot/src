@@ -207,7 +207,7 @@ bool doCalibration(void) {
         Serial.print(F(" Right eye "));
         Serial.print((int)((1600000 / analogRead(A1)) / analogRead(A1)));
         Serial.print(F(" Direction "));
-        Serial.print(m_gyroState.direction);
+        Serial.print((int)m_gyroState.direction);
         // motors current
         Serial.print(F(" Battery mv "));
         Serial.print((int)analogRead(A6));

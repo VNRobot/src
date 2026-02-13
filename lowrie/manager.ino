@@ -53,8 +53,6 @@ input data
       GO_TASK,
       STAND_TASK,
       DOWN_TASK,
-      RECOVER_LEFT_TASK,
-      RECOVER_RIGHT_TASK,
       FLIP_TASK,
       DEFAULT_TASK
     m_robotState.taskPriorityNow
@@ -63,8 +61,6 @@ input data
       PRIORITY_LOW,
     m_robotState.patternNow
       P_DOSTAND,
-      P_STANDTOGO,
-      P_GOTOSTAND,
       P_STANDGO,
       P_STANDGOLEFT,
       P_STANDGORIGHT,
@@ -76,8 +72,6 @@ input data
       P_GOBACKRIGHT,
       P_DOLOW,
       P_DODOWN,
-      P_RECOVERLEFT,
-      P_RECOVERRIGHT,
       P_DOFLIP,
       P_DONE,
       P_SETDIRECTION,
@@ -180,10 +174,6 @@ unsigned char getOppositeTask(void) {
     case STANDTURNLEFT2_TASK:
       return GOBACKRIGHT_TASK;
     break;
-    case RECOVER_LEFT_TASK:
-    case RECOVER_RIGHT_TASK:
-      return FLIP_TASK;
-    break;
     case FLIP_TASK:
       return BEGIN_TASK;
     break;
@@ -232,7 +222,7 @@ void _setRobotState(unsigned char newState) {
       m_robotState.inputDistanceNow = NORMAL_DISTANCE;
       m_robotState.robotStateNow = ROBOT_NORM;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.speedMuliplierNow = 2;
+      m_robotState.speedMuliplierNow = 20;
       m_robotState.surfaceAngleDevider = 0;
       m_robotState.timeDelayNow = TIME_DELAY;
       m_robotState.edgeEnabled = false;
@@ -244,7 +234,7 @@ void _setRobotState(unsigned char newState) {
       m_robotState.inputDistanceNow = NORMAL_DISTANCE;
       m_robotState.robotStateNow = ROBOT_ROLL;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.speedMuliplierNow = 2;
+      m_robotState.speedMuliplierNow = 20;
       m_robotState.surfaceAngleDevider = -4;
       m_robotState.timeDelayNow = TIME_DELAY;
       m_robotState.edgeEnabled = false;

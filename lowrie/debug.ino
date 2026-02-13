@@ -45,12 +45,6 @@ void printTaskNameDebug(unsigned char taskNow) {
     case STAND_TASK:
       Serial.println(F(" STAND_TASK "));
     break;
-    case RECOVER_LEFT_TASK:
-      Serial.println(F(" RECOVER_LEFT_TASK "));
-    break;
-    case RECOVER_RIGHT_TASK:
-      Serial.println(F(" RECOVER_RIGHT_TASK "));
-    break;
     case FLIP_TASK:
       Serial.println(F(" FLIP_TASK "));
     break;
@@ -70,12 +64,6 @@ void printPatternNameDebug(unsigned char patternNow) {
   switch (patternNow) {
     case P_DOSTAND:
       Serial.print(F(" P_DOSTAND "));
-    break;
-    case P_STANDTOGO:
-      Serial.print(F(" P_STANDTOGO "));
-    break;
-    case P_GOTOSTAND:
-      Serial.print(F(" P_GOTOSTAND "));
     break;
     case P_STANDGO:
       Serial.print(F(" P_STANDGO "));
@@ -109,12 +97,6 @@ void printPatternNameDebug(unsigned char patternNow) {
     break;
     case P_DODOWN:
       Serial.print(F(" P_DODOWN "));
-    break;
-    case P_RECOVERLEFT:
-      Serial.print(F("P_RECOVERLEFT  "));
-    break;
-    case P_RECOVERRIGHT:
-      Serial.print(F(" P_RECOVERRIGHT "));
     break;
     case P_DOFLIP:
       Serial.print(F(" P_DOFLIP "));
@@ -215,24 +197,24 @@ void printCurrentStateDebug(void) {
 // print gyro values
 void printLineGyroDebug(void) {
   Serial.print(" aRoll ");
-  Serial.print(m_gyroState.accRollX);
+  Serial.print((int)m_gyroState.accRollX);
   Serial.print(" aPitch ");
-  Serial.print(m_gyroState.accPitchY);
+  Serial.print((int)m_gyroState.accPitchY);
   Serial.print(" Z ");
-  Serial.print(m_gyroState.accUpsideZ);
+  Serial.print((int)m_gyroState.accUpsideZ);
   Serial.print(" direction ");
-  Serial.println(m_gyroState.direction);
+  Serial.println((int)m_gyroState.direction);
 }
 
 // print gyro values
 void printRollGyroDebug(void) {
   Serial.print(" rollMin ");
-  Serial.print(m_gyroState.rollMin);
+  Serial.print((int)m_gyroState.rollMin);
   Serial.print(" rollMax ");
-  Serial.print(m_gyroState.rollMax);
+  Serial.print((int)m_gyroState.rollMax);
   Serial.print(" rollMinTime ");
-  Serial.print(m_gyroState.rollMinTime);
+  Serial.print((int)m_gyroState.rollMinTime);
   Serial.print(" rollMaxTime ");
-  Serial.println(m_gyroState.rollMaxTime);
+  Serial.println((int)m_gyroState.rollMaxTime);
 }
 */

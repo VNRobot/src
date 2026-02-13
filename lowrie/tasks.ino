@@ -6,7 +6,7 @@ List of tasks. Every task contains movement patterns.
 */
 
 // Array to store currently executed task. contains list of patterns
-unsigned char currentTask[32] = {P_DOSTAND, P_DONE};
+unsigned char currentTask[16] = {P_DOSTAND, P_DONE};
 // pattern counter points to currentTask
 unsigned char currentTaskPoint = 0;
 // repeat counter
@@ -16,62 +16,29 @@ unsigned char repeatCounterEnd = 8;
 // set down task
 void _setDownTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
-  currentTask[1] = P_GOTOSTAND;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_DODOWN;
-  currentTask[4] = P_END;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DODOWN;
+  currentTask[3] = P_END;
 }
 
 // set stand task
 void _setStandTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
-  currentTask[1] = P_GOTOSTAND;
-  currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_END;
-}
-
-// set bend left task
-void _setRecoverLeftTask(void) {
-  currentTask[0] = P_SETPRIORITY_HIGH;
   currentTask[1] = P_DOSTAND;
-  currentTask[2] = P_RECOVERLEFT;
-  currentTask[3] = P_DOSTAND;
-  currentTask[4] = P_RESETGIRO;
-  currentTask[5] = P_DOSTAND;
-  currentTask[6] = P_SETPRIORITY_NORM;
-  currentTask[7] = P_DOSTAND;
-  currentTask[8] = P_STANDTOGO;
-  currentTask[9] = P_STANDGO;
-  currentTask[10] = P_DONE;
-}
-// set bend right task
-void _setRecoverRightTask(void) {
-  currentTask[0] = P_SETPRIORITY_HIGH;
-  currentTask[1] = P_DOSTAND;
-  currentTask[2] = P_RECOVERRIGHT;
-  currentTask[3] = P_DOSTAND;
-  currentTask[4] = P_RESETGIRO;
-  currentTask[5] = P_DOSTAND;
-  currentTask[6] = P_SETPRIORITY_NORM;
-  currentTask[7] = P_DOSTAND;
-  currentTask[8] = P_STANDTOGO;
-  currentTask[9] = P_STANDGO;
-  currentTask[10] = P_DONE;
+  currentTask[2] = P_END;
 }
 
 void _setFlipTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
-  currentTask[1] = P_GOTOSTAND;
-  currentTask[2] = P_DOLOW;
-  currentTask[3] = P_DOFLIP;
-  currentTask[4] = P_DOSTAND;
-  currentTask[5] = P_RESETGIRO;
-  currentTask[6] = P_DOSTAND;
-  currentTask[7] = P_SETPRIORITY_NORM;
-  currentTask[8] = P_DOSTAND;
-  currentTask[9] = P_STANDTOGO;
-  currentTask[10] = P_STANDGO;
-  currentTask[11] = P_DONE;
+  currentTask[1] = P_DOLOW;
+  currentTask[2] = P_DOFLIP;
+  currentTask[3] = P_DOSTAND;
+  currentTask[4] = P_RESETGIRO;
+  currentTask[5] = P_DOSTAND;
+  currentTask[6] = P_SETPRIORITY_NORM;
+  currentTask[7] = P_DOSTAND;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = P_DONE;
 }
 
 // set begin task
@@ -79,10 +46,10 @@ void _setBeginTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
   currentTask[1] = P_DOSTAND;
   currentTask[2] = P_DOSTAND;
-  currentTask[3] = P_DOSTAND;
-  currentTask[4] = P_DOSTAND;
-  currentTask[5] = P_RESETGIRO;
-  currentTask[6] = P_STANDTOGO;
+  currentTask[3] = P_RESETGIRO;
+  currentTask[4] = P_STANDGO;
+  currentTask[5] = P_STANDGO;
+  currentTask[6] = P_STANDGO;
   currentTask[7] = P_STANDGO;
   currentTask[8] = P_STANDGO;
   currentTask[9] = P_GOFORWARD;
@@ -225,12 +192,6 @@ void applyTask(unsigned char task) {
     case STAND_TASK:
       _setStandTask();
     break;
-    case RECOVER_LEFT_TASK:
-      _setRecoverLeftTask();
-    break;
-    case RECOVER_RIGHT_TASK:
-      _setRecoverRightTask();
-    break;
     case FLIP_TASK:
       _setFlipTask();
     break;
@@ -279,10 +240,10 @@ unsigned char getHighPriorityTask(void) {
       return FLIP_TASK;
     break;
     case GYRO_FELL_LEFT:
-      return RECOVER_LEFT_TASK;
+      return FLIP_TASK;
     break;
     case GYRO_FELL_RIGHT:
-      return RECOVER_RIGHT_TASK;
+      return FLIP_TASK;
     break;
     case GYRO_FELL_FRONT:
       return FLIP_TASK;
