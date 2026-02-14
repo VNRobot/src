@@ -281,35 +281,35 @@ unsigned char _statusGyro(void) {
     return GYRO_UPSIDEDOWN;
   }
   // fell left
-  if (m_gyroState.accRollX < -45) {
+  if (m_gyroState.accRollX < -FALLING_ANGLE) {
     return GYRO_FELL_LEFT;
   }
   // fell right
-  if (m_gyroState.accRollX > 45) {
+  if (m_gyroState.accRollX > FALLING_ANGLE) {
     return GYRO_FELL_RIGHT;
   }
   // fell front
-  if (m_gyroState.accPitchY < -45) {
+  if (m_gyroState.accPitchY < -FALLING_ANGLE) {
     return GYRO_FELL_FRONT;
   }
   // fell back
-  if (m_gyroState.accPitchY > 45) {
+  if (m_gyroState.accPitchY > FALLING_ANGLE) {
     return GYRO_FELL_BACK;
   }
   // folling left
-  if (m_gyroState.accRollX < -10) {
+  if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right
-  if (m_gyroState.accRollX > 10) {
+  if (m_gyroState.accRollX > OFFROAD_ANGLE) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front
-  if (m_gyroState.accPitchY < -10) {
+  if (m_gyroState.accPitchY < -OFFROAD_ANGLE) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back
-  if (m_gyroState.accPitchY > 10) {
+  if (m_gyroState.accPitchY > OFFROAD_ANGLE) {
     return GYRO_FOLLING_BACK;
   }
   if (m_gyroState.direction - walkingDirection > 4) {

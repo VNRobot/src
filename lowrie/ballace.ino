@@ -50,7 +50,7 @@ void updateBallance(void) {
 
 // static ballance
 void _updateStaticBallance(void) {
-  staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned // 15 deg is 28
+  staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned
   // 
   if ((staticForward > staticForwardTemp) && (staticForward > -staticForwardMax)) {
     staticForward --;

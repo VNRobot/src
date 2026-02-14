@@ -22,40 +22,86 @@ enum senState {
   SEN_NORMAL
 };
 
-// turn left or right decision
-bool turnLeft = true;
-
-// sensors state
-unsigned char senStateLeft = 0;
-unsigned char senStateRight = 0;
-
 // analog sensors structure
 struct aSensors {
   unsigned short left;      // A0
   unsigned short right;     // A1
 };
 
+// sensors enabled flag
+bool sensorsEnabled = true;
+// bool edge enabled
+bool edgeEnabled = false;
+// turn left or right decision
+bool turnLeft = true;
+// sensors state
+unsigned char senStateLeft = 0;
+unsigned char senStateRight = 0;
 // analog input values array
 aSensors analogRawInputs = {0, 0}; // raw values
-aSensors analogValueInputs = {0, 0}; // processed values
+aSensors distanceMeasured = {0, 0}; // processed values
+// normal min and max distance
+unsigned char normalDistanceMin = 12; // cm
+unsigned char normalDistanceMax = 72; // cm
+unsigned char calculatedDistance = 72; // cm
+// down angle sensor limits
+unsigned char downAngleMin = OFFROAD_ANGLE; // deg
+unsigned char downAngleMax = 60; // deg
+
+// calculate sensors geometry
+void calculateGeometry(void) {
+  if ((SENSOR_ANGLE - m_gyroState.accPitchY) > downAngleMax) { // 60 deg max
+    // too close to the ground
+    calculatedDistance = SENSOR_HIGHT + m_robotState.legHightNow / 2; // 2 for small robot in mm
+    edgeEnabled = false;
+  } else if ((SENSOR_ANGLE - m_gyroState.accPitchY) > downAngleMin) { // 15 deg min
+    // can be calculated
+    calculatedDistance = (unsigned char)(((SENSOR_HIGHT + m_robotState.legHightNow / 2) / sin((SENSOR_ANGLE - m_gyroState.accPitchY) * (PI / 180.0))) / 10);
+    edgeEnabled = true;
+  } else {
+    // too high
+    calculatedDistance = normalDistanceMax;
+    edgeEnabled = false;
+  }
+  if (calculatedDistance > normalDistanceMax) {
+    calculatedDistance = normalDistanceMax;
+    sensorsEnabled = true;
+    edgeEnabled = false;
+  } else if (calculatedDistance < normalDistanceMin) {
+    calculatedDistance = normalDistanceMin;
+    sensorsEnabled = false;
+    edgeEnabled = false;
+  } else {
+    sensorsEnabled = true;
+  }
+}
 
 // init inputs
 void initInputs(void) {
+  calculateGeometry();
 }
 
 // read and remember analog sensors readings
 void updateInputs(void) {
   // read once in a pattern
   if (m_sequenceCounter.m == 0) {
+    // update geometry
+    calculateGeometry();
     // read analog inputs
     analogRawInputs.left = (unsigned short)analogRead(A0);
     analogRawInputs.right = (unsigned short)analogRead(A1);
+    // find turn
+    if (analogRawInputs.left > analogRawInputs.right) {
+      turnLeft = false;
+    } else {
+      turnLeft = true;
+    }
     // crossconnection left senor is facing right and right sensor is facing left
-    analogValueInputs.right = (unsigned short)((1600000 / analogRawInputs.left) / analogRawInputs.left);
-    analogValueInputs.left = (unsigned short)((1600000 / analogRawInputs.right) / analogRawInputs.right);
+    distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.left) / analogRawInputs.left);
+    distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.right) / analogRawInputs.right);
     // get sensor state
-    senStateLeft  = _getSensorState(analogValueInputs.left);
-    senStateRight = _getSensorState(analogValueInputs.right);
+    senStateLeft  = _getSensorState(distanceMeasured.left);
+    senStateRight = _getSensorState(distanceMeasured.right);
     //
     m_robotState.inputStateNow = _getInputState(senStateLeft, senStateRight);
     //
@@ -67,11 +113,11 @@ void updateInputs(void) {
 
 // process distances
 unsigned char _getSensorState(unsigned short input) {
-  if (m_robotState.sensorsEnabledNow) {
-    if (input < (m_robotState.inputDistanceNow * 4)) { // no edge
-      if (input > (m_robotState.inputDistanceNow / 6)) { // not blocked
-        if (input > (m_robotState.inputDistanceNow / 3)) { // no wall
-          if (input > (m_robotState.inputDistanceNow / 2)) { // no obstacle
+  if (sensorsEnabled) {
+    if (input < 120) {                            // no edge            120
+      if (input > 5) {                            // not blocked        5
+        if (input > (calculatedDistance / 3)) {   // no wall            
+          if (input > (calculatedDistance / 2 + calculatedDistance / 4)) { // no obstacle        
             return SEN_NORMAL;
           } else {
             // obstacle
@@ -87,7 +133,7 @@ unsigned char _getSensorState(unsigned short input) {
       }
     } else {
       // edge
-      if (m_robotState.edgeEnabled) {
+      if (edgeEnabled) {
         return SEN_EDGE;
       } else {
         return SEN_NORMAL;
@@ -106,11 +152,9 @@ unsigned char _getInputState( unsigned short sLeft,  unsigned short sRight) {
   }
   // both sensors blocked
   if ((sLeft == SEN_BLOCK) && (sRight == SEN_BLOCK)) {
-    if (analogValueInputs.left > analogValueInputs.right) {
-      turnLeft = false;
-      return IN_WALL_FRONTRIGHT;
+    if (turnLeft) { // opposite turn
+      return IN_WALL_FRONTLEFT;
     } else {
-      turnLeft = true;
       return IN_WALL_FRONTRIGHT;
     } 
   }
@@ -124,11 +168,9 @@ unsigned char _getInputState( unsigned short sLeft,  unsigned short sRight) {
   }
   // both sensors obstacle
   if ((sLeft == SEN_OBSTACLE) && (sRight == SEN_OBSTACLE)) {
-    if (analogValueInputs.left > analogValueInputs.right) {
-      turnLeft = true;
+    if (turnLeft) {
       return IN_OBSTACLE_FRONTRIGHT;
     } else {
-      turnLeft = false;
       return IN_OBSTACLE_FRONTLEFT;
     } 
   }
@@ -136,9 +178,7 @@ unsigned char _getInputState( unsigned short sLeft,  unsigned short sRight) {
   // right is normal
   if (sRight == SEN_NORMAL) {
     // only left side obstacle
-    turnLeft = false;
     if (sLeft == SEN_BLOCK) {
-      turnLeft = true;
       return IN_WALL_RIGHT;
     }
     if ((sLeft == SEN_WALL) || (sLeft == SEN_EDGE)) {
@@ -151,9 +191,7 @@ unsigned char _getInputState( unsigned short sLeft,  unsigned short sRight) {
   // left is normal
   if (sLeft == SEN_NORMAL) {
     // only right side obstacle
-    turnLeft = true;
     if (sRight == SEN_BLOCK) {
-      turnLeft = false;
       return IN_WALL_LEFT;
     }
     if ((sRight == SEN_WALL) || (sRight == SEN_EDGE)) {
@@ -165,37 +203,27 @@ unsigned char _getInputState( unsigned short sLeft,  unsigned short sRight) {
   }
   //SEN_EDGE, SEN_OBSTACLE, SEN_WALL, SEN_BLOCK
   if (sLeft == SEN_BLOCK) {
-    turnLeft = true;
     return IN_WALL_FRONTRIGHT;
   }
   if (sRight == SEN_BLOCK) {
-    turnLeft = false;
     return IN_WALL_FRONTLEFT;
   }
   //SEN_EDGE, SEN_OBSTACLE, SEN_WALL
   if ((sLeft == SEN_WALL) || (sLeft == SEN_EDGE)) {
-    turnLeft = false;
     return IN_WALL_FRONTLEFT;
   }
   if ((sRight == SEN_WALL) || (sRight == SEN_EDGE)) {
-    turnLeft = true;
     return IN_WALL_FRONTRIGHT;
   }
-  // should not go here
-  if (analogValueInputs.left > analogValueInputs.right) {
-    turnLeft = true;
-  } else {
-    turnLeft = false;
-  } 
   return IN_NORMAL;
 }
 /*
 // print raw data
 void _printLineInputs(void) {
   Serial.print(F(" left "));
-  Serial.print((int)analogValueInputs.left);
+  Serial.print((int)distanceMeasured.left);
   Serial.print(F(" right "));
-  Serial.print((int)analogValueInputs.right);
+  Serial.print((int)distanceMeasured.right);
 }
 
 void _printSensorState(unsigned char sensorState) {

@@ -89,7 +89,7 @@ input data
 output state
   m_robotState.robotStateNow
     ROBOT_NORM,
-    ROBOT_ROLL,
+    ROBOT_INO,
 */
 
 // remember tasks
@@ -219,25 +219,17 @@ void _setRobotState(unsigned char newState) {
     case ROBOT_NORM:
     {
       m_robotState.legLiftNow = LEG_LIFT;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE;
       m_robotState.robotStateNow = ROBOT_NORM;
       m_robotState.legHightNow = HIGHT_DEFAULT;
       m_robotState.speedMuliplierNow = 20;
-      m_robotState.surfaceAngleDevider = 0;
-      m_robotState.timeDelayNow = TIME_DELAY;
-      m_robotState.edgeEnabled = false;
     }
     break;
-    case ROBOT_ROLL:
+    case ROBOT_INO:
     {
       m_robotState.legLiftNow = LEG_LIFT;
-      m_robotState.inputDistanceNow = NORMAL_DISTANCE;
-      m_robotState.robotStateNow = ROBOT_ROLL;
+      m_robotState.robotStateNow = ROBOT_INO;
       m_robotState.legHightNow = HIGHT_DEFAULT;
       m_robotState.speedMuliplierNow = 20;
-      m_robotState.surfaceAngleDevider = -4;
-      m_robotState.timeDelayNow = TIME_DELAY;
-      m_robotState.edgeEnabled = false;
     }
     break;
     default:
@@ -270,6 +262,7 @@ unsigned char _inputsCheck(void) {
     case GYRO_FOLLING_RIGHT:
     case GYRO_FOLLING_FRONT:
     case GYRO_FOLLING_BACK:
+      // change walking state ?
       return ROBOT_NORM;
     break;
     default:
@@ -294,5 +287,5 @@ void doStateManager(void) {
 output state
   m_robotState.robotStateNow
     ROBOT_NORM,
-    ROBOT_ROLL,
+    ROBOT_INO,
 */

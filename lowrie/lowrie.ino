@@ -29,10 +29,14 @@ Main file
 #define HIGHT_DEFAULT           125
 // normal leg lift in mm
 #define LEG_LIFT                80
-// normal input sensors distance in sm
-#define NORMAL_DISTANCE         72
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
+// sensors geometry
+#define SENSOR_ANGLE            0     // down angle
+#define SENSOR_HIGHT            0     // hight relative to legs
+// robot phisics
+#define OFFROAD_ANGLE           15
+#define FALLING_ANGLE           45
 
 // input state
 enum inState {
@@ -121,7 +125,7 @@ enum tPriority {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_ROLL,
+  ROBOT_INO,
   ROBOT_DEFAULT
 };
 // structure for one leg motors
@@ -170,18 +174,13 @@ struct phase {
 };
 // robot state structure
 typedef struct robotState {
-  bool sensorsEnabledNow;
-  unsigned char inputDistanceNow;
   unsigned char inputStateNow;
   unsigned char currentStateNow;
   unsigned char robotStateNow;
-  unsigned char timeDelayNow;
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
-  char surfaceAngleDevider;
   char flipStateNow;
-  bool edgeEnabled;
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
@@ -197,18 +196,13 @@ short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
 robotState m_robotState = {
-  true,                    // bool sensorsEnabledNow; *** for debugging only
-  NORMAL_DISTANCE,         // unsigned char inputDistanceNow;
   IN_NORMAL,               // unsigned char inputStateNow;
   C_NORMAL,                // unsigned char currentStateNow;
   ROBOT_NORM,              // unsigned char robotStateNow;
-  TIME_DELAY,              // unsigned char timeDelayNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   20,                      // char speedMuliplierNow; 10 - 30
-  0,                       // char surfaceAngleDevider;
   1,                       // char flipStateNow;
-  false,                   // edgeEnabled;
   PRIORITY_LOW,            // taskPriorityNow;
   P_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
@@ -307,7 +301,7 @@ void setTaskAndPattern(void) {
 void doCycle(void) {
   // update servo motors values, move motors
   updateLegsServo(getWalkPatterns());
-  doPWMServo(m_robotState.timeDelayNow);
+  doPWMServo(TIME_DELAY);
   cycleDone = true;
 }
 

@@ -40,13 +40,13 @@ char forwardSetValue = 0;
 // calculate motor 1 and motor 2 angles
 char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   // used for run, bend or roll
-  if (m_robotState.surfaceAngleDevider > 0) {
-    // run or bend
-    Hval += Sval / m_robotState.surfaceAngleDevider;
-  } else if (m_robotState.surfaceAngleDevider < 0) {
-    // roll
-    Hval += (Sval * Sval) / m_robotState.surfaceAngleDevider;
-  }
+  //if (m_robotState.surfaceAngleDevider > 0) {
+  //  // run or bend
+  //  Hval += Sval / m_robotState.surfaceAngleDevider;
+  //} else if (m_robotState.surfaceAngleDevider < 0) {
+  //  // roll
+  //  Hval += (Sval * Sval) / m_robotState.surfaceAngleDevider;
+  //}
   //
   float Lval = (float)Hval;
   float AngleB = 0;
