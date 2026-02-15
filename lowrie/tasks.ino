@@ -89,7 +89,7 @@ void _setWalkBackRightTask(void) {
 // set stand Turn right task
 void _setStandTurnRightTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGORIGHT;
+  currentTask[1] = P_STANDGO;
   currentTask[2] = P_STANDGORIGHT;
   currentTask[3] = P_STANDGORIGHT;
   currentTask[4] = P_STANDGO;
@@ -100,7 +100,7 @@ void _setStandTurnRightTask(void) {
 // set stand Turn left task
 void _setStandTurnLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGOLEFT;
+  currentTask[1] = P_STANDGO;
   currentTask[2] = P_STANDGOLEFT;
   currentTask[3] = P_STANDGOLEFT;
   currentTask[4] = P_STANDGO;
@@ -111,7 +111,7 @@ void _setStandTurnLeftTask(void) {
 // set stand Turn right sharp task
 void _setStandTurnRight2Task(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGORIGHT; 
+  currentTask[1] = P_STANDGO; 
   currentTask[2] = P_STANDGORIGHT; 
   currentTask[3] = P_STANDGORIGHT;
   currentTask[4] = P_STANDGORIGHT; 
@@ -123,7 +123,7 @@ void _setStandTurnRight2Task(void) {
 // set stand Turn left sharp task
 void _setStandTurnLeft2Task(void) {
   currentTask[0] = P_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGOLEFT; 
+  currentTask[1] = P_STANDGO; 
   currentTask[2] = P_STANDGOLEFT; 
   currentTask[3] = P_STANDGOLEFT;
   currentTask[4] = P_STANDGOLEFT; 
@@ -136,14 +136,16 @@ void _setStandTurnLeft2Task(void) {
 void _setWalkTurnRightTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GORIGHT;
-  currentTask[2] = P_DONE;
+  currentTask[2] = P_GORIGHT;
+  currentTask[3] = P_DONE;
 }
 
 // set Turn left task
 void _setWalkTurnLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GOLEFT;
-  currentTask[2] = P_DONE;
+  currentTask[2] = P_GOLEFT;
+  currentTask[3] = P_DONE;
 }
 
 // set walk task

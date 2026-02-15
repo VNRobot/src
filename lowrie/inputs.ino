@@ -42,8 +42,8 @@ aSensors analogRawInputs = {0, 0}; // raw values
 aSensors distanceMeasured = {0, 0}; // processed values
 // normal min and max distance
 unsigned char normalDistanceMin = 12; // cm
-unsigned char normalDistanceMax = 72; // cm
-unsigned char calculatedDistance = 72; // cm
+unsigned char normalDistanceMax = 48; // cm
+unsigned char calculatedDistance = 48; // cm
 // down angle sensor limits
 unsigned char downAngleMin = OFFROAD_ANGLE; // deg
 unsigned char downAngleMax = 60; // deg
@@ -57,7 +57,7 @@ void calculateGeometry(void) {
   } else if ((SENSOR_ANGLE - m_gyroState.accPitchY) > downAngleMin) { // 15 deg min
     // can be calculated
     calculatedDistance = (unsigned char)(((SENSOR_HIGHT + m_robotState.legHightNow / 2) / sin((SENSOR_ANGLE - m_gyroState.accPitchY) * (PI / 180.0))) / 10);
-    edgeEnabled = true;
+    edgeEnabled = false; //true;   //  *** todo
   } else {
     // too high
     calculatedDistance = normalDistanceMax;

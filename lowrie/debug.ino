@@ -183,9 +183,6 @@ void printCurrentStateDebug(void) {
     case C_HIGH_CURRENT:
       Serial.print(F(" C_HIGH_CURRENT "));
     break;
-    case C_LOW_CURRENT:
-      Serial.print(F(" C_LOW_CURRENT "));
-    break;
     case C_NORMAL:
       Serial.print(F(" C_NORMAL "));
     break;

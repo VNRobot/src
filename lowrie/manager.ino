@@ -221,7 +221,10 @@ void _setRobotState(unsigned char newState) {
       m_robotState.legLiftNow = LEG_LIFT;
       m_robotState.robotStateNow = ROBOT_NORM;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.speedMuliplierNow = 20;
+      m_robotState.speedMuliplierNow = 2;
+      m_robotState.fullCycleNow = 36;
+      m_robotState.halfCycleNow = 18;
+      m_robotState.pairCycleNow = 0;
     }
     break;
     case ROBOT_INO:
@@ -229,7 +232,10 @@ void _setRobotState(unsigned char newState) {
       m_robotState.legLiftNow = LEG_LIFT;
       m_robotState.robotStateNow = ROBOT_INO;
       m_robotState.legHightNow = HIGHT_DEFAULT;
-      m_robotState.speedMuliplierNow = 20;
+      m_robotState.speedMuliplierNow = 1;
+      m_robotState.fullCycleNow = 72;
+      m_robotState.halfCycleNow = 36;
+      m_robotState.pairCycleNow = 18;
     }
     break;
     default:
@@ -263,7 +269,7 @@ unsigned char _inputsCheck(void) {
     case GYRO_FOLLING_FRONT:
     case GYRO_FOLLING_BACK:
       // change walking state ?
-      return ROBOT_NORM;
+      return ROBOT_INO;
     break;
     default:
     break;
@@ -274,7 +280,7 @@ unsigned char _inputsCheck(void) {
 // do state manager
 void doStateManager(void) {
   // check inputs
-  newRobotState = ROBOT_NORM; //_inputsCheck();
+  newRobotState = _inputsCheck();
   // update state
   old2RobotState = oldRobotState;
   oldRobotState = m_robotState.robotStateNow;

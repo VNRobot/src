@@ -18,9 +18,6 @@ Main file
 #define DEAD_BATTERY            6000
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
-// main servo pattern counter end
-#define SERVO_FULL_CYCLE        36
-#define SERVO_HALF_CYCLE        18
 // main time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              12
 // low hight in mm. upper arm is horizontal
@@ -35,7 +32,7 @@ Main file
 #define SENSOR_ANGLE            0     // down angle
 #define SENSOR_HIGHT            0     // hight relative to legs
 // robot phisics
-#define OFFROAD_ANGLE           15
+#define OFFROAD_ANGLE           10
 #define FALLING_ANGLE           45
 
 // input state
@@ -185,6 +182,9 @@ typedef struct robotState {
   unsigned char patternNow;
   unsigned char taskNow;
   char speedNow;
+  unsigned char fullCycleNow;
+  unsigned char halfCycleNow;
+  unsigned char pairCycleNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -192,7 +192,7 @@ typedef struct robotState {
 allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor value
 short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-// sequence counter 0 to SERVO_FULL_CYCLE - 1
+// sequence counter 0 to m_robotState.fullCycleNow - 1
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
 robotState m_robotState = {
@@ -201,12 +201,15 @@ robotState m_robotState = {
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
-  20,                      // char speedMuliplierNow; 10 - 30
+  2,                       // char speedMuliplierNow; 1 - 3
   1,                       // char flipStateNow;
   PRIORITY_LOW,            // taskPriorityNow;
   P_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
-  0                        // speedNow
+  0,                       // speedNow
+  36,                      // fullCycleNow
+  18,                      // halfCycleNow
+  0                        // pairCycleNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};

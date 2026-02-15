@@ -19,9 +19,9 @@ struct aCurrent {
 
 // analog input values array
 aCurrent analogValueCurrent = {LOW_BATTERY, 0, 0}; // processed values
-unsigned int batteryV = 0;
-unsigned int currentF = 0;
-unsigned int currentR = 0;
+unsigned long batteryV = 0;
+unsigned long currentF = 0;
+unsigned long currentR = 0;
 
 // init current inputs
 void initCurrent(void) {
@@ -32,9 +32,9 @@ void updateCurrent(void) {
   // end of previous cycle
   if (m_sequenceCounter.m == 0) {
     // average
-    batteryV /= SERVO_FULL_CYCLE;
-    currentF /= SERVO_FULL_CYCLE;
-    currentR /= SERVO_FULL_CYCLE;
+    batteryV /= m_robotState.fullCycleNow;
+    currentF /= m_robotState.fullCycleNow;
+    currentR /= m_robotState.fullCycleNow;
     // to ma
     if (batteryV > currentF) {
       analogValueCurrent.current2 = (batteryV - currentF) * 8;

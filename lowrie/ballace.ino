@@ -34,10 +34,12 @@ void updateBallance(void) {
     _updateStaticBallance();
     // once
     if (m_sequenceCounter.m == 0) {
-      // dynamic ballance
-      _updateDynamicBallance();
-      // speed correction
-      speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
+      if (m_robotState.robotStateNow == ROBOT_NORM) {
+        // dynamic ballance
+        _updateDynamicBallance();
+        // speed correction
+        speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
+      }
     }
     // correct legs
     finalForwardShift = staticForward + dynamicForward + speedCorrection;
@@ -50,7 +52,11 @@ void updateBallance(void) {
 
 // static ballance
 void _updateStaticBallance(void) {
-  staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned
+  if (m_robotState.robotStateNow == ROBOT_NORM) {
+    staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned
+  } else if (m_robotState.robotStateNow == ROBOT_INO) {
+    staticForwardTemp = (short)(m_gyroState.accPitchY * 2); // 2 has to be tuned
+  }
   // 
   if ((staticForward > staticForwardTemp) && (staticForward > -staticForwardMax)) {
     staticForward --;
@@ -63,13 +69,13 @@ void _updateStaticBallance(void) {
 void _updateDynamicBallance(void) {
   if (m_gyroState.rollMax - m_gyroState.rollMin > 2) {
     // body rolls
-    if ((m_gyroState.rollMinTime < SERVO_HALF_CYCLE) && (m_gyroState.rollMaxTime > SERVO_HALF_CYCLE - 1)) {
+    if ((m_gyroState.rollMinTime < m_robotState.halfCycleNow) && (m_gyroState.rollMaxTime > m_robotState.halfCycleNow - 1)) {
       // front is too heavy
       if (dynamicForward > -dynamicForwardMax) {
         dynamicForward --;
       }
     }
-    if ((m_gyroState.rollMinTime > SERVO_HALF_CYCLE - 1) && (m_gyroState.rollMaxTime < SERVO_HALF_CYCLE)) {
+    if ((m_gyroState.rollMinTime > m_robotState.halfCycleNow - 1) && (m_gyroState.rollMaxTime < m_robotState.halfCycleNow)) {
       // rear is too heavy
       if (dynamicForward < dynamicForwardMax) {
         dynamicForward ++;
