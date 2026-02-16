@@ -25,7 +25,7 @@ Main file
 // normal hight
 #define HIGHT_DEFAULT           125
 // normal leg lift in mm
-#define LEG_LIFT                80
+#define LEG_LIFT                40
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
 // sensors geometry

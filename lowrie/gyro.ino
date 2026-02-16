@@ -7,12 +7,6 @@ use MPU6050 to read gyroscope and accelerometer
 
 #include <Wire.h>
 
-// gyro data structure
-typedef struct gyro {
-  float accRollX;     // roll       right - positive   -90 0 90 upsidedown also 0
-  float accPitchY;    // pitch      down - positive   -90 0 90 upsidedown also 0
-  float direction;    // direction  turn left - positive
-} gyro;
 // gyro errors structure
 typedef struct errors {
 float AccErrorX;
@@ -22,18 +16,21 @@ float GyroErrorY;
 float GyroErrorZ;
 } errors;
 
-// gyro data
-gyro gyroData = {0, 0, 0};
 // gyro errors
 errors gyroErrors = {0, 0, 0, 0, 0};
-
+// buffers to read register into
+float floatBuffer[3];
+// float data
+float floatRollX;         // roll       right - positive   -90 0 90 upsidedown also 0
+float floatPitchY;        // pitch      down - positive   -90 0 90 upsidedown also 0
+float floatDirection;     // direction  turn left - positive
 // time parameters
 float timeInterval;
 unsigned long currentTime = 0;
 unsigned long oldTime;
-// buffers to read register into
-float floatBuffer[3];
+// gyro state
 unsigned char stateGyroOld = GYRO_NORM;
+// roll data
 short rollMinBuffer;
 short rollMaxBuffer;
 unsigned char rollMinTimeBuffer;
@@ -41,9 +38,10 @@ unsigned char rollMaxTimeBuffer;
 // shake parameters
 short shakeNow = 0;
 short shakeOld = 0;
-short rollBuffer = 0;
-short pitchBuffer = 0;
-short directionBuffer = 0;
+short rollNow = 0;
+short rollOld = 0;
+short pitchNow = 0;
+short pitchOld = 0;
 // walking direction
 short walkingDirection = 0;
 short walkingDirectionOld = 0;
@@ -156,8 +154,8 @@ void updateGyro(void) {
   floatBuffer[0] /= 16384.0;
   floatBuffer[1] /= 16384.0;
   floatBuffer[2] /= 16384.0;
-  gyroData.accRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
-  gyroData.accPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
+  floatRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
+  floatPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
   m_gyroState.accUpsideZ = (short)((floatBuffer[2]) * 100);
   // gyroscope
   oldTime = currentTime;
@@ -167,58 +165,60 @@ void updateGyro(void) {
   floatBuffer[0] = floatBuffer[0] / 131.0 - gyroErrors.GyroErrorX;
   floatBuffer[1] = floatBuffer[1] / 131.0 - gyroErrors.GyroErrorY;
   floatBuffer[2] = floatBuffer[2] / 131.0 - gyroErrors.GyroErrorZ;
-  gyroData.direction  += floatBuffer[2] * timeInterval;
-  m_gyroState.accRollX =   (short)gyroData.accRollX;
-  m_gyroState.accPitchY = -(short)gyroData.accPitchY;
-  // walk cycle related operations
+  floatDirection  += floatBuffer[2] * timeInterval;
+  // short data
+  rollNow = (short)floatRollX;
+  pitchNow = -(short)floatPitchY;
+  // shake data processing
+  if (rollNow > rollOld) {
+    shakeNow += rollNow - rollOld;
+  } else {
+    shakeNow += rollOld - rollNow;
+  }
+  if (pitchNow > pitchOld) {
+    shakeNow += pitchNow - pitchOld;
+  } else {
+    shakeNow += pitchOld - pitchNow;
+  }
+  // remember roll and pitch
+  m_gyroState.accRollX = (rollNow + rollOld) / 2;
+  m_gyroState.accPitchY = (pitchNow + pitchOld) / 2;
+  // remember position
+  rollOld = rollNow;
+  pitchOld = pitchNow;
+  // cycle statrt
   if (m_sequenceCounter.m == 0) {
+    // process direction
     // fix rotation angle value
-    gyroData.direction  = _fixAngle(gyroData.direction, 180);
+    floatDirection  = _fixAngle(floatDirection, 180);
     // get gyro data
-    m_gyroState.direction =  -((short)gyroData.direction * 2);
-    // shake value
-    shakeOld = shakeNow;
-    if (m_gyroState.accRollX > rollBuffer) {
-      shakeNow = m_gyroState.accRollX - rollBuffer;
-    } else {
-      shakeNow = rollBuffer - m_gyroState.accRollX;
-    }
-    if (m_gyroState.accPitchY > pitchBuffer) {
-      shakeNow += m_gyroState.accPitchY - pitchBuffer;
-    } else {
-      shakeNow += pitchBuffer - m_gyroState.accPitchY;
-    }
-    if (m_gyroState.direction > directionBuffer) {
-      shakeNow += m_gyroState.direction - directionBuffer;
-    } else {
-      shakeNow += directionBuffer - m_gyroState.direction;
-    }
-    // remember position
-    rollBuffer = m_gyroState.accRollX;
-    pitchBuffer = m_gyroState.accPitchY;
-    directionBuffer = m_gyroState.direction;
-    // start of walk cycle
+    m_gyroState.direction =  -((short)floatDirection * 2);
+    // process roll
+    // remember roll
     m_gyroState.rollMin = rollMinBuffer;
     m_gyroState.rollMax = rollMaxBuffer;
     m_gyroState.rollMinTime = rollMinTimeBuffer;
     m_gyroState.rollMaxTime = rollMaxTimeBuffer;
-    rollMinBuffer = gyroData.accRollX;
-    rollMaxBuffer = gyroData.accRollX;
+    // reset roll
+    rollMinBuffer = rollNow;
+    rollMaxBuffer = rollNow;
     rollMinTimeBuffer = 0;
     rollMaxTimeBuffer = 0;
   } else {
     // find max and min roll
-    if (gyroData.accRollX > rollMaxBuffer) {
-      rollMaxBuffer = gyroData.accRollX;
+    if (rollNow > rollMaxBuffer) {
+      rollMaxBuffer = rollNow;
       rollMaxTimeBuffer = m_sequenceCounter.m;
     }
-    if (gyroData.accRollX < rollMinBuffer) {
-      rollMinBuffer = gyroData.accRollX;
+    if (rollNow < rollMinBuffer) {
+      rollMinBuffer = rollNow;
       rollMinTimeBuffer = m_sequenceCounter.m;
     }
   }
-  // end walk cycle related operations
+  // walk cycle related operations
   if (m_sequenceCounter.m == 0) {
+    // process data
+    // get status
     m_gyroState.stateGyro = _statusGyro();
     if (stateGyroOld != m_gyroState.stateGyro) {
       stateGyroOld = m_gyroState.stateGyro;
@@ -226,11 +226,14 @@ void updateGyro(void) {
       //_printGyro();
     }
   }
+  // remember and reset shake values
+  shakeOld = shakeNow;
+  shakeNow = 0;
 }
 
 // reset gyro data
 void resetGyro(void) {
-  gyroData.direction = 0;
+  floatDirection = 0;
   m_gyroState.direction = 0;
   m_gyroState.rollMin = 0;
   m_gyroState.rollMax = 0;
@@ -241,9 +244,8 @@ void resetGyro(void) {
   walkingDirection = 0;
   shakeOld = 0;
   shakeNow = 0;
-  rollBuffer = 0;
-  pitchBuffer = 0;
-  directionBuffer = 0;
+  rollOld = 0;
+  pitchOld = 0;
 }
 
 // get walking direction
@@ -357,6 +359,9 @@ void _printGyro(void) {
     break;
     case GYRO_FOLLING_FRONT:
       Serial.println(F(" GYRO_FOLLING_FRONT "));
+    break;
+    case GYRO_SHAKEN:
+      Serial.println(F(" GYRO_SHAKEN "));
     break;
     case GYRO_FOLLING_BACK:
       Serial.println(F(" GYRO_FOLLING_BACK "));

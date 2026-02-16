@@ -229,7 +229,7 @@ void _setRobotState(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      m_robotState.legLiftNow = LEG_LIFT;
+      m_robotState.legLiftNow = LEG_LIFT * 2;
       m_robotState.robotStateNow = ROBOT_INO;
       m_robotState.legHightNow = HIGHT_DEFAULT;
       m_robotState.speedMuliplierNow = 1;

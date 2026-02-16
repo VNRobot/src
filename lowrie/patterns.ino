@@ -199,27 +199,30 @@ allLegs getWalkPatterns(void) {
 
 // set walk step value
 leg _getWalkStep(unsigned char counter, char speedValue) {
-  char fowardPoint = 0;
-  short liftPoint = 1;
-  //
-  if (counter < 4) {
-    fowardPoint = -counter * quickShiftMultiplier;
-    liftPoint = 1;
-  } else if (counter > m_robotState.fullCycleNow - 4) {
-    fowardPoint = (m_robotState.fullCycleNow - counter) * quickShiftMultiplier;
-    liftPoint = 1;
-  } else {
-    fowardPoint = counter - m_robotState.halfCycleNow;
-    if ((counter > m_robotState.halfCycleNow - 4) && (counter < m_robotState.halfCycleNow + 4)) {
-      liftPoint = 1000;
-    } else {
-      liftPoint = 10;
-    }
-  }
   // leg step values
   leg legStep = {0, 0};
+  //
+  if (counter < 4) {
+    legStep.shift = -counter * quickShiftMultiplier;
+    legStep.hight = -m_robotState.legLiftNow; // lifted
+  } else if (counter > m_robotState.fullCycleNow - 4) {
+    legStep.shift = (m_robotState.fullCycleNow - counter) * quickShiftMultiplier;
+    legStep.hight = -m_robotState.legLiftNow; // lifted
+  } else {
+    legStep.shift = counter - m_robotState.halfCycleNow;
+    if ((counter > m_robotState.halfCycleNow - 4) && (counter < m_robotState.halfCycleNow + 4)) {
+      legStep.hight = 0; // one leg touch
+    } else {
+      if (counter == 4) {
+        legStep.hight = -6; // touch the ground
+      } else {
+        legStep.hight = -2; // compensate legs flexibility
+      }
+    }
+  }
+  // hight
+  legStep.hight += m_robotState.legHightNow;
   // forward shift
-  legStep.hight = m_robotState.legHightNow - (short)(m_robotState.legLiftNow / liftPoint);
-  legStep.shift = (short)(fowardPoint * speedValue * m_robotState.speedMuliplierNow);
+  legStep.shift = legStep.shift * speedValue * m_robotState.speedMuliplierNow;
   return legStep;
 }
