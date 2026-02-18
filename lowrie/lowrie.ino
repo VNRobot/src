@@ -69,6 +69,7 @@ enum rPatterns {
   P_DOLOW,
   P_DODOWN,
   P_DOFLIP,
+  P_DORECOVER,
   P_DONE,
   P_SETDIRECTION,
   P_RESETDIRECTION,
@@ -95,12 +96,14 @@ enum rTasks {
   STAND_TASK,
   DOWN_TASK,
   FLIP_TASK,
+  RESET_TASK,
   DEFAULT_TASK
 };
 // gyro state
 enum gState {
   GYRO_NORM,
   GYRO_UPSIDEDOWN,
+  GYRO_RESET,
   GYRO_FELL_LEFT,
   GYRO_FELL_RIGHT,
   GYRO_FELL_FRONT,
@@ -234,7 +237,7 @@ void setup() {
   // init servo motors
   initServo();
   doPWMServo(200);
-  setServo(HIGHT_LOW);
+  setServo(HIGHT_LOW, HIGHT_LOW, 20);
   // init gyro MPU6050 using I2C
   initGyro();
   doPWMServo(200);
@@ -245,7 +248,7 @@ void setup() {
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
-    setServo(HIGHT_DEFAULT);
+    setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
     doPWMServo(200);
     // init current readings
     initCurrent();
@@ -364,12 +367,28 @@ void loop() {
       break;
       case P_DOLOW:
       {
-        setServo(HIGHT_LOW);
+        setServo(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
       case P_DOSTAND:
       {
-        setServo(m_robotState.legHightNow);
+        setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
+      }
+      break;
+      case P_DORECOVER:
+      {
+        // smart recover
+        if (m_gyroState.accRollX > 0) {
+          // recover left
+          setServo(170, 40, 0);
+          setServo(170, 170, 0);
+          setServo(40, 40, 0);
+        } else {
+          // recover right
+          setServo(40, 170, 0);
+          setServo(170, 170, 0);
+          setServo(40, 40, 0);
+        }
       }
       break;
       case P_DOFLIP:
@@ -389,7 +408,7 @@ void loop() {
       case P_DODOWN:
       {
         // disable motors
-        setServo(HIGHT_LOW);
+        setServo(HIGHT_LOW, HIGHT_LOW, 20);
         detachServo();
       }
       break;

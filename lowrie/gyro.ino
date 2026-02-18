@@ -279,8 +279,9 @@ unsigned char _statusGyro(void) {
   if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
     return GYRO_UPSIDEDOWN;
   }
+  // reset
   if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
-    return GYRO_UPSIDEDOWN;
+    return GYRO_RESET;
   }
   // fell left
   if (m_gyroState.accRollX < -FALLING_ANGLE) {

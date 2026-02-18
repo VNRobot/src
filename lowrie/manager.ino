@@ -175,7 +175,7 @@ unsigned char getOppositeTask(void) {
       return GOBACKRIGHT_TASK;
     break;
     case FLIP_TASK:
-      return BEGIN_TASK;
+      return RESET_TASK;
     break;
     case BEGIN_TASK:
       return DOWN_TASK;
@@ -255,6 +255,7 @@ unsigned char _inputsCheck(void) {
    // check gyro state
   switch (m_gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
+    case GYRO_RESET:
     case GYRO_FELL_LEFT:
     case GYRO_FELL_RIGHT:
     case GYRO_FELL_FRONT:

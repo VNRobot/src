@@ -28,17 +28,32 @@ void _setStandTask(void) {
   currentTask[2] = P_END;
 }
 
+// flip recover
 void _setFlipTask(void) {
+  currentTask[0] = P_SETPRIORITY_HIGH;
+  currentTask[1] = P_DOSTAND;
+  currentTask[2] = P_DOFLIP;
+  currentTask[3] = P_DOLOW;
+  currentTask[4] = P_DORECOVER;
+  currentTask[5] = P_DOFLIP;
+  currentTask[6] = P_DOSTAND;
+  currentTask[7] = P_RESETGIRO;
+  currentTask[8] = P_SETPRIORITY_NORM;
+  currentTask[9] = P_DOSTAND;
+  currentTask[10] = P_DONE;
+}
+
+// reset
+void _setResetTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
   currentTask[1] = P_DOLOW;
   currentTask[2] = P_DOFLIP;
-  currentTask[3] = P_DOSTAND;
-  currentTask[4] = P_RESETGIRO;
-  currentTask[5] = P_DOSTAND;
+  currentTask[3] = P_DOLOW;
+  currentTask[4] = P_DOSTAND;
+  currentTask[5] = P_RESETGIRO;
   currentTask[6] = P_SETPRIORITY_NORM;
   currentTask[7] = P_DOSTAND;
-  currentTask[8] = P_STANDGO;
-  currentTask[9] = P_DONE;
+  currentTask[8] = P_DONE;
 }
 
 // set begin task
@@ -197,6 +212,9 @@ void applyTask(unsigned char task) {
     case FLIP_TASK:
       _setFlipTask();
     break;
+    case RESET_TASK:
+      _setResetTask();
+    break;
     default:
     break;
   }
@@ -240,6 +258,9 @@ unsigned char getHighPriorityTask(void) {
   switch (m_gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
       return FLIP_TASK;
+    break;
+    case GYRO_RESET:
+      return RESET_TASK;
     break;
     case GYRO_FELL_LEFT:
       return FLIP_TASK;
