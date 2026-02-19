@@ -19,7 +19,7 @@ Main file
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              12
+#define TIME_DELAY              10
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               63
 // normal hight
@@ -68,7 +68,7 @@ enum rPatterns {
   P_GOBACKRIGHT,
   P_DOLOW,
   P_DODOWN,
-  P_DOFLIP,
+  P_DORESET,
   P_DORECOVER,
   P_DONE,
   P_SETDIRECTION,
@@ -378,28 +378,27 @@ void loop() {
       case P_DORECOVER:
       {
         // smart recover
+        setServo(60, 60, 0);
         if (m_gyroState.accRollX > 0) {
           // recover left
-          setServo(170, 40, 0);
-          setServo(170, 170, 0);
-          setServo(40, 40, 0);
+          setServo(170, 35, 0);
         } else {
           // recover right
-          setServo(40, 170, 0);
-          setServo(170, 170, 0);
-          setServo(40, 40, 0);
+          setServo(35, 170, 0);
         }
+        setServo(170, 170, 0);
+        setServo(60, 60, 0);
       }
       break;
-      case P_DOFLIP:
+      case P_DORESET:
       {
-        // do flip
-        if (m_robotState.flipStateNow == 1) {
+        if (m_gyroState.accUpsideZ < 0) {
           m_robotState.flipStateNow = -1;
         } else {
           m_robotState.flipStateNow = 1;
         }
       }
+      break;
       case P_REPEAT:
       case P_DONE:
       // do nothing

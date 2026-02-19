@@ -72,7 +72,7 @@ input data
       P_GOBACKRIGHT,
       P_DOLOW,
       P_DODOWN,
-      P_DOFLIP,
+      P_DORESET,
       P_DONE,
       P_SETDIRECTION,
       P_RESETDIRECTION,

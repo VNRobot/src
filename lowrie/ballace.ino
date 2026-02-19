@@ -36,9 +36,9 @@ void updateBallance(void) {
     if (m_sequenceCounter.m == 0) {
       if (m_robotState.robotStateNow == ROBOT_NORM) {
         // dynamic ballance
-        _updateDynamicBallance();
+        //_updateDynamicBallance();
         // speed correction
-        speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
+        //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
       }
     }
     // correct legs

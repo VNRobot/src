@@ -275,11 +275,12 @@ unsigned char _statusGyro(void) {
   if (shakeNow > (shakeOld * 2)) {
     return GYRO_SHAKEN;
   }
-  // upside down
+  // not shaken check upside down
   if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
+    // flip event. update flip state
     return GYRO_UPSIDEDOWN;
   }
-  // reset
+  // position normal reset walking
   if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
     return GYRO_RESET;
   }
@@ -320,6 +321,10 @@ unsigned char _statusGyro(void) {
   }
   if (m_gyroState.direction - walkingDirection < -4) {
     return GYRO_TURNED_LEFT;
+  }
+  // upside down. recover fail
+  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == -1)) {
+    // do nothing for now
   }
   return GYRO_NORM;
 }

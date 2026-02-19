@@ -42,8 +42,8 @@ aSensors analogRawInputs = {0, 0}; // raw values
 aSensors distanceMeasured = {0, 0}; // processed values
 // normal min and max distance
 unsigned char normalDistanceMin = 12; // cm
-unsigned char normalDistanceMax = 48; // cm
-unsigned char calculatedDistance = 48; // cm
+unsigned char normalDistanceMax = 36; //48; // cm
+unsigned char calculatedDistance = 36; //48; // cm
 // down angle sensor limits
 unsigned char downAngleMin = OFFROAD_ANGLE; // deg
 unsigned char downAngleMax = 60; // deg

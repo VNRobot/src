@@ -98,8 +98,8 @@ void printPatternNameDebug(unsigned char patternNow) {
     case P_DODOWN:
       Serial.print(F(" P_DODOWN "));
     break;
-    case P_DOFLIP:
-      Serial.print(F(" P_DOFLIP "));
+    case P_DORESET:
+      Serial.print(F(" P_DORESET "));
     break;
     case P_DONE:
       Serial.print(F(" P_DONE "));

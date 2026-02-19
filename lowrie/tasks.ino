@@ -31,23 +31,24 @@ void _setStandTask(void) {
 // flip recover
 void _setFlipTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
-  currentTask[1] = P_DOSTAND;
-  currentTask[2] = P_DOFLIP;
+  currentTask[1] = P_DOLOW;
+  currentTask[2] = P_DORESET;
   currentTask[3] = P_DOLOW;
   currentTask[4] = P_DORECOVER;
-  currentTask[5] = P_DOFLIP;
-  currentTask[6] = P_DOSTAND;
-  currentTask[7] = P_RESETGIRO;
-  currentTask[8] = P_SETPRIORITY_NORM;
-  currentTask[9] = P_DOSTAND;
-  currentTask[10] = P_DONE;
+  currentTask[5] = P_DOLOW;
+  currentTask[6] = P_DORESET;
+  currentTask[7] = P_DOSTAND;
+  currentTask[8] = P_RESETGIRO;
+  currentTask[9] = P_SETPRIORITY_NORM;
+  currentTask[10] = P_DOSTAND;
+  currentTask[11] = P_DONE;
 }
 
 // reset
 void _setResetTask(void) {
   currentTask[0] = P_SETPRIORITY_HIGH;
   currentTask[1] = P_DOLOW;
-  currentTask[2] = P_DOFLIP;
+  currentTask[2] = P_DORESET;
   currentTask[3] = P_DOLOW;
   currentTask[4] = P_DOSTAND;
   currentTask[5] = P_RESETGIRO;
@@ -151,16 +152,14 @@ void _setStandTurnLeft2Task(void) {
 void _setWalkTurnRightTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GORIGHT;
-  currentTask[2] = P_GORIGHT;
-  currentTask[3] = P_DONE;
+  currentTask[2] = P_DONE;
 }
 
 // set Turn left task
 void _setWalkTurnLeftTask(void) {
   currentTask[0] = P_SETPRIORITY_LOW;
   currentTask[1] = P_GOLEFT;
-  currentTask[2] = P_GOLEFT;
-  currentTask[3] = P_DONE;
+  currentTask[2] = P_DONE;
 }
 
 // set walk task
