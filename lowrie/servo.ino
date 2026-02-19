@@ -30,7 +30,7 @@ Servo m_servo_rr_1;
 Servo m_servo_rr_2;
 
 // static ballance
-allLegs staticBallance = {0, 0, 0, 0, 0, 0, 0, 0};
+allLegs staticBallance = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 // motors attached flag
 bool attached = false;
 // motors init values

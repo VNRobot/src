@@ -245,6 +245,7 @@ void _setRobotState(unsigned char newState) {
 
 // check for slop
 unsigned char _inputsCheck(void) {
+  return ROBOT_INO;
   // check current
   if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
     return ROBOT_NORM;

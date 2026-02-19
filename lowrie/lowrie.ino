@@ -19,7 +19,7 @@ Main file
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              10
+#define TIME_DELAY              20
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               63
 // normal hight
@@ -137,6 +137,7 @@ struct motors {
 struct leg {
   short hight;
   short shift;
+  bool lifted;
 };
 // legs motors structure
 struct allMotors {
@@ -217,7 +218,7 @@ robotState m_robotState = {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // ballance correction
-allLegs m_legCorrect = {0, 0, 0, 0, 0, 0, 0, 0};
+allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 //----------------------------------------------------------
 // servo cycle is done flag
 bool cycleDone = true;
