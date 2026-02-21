@@ -32,9 +32,9 @@ void updateCurrent(void) {
   // end of previous cycle
   if (m_sequenceCounter.m == 0) {
     // average
-    batteryV /= m_robotState.fullCycleNow;
-    currentF /= m_robotState.fullCycleNow;
-    currentR /= m_robotState.fullCycleNow;
+    batteryV /= MAIN_FULL_CYCLE;
+    currentF /= MAIN_FULL_CYCLE;
+    currentR /= MAIN_FULL_CYCLE;
     // to ma
     if (batteryV > currentF) {
       analogValueCurrent.current2 = (batteryV - currentF) * 8;

@@ -222,9 +222,6 @@ void _setRobotState(unsigned char newState) {
       m_robotState.robotStateNow = ROBOT_NORM;
       m_robotState.legHightNow = HIGHT_DEFAULT;
       m_robotState.speedMuliplierNow = 2;
-      m_robotState.fullCycleNow = 36;
-      m_robotState.halfCycleNow = 18;
-      m_robotState.pairCycleNow = 0;
     }
     break;
     case ROBOT_INO:
@@ -233,9 +230,6 @@ void _setRobotState(unsigned char newState) {
       m_robotState.robotStateNow = ROBOT_INO;
       m_robotState.legHightNow = HIGHT_DEFAULT;
       m_robotState.speedMuliplierNow = 1;
-      m_robotState.fullCycleNow = 72;
-      m_robotState.halfCycleNow = 36;
-      m_robotState.pairCycleNow = 18;
     }
     break;
     default:
@@ -245,7 +239,6 @@ void _setRobotState(unsigned char newState) {
 
 // check for slop
 unsigned char _inputsCheck(void) {
-  return ROBOT_INO;
   // check current
   if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
     return ROBOT_NORM;

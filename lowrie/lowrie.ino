@@ -19,7 +19,7 @@ Main file
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              20
+#define TIME_DELAY              10
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               63
 // normal hight
@@ -34,6 +34,12 @@ Main file
 // robot phisics
 #define OFFROAD_ANGLE           10
 #define FALLING_ANGLE           45
+// main servo pattern counter end
+#define SERVO_FULL_CYCLE 72
+#define SERVO_HALF_CYCLE 36
+#define SERVO_PAIR_SHIFT 18
+#define MAIN_FULL_CYCLE 36
+#define MAIN_HALF_CYCLE 18
 
 // input state
 enum inState {
@@ -186,9 +192,6 @@ typedef struct robotState {
   unsigned char patternNow;
   unsigned char taskNow;
   char speedNow;
-  unsigned char fullCycleNow;
-  unsigned char halfCycleNow;
-  unsigned char pairCycleNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -196,7 +199,7 @@ typedef struct robotState {
 allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor value
 short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-// sequence counter 0 to m_robotState.fullCycleNow - 1
+// sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
 robotState m_robotState = {
@@ -205,15 +208,12 @@ robotState m_robotState = {
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
-  2,                       // char speedMuliplierNow; 1 - 3
+  2,                       // char speedMuliplierNow; 1 or 2
   1,                       // char flipStateNow;
   PRIORITY_LOW,            // taskPriorityNow;
   P_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
-  0,                       // speedNow
-  36,                      // fullCycleNow
-  18,                      // halfCycleNow
-  0                        // pairCycleNow
+  0                        // speedNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};

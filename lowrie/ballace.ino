@@ -69,13 +69,13 @@ void _updateStaticBallance(void) {
 void _updateDynamicBallance(void) {
   if (m_gyroState.rollMax - m_gyroState.rollMin > 2) {
     // body rolls
-    if ((m_gyroState.rollMinTime < m_robotState.halfCycleNow) && (m_gyroState.rollMaxTime > m_robotState.halfCycleNow - 1)) {
+    if ((m_gyroState.rollMinTime < MAIN_HALF_CYCLE) && (m_gyroState.rollMaxTime > MAIN_HALF_CYCLE - 1)) {
       // front is too heavy
       if (dynamicForward > -dynamicForwardMax) {
         dynamicForward --;
       }
     }
-    if ((m_gyroState.rollMinTime > m_robotState.halfCycleNow - 1) && (m_gyroState.rollMaxTime < m_robotState.halfCycleNow)) {
+    if ((m_gyroState.rollMinTime > MAIN_HALF_CYCLE - 1) && (m_gyroState.rollMaxTime < MAIN_HALF_CYCLE)) {
       // rear is too heavy
       if (dynamicForward < dynamicForwardMax) {
         dynamicForward ++;

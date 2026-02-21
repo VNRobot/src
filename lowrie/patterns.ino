@@ -7,6 +7,8 @@ Robot legs motion patterns
 
 // main counter
 unsigned char mainCounter = 0;
+unsigned char walkCounter = 0;
+unsigned char walkForwardCounter = 0;
 // leg values for 4 legs
 allLegs legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // walking mode
@@ -15,10 +17,10 @@ bool walkingMode = false;
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
-// quick shift multiplier
-unsigned char quickShiftMultiplier = 5;
 // walking direction
 bool walkFrward = true;
+// leg pair shift
+unsigned char pairShift = 0;
 
 // get next sequence, mode and speed
 void setPattern(void) {
@@ -119,50 +121,54 @@ void setPattern(void) {
   } else {
     m_robotState.speedNow = -speed;
   }
-  // set quick shift
-  quickShiftMultiplier = (m_robotState.halfCycleNow - 3) / 3;
 }
 
 // update servo motors values
 void updateCountPatterns(void) {
-  // update sequence shift 
+  // update main counter
+  mainCounter ++;
+  walkForwardCounter += m_robotState.speedMuliplierNow;
+  if (mainCounter >= MAIN_FULL_CYCLE) {
+    mainCounter = 0;
+    if (walkForwardCounter >= SERVO_FULL_CYCLE) {
+      walkForwardCounter = 0;
+    }
+  }
+  // set servo counter
   if (walkFrward) {
-    mainCounter ++;
-    if (mainCounter == m_robotState.fullCycleNow) {
-      mainCounter = 0;
+      walkCounter = walkForwardCounter;
+  } else {
+    walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
+  }
+  // remember main counter
+  m_sequenceCounter.m = mainCounter;
+  // update pair shift
+  if (m_robotState.robotStateNow == ROBOT_INO) {
+    if (pairShift < SERVO_PAIR_SHIFT) {
+      pairShift ++;
     }
   } else {
-    if (mainCounter == 0) {
-      mainCounter = m_robotState.fullCycleNow - 1;
-    } else {
-      mainCounter --;
+    if (pairShift > 0) {
+      pairShift --;
     }
   }
-  m_sequenceCounter.m = mainCounter;
   // set counters
-  m_sequenceCounter.fl = mainCounter;
-  m_sequenceCounter.fr = mainCounter + m_robotState.halfCycleNow;
-  if (m_robotState.robotStateNow == ROBOT_NORM) {
-    // norm
-    m_sequenceCounter.rl = mainCounter + m_robotState.halfCycleNow;
-    m_sequenceCounter.rr = mainCounter;
-  } else if (m_robotState.robotStateNow == ROBOT_INO) {
-    // ino
-    m_sequenceCounter.rl = mainCounter + m_robotState.pairCycleNow;
-    m_sequenceCounter.rr = mainCounter + m_robotState.halfCycleNow + m_robotState.pairCycleNow;
-  }
+  m_sequenceCounter.fl = walkCounter + pairShift;
+  m_sequenceCounter.fr = walkCounter + SERVO_HALF_CYCLE + pairShift;
+  m_sequenceCounter.rl = walkCounter + SERVO_HALF_CYCLE;
+  m_sequenceCounter.rr = walkCounter;
   //
-  if (m_sequenceCounter.fl >= m_robotState.fullCycleNow) {
-    m_sequenceCounter.fl -= m_robotState.fullCycleNow;
+  if (m_sequenceCounter.fl >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.fl -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.fr >= m_robotState.fullCycleNow) {
-    m_sequenceCounter.fr -= m_robotState.fullCycleNow;
+  if (m_sequenceCounter.fr >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.fr -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.rl >= m_robotState.fullCycleNow) {
-    m_sequenceCounter.rl -= m_robotState.fullCycleNow;
+  if (m_sequenceCounter.rl >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.rl -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.rr >= m_robotState.fullCycleNow) {
-    m_sequenceCounter.rr -= m_robotState.fullCycleNow;
+  if (m_sequenceCounter.rr >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.rr -= SERVO_FULL_CYCLE;
   }
 }
 
@@ -212,30 +218,26 @@ allLegs getWalkPatterns(void) {
 leg _getWalkStep(unsigned char counter, char speedValue) {
   // leg step values
   leg legStep = {0, 0, false};
+  // lift timing point
+  unsigned char liftPoint = (2 + speedValue) * m_robotState.speedMuliplierNow;
+  // quick shift multiplier
+  unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //
-  if (counter < 4) {
+  if (counter < liftPoint) {
     legStep.shift = -counter * quickShiftMultiplier;
-    if (speedValue == 2) {
-      legStep.hight = -m_robotState.legLiftNow; // lifted
-    } else {
-      legStep.hight = -m_robotState.legLiftNow / 2; // lifted
-    }
+    legStep.hight = -m_robotState.legLiftNow; // lifted
     legStep.lifted = true;
-  } else if (counter > m_robotState.fullCycleNow - 4) {
-    legStep.shift = (m_robotState.fullCycleNow - counter) * quickShiftMultiplier;
-    if (speedValue == 2) {
-      legStep.hight = -m_robotState.legLiftNow; // lifted
-    } else {
-      legStep.hight = -m_robotState.legLiftNow / 2; // lifted
-    }
+  } else if (counter > SERVO_FULL_CYCLE - liftPoint) {
+    legStep.shift = (SERVO_FULL_CYCLE - counter) * quickShiftMultiplier;
+    legStep.hight = -m_robotState.legLiftNow; // lifted
     legStep.lifted = true;
   } else {
     legStep.lifted = false;
-    legStep.shift = counter - m_robotState.halfCycleNow;
-    if ((counter > m_robotState.halfCycleNow - 4) && (counter < m_robotState.halfCycleNow + 4)) {
+    legStep.shift = counter - SERVO_HALF_CYCLE;
+    if ((counter > SERVO_HALF_CYCLE - liftPoint) && (counter < SERVO_HALF_CYCLE + liftPoint)) {
       legStep.hight = 0; // one leg touch
     } else {
-      if (counter == 4) {
+      if (counter == liftPoint) {
         legStep.hight = -6; // touch the ground
       } else {
         legStep.hight = -2; // compensate legs flexibility
@@ -245,6 +247,6 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   // hight
   legStep.hight += m_robotState.legHightNow;
   // forward shift
-  legStep.shift = legStep.shift * speedValue * m_robotState.speedMuliplierNow;
+  legStep.shift = legStep.shift * speedValue;
   return legStep;
 }
