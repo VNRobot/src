@@ -5,93 +5,6 @@ Arduino nano
 Manager file
 */
 
-/*
-input data
-  current
-    m_robotState.currentStateNow
-      C_LOW_BATTERY,
-      C_DEAD_BATTERY,
-      C_HIGH_CURRENT,
-      C_NORMAL  
-  gyro
-    m_gyroState.stateGyro          
-      GYRO_NORM,
-      GYRO_UPSIDEDOWN,
-      GYRO_FELL_LEFT,
-      GYRO_FELL_RIGHT,
-      GYRO_FELL_FRONT,
-      GYRO_FELL_BACK,
-      GYRO_FOLLING_LEFT,
-      GYRO_FOLLING_RIGHT,
-      GYRO_FOLLING_FRONT,
-      GYRO_FOLLING_BACK,
-      GYRO_SHAKEN,
-      GYRO_TURNED_RIGHT,
-      GYRO_TURNED_LEFT
-  inputs
-    m_robotState.inputStateNow
-      IN_WALL_FRONTLEFT,
-      IN_WALL_FRONTRIGHT,
-      IN_WALL_LEFT,
-      IN_WALL_RIGHT,
-      IN_OBSTACLE_FRONTLEFT,
-      IN_OBSTACLE_FRONTRIGHT,
-      IN_OBSTACLE_LEFT,
-      IN_OBSTACLE_RIGHT,
-      IN_NORMAL             
-  tasks
-    m_robotState.taskNow
-      BEGIN_TASK,
-      GOBACKLEFT_TASK,
-      GOBACKRIGHT_TASK,
-      GOTURNRIGHT_TASK,
-      GOTURNLEFT_TASK,
-      STANDTURNRIGHT_TASK,
-      STANDTURNLEFT_TASK,
-      STANDTURNRIGHT2_TASK,
-      STANDTURNLEFT2_TASK,
-      GO_TASK,
-      STAND_TASK,
-      DOWN_TASK,
-      FLIP_TASK,
-      DEFAULT_TASK
-    m_robotState.taskPriorityNow
-      PRIORITY_HIGH,
-      PRIORITY_NORM,
-      PRIORITY_LOW,
-    m_robotState.patternNow
-      P_DOSTAND,
-      P_STANDGO,
-      P_STANDGOLEFT,
-      P_STANDGORIGHT,
-      P_GOFORWARD,
-      P_GOLEFT,
-      P_GORIGHT,
-      P_GOBACK,
-      P_GOBACKLEFT,
-      P_GOBACKRIGHT,
-      P_DOLOW,
-      P_DODOWN,
-      P_DORESET,
-      P_DONE,
-      P_SETDIRECTION,
-      P_RESETDIRECTION,
-      P_RESTOREDIRECTION,
-      P_RESETGIRO,
-      P_REPEAT,
-      P_SETPRIORITY_HIGH,
-      P_SETPRIORITY_NORM,
-      P_SETPRIORITY_LOW,
-      P_END
-*/
-
-/*
-output state
-  m_robotState.robotStateNow
-    ROBOT_NORM,
-    ROBOT_INO,
-*/
-
 // remember tasks
 unsigned char tasksMemory[16] = {DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
                                  DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
@@ -254,9 +167,7 @@ unsigned char _inputsCheck(void) {
     case GYRO_FELL_RIGHT:
     case GYRO_FELL_FRONT:
     case GYRO_FELL_BACK:
-      return ROBOT_NORM;
-    break;
-    case GYRO_SHAKEN:
+    case GYRO_NORM:
       return ROBOT_NORM;
     break;
     case GYRO_FOLLING_LEFT:
@@ -283,10 +194,3 @@ void doStateManager(void) {
     _setRobotState(newRobotState);
   }
 }
-
-/*
-output state
-  m_robotState.robotStateNow
-    ROBOT_NORM,
-    ROBOT_INO,
-*/

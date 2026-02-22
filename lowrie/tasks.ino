@@ -268,9 +268,6 @@ unsigned char getHighPriorityTask(void) {
     case GYRO_FOLLING_BACK:
       return DEFAULT_TASK;
     break;
-    case GYRO_SHAKEN:
-      return DEFAULT_TASK;
-    break;
     default:
     break;
   }
@@ -279,7 +276,7 @@ unsigned char getHighPriorityTask(void) {
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getNormalTask(void) {
+unsigned char getNormalTask(int direction) {
   // obstacle state
   switch (m_robotState.inputStateNow) {
     case IN_WALL_FRONTLEFT:
@@ -308,10 +305,10 @@ unsigned char getNormalTask(void) {
     break;
     case IN_NORMAL:
       {
-        if (m_gyroState.stateGyro == GYRO_TURNED_RIGHT) {
+        if (direction > 4) {
           return GOTURNLEFT_TASK;
         }
-        if (m_gyroState.stateGyro == GYRO_TURNED_LEFT) {
+        if (direction < -4) {
           return GOTURNRIGHT_TASK;
         }
         if (m_robotState.currentStateNow == C_LOW_BATTERY) {

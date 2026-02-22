@@ -32,7 +32,7 @@ Main file
 #define SENSOR_ANGLE            0     // down angle
 #define SENSOR_HIGHT            0     // hight relative to legs
 // robot phisics
-#define OFFROAD_ANGLE           10
+#define OFFROAD_ANGLE           6
 #define FALLING_ANGLE           45
 // main servo pattern counter end
 #define SERVO_FULL_CYCLE 72
@@ -117,10 +117,7 @@ enum gState {
   GYRO_FOLLING_LEFT,
   GYRO_FOLLING_RIGHT,
   GYRO_FOLLING_FRONT,
-  GYRO_FOLLING_BACK,
-  GYRO_SHAKEN,
-  GYRO_TURNED_RIGHT,
-  GYRO_TURNED_LEFT
+  GYRO_FOLLING_BACK
 };
 // task priority
 enum tPriority {
@@ -291,7 +288,7 @@ void setTaskAndPattern(void) {
   // any priority end of task
   if (m_robotState.patternNow == P_DONE) {
     // check for normal priority
-    taskNext = getNormalTask();
+    taskNext = getNormalTask(getDirectionGyro());
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
@@ -379,16 +376,16 @@ void loop() {
       case P_DORECOVER:
       {
         // smart recover
-        setServo(60, 60, 0);
+        setServo(90, 90, 0);
         if (m_gyroState.accRollX > 0) {
           // recover left
-          setServo(170, 35, 0);
+          setServo(170, 32, 0);
         } else {
           // recover right
-          setServo(35, 170, 0);
+          setServo(32, 170, 0);
         }
         setServo(170, 170, 0);
-        setServo(60, 60, 0);
+        setServo(90, 90, 0);
       }
       break;
       case P_DORESET:

@@ -42,6 +42,8 @@ short rollNow = 0;
 short rollOld = 0;
 short pitchNow = 0;
 short pitchOld = 0;
+long rollAverage = 0;
+long pitchAverage = 0;
 // walking direction
 short walkingDirection = 0;
 short walkingDirectionOld = 0;
@@ -180,14 +182,20 @@ void updateGyro(void) {
   } else {
     shakeNow += pitchOld - pitchNow;
   }
-  // remember roll and pitch
-  m_gyroState.accRollX = (rollNow + rollOld) / 2;
-  m_gyroState.accPitchY = (pitchNow + pitchOld) / 2;
+  // add average
+  rollAverage += rollNow;
+  pitchAverage += pitchNow;
   // remember position
   rollOld = rollNow;
   pitchOld = pitchNow;
   // cycle statrt
   if (m_sequenceCounter.m == 0) {
+    // remember roll and pitch
+    m_gyroState.accRollX = rollAverage / MAIN_FULL_CYCLE;
+    m_gyroState.accPitchY = pitchAverage / MAIN_FULL_CYCLE;
+    // reset average
+    rollAverage = 0;
+    pitchAverage = 0;
     // process direction
     // fix rotation angle value
     floatDirection  = _fixAngle(floatDirection, 180);
@@ -272,55 +280,48 @@ void restoreDirectionGyro(void) {
 // status of gyro
 unsigned char _statusGyro(void) {
   // if shaken wait
-  if (shakeNow > (shakeOld * 2)) {
-    return GYRO_SHAKEN;
-  }
-  // not shaken check upside down
-  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
-    // flip event. update flip state
-    return GYRO_UPSIDEDOWN;
-  }
-  // position normal reset walking
-  if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
-    return GYRO_RESET;
-  }
-  // fell left
-  if (m_gyroState.accRollX < -FALLING_ANGLE) {
-    return GYRO_FELL_LEFT;
-  }
-  // fell right
-  if (m_gyroState.accRollX > FALLING_ANGLE) {
-    return GYRO_FELL_RIGHT;
-  }
-  // fell front
-  if (m_gyroState.accPitchY < -FALLING_ANGLE) {
-    return GYRO_FELL_FRONT;
-  }
-  // fell back
-  if (m_gyroState.accPitchY > FALLING_ANGLE) {
-    return GYRO_FELL_BACK;
+  if (shakeNow < (shakeOld * 2)) {
+    // not shaken check upside down
+    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
+      // flip event. update flip state
+      return GYRO_UPSIDEDOWN;
+    }
+    // position normal reset walking
+    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
+      return GYRO_RESET;
+    }
+    // fell left
+    if (m_gyroState.accRollX < -FALLING_ANGLE) {
+      return GYRO_FELL_LEFT;
+    }
+    // fell right
+    if (m_gyroState.accRollX > FALLING_ANGLE) {
+      return GYRO_FELL_RIGHT;
+    }
+    // fell front
+    if (m_gyroState.accPitchY < -FALLING_ANGLE) {
+      return GYRO_FELL_FRONT;
+    }
+    // fell back
+    if (m_gyroState.accPitchY > FALLING_ANGLE) {
+      return GYRO_FELL_BACK;
+    }
   }
   // folling left
-  if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
+  if (m_gyroState.accRollX < -OFFROAD_ANGLE - 1) {
     return GYRO_FOLLING_LEFT;
   }
   // folling right
-  if (m_gyroState.accRollX > OFFROAD_ANGLE) {
+  if (m_gyroState.accRollX > OFFROAD_ANGLE + 1) {
     return GYRO_FOLLING_RIGHT;
   }
   // folling front
-  if (m_gyroState.accPitchY < -OFFROAD_ANGLE) {
+  if (m_gyroState.accPitchY < -OFFROAD_ANGLE - 1) {
     return GYRO_FOLLING_FRONT;
   }
   // folling back
-  if (m_gyroState.accPitchY > OFFROAD_ANGLE) {
+  if (m_gyroState.accPitchY > OFFROAD_ANGLE + 1) {
     return GYRO_FOLLING_BACK;
-  }
-  if (m_gyroState.direction - walkingDirection > 4) {
-    return GYRO_TURNED_RIGHT;
-  }
-  if (m_gyroState.direction - walkingDirection < -4) {
-    return GYRO_TURNED_LEFT;
   }
   // upside down. recover fail
   if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == -1)) {
@@ -335,12 +336,6 @@ void _printGyro(void) {
   switch (m_gyroState.stateGyro) {
     case GYRO_NORM:
       Serial.println(F(" GYRO_NORM "));
-    break;
-    case GYRO_TURNED_RIGHT:
-      Serial.println(F(" GYRO_TURNED_RIGHT "));
-    break;
-    case GYRO_TURNED_LEFT:
-      Serial.println(F(" GYRO_TURNED_LEFT "));
     break;
     case GYRO_UPSIDEDOWN:
       Serial.println(F(" GYRO_UPSIDEDOWN "));
@@ -365,9 +360,6 @@ void _printGyro(void) {
     break;
     case GYRO_FOLLING_FRONT:
       Serial.println(F(" GYRO_FOLLING_FRONT "));
-    break;
-    case GYRO_SHAKEN:
-      Serial.println(F(" GYRO_SHAKEN "));
     break;
     case GYRO_FOLLING_BACK:
       Serial.println(F(" GYRO_FOLLING_BACK "));
