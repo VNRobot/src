@@ -281,15 +281,7 @@ void restoreDirectionGyro(void) {
 unsigned char _statusGyro(void) {
   // if shaken wait
   if (shakeNow < (shakeOld * 2)) {
-    // not shaken check upside down
-    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
-      // flip event. update flip state
-      return GYRO_UPSIDEDOWN;
-    }
-    // position normal reset walking
-    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
-      return GYRO_RESET;
-    }
+    // not shaken 
     // fell left
     if (m_gyroState.accRollX < -FALLING_ANGLE) {
       return GYRO_FELL_LEFT;
@@ -306,22 +298,15 @@ unsigned char _statusGyro(void) {
     if (m_gyroState.accPitchY > FALLING_ANGLE) {
       return GYRO_FELL_BACK;
     }
-  }
-  // folling left
-  if (m_gyroState.accRollX < -OFFROAD_ANGLE - 1) {
-    return GYRO_FOLLING_LEFT;
-  }
-  // folling right
-  if (m_gyroState.accRollX > OFFROAD_ANGLE + 1) {
-    return GYRO_FOLLING_RIGHT;
-  }
-  // folling front
-  if (m_gyroState.accPitchY < -OFFROAD_ANGLE - 1) {
-    return GYRO_FOLLING_FRONT;
-  }
-  // folling back
-  if (m_gyroState.accPitchY > OFFROAD_ANGLE + 1) {
-    return GYRO_FOLLING_BACK;
+    // check upside down
+    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
+      // flip event. update flip state
+      return GYRO_UPSIDEDOWN;
+    }
+    // position normal reset walking
+    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
+      return GYRO_RESET;
+    }
   }
   // upside down. recover fail
   if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == -1)) {
@@ -329,7 +314,7 @@ unsigned char _statusGyro(void) {
   }
   return GYRO_NORM;
 }
-/*
+
 // print gyro values
 void _printGyro(void) {
   // print gyro status
@@ -339,6 +324,9 @@ void _printGyro(void) {
     break;
     case GYRO_UPSIDEDOWN:
       Serial.println(F(" GYRO_UPSIDEDOWN "));
+    break;
+    case GYRO_RESET:
+      Serial.println(F(" GYRO_RESET "));
     break;
     case GYRO_FELL_LEFT:
       Serial.println(F(" GYRO_FELL_LEFT "));
@@ -352,20 +340,7 @@ void _printGyro(void) {
     case GYRO_FELL_BACK:
       Serial.println(F(" GYRO_FELL_BACK "));
     break;
-    case GYRO_FOLLING_LEFT:
-      Serial.println(F(" GYRO_FOLLING_LEFT "));
-    break;
-    case GYRO_FOLLING_RIGHT:
-      Serial.println(F(" GYRO_FOLLING_RIGHT "));
-    break;
-    case GYRO_FOLLING_FRONT:
-      Serial.println(F(" GYRO_FOLLING_FRONT "));
-    break;
-    case GYRO_FOLLING_BACK:
-      Serial.println(F(" GYRO_FOLLING_BACK "));
-    break;
     default:
       Serial.println(F(" Wrong gyro state "));
   }
 }
-*/

@@ -62,7 +62,6 @@ enum cState {
 };
 // patterns
 enum rPatterns {
-  P_DOSTAND,
   P_STANDGO,
   P_STANDGOLEFT,
   P_STANDGORIGHT,
@@ -72,20 +71,22 @@ enum rPatterns {
   P_GOBACK,
   P_GOBACKLEFT,
   P_GOBACKRIGHT,
-  P_DOLOW,
-  P_DODOWN,
-  P_DORESET,
-  P_DORECOVER,
-  P_DONE,
-  P_SETDIRECTION,
-  P_RESETDIRECTION,
-  P_RESTOREDIRECTION,
-  P_RESETGIRO,
-  P_REPEAT,
-  P_SETPRIORITY_HIGH,
-  P_SETPRIORITY_NORM,
-  P_SETPRIORITY_LOW,
-  P_END
+  Q_DOLOW,
+  Q_DODOWN,
+  Q_DOSTAND,
+  Q_DORESET,
+  Q_DORECOVER,
+  Q_DOFLIP,
+  Q_DONE,
+  Q_SETDIRECTION,
+  Q_RESETDIRECTION,
+  Q_RESTOREDIRECTION,
+  Q_RESETGIRO,
+  Q_REPEAT,
+  Q_SETPRIORITY_HIGH,
+  Q_SETPRIORITY_NORM,
+  Q_SETPRIORITY_LOW,
+  Q_END
 };
 // tasks
 enum rTasks {
@@ -102,6 +103,7 @@ enum rTasks {
   STAND_TASK,
   DOWN_TASK,
   FLIP_TASK,
+  RECOVER_TASK,
   RESET_TASK,
   DEFAULT_TASK
 };
@@ -113,11 +115,7 @@ enum gState {
   GYRO_FELL_LEFT,
   GYRO_FELL_RIGHT,
   GYRO_FELL_FRONT,
-  GYRO_FELL_BACK,
-  GYRO_FOLLING_LEFT,
-  GYRO_FOLLING_RIGHT,
-  GYRO_FOLLING_FRONT,
-  GYRO_FOLLING_BACK
+  GYRO_FELL_BACK
 };
 // task priority
 enum tPriority {
@@ -128,8 +126,7 @@ enum tPriority {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_INO,
-  ROBOT_DEFAULT
+  ROBOT_INO
 };
 // structure for one leg motors
 struct motors {
@@ -208,7 +205,7 @@ robotState m_robotState = {
   2,                       // char speedMuliplierNow; 1 or 2
   1,                       // char flipStateNow;
   PRIORITY_LOW,            // taskPriorityNow;
-  P_DOSTAND,               // patternNow
+  Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
   0                        // speedNow
 };
@@ -258,7 +255,7 @@ void setup() {
     updateInputs();
     // explore mode
     Serial.println(F("Entering explore mode"));
-    applyTask(doTaskManager(BEGIN_TASK));
+    applyTask(doManageTasks(BEGIN_TASK));
     // load task and pattern. direction is 0
     setPattern();
     updateCountPatterns();
@@ -267,34 +264,30 @@ void setup() {
 
 // set new task and new pattern
 void setTaskAndPattern(void) {
-  if (m_robotState.patternNow == P_END) {
+  if (m_robotState.patternNow == Q_END) {
     // this is the end. do nothing
     delay(10);
     return;
   }
   // not high priority or end of high priority task
-  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == P_DONE)) {
+  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == Q_DONE)) {
     // override with high priority task
     taskNext = getHighPriorityTask();
     if (taskNext == DEFAULT_TASK) {
       taskNext = m_robotState.taskNow;
     } else {
-      applyTask(doTaskManager(taskNext));
-      // update robot state
-      doStateManager();
+      applyTask(doManageTasks(taskNext));
       return;
     }
   }
   // any priority end of task
-  if (m_robotState.patternNow == P_DONE) {
+  if (m_robotState.patternNow == Q_DONE) {
     // check for normal priority
     taskNext = getNormalTask(getDirectionGyro());
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
-    applyTask(doTaskManager(taskNext));
-    // update robot state
-    doStateManager();
+    applyTask(doManageTasks(taskNext));
     return;
   }
   // set next pattern
@@ -326,8 +319,10 @@ void loop() {
     if (m_sequenceCounter.m == 0) {
       //printInputsDebug();
       //printCurrentStateDebug();
-      //printLineGyroDebug();
-      //printRollGyroDebug();
+      //_printLineGyroDebug();
+      //_printRollGyroDebug();
+      // set robot state
+      setRobotState();
     }
     // update ballance
     updateBallance();
@@ -339,56 +334,54 @@ void loop() {
     setTaskAndPattern();
     if (m_robotState.taskNow != taskNext) {
       m_robotState.taskNow = taskNext;
-      //printTaskNameDebug(m_robotState.taskNow); // DEBUG
+      //_printTaskNameDebug(taskNext); // DEBUG
     }
     //printPatternNameDebug(m_robotState.patternNow); // DEBUG
     switch (m_robotState.patternNow) {
-      case P_SETDIRECTION:
+      case Q_SETDIRECTION:
       {
         setDirectionGyro();
       }
       break;
-      case P_RESETDIRECTION:
+      case Q_RESETDIRECTION:
       {
         resetDirectionGyro();
       }
       break;
-      case P_RESETGIRO:
+      case Q_RESETGIRO:
       {
         resetGyro();
       }
       break;
-      case P_RESTOREDIRECTION:
+      case Q_RESTOREDIRECTION:
       {
         restoreDirectionGyro();
       }
       break;
-      case P_DOLOW:
+      case Q_DOLOW:
       {
         setServo(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
-      case P_DOSTAND:
+      case Q_DOSTAND:
       {
         setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
-      case P_DORECOVER:
+      case Q_DOFLIP:
+      case Q_DORECOVER:
       {
         // smart recover
-        setServo(90, 90, 0);
-        if (m_gyroState.accRollX > 0) {
-          // recover left
-          setServo(170, 32, 0);
-        } else {
-          // recover right
-          setServo(32, 170, 0);
-        }
-        setServo(170, 170, 0);
-        setServo(90, 90, 0);
+        m_robotState.flipStateNow = 1;
+        setServo(100, 100, 0);
+        setServo(46, 180, 0);
+        setServo(180, 46, 0);
+        setServo(46, 180, 0);
+        setServo(180, 46, 0);
+        setServo(100, 100, 0);
       }
       break;
-      case P_DORESET:
+      case Q_DORESET:
       {
         if (m_gyroState.accUpsideZ < 0) {
           m_robotState.flipStateNow = -1;
@@ -397,29 +390,29 @@ void loop() {
         }
       }
       break;
-      case P_REPEAT:
-      case P_DONE:
+      case Q_REPEAT:
+      case Q_DONE:
       // do nothing
       // immediatelly run loop again
       break;
-      case P_DODOWN:
+      case Q_DODOWN:
       {
         // disable motors
         setServo(HIGHT_LOW, HIGHT_LOW, 20);
         detachServo();
       }
       break;
-      case P_SETPRIORITY_HIGH:
+      case Q_SETPRIORITY_HIGH:
       {
         m_robotState.taskPriorityNow = PRIORITY_HIGH;
       }
       break;
-      case P_SETPRIORITY_NORM:
+      case Q_SETPRIORITY_NORM:
       {
         m_robotState.taskPriorityNow = PRIORITY_NORM;
       }
       break;
-      case P_SETPRIORITY_LOW:
+      case Q_SETPRIORITY_LOW:
       {
         m_robotState.taskPriorityNow = PRIORITY_LOW;
       }
@@ -436,4 +429,217 @@ void loop() {
     // cycle in the middle of pattern
     doCycle();
   }
+}
+
+// print task  name
+void _printTaskNameDebug(unsigned char taskName) {
+  Serial.println(F(" "));
+  switch (taskName) {
+    case BEGIN_TASK:
+      Serial.println(F(" BEGIN_TASK "));
+    break;
+    case DOWN_TASK:
+      Serial.println(F(" DOWN_TASK "));
+    break;
+    case GOBACKLEFT_TASK:
+      Serial.println(F(" GOBACKLEFT_TASK "));
+    break;
+    case GOBACKRIGHT_TASK:
+      Serial.println(F(" GOBACKRIGHT_TASK "));
+    break;
+    case GOTURNRIGHT_TASK:
+      Serial.println(F(" GOTURNRIGHT_TASK "));
+    break;
+    case GOTURNLEFT_TASK:
+      Serial.println(F(" GOTURNLEFT_TASK "));
+    break;
+    case STANDTURNRIGHT_TASK:
+      Serial.println(F(" STANDTURNRIGHT_TASK "));
+    break;
+    case STANDTURNLEFT_TASK:
+      Serial.println(F(" STANDTURNLEFT_TASK "));
+    break;
+    case STANDTURNRIGHT2_TASK:
+      Serial.println(F(" STANDTURNRIGHT2_TASK "));
+    break;
+    case STANDTURNLEFT2_TASK:
+      Serial.println(F(" STANDTURNLEFT2_TASK "));
+    break;
+    case GO_TASK:
+      Serial.println(F(" GO_TASK "));
+    break;
+    case STAND_TASK:
+      Serial.println(F(" STAND_TASK "));
+    break;
+    case FLIP_TASK:
+      Serial.println(F(" FLIP_TASK "));
+    break;
+    case RECOVER_TASK:
+      Serial.println(F(" RECOVER_TASK "));
+    break;
+    case DEFAULT_TASK:
+      Serial.println(F(" DEFAULT_TASK "));
+    break;
+    default:
+      Serial.print(F(" unknown task "));
+      Serial.print((int)taskName);
+      Serial.println(F(" "));
+    break;
+  }
+}
+
+// print task  name
+void printPatternNameDebug(unsigned char patternNow) {
+  switch (patternNow) {
+    case Q_DOSTAND:
+      Serial.print(F(" Q_DOSTAND "));
+    break;
+    case P_STANDGO:
+      Serial.print(F(" P_STANDGO "));
+    break;
+    case P_STANDGOLEFT:
+      Serial.print(F(" P_STANDGOLEFT "));
+    break;
+    case P_STANDGORIGHT:
+      Serial.print(F(" P_STANDGORIGHT "));
+    break;
+    case P_GOFORWARD:
+      Serial.print(F(" P_GOFORWARD "));
+    break;
+    case P_GOLEFT:
+      Serial.print(F(" P_GOLEFT "));
+    break;
+    case P_GORIGHT:
+      Serial.print(F(" P_GORIGHT "));
+    break;
+    case P_GOBACK:
+      Serial.print(F(" P_GOBACK "));
+    break;
+    case P_GOBACKLEFT:
+      Serial.print(F(" P_GOBACKLEFT "));
+    break;
+    case P_GOBACKRIGHT:
+      Serial.print(F(" P_GOBACKRIGHT "));
+    break;
+    case Q_DOLOW:
+      Serial.print(F(" Q_DOLOW "));
+    break;
+    case Q_DODOWN:
+      Serial.print(F(" Q_DODOWN "));
+    break;
+    case Q_DORESET:
+      Serial.print(F(" Q_DORESET "));
+    break;
+    case Q_DONE:
+      Serial.print(F(" Q_DONE "));
+    break;
+    case Q_RESETDIRECTION:
+      Serial.print(F(" Q_RESETDIRECTION "));
+    break;
+    case Q_RESTOREDIRECTION:
+      Serial.print(F(" Q_RESTOREDIRECTION "));
+    break;
+    case Q_RESETGIRO:
+      Serial.print(F(" Q_RESETGIRO "));
+    break;
+    case Q_REPEAT:
+      Serial.print(F(" Q_REPEAT "));
+    break;
+    case Q_SETPRIORITY_HIGH:
+      Serial.print(F(" Q_SETPRIORITY_HIGH "));
+    break;
+    case Q_SETPRIORITY_NORM:
+      Serial.print(F(" Q_SETPRIORITY_NORM "));
+    break;
+    case Q_SETPRIORITY_LOW:
+      Serial.print(F(" Q_SETPRIORITY_LOW "));
+    break;
+    case Q_END:
+      Serial.print(F(" Q_END "));
+    break;
+    default:
+      Serial.print(F(" unknown pattern "));
+    break;
+  }
+}
+
+// print sensor inputs state
+void printInputsDebug(void) {
+  // print input state
+  switch (m_robotState.inputStateNow) {
+    case IN_WALL_FRONTLEFT:
+      Serial.println(F(" IN_WALL_FRONTLEFT "));
+    break;
+    case IN_WALL_FRONTRIGHT:
+      Serial.println(F(" IN_WALL_FRONTRIGHT "));
+    break;
+    case IN_WALL_LEFT:
+      Serial.println(F(" IN_WALL_LEFT "));
+    break;
+    case IN_WALL_RIGHT:
+      Serial.println(F(" IN_WALL_RIGHT "));
+    break;
+    case IN_OBSTACLE_FRONTLEFT:
+      Serial.println(F(" IN_OBSTACLE_FRONTLEFT "));
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      Serial.println(F(" IN_OBSTACLE_FRONTRIGHT "));
+    break;
+    case IN_OBSTACLE_LEFT:
+      Serial.println(F(" IN_OBSTACLE_LEFT "));
+    break;
+    case IN_OBSTACLE_RIGHT:
+      Serial.println(F(" IN_OBSTACLE_RIGHT "));
+    break;
+    case IN_NORMAL:
+      Serial.println(F(" IN_NORMAL "));
+    break;
+    default:
+      Serial.println(F(" Wrong inputs state "));
+  }
+}
+
+// print current state
+void printCurrentStateDebug(void) {
+  // print input state
+  switch (m_robotState.currentStateNow) {
+    case C_DEAD_BATTERY:
+      Serial.print(F(" C_DEAD_BATTERY "));
+    break;
+    case C_LOW_BATTERY:
+      Serial.print(F(" C_LOW_BATTERY "));
+    break;
+    case C_HIGH_CURRENT:
+      Serial.print(F(" C_HIGH_CURRENT "));
+    break;
+    case C_NORMAL:
+      Serial.print(F(" C_NORMAL "));
+    break;
+    default:
+      Serial.println(F(" Wrong inputs state "));
+  }
+}
+
+// print gyro values
+void _printLineGyroDebug(void) {
+  Serial.print(" aRoll ");
+  Serial.print((int)m_gyroState.accRollX);
+  Serial.print(" aPitch ");
+  Serial.print((int)m_gyroState.accPitchY);
+  Serial.print(" Z ");
+  Serial.print((int)m_gyroState.accUpsideZ);
+  Serial.print(" direction ");
+  Serial.println((int)m_gyroState.direction);
+}
+
+// print gyro values
+void _printRollGyroDebug(void) {
+  Serial.print(" rollMin ");
+  Serial.print((int)m_gyroState.rollMin);
+  Serial.print(" rollMax ");
+  Serial.print((int)m_gyroState.rollMax);
+  Serial.print(" rollMinTime ");
+  Serial.print((int)m_gyroState.rollMinTime);
+  Serial.print(" rollMaxTime ");
+  Serial.println((int)m_gyroState.rollMaxTime);
 }
