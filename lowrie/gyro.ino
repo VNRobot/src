@@ -277,6 +277,18 @@ void restoreDirectionGyro(void) {
   walkingDirection = walkingDirectionOld;
 }
 
+// reverse horizontal direction
+void reverseDirectionGyro(void) {
+  if ((walkingDirection < 30) && (walkingDirection > -30)) {
+    // not reverset yet
+    if (m_gyroState.direction < 0) {
+      walkingDirection = m_gyroState.direction + 180;
+    } else {
+      walkingDirection = m_gyroState.direction - 180;
+    }
+  }
+}
+
 // status of gyro
 unsigned char _statusGyro(void) {
   // if shaken wait
@@ -299,17 +311,17 @@ unsigned char _statusGyro(void) {
       return GYRO_FELL_BACK;
     }
     // check upside down
-    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == 1)) {
+    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateLNow == 1) && (m_robotState.flipStateRNow == 1)) {
       // flip event. update flip state
       return GYRO_UPSIDEDOWN;
     }
     // position normal reset walking
-    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateNow == -1)) {
+    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
       return GYRO_RESET;
     }
   }
   // upside down. recover fail
-  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateNow == -1)) {
+  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
     // do nothing for now
   }
   return GYRO_NORM;

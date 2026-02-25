@@ -21,7 +21,7 @@ Main file
 // main time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              10
 // low hight in mm. upper arm is horizontal
-#define HIGHT_LOW               63
+#define HIGHT_LOW               88
 // normal hight
 #define HIGHT_DEFAULT           125
 // normal leg lift in mm
@@ -29,10 +29,11 @@ Main file
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
 // sensors geometry
-#define SENSOR_ANGLE            0     // down angle
-#define SENSOR_HIGHT            0     // hight relative to legs
+#define SENSOR_ANGLE            20     // down angle
+#define SENSOR_HIGHT            10     // mm hight relative to legs
 // robot phisics
 #define OFFROAD_ANGLE           6
+#define SLOP_ANGLE              15
 #define FALLING_ANGLE           45
 // main servo pattern counter end
 #define SERVO_FULL_CYCLE 72
@@ -40,6 +41,8 @@ Main file
 #define SERVO_PAIR_SHIFT 18
 #define MAIN_FULL_CYCLE 36
 #define MAIN_HALF_CYCLE 18
+// robot size
+#define ROBOT_SIZE_DIVIDER      2
 
 // input state
 enum inState {
@@ -81,6 +84,7 @@ enum rPatterns {
   Q_SETDIRECTION,
   Q_RESETDIRECTION,
   Q_RESTOREDIRECTION,
+  Q_REVERSEDIRECTION,
   Q_RESETGIRO,
   Q_REPEAT,
   Q_SETPRIORITY_HIGH,
@@ -100,6 +104,7 @@ enum rTasks {
   STANDTURNRIGHT2_TASK,
   STANDTURNLEFT2_TASK,
   GO_TASK,
+  GOBACK_TASK,
   STAND_TASK,
   DOWN_TASK,
   FLIP_TASK,
@@ -181,7 +186,8 @@ typedef struct robotState {
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
-  char flipStateNow;
+  char flipStateLNow;
+  char flipStateRNow;
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
@@ -203,7 +209,8 @@ robotState m_robotState = {
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow; 1 or 2
-  1,                       // char flipStateNow;
+  1,                       // char flipStateLNow;
+  1,                       // char flipStateRNow;
   PRIORITY_LOW,            // taskPriorityNow;
   Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
@@ -332,10 +339,6 @@ void loop() {
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
     setTaskAndPattern();
-    if (m_robotState.taskNow != taskNext) {
-      m_robotState.taskNow = taskNext;
-      //_printTaskNameDebug(taskNext); // DEBUG
-    }
     //printPatternNameDebug(m_robotState.patternNow); // DEBUG
     switch (m_robotState.patternNow) {
       case Q_SETDIRECTION:
@@ -346,6 +349,11 @@ void loop() {
       case Q_RESETDIRECTION:
       {
         resetDirectionGyro();
+      }
+      break;
+      case Q_REVERSEDIRECTION:
+      {
+        reverseDirectionGyro();
       }
       break;
       case Q_RESETGIRO:
@@ -368,25 +376,39 @@ void loop() {
         setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
-      case Q_DOFLIP:
       case Q_DORECOVER:
       {
-        // smart recover
-        m_robotState.flipStateNow = 1;
-        setServo(100, 100, 0);
-        setServo(46, 180, 0);
-        setServo(180, 46, 0);
-        setServo(46, 180, 0);
-        setServo(180, 46, 0);
-        setServo(100, 100, 0);
+        setServo(HIGHT_LOW, HIGHT_LOW, 0);
+        if (m_gyroState.accRollX < 0) {
+          m_robotState.flipStateLNow = 1;
+          m_robotState.flipStateRNow = -1;
+          setServo(180, 180, 0);
+          m_robotState.flipStateLNow = -1;
+          m_robotState.flipStateRNow = 1;
+          setServo(180, 180, 0);
+        } else {
+          m_robotState.flipStateLNow = -1;
+          m_robotState.flipStateRNow = 1;
+          setServo(180, 180, 0);
+          m_robotState.flipStateLNow = 1;
+          m_robotState.flipStateRNow = -1;
+          setServo(180, 180, 0);
+        }
+        m_robotState.flipStateLNow = 1;
+        m_robotState.flipStateRNow = 1;
+        setServo(HIGHT_LOW, HIGHT_LOW, 0);
       }
       break;
+      case Q_DOFLIP:
+        // do nothing for now
       case Q_DORESET:
       {
         if (m_gyroState.accUpsideZ < 0) {
-          m_robotState.flipStateNow = -1;
+          m_robotState.flipStateLNow = -1;
+          m_robotState.flipStateRNow = -1;
         } else {
-          m_robotState.flipStateNow = 1;
+          m_robotState.flipStateLNow = 1;
+          m_robotState.flipStateRNow = 1;
         }
       }
       break;
@@ -428,63 +450,6 @@ void loop() {
   } else {
     // cycle in the middle of pattern
     doCycle();
-  }
-}
-
-// print task  name
-void _printTaskNameDebug(unsigned char taskName) {
-  Serial.println(F(" "));
-  switch (taskName) {
-    case BEGIN_TASK:
-      Serial.println(F(" BEGIN_TASK "));
-    break;
-    case DOWN_TASK:
-      Serial.println(F(" DOWN_TASK "));
-    break;
-    case GOBACKLEFT_TASK:
-      Serial.println(F(" GOBACKLEFT_TASK "));
-    break;
-    case GOBACKRIGHT_TASK:
-      Serial.println(F(" GOBACKRIGHT_TASK "));
-    break;
-    case GOTURNRIGHT_TASK:
-      Serial.println(F(" GOTURNRIGHT_TASK "));
-    break;
-    case GOTURNLEFT_TASK:
-      Serial.println(F(" GOTURNLEFT_TASK "));
-    break;
-    case STANDTURNRIGHT_TASK:
-      Serial.println(F(" STANDTURNRIGHT_TASK "));
-    break;
-    case STANDTURNLEFT_TASK:
-      Serial.println(F(" STANDTURNLEFT_TASK "));
-    break;
-    case STANDTURNRIGHT2_TASK:
-      Serial.println(F(" STANDTURNRIGHT2_TASK "));
-    break;
-    case STANDTURNLEFT2_TASK:
-      Serial.println(F(" STANDTURNLEFT2_TASK "));
-    break;
-    case GO_TASK:
-      Serial.println(F(" GO_TASK "));
-    break;
-    case STAND_TASK:
-      Serial.println(F(" STAND_TASK "));
-    break;
-    case FLIP_TASK:
-      Serial.println(F(" FLIP_TASK "));
-    break;
-    case RECOVER_TASK:
-      Serial.println(F(" RECOVER_TASK "));
-    break;
-    case DEFAULT_TASK:
-      Serial.println(F(" DEFAULT_TASK "));
-    break;
-    default:
-      Serial.print(F(" unknown task "));
-      Serial.print((int)taskName);
-      Serial.println(F(" "));
-    break;
   }
 }
 

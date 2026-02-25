@@ -19,7 +19,7 @@ unsigned char tasksMemory[16] = {DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAU
                                  DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
                                  DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK};
 // counter for tasks
-unsigned char tasksCounter[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+unsigned char tasksCounter[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // common task
 unsigned char commonTask = DEFAULT_TASK;
 unsigned char commonTaskCount = 0;
@@ -45,15 +45,12 @@ void _setStandTask(void) {
 void _setFlipTask(void) {
   currentTask[0] = Q_SETPRIORITY_HIGH;
   currentTask[1] = Q_DOLOW;
-  currentTask[2] = Q_DOFLIP;
+  currentTask[2] = Q_DORESET;
   currentTask[3] = Q_DOSTAND;
   currentTask[4] = P_STANDGO;
-  currentTask[5] = Q_DORESET;
+  currentTask[5] = Q_SETPRIORITY_NORM;
   currentTask[6] = P_STANDGO;
-  currentTask[7] = Q_RESETGIRO;
-  currentTask[8] = Q_SETPRIORITY_NORM;
-  currentTask[9] = P_STANDGO;
-  currentTask[10] = Q_DONE;
+  currentTask[7] = Q_DONE;
 }
 
 // recover
@@ -65,10 +62,9 @@ void _setRecoverTask(void) {
   currentTask[4] = P_STANDGO;
   currentTask[5] = Q_DORESET;
   currentTask[6] = P_STANDGO;
-  currentTask[7] = Q_RESETGIRO;
-  currentTask[8] = Q_SETPRIORITY_NORM;
-  currentTask[9] = P_STANDGO;
-  currentTask[10] = Q_DONE;
+  currentTask[7] = Q_SETPRIORITY_NORM;
+  currentTask[8] = P_STANDGO;
+  currentTask[9] = Q_DONE;
 }
 // reset
 void _setResetTask(void) {
@@ -77,10 +73,9 @@ void _setResetTask(void) {
   currentTask[2] = Q_DORESET;
   currentTask[3] = Q_DOSTAND;
   currentTask[4] = P_STANDGO;
-  currentTask[5] = Q_RESETGIRO;
-  currentTask[6] = Q_SETPRIORITY_NORM;
-  currentTask[7] = P_STANDGO;
-  currentTask[8] = Q_DONE;
+  currentTask[5] = Q_SETPRIORITY_NORM;
+  currentTask[6] = P_STANDGO;
+  currentTask[7] = Q_DONE;
 }
 
 // set begin task
@@ -179,6 +174,14 @@ void _setWalkTask(void) {
   currentTask[2] = Q_DONE;
 }
 
+// set walk back task
+void _setWalkBackTask(void) {
+  currentTask[0] = Q_SETPRIORITY_LOW;
+  currentTask[1] = P_GOBACK;
+  currentTask[2] = Q_REVERSEDIRECTION;
+  currentTask[3] = Q_DONE;
+}
+
 // set task by name
 void applyTask(unsigned char task) {
   switch (task) {
@@ -215,6 +218,9 @@ void applyTask(unsigned char task) {
     case GO_TASK:
       _setWalkTask();
     break;
+    case GOBACK_TASK:
+      _setWalkBackTask();
+    break;
     case STAND_TASK:
       _setStandTask();
     break;
@@ -233,6 +239,8 @@ void applyTask(unsigned char task) {
   repeatCounter = 0;
   currentTaskPoint = 0;
   m_robotState.patternNow = currentTask[currentTaskPoint];
+  m_robotState.taskNow = task;
+  //_printTaskNameDebug(task); // DEBUG
 }
 
 // set next pattern in task
@@ -264,9 +272,6 @@ unsigned char getHighPriorityTask(void) {
   if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
     return STAND_TASK;
   }
-  //if (m_robotState.currentStateNow == C_LOW_CURRENT) {
-  //  return FLIP_TASK;
-  //}
   switch (m_gyroState.stateGyro) {
     case GYRO_UPSIDEDOWN:
       return FLIP_TASK;
@@ -280,12 +285,6 @@ unsigned char getHighPriorityTask(void) {
     case GYRO_FELL_RIGHT:
       return RECOVER_TASK;
     break;
-    case GYRO_FELL_FRONT:
-      return RECOVER_TASK;
-    break;
-    case GYRO_FELL_BACK:
-      return RECOVER_TASK;
-    break;
     default:
     break;
   }
@@ -295,6 +294,52 @@ unsigned char getHighPriorityTask(void) {
 // process sensors return next task name
 // could be more complex if remembers previos states
 unsigned char getNormalTask(int direction) {
+  // slop up or down
+  switch (m_gyroState.stateGyro) {
+    case GYRO_FELL_FRONT:
+      return GO_TASK;
+    break;
+    case GYRO_FELL_BACK:
+      return GOBACK_TASK;
+    break;
+    default:
+    break;
+  }
+  // check slop
+  if (m_gyroState.accPitchY < -SLOP_ANGLE) {
+    // down
+    if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
+      return GOTURNLEFT_TASK;
+    }
+    if (m_gyroState.accRollX > OFFROAD_ANGLE) {
+      return GOTURNRIGHT_TASK;
+    }
+    if (direction > 4) {
+      return GOTURNLEFT_TASK;
+    }
+    if (direction < -4) {
+      return GOTURNRIGHT_TASK;
+    }
+    return GO_TASK;
+  }
+  if (m_gyroState.accPitchY > SLOP_ANGLE) {
+    // up
+    if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
+      return GOBACKRIGHT_TASK;
+    }
+    if (m_gyroState.accRollX > OFFROAD_ANGLE) {
+      return GOBACKLEFT_TASK;
+    }
+    return GOBACK_TASK;
+  }
+  if (m_gyroState.accRollX < -SLOP_ANGLE) {
+    // left
+    return GOTURNLEFT_TASK;
+  }
+  if (m_gyroState.accRollX > SLOP_ANGLE) {
+    // left
+    return GOTURNRIGHT_TASK;
+  }
   // obstacle state
   switch (m_robotState.inputStateNow) {
     case IN_WALL_FRONTLEFT:
@@ -323,6 +368,12 @@ unsigned char getNormalTask(int direction) {
     break;
     case IN_NORMAL:
       {
+        if (direction > 90) {
+          return GOBACKLEFT_TASK;
+        }
+        if (direction < -90) {
+          return GOBACKRIGHT_TASK;
+        }
         if (direction > 4) {
           return GOTURNLEFT_TASK;
         }
@@ -361,7 +412,7 @@ void _replaceItem(unsigned char item, unsigned char * itemArray) {
 // count items
 void _countItems(unsigned char * countArray, unsigned char * itemArray) {
   // reset counts
-  for (i = 0; i < 16; i ++) {
+  for (i = 0; i < 17; i ++) {
     countArray[i] = 0;
   }
   // add counts
@@ -374,14 +425,14 @@ void _countItems(unsigned char * countArray, unsigned char * itemArray) {
 void _getCommonTask(unsigned char * countArray) {
   commonTask = DEFAULT_TASK;
   commonTaskCount = 0;
-  for (i = 0; i < 16; i ++) {
+  for (i = 0; i < 17; i ++) {
     if (countArray[i] > commonTaskCount) {
       commonTaskCount = countArray[i];
       commonTask = i;
     }
   }
-  // for now repeat same task 6 times
-  if (commonTaskCount < 6) {
+  // for now repeat same task 4 times
+  if (commonTaskCount < 4) {
     commonTask = DEFAULT_TASK;
   }
 }
@@ -416,6 +467,9 @@ unsigned char getOppositeTask(void) {
     case BEGIN_TASK:
       return DOWN_TASK;
     break;
+    case GOBACK_TASK:
+      return GO_TASK;
+    break;
     case DOWN_TASK:
     case STAND_TASK:
     case GO_TASK:
@@ -445,4 +499,61 @@ unsigned char doManageTasks(unsigned char taskNext) {
     _replaceItem(taskNext, tasksMemory);
   }
   return taskNext;
+}
+
+// print task  name
+void _printTaskNameDebug(unsigned char taskName) {
+  Serial.println(F(" "));
+  switch (taskName) {
+    case BEGIN_TASK:
+      Serial.println(F(" BEGIN_TASK "));
+    break;
+    case DOWN_TASK:
+      Serial.println(F(" DOWN_TASK "));
+    break;
+    case GOBACKLEFT_TASK:
+      Serial.println(F(" GOBACKLEFT_TASK "));
+    break;
+    case GOBACKRIGHT_TASK:
+      Serial.println(F(" GOBACKRIGHT_TASK "));
+    break;
+    case GOTURNRIGHT_TASK:
+      Serial.println(F(" GOTURNRIGHT_TASK "));
+    break;
+    case GOTURNLEFT_TASK:
+      Serial.println(F(" GOTURNLEFT_TASK "));
+    break;
+    case STANDTURNRIGHT_TASK:
+      Serial.println(F(" STANDTURNRIGHT_TASK "));
+    break;
+    case STANDTURNLEFT_TASK:
+      Serial.println(F(" STANDTURNLEFT_TASK "));
+    break;
+    case STANDTURNRIGHT2_TASK:
+      Serial.println(F(" STANDTURNRIGHT2_TASK "));
+    break;
+    case STANDTURNLEFT2_TASK:
+      Serial.println(F(" STANDTURNLEFT2_TASK "));
+    break;
+    case GO_TASK:
+      Serial.println(F(" GO_TASK "));
+    break;
+    case STAND_TASK:
+      Serial.println(F(" STAND_TASK "));
+    break;
+    case FLIP_TASK:
+      Serial.println(F(" FLIP_TASK "));
+    break;
+    case RECOVER_TASK:
+      Serial.println(F(" RECOVER_TASK "));
+    break;
+    case DEFAULT_TASK:
+      Serial.println(F(" DEFAULT_TASK "));
+    break;
+    default:
+      Serial.print(F(" unknown task "));
+      Serial.print((int)taskName);
+      Serial.println(F(" "));
+    break;
+  }
 }

@@ -51,9 +51,11 @@ unsigned char _inputsCheck(void) {
     case GYRO_RESET:
     case GYRO_FELL_LEFT:
     case GYRO_FELL_RIGHT:
+      return ROBOT_NORM;
+    break;
     case GYRO_FELL_FRONT:
     case GYRO_FELL_BACK:
-      return ROBOT_NORM;
+      return ROBOT_INO;
     break;
       default:
     break;

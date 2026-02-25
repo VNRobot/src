@@ -29,7 +29,7 @@ struct aSensors {
 };
 
 // sensors enabled flag
-bool sensorsEnabled = true;
+bool sensorsEnabled = false;
 // bool edge enabled
 bool edgeEnabled = false;
 // turn left or right decision
@@ -44,41 +44,52 @@ aSensors distanceMeasured = {0, 0}; // processed values
 unsigned char normalDistanceMin = 12; // cm
 unsigned char normalDistanceMax = 36; //48; // cm
 unsigned char calculatedDistance = 36; //48; // cm
-// down angle sensor limits
-unsigned char downAngleMin = OFFROAD_ANGLE; // deg
-unsigned char downAngleMax = 60; // deg
 
 // calculate sensors geometry
 void calculateGeometry(void) {
-  if ((SENSOR_ANGLE - m_gyroState.accPitchY) > downAngleMax) { // 60 deg max
-    // too close to the ground
-    calculatedDistance = SENSOR_HIGHT + m_robotState.legHightNow / 2; // 2 for small robot in mm
-    edgeEnabled = false;
-  } else if ((SENSOR_ANGLE - m_gyroState.accPitchY) > downAngleMin) { // 15 deg min
-    // can be calculated
-    calculatedDistance = (unsigned char)(((SENSOR_HIGHT + m_robotState.legHightNow / 2) / sin((SENSOR_ANGLE - m_gyroState.accPitchY) * (PI / 180.0))) / 10);
-    edgeEnabled = false; //true;   //  *** todo
-  } else {
-    // too high
-    calculatedDistance = normalDistanceMax;
-    edgeEnabled = false;
-  }
-  if (calculatedDistance > normalDistanceMax) {
-    calculatedDistance = normalDistanceMax;
-    sensorsEnabled = true;
-    edgeEnabled = false;
-  } else if (calculatedDistance < normalDistanceMin) {
-    calculatedDistance = normalDistanceMin;
+  // check robot roll
+  if ((m_gyroState.accRollX < -SLOP_ANGLE) || (m_gyroState.accRollX > SLOP_ANGLE)) {
     sensorsEnabled = false;
-    edgeEnabled = false;
-  } else {
-    sensorsEnabled = true;
+    return;
   }
+  // check robot pitch
+  if ((m_gyroState.accPitchY < -SLOP_ANGLE) || (m_gyroState.accPitchY > SLOP_ANGLE)) {
+    sensorsEnabled = false;
+    return;
+  }
+  sensorsEnabled = true;
 }
 
 // init inputs
 void initInputs(void) {
-  calculateGeometry();
+  // calculate geometry
+  if (SENSOR_ANGLE > 60) { // 60 deg max
+    // sensors facing down
+    calculatedDistance = SENSOR_HIGHT + m_robotState.legHightNow / ROBOT_SIZE_DIVIDER; // 2 for small robot
+    edgeEnabled = false;
+  } else if (SENSOR_ANGLE > 15) { // 15 deg min
+    // can be calculated
+    calculatedDistance = (unsigned char)(((SENSOR_HIGHT + m_robotState.legHightNow / ROBOT_SIZE_DIVIDER) / sin(SENSOR_ANGLE * (PI / 180.0))) / 10);
+    edgeEnabled = true;
+  } else {
+    // too horizontal
+    calculatedDistance = normalDistanceMax;
+    edgeEnabled = false;
+  }
+  // analyse sensor angles
+  if (calculatedDistance > normalDistanceMax) {
+    // too far
+    calculatedDistance = normalDistanceMax;
+    edgeEnabled = false;
+  } else if (calculatedDistance < normalDistanceMin) {
+    // too close
+    calculatedDistance = normalDistanceMin;
+    edgeEnabled = false;
+  } else {
+    // all good
+    edgeEnabled = true;
+    sensorsEnabled = true;
+  }
 }
 
 // read and remember analog sensors readings
