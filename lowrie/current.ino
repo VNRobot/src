@@ -13,15 +13,13 @@ Gets analog current inputs
 // analog sensors structure
 struct aCurrent {
   unsigned short battery;   // A6
-  unsigned short current2;  // A3
-  unsigned short current3;  // A2
+  unsigned short current1;  // A7 current1
 };
 
 // analog input values array
-aCurrent analogValueCurrent = {LOW_BATTERY, 0, 0}; // processed values
+aCurrent analogValueCurrent = {LOW_BATTERY, 0}; // processed values
 unsigned long batteryV = 0;
-unsigned long currentF = 0;
-unsigned long currentR = 0;
+unsigned long currentSum = 0;
 
 // init current inputs
 void initCurrent(void) {
@@ -33,26 +31,20 @@ void updateCurrent(void) {
   if (m_sequenceCounter.m == 0) {
     // average
     batteryV /= MAIN_FULL_CYCLE;
-    currentF /= MAIN_FULL_CYCLE;
-    currentR /= MAIN_FULL_CYCLE;
+    currentSum /= MAIN_FULL_CYCLE;
     // to ma
-    if (batteryV > currentF) {
-      analogValueCurrent.current2 = (batteryV - currentF) * 8;
+    if (batteryV > currentSum) {
+      analogValueCurrent.current1 = (batteryV - currentSum) * 3; // 8;
     } else {
-      analogValueCurrent.current2 = 0;
-    }
-    if (batteryV > currentR) {
-      analogValueCurrent.current3 = (batteryV - currentR) * 8;
-    } else {
-      analogValueCurrent.current3 = 0;
+      analogValueCurrent.current1 = 0;
     }
     analogValueCurrent.battery = (batteryV * 25) / 3;
     // get current state
     if (analogValueCurrent.battery < DEAD_BATTERY) {
       // battery dead
       m_robotState.currentStateNow = C_DEAD_BATTERY;
-    } else if ((analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
-      // motor 2 or 3 current too high
+    } else if (analogValueCurrent.current1 > MAX_CURRENT) {
+      // current too high
       m_robotState.currentStateNow = C_HIGH_CURRENT;
     } else if (analogValueCurrent.battery < LOW_BATTERY) {
       // battery low
@@ -63,23 +55,19 @@ void updateCurrent(void) {
     //_printLineCurrent();
     // new value
     batteryV = (unsigned short)analogRead(A6);
-    currentF = (unsigned short)analogRead(A3);
-    currentR = (unsigned short)analogRead(A2);
+    currentSum = (unsigned short)analogRead(A7);
   } else {
     // add to value
     batteryV += (unsigned short)analogRead(A6);
-    currentF += (unsigned short)analogRead(A3);
-    currentR += (unsigned short)analogRead(A2);
+    currentSum += (unsigned short)analogRead(A7);
   }
 }
 /*
 // print raw data
 void _printLineCurrent(void) {
-  Serial.print(F(" battery "));
+  Serial.print(F(" Battery "));
   Serial.print((int)analogValueCurrent.battery);
-  Serial.print(F(" F "));
-  Serial.print((int)analogValueCurrent.current2);
-  Serial.print(F(" R "));
-  Serial.println((int)analogValueCurrent.current3);
+  Serial.print(F(" Current "));
+  Serial.print((int)analogValueCurrent.current1);
 }
 */

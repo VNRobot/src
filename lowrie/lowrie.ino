@@ -316,10 +316,10 @@ void loop() {
     cycleDone = false;
     // update motor pattern point
     updateCountPatterns();
-    // update gyro readings
-    updateGyro();
     // update current readings
     updateCurrent();
+    // update gyro readings
+    updateGyro();
     // read proximity sensors
     updateInputs();
     // once in a pattern after delay

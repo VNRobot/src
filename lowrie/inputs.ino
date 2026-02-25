@@ -24,12 +24,20 @@ enum senState {
 
 // analog sensors structure
 struct aSensors {
-  unsigned short left;      // A0
-  unsigned short right;     // A1
+  unsigned short leftUpper;      // A0 left upper sensor facing down
+  unsigned short rightUpper;     // A1 right upper sensor facing down
+  unsigned short leftLower;      // A3 left lower sensor uses when flipped
+  unsigned short rightLower;     // A2 right lower sensor uses when flipped
+};
+// distance sensors structure
+struct dSensors {
+  unsigned short left;
+  unsigned short right;
 };
 
 // sensors enabled flag
 bool sensorsEnabled = false;
+bool sensorsActive = false;
 // bool edge enabled
 bool edgeEnabled = false;
 // turn left or right decision
@@ -38,26 +46,26 @@ bool turnLeft = true;
 unsigned char senStateLeft = 0;
 unsigned char senStateRight = 0;
 // analog input values array
-aSensors analogRawInputs = {0, 0}; // raw values
-aSensors distanceMeasured = {0, 0}; // processed values
+aSensors analogRawInputs = {0, 0, 0, 0}; // raw values
+dSensors distanceMeasured = {0, 0}; // processed values
 // normal min and max distance
 unsigned char normalDistanceMin = 12; // cm
 unsigned char normalDistanceMax = 36; //48; // cm
 unsigned char calculatedDistance = 36; //48; // cm
 
-// calculate sensors geometry
-void calculateGeometry(void) {
+// check surface
+void checkSurface(void) {
   // check robot roll
   if ((m_gyroState.accRollX < -SLOP_ANGLE) || (m_gyroState.accRollX > SLOP_ANGLE)) {
-    sensorsEnabled = false;
+    sensorsActive = false;
     return;
   }
   // check robot pitch
   if ((m_gyroState.accPitchY < -SLOP_ANGLE) || (m_gyroState.accPitchY > SLOP_ANGLE)) {
-    sensorsEnabled = false;
+    sensorsActive = false;
     return;
   }
-  sensorsEnabled = true;
+  sensorsActive = true;
 }
 
 // init inputs
@@ -96,20 +104,53 @@ void initInputs(void) {
 void updateInputs(void) {
   // read once in a pattern
   if (m_sequenceCounter.m == 0) {
-    // update geometry
-    calculateGeometry();
+    // check roll and pitch
+    checkSurface();
     // read analog inputs
-    analogRawInputs.left = (unsigned short)analogRead(A0);
-    analogRawInputs.right = (unsigned short)analogRead(A1);
+    analogRawInputs.leftUpper = (unsigned short)analogRead(A0);
+    analogRawInputs.rightUpper = (unsigned short)analogRead(A1);
+    analogRawInputs.leftLower = (unsigned short)analogRead(A3);
+    analogRawInputs.rightLower = (unsigned short)analogRead(A2);
+    // crossconnection left sensor is facing right and right sensor is facing left upper facing down lower facing up
+    if (m_gyroState.accRollX < 0) {
+      // upside down
+      if (analogRawInputs.leftUpper > analogRawInputs.leftLower) {
+        // top blocked
+        distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.leftUpper) / analogRawInputs.leftUpper);
+      } else {
+        // ground found
+        distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.leftLower) / analogRawInputs.leftLower);
+      }
+      if (analogRawInputs.rightUpper > analogRawInputs.rightLower) {
+        // top blocked
+        distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.rightUpper) / analogRawInputs.rightUpper);
+      } else {
+        // ground found
+        distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.rightLower) / analogRawInputs.rightLower);
+      }
+    } else {
+      // normal
+      if (analogRawInputs.leftUpper > analogRawInputs.leftLower) {
+        // ground found
+        distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.leftUpper) / analogRawInputs.leftUpper);
+      } else {
+        // top blocked
+        distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.leftLower) / analogRawInputs.leftLower);
+      }
+      if (analogRawInputs.rightUpper > analogRawInputs.rightLower) {
+        // ground found
+        distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.rightUpper) / analogRawInputs.rightUpper);
+      } else {
+        // top blocked
+        distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.rightLower) / analogRawInputs.rightLower);
+      }
+    }
     // find turn
-    if (analogRawInputs.left > analogRawInputs.right) {
+    if (distanceMeasured.left < distanceMeasured.right) {
       turnLeft = false;
     } else {
       turnLeft = true;
     }
-    // crossconnection left senor is facing right and right sensor is facing left
-    distanceMeasured.right = (unsigned short)((1600000 / analogRawInputs.left) / analogRawInputs.left);
-    distanceMeasured.left = (unsigned short)((1600000 / analogRawInputs.right) / analogRawInputs.right);
     // get sensor state
     senStateLeft  = _getSensorState(distanceMeasured.left);
     senStateRight = _getSensorState(distanceMeasured.right);
@@ -124,11 +165,11 @@ void updateInputs(void) {
 
 // process distances
 unsigned char _getSensorState(unsigned short input) {
-  if (sensorsEnabled) {
+  if (sensorsEnabled && sensorsActive) {
     if (input < 120) {                            // no edge            120
       if (input > 5) {                            // not blocked        5
         if (input > (calculatedDistance / 3)) {   // no wall            
-          if (input > (calculatedDistance / 2 + calculatedDistance / 4)) { // no obstacle        
+          if (input > (calculatedDistance / 2)) { // no obstacle        
             return SEN_NORMAL;
           } else {
             // obstacle

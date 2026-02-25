@@ -55,7 +55,7 @@ void writeCalibrationEeprom(void) {
   EEPROM.update(0, ROBOT_VERSION);
 #endif
 }
-/*
+
 // get current of first set of outputs
 short _getCurrent1Inputs(void) {
   current = analogRead(A6) - analogRead(A7);
@@ -65,7 +65,6 @@ short _getCurrent1Inputs(void) {
   current += analogRead(A6) - analogRead(A7);
   doPWMServo(20);
   current += analogRead(A6) - analogRead(A7);
-  current *= 2;
   //Serial.print(F(" current1 "));
   //Serial.println((int)current);
   if (current < 0) {
@@ -73,7 +72,7 @@ short _getCurrent1Inputs(void) {
   }
   return current;
 }
-*/
+/*
 // get current of front motors
 short _getCurrent2Inputs(void) {
   current = analogRead(A6) - analogRead(A3);
@@ -109,7 +108,7 @@ short _getCurrent3Inputs(void) {
   }
   return current;
 }
-
+*/
 void _calibrateMotor1(motors * calibrationSet, short current) {
   if (calibrationCounter == 0) {
     // set initial leg calibration
@@ -211,10 +210,8 @@ bool doCalibration(void) {
         // motors current
         Serial.print(F(" Battery mv "));
         Serial.print((int)analogRead(A6));
-        Serial.print(F(" front ma "));
-        Serial.print((int)_getCurrent2Inputs());
-        Serial.print(F(" rear ma "));
-        Serial.println((int)_getCurrent3Inputs());
+        Serial.print(F(" current ma "));
+        Serial.println((int)_getCurrent1Inputs());
         doPWMServo(500);
       }
       break;
@@ -238,35 +235,35 @@ bool doCalibration(void) {
         switch (calibrationStage) {
           case 0:
             Serial.println(F("CALIBRATION_FL_1"));
-            _calibrateMotor1(& m_calibrationData.fl,  _getCurrent2Inputs());
+            _calibrateMotor1(& m_calibrationData.fl,  _getCurrent1Inputs());
           break;
           case 1:
             Serial.println(F("CALIBRATION_FL_2"));
-            _calibrateMotor2(& m_calibrationData.fl,  _getCurrent2Inputs());
+            _calibrateMotor2(& m_calibrationData.fl,  _getCurrent1Inputs());
           break;
           case 2:
             Serial.println(F("CALIBRATION_RL_1"));
-            _calibrateMotor1(& m_calibrationData.rl,  _getCurrent3Inputs());
+            _calibrateMotor1(& m_calibrationData.rl,  _getCurrent1Inputs());
           break;
           case 3:
             Serial.println(F("CALIBRATION_RL_2"));
-            _calibrateMotor2(& m_calibrationData.rl,  _getCurrent3Inputs());
+            _calibrateMotor2(& m_calibrationData.rl,  _getCurrent1Inputs());
           break;
           case 4:
             Serial.println(F("CALIBRATION_FR_1"));
-            _calibrateMotor1(& m_calibrationData.fr,  _getCurrent2Inputs());
+            _calibrateMotor1(& m_calibrationData.fr,  _getCurrent1Inputs());
           break;
           case 5:
             Serial.println(F("CALIBRATION_FR_2"));
-            _calibrateMotor2(& m_calibrationData.fr,  _getCurrent2Inputs());
+            _calibrateMotor2(& m_calibrationData.fr,  _getCurrent1Inputs());
           break;
           case 6:
             Serial.println(F("CALIBRATION_RR_1"));
-            _calibrateMotor1(& m_calibrationData.rr,  _getCurrent3Inputs());
+            _calibrateMotor1(& m_calibrationData.rr,  _getCurrent1Inputs());
           break;
           case 7:
             Serial.println(F("CALIBRATION_RR_2"));
-            _calibrateMotor2(& m_calibrationData.rr,  _getCurrent3Inputs());
+            _calibrateMotor2(& m_calibrationData.rr,  _getCurrent1Inputs());
           break;
           // add wings calibration here
           case 8:
