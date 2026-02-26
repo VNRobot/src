@@ -11,7 +11,6 @@ unsigned char currentTask[16] = {Q_DOSTAND, Q_DONE};
 unsigned char currentTaskPoint = 0;
 // repeat counter
 unsigned char repeatCounter = 0;
-unsigned char repeatCounterEnd = 8;
 // -----------------tasks manager----------------------
 // remember tasks
 unsigned char tasksMemory[16] = {DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
@@ -251,7 +250,7 @@ void setNextPatternInTask(void) {
     m_robotState.patternNow = Q_DONE;
     return;
   }
-  if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < repeatCounterEnd)) {
+  if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < REPEAT_COUNTER_END)) {
     // update repeat counter
     repeatCounter ++;
     return;

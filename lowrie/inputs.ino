@@ -49,9 +49,7 @@ unsigned char senStateRight = 0;
 aSensors analogRawInputs = {0, 0, 0, 0}; // raw values
 dSensors distanceMeasured = {0, 0}; // processed values
 // normal min and max distance
-unsigned char normalDistanceMin = 12; // cm
-unsigned char normalDistanceMax = 36; //48; // cm
-unsigned char calculatedDistance = 36; //48; // cm
+unsigned char calculatedDistance = SENSOR_DISTANCE_MAX; // cm
 
 // check surface
 void checkSurface(void) {
@@ -81,17 +79,17 @@ void initInputs(void) {
     edgeEnabled = true;
   } else {
     // too horizontal
-    calculatedDistance = normalDistanceMax;
+    calculatedDistance = SENSOR_DISTANCE_MAX;
     edgeEnabled = false;
   }
   // analyse sensor angles
-  if (calculatedDistance > normalDistanceMax) {
+  if (calculatedDistance > SENSOR_DISTANCE_MAX) {
     // too far
-    calculatedDistance = normalDistanceMax;
+    calculatedDistance = SENSOR_DISTANCE_MAX;
     edgeEnabled = false;
-  } else if (calculatedDistance < normalDistanceMin) {
+  } else if (calculatedDistance < SENSOR_DISTANCE_MIN) {
     // too close
-    calculatedDistance = normalDistanceMin;
+    calculatedDistance = SENSOR_DISTANCE_MIN;
     edgeEnabled = false;
   } else {
     // all good

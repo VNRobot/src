@@ -10,10 +10,8 @@ bool ballanceEnabled = true;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;
-char staticForwardMax = 40;
 // dynamic forward ballance value
 char dynamicForward = 0;
-char dynamicForwardMax = 20;
 // speed correction
 char speedCorrection = 0;
 // final forward shift
@@ -58,9 +56,9 @@ void _updateStaticBallance(void) {
     staticForwardTemp = (short)(m_gyroState.accPitchY * 2); // 2 has to be tuned
   }
   // 
-  if ((staticForward > staticForwardTemp) && (staticForward > -staticForwardMax)) {
+  if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
     staticForward --;
-  } else if ((staticForward < staticForwardTemp) && (staticForward < staticForwardMax)) {
+  } else if ((staticForward < staticForwardTemp) && (staticForward < STATIC_BALLANCE_MAX)) {
     staticForward ++;
   }
 }
@@ -71,13 +69,13 @@ void _updateDynamicBallance(void) {
     // body rolls
     if ((m_gyroState.rollMinTime < MAIN_HALF_CYCLE) && (m_gyroState.rollMaxTime > MAIN_HALF_CYCLE - 1)) {
       // front is too heavy
-      if (dynamicForward > -dynamicForwardMax) {
+      if (dynamicForward > -DYNAMIC_BALLANCE_MAX) {
         dynamicForward --;
       }
     }
     if ((m_gyroState.rollMinTime > MAIN_HALF_CYCLE - 1) && (m_gyroState.rollMaxTime < MAIN_HALF_CYCLE)) {
       // rear is too heavy
-      if (dynamicForward < dynamicForwardMax) {
+      if (dynamicForward < DYNAMIC_BALLANCE_MAX) {
         dynamicForward ++;
       }
     }

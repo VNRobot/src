@@ -31,18 +31,25 @@ Main file
 // sensors geometry
 #define SENSOR_ANGLE            20     // down angle
 #define SENSOR_HIGHT            10     // mm hight relative to legs
+#define SENSOR_DISTANCE_MIN     12     // cm
+#define SENSOR_DISTANCE_MAX     48     // cm
 // robot phisics
-#define OFFROAD_ANGLE           6
-#define SLOP_ANGLE              15
+#define OFFROAD_ANGLE           4
+#define SLOP_ANGLE              12
 #define FALLING_ANGLE           45
 // main servo pattern counter end
-#define SERVO_FULL_CYCLE 72
-#define SERVO_HALF_CYCLE 36
-#define SERVO_PAIR_SHIFT 18
-#define MAIN_FULL_CYCLE 36
-#define MAIN_HALF_CYCLE 18
+#define SERVO_FULL_CYCLE        72
+#define SERVO_HALF_CYCLE        36
+#define SERVO_PAIR_SHIFT        18
+#define MAIN_FULL_CYCLE         36
+#define MAIN_HALF_CYCLE         18
 // robot size
 #define ROBOT_SIZE_DIVIDER      2
+// ballance correction max value
+#define STATIC_BALLANCE_MAX     60
+#define DYNAMIC_BALLANCE_MAX    20
+// pattern repeat counter
+#define REPEAT_COUNTER_END      8
 
 // input state
 enum inState {
