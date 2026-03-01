@@ -305,12 +305,12 @@ unsigned char getNormalTask(int direction) {
     break;
   }
   // check slop
-  if (m_gyroState.accPitchY < -SLOP_ANGLE) {
+  if (m_gyroState.aPitchAverage < -SLOP_ANGLE) {
     // down
-    if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
+    if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
       return GOTURNLEFT_TASK;
     }
-    if (m_gyroState.accRollX > OFFROAD_ANGLE) {
+    if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
       return GOTURNRIGHT_TASK;
     }
     if (direction > 4) {
@@ -321,21 +321,21 @@ unsigned char getNormalTask(int direction) {
     }
     return GO_TASK;
   }
-  if (m_gyroState.accPitchY > SLOP_ANGLE) {
+  if (m_gyroState.aPitchAverage > SLOP_ANGLE) {
     // up
-    if (m_gyroState.accRollX < -OFFROAD_ANGLE) {
+    if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
       return GOBACKRIGHT_TASK;
     }
-    if (m_gyroState.accRollX > OFFROAD_ANGLE) {
+    if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
       return GOBACKLEFT_TASK;
     }
     return GOBACK_TASK;
   }
-  if (m_gyroState.accRollX < -SLOP_ANGLE) {
+  if (m_gyroState.aRollAverage < -SLOP_ANGLE) {
     // left
     return GOTURNLEFT_TASK;
   }
-  if (m_gyroState.accRollX > SLOP_ANGLE) {
+  if (m_gyroState.aRollAverage > SLOP_ANGLE) {
     // left
     return GOTURNRIGHT_TASK;
   }

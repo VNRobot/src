@@ -31,10 +31,6 @@ unsigned long oldTime;
 // gyro state
 unsigned char stateGyroOld = GYRO_NORM;
 // roll data
-short rollMinBuffer;
-short rollMaxBuffer;
-unsigned char rollMinTimeBuffer;
-unsigned char rollMaxTimeBuffer;
 // shake parameters
 short shakeNow = 0;
 short shakeOld = 0;
@@ -42,8 +38,12 @@ short rollNow = 0;
 short rollOld = 0;
 short pitchNow = 0;
 short pitchOld = 0;
+short deltaRoll = 0;
+short deltaPitch = 0;
 long rollAverage = 0;
 long pitchAverage = 0;
+short rollAverageOld = 0;
+short pitchAverageOld = 0;
 // walking direction
 short walkingDirection = 0;
 short walkingDirectionOld = 0;
@@ -158,7 +158,7 @@ void updateGyro(void) {
   floatBuffer[2] /= 16384.0;
   floatRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
   floatPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
-  m_gyroState.accUpsideZ = (short)((floatBuffer[2]) * 100);
+  m_gyroState.aUpsideAverage = (short)((floatBuffer[2]) * 100);
   // gyroscope
   oldTime = currentTime;
   currentTime = millis();
@@ -171,61 +171,49 @@ void updateGyro(void) {
   // short data
   rollNow = (short)floatRollX;
   pitchNow = -(short)floatPitchY;
-  // shake data processing
-  if (rollNow > rollOld) {
-    shakeNow += rollNow - rollOld;
-  } else {
-    shakeNow += rollOld - rollNow;
-  }
-  if (pitchNow > pitchOld) {
-    shakeNow += pitchNow - pitchOld;
-  } else {
-    shakeNow += pitchOld - pitchNow;
-  }
-  // add average
-  rollAverage += rollNow;
-  pitchAverage += pitchNow;
+  // data now
+  m_gyroState.aRollNow = rollNow;
+  m_gyroState.aPitchNow = pitchNow;
+  // deltas
+  deltaRoll = rollNow - rollOld;
+  deltaPitch = pitchNow - pitchOld;
   // remember position
   rollOld = rollNow;
   pitchOld = pitchNow;
+  // add average
+  rollAverage += rollNow;
+  pitchAverage += pitchNow;
+  // get lift value
+  m_gyroState.aLiftFL = deltaRoll + deltaPitch;
+  m_gyroState.aLiftFR = -deltaRoll + deltaPitch;
+  m_gyroState.aLiftRL = deltaRoll - deltaPitch;
+  m_gyroState.aLiftRR = -deltaRoll - deltaPitch;
   // cycle statrt
   if (m_sequenceCounter.m == 0) {
     // remember roll and pitch
-    m_gyroState.accRollX = rollAverage / MAIN_FULL_CYCLE;
-    m_gyroState.accPitchY = pitchAverage / MAIN_FULL_CYCLE;
+    m_gyroState.aRollAverage = rollAverage / MAIN_FULL_CYCLE;
+    m_gyroState.aPitchAverage = pitchAverage / MAIN_FULL_CYCLE;
     // reset average
     rollAverage = 0;
     pitchAverage = 0;
+    // shake data processing
+    if (m_gyroState.aRollAverage > rollAverageOld) {
+      shakeNow += m_gyroState.aRollAverage - rollAverageOld;
+    } else {
+      shakeNow -= m_gyroState.aRollAverage - rollAverageOld;
+    }
+    if (m_gyroState.aPitchAverage > pitchAverageOld) {
+      shakeNow += m_gyroState.aPitchAverage - pitchAverageOld;
+    } else {
+      shakeNow -= m_gyroState.aPitchAverage - pitchAverageOld;
+    }
+    rollAverageOld = m_gyroState.aRollAverage;
+    pitchAverageOld = m_gyroState.aPitchAverage;
     // process direction
     // fix rotation angle value
     floatDirection  = _fixAngle(floatDirection, 180);
     // get gyro data
     m_gyroState.direction =  -((short)floatDirection * 2);
-    // process roll
-    // remember roll
-    m_gyroState.rollMin = rollMinBuffer;
-    m_gyroState.rollMax = rollMaxBuffer;
-    m_gyroState.rollMinTime = rollMinTimeBuffer;
-    m_gyroState.rollMaxTime = rollMaxTimeBuffer;
-    // reset roll
-    rollMinBuffer = rollNow;
-    rollMaxBuffer = rollNow;
-    rollMinTimeBuffer = 0;
-    rollMaxTimeBuffer = 0;
-  } else {
-    // find max and min roll
-    if (rollNow > rollMaxBuffer) {
-      rollMaxBuffer = rollNow;
-      rollMaxTimeBuffer = m_sequenceCounter.m;
-    }
-    if (rollNow < rollMinBuffer) {
-      rollMinBuffer = rollNow;
-      rollMinTimeBuffer = m_sequenceCounter.m;
-    }
-  }
-  // walk cycle related operations
-  if (m_sequenceCounter.m == 0) {
-    // process data
     // get status
     m_gyroState.stateGyro = _statusGyro();
     if (stateGyroOld != m_gyroState.stateGyro) {
@@ -233,20 +221,18 @@ void updateGyro(void) {
       // debug print
       //_printGyro();
     }
+    //_printLineGyroDebug();
+    // remember shake values
+    shakeOld = shakeNow;
+    shakeNow = 0;
   }
-  // remember and reset shake values
-  shakeOld = shakeNow;
-  shakeNow = 0;
+  //_printRollGyroDebug();
 }
 
 // reset gyro data
 void resetGyro(void) {
   floatDirection = 0;
   m_gyroState.direction = 0;
-  m_gyroState.rollMin = 0;
-  m_gyroState.rollMax = 0;
-  m_gyroState.rollMinTime = 0;
-  m_gyroState.rollMaxTime = 0;
   m_gyroState.stateGyro = GYRO_NORM;
   walkingDirectionOld = 0;
   walkingDirection = 0;
@@ -254,6 +240,8 @@ void resetGyro(void) {
   shakeNow = 0;
   rollOld = 0;
   pitchOld = 0;
+  rollAverageOld = 0;
+  pitchAverageOld = 0;
 }
 
 // get walking direction
@@ -295,38 +283,38 @@ unsigned char _statusGyro(void) {
   if (shakeNow < (shakeOld * 2)) {
     // not shaken 
     // fell left
-    if (m_gyroState.accRollX < -FALLING_ANGLE) {
+    if (m_gyroState.aRollAverage < -FALLING_ANGLE) {
       return GYRO_FELL_LEFT;
     }
     // fell right
-    if (m_gyroState.accRollX > FALLING_ANGLE) {
+    if (m_gyroState.aRollAverage > FALLING_ANGLE) {
       return GYRO_FELL_RIGHT;
     }
     // fell front
-    if (m_gyroState.accPitchY < -FALLING_ANGLE) {
+    if (m_gyroState.aPitchAverage < -FALLING_ANGLE) {
       return GYRO_FELL_FRONT;
     }
     // fell back
-    if (m_gyroState.accPitchY > FALLING_ANGLE) {
+    if (m_gyroState.aPitchAverage > FALLING_ANGLE) {
       return GYRO_FELL_BACK;
     }
     // check upside down
-    if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateLNow == 1) && (m_robotState.flipStateRNow == 1)) {
+    if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == 1) && (m_robotState.flipStateRNow == 1)) {
       // flip event. update flip state
       return GYRO_UPSIDEDOWN;
     }
     // position normal reset walking
-    if ((m_gyroState.accUpsideZ > 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+    if ((m_gyroState.aUpsideAverage > 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
       return GYRO_RESET;
     }
   }
   // upside down. recover fail
-  if ((m_gyroState.accUpsideZ < 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+  if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
     // do nothing for now
   }
   return GYRO_NORM;
 }
-
+/*
 // print gyro values
 void _printGyro(void) {
   // print gyro status
@@ -356,3 +344,30 @@ void _printGyro(void) {
       Serial.println(F(" Wrong gyro state "));
   }
 }
+
+// print gyro values
+void _printLineGyroDebug(void) {
+  Serial.print(" shaken ");
+  Serial.print((int)shakeNow);
+  Serial.print(" aRoll ");
+  Serial.print((int)m_gyroState.aRollAverage);
+  Serial.print(" aPitch ");
+  Serial.print((int)m_gyroState.aPitchAverage);
+  Serial.print(" Z ");
+  Serial.print((int)m_gyroState.aUpsideAverage);
+  Serial.print(" direction ");
+  Serial.println((int)m_gyroState.direction);
+}
+
+// print gyro values
+void _printRollGyroDebug(void) {
+  Serial.print(" aLiftFL ");
+  Serial.print((int)m_gyroState.aLiftFL);
+  Serial.print(" aLiftFR ");
+  Serial.print((int)m_gyroState.aLiftFR);
+  Serial.print(" aLiftRL ");
+  Serial.print((int)m_gyroState.aLiftRL);
+  Serial.print(" aLiftRR ");
+  Serial.println((int)m_gyroState.aLiftRR);
+}
+*/

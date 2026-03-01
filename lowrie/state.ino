@@ -31,6 +31,14 @@ void _setState(unsigned char newState) {
       m_robotState.speedMuliplierNow = 1;
     }
     break;
+    case ROBOT_CRAWL:
+    {
+      m_robotState.legLiftNow = LEG_LIFT * 2;
+      m_robotState.robotStateNow = ROBOT_CRAWL;
+      m_robotState.legHightNow = HIGHT_DEFAULT;
+      m_robotState.speedMuliplierNow = 1;
+    }
+    break;
     default:
     break;
   }
@@ -38,6 +46,7 @@ void _setState(unsigned char newState) {
 
 // check for slop
 unsigned char _inputsCheck(void) {
+  return ROBOT_NORM;
   // check current
   if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
     return ROBOT_NORM;
@@ -55,27 +64,29 @@ unsigned char _inputsCheck(void) {
     break;
     case GYRO_FELL_FRONT:
     case GYRO_FELL_BACK:
-      return ROBOT_INO;
+      return ROBOT_CRAWL;
     break;
       default:
     break;
   }
   // check normal priority state
-  // folling left
-  if (m_gyroState.accRollX < -OFFROAD_ANGLE - 1) {
+  // a bit left or right
+  if ((m_gyroState.aRollAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aRollAverage > OFFROAD_ANGLE + 1)) {
     return ROBOT_INO;
   }
-  // folling right
-  if (m_gyroState.accRollX > OFFROAD_ANGLE + 1) {
+  // a bit front or back
+  if ((m_gyroState.aPitchAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aPitchAverage > OFFROAD_ANGLE + 1)) {
     return ROBOT_INO;
   }
-  // folling front
-  if (m_gyroState.accPitchY < -OFFROAD_ANGLE - 1) {
-    return ROBOT_INO;
+  // slop left or right
+  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
+    return ROBOT_CRAWL;
+    return;
   }
-  // folling back
-  if (m_gyroState.accPitchY > OFFROAD_ANGLE + 1) {
-    return ROBOT_INO;
+  // slop front or back
+  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
+    return ROBOT_CRAWL;
+    return;
   }
   return ROBOT_NORM;
 }
@@ -102,6 +113,9 @@ void _printStateDebug(unsigned char stateNow) {
     break;
     case ROBOT_INO:
       Serial.print(F(" ROBOT_INO "));
+    break;
+    case ROBOT_CRAWL:
+      Serial.print(F(" ROBOT_CRAWL "));
     break;
     default:
       Serial.println(F(" Wrong state "));

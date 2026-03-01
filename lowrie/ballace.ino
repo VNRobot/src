@@ -51,9 +51,11 @@ void updateBallance(void) {
 // static ballance
 void _updateStaticBallance(void) {
   if (m_robotState.robotStateNow == ROBOT_NORM) {
-    staticForwardTemp = (short)(m_gyroState.accPitchY * 4); // 4 has to be tuned
+    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 4); // 4 has to be tuned
   } else if (m_robotState.robotStateNow == ROBOT_INO) {
-    staticForwardTemp = (short)(m_gyroState.accPitchY * 2); // 2 has to be tuned
+    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 2); // 2 has to be tuned
+  } else if (m_robotState.robotStateNow == ROBOT_CRAWL) {
+    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 2); // 2 has to be tuned
   }
   // 
   if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
@@ -65,19 +67,4 @@ void _updateStaticBallance(void) {
 
 // dynamic ballance
 void _updateDynamicBallance(void) {
-  if (m_gyroState.rollMax - m_gyroState.rollMin > 2) {
-    // body rolls
-    if ((m_gyroState.rollMinTime < MAIN_HALF_CYCLE) && (m_gyroState.rollMaxTime > MAIN_HALF_CYCLE - 1)) {
-      // front is too heavy
-      if (dynamicForward > -DYNAMIC_BALLANCE_MAX) {
-        dynamicForward --;
-      }
-    }
-    if ((m_gyroState.rollMinTime > MAIN_HALF_CYCLE - 1) && (m_gyroState.rollMaxTime < MAIN_HALF_CYCLE)) {
-      // rear is too heavy
-      if (dynamicForward < DYNAMIC_BALLANCE_MAX) {
-        dynamicForward ++;
-      }
-    }
-  }
 }

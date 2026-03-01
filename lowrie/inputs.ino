@@ -54,12 +54,12 @@ unsigned char calculatedDistance = SENSOR_DISTANCE_MAX; // cm
 // check surface
 void checkSurface(void) {
   // check robot roll
-  if ((m_gyroState.accRollX < -SLOP_ANGLE) || (m_gyroState.accRollX > SLOP_ANGLE)) {
+  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
     sensorsActive = false;
     return;
   }
   // check robot pitch
-  if ((m_gyroState.accPitchY < -SLOP_ANGLE) || (m_gyroState.accPitchY > SLOP_ANGLE)) {
+  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
     sensorsActive = false;
     return;
   }
@@ -110,7 +110,7 @@ void updateInputs(void) {
     analogRawInputs.leftLower = (unsigned short)analogRead(A3);
     analogRawInputs.rightLower = (unsigned short)analogRead(A2);
     // crossconnection left sensor is facing right and right sensor is facing left upper facing down lower facing up
-    if (m_gyroState.accRollX < 0) {
+    if (m_gyroState.aRollAverage < 0) {
       // upside down
       if (analogRawInputs.leftUpper > analogRawInputs.leftLower) {
         // top blocked

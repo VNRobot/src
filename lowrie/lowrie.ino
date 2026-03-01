@@ -138,7 +138,8 @@ enum tPriority {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_INO
+  ROBOT_INO,
+  ROBOT_CRAWL
 };
 // structure for one leg motors
 struct motors {
@@ -167,13 +168,15 @@ struct allLegs {
 };
 // acc and gyro data structure
 typedef struct accRoll {
-  short accRollX;                 // roll       right - positive   -90 0 90 upsidedown also 0
-  short accPitchY;                // pitch      up - positive   -90 0 90 upsidedown also 0
-  short accUpsideZ;               // z          upside down - negative
-  short rollMin;
-  short rollMax;
-  unsigned char rollMinTime;
-  unsigned char rollMaxTime;
+  short aRollNow;              // relative roll  now    
+  short aPitchNow;             // relative pitch now
+  short aRollAverage;                 // roll       right - positive   -90 0 90 upsidedown also 0
+  short aPitchAverage;                // pitch      up - positive   -90 0 90 upsidedown also 0
+  short aUpsideAverage;               // z          upside down - negative
+  short aLiftFL;
+  short aLiftFR;
+  short aLiftRL;
+  short aLiftRR;
   short direction;                // direction  turn right - positive
   unsigned char stateGyro;
 } accRoll;
@@ -224,7 +227,7 @@ robotState m_robotState = {
   0                        // speedNow
 };
 // gyro state
-accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
+accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 //----------------------------------------------------------
@@ -333,8 +336,6 @@ void loop() {
     if (m_sequenceCounter.m == 0) {
       //printInputsDebug();
       //printCurrentStateDebug();
-      //_printLineGyroDebug();
-      //_printRollGyroDebug();
       // set robot state
       setRobotState();
     }
@@ -386,7 +387,7 @@ void loop() {
       case Q_DORECOVER:
       {
         setServo(HIGHT_LOW, HIGHT_LOW, 0);
-        if (m_gyroState.accRollX < 0) {
+        if (m_gyroState.aRollAverage < 0) {
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
           setServo(180, 180, 0);
@@ -410,7 +411,7 @@ void loop() {
         // do nothing for now
       case Q_DORESET:
       {
-        if (m_gyroState.accUpsideZ < 0) {
+        if (m_gyroState.aUpsideAverage < 0) {
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = -1;
         } else {
@@ -590,28 +591,4 @@ void printCurrentStateDebug(void) {
     default:
       Serial.println(F(" Wrong inputs state "));
   }
-}
-
-// print gyro values
-void _printLineGyroDebug(void) {
-  Serial.print(" aRoll ");
-  Serial.print((int)m_gyroState.accRollX);
-  Serial.print(" aPitch ");
-  Serial.print((int)m_gyroState.accPitchY);
-  Serial.print(" Z ");
-  Serial.print((int)m_gyroState.accUpsideZ);
-  Serial.print(" direction ");
-  Serial.println((int)m_gyroState.direction);
-}
-
-// print gyro values
-void _printRollGyroDebug(void) {
-  Serial.print(" rollMin ");
-  Serial.print((int)m_gyroState.rollMin);
-  Serial.print(" rollMax ");
-  Serial.print((int)m_gyroState.rollMax);
-  Serial.print(" rollMinTime ");
-  Serial.print((int)m_gyroState.rollMinTime);
-  Serial.print(" rollMaxTime ");
-  Serial.println((int)m_gyroState.rollMaxTime);
 }
