@@ -9,8 +9,6 @@ Robot legs motion patterns
 unsigned char mainCounter = 0;
 unsigned char walkCounter = 0;
 unsigned char walkForwardCounter = 0;
-// leg values for 4 legs
-allLegs legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // walking mode
 bool walkingMode = false;
 // speed relative value from -1 to 2
@@ -174,44 +172,43 @@ void updateCountPatterns(void) {
 
 // set same values for legs
 void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shiftR) {
-  legsValue.fl.hight = hightL;
-  legsValue.fl.shift = shiftL;
-  legsValue.fl.lifted = false;
-  legsValue.fr.hight = hightR;
-  legsValue.fr.shift = shiftR;
-  legsValue.fr.lifted = false;
-  legsValue.rl.hight = hightL;
-  legsValue.rl.shift = shiftL;
-  legsValue.rl.lifted = false;
-  legsValue.rr.hight = hightR;
-  legsValue.rr.shift = shiftR;
-  legsValue.rr.lifted = false;
+  m_legsValue.fl.hight = hightL;
+  m_legsValue.fl.shift = shiftL;
+  m_legsValue.fl.lifted = false;
+  m_legsValue.fr.hight = hightR;
+  m_legsValue.fr.shift = shiftR;
+  m_legsValue.fr.lifted = false;
+  m_legsValue.rl.hight = hightL;
+  m_legsValue.rl.shift = shiftL;
+  m_legsValue.rl.lifted = false;
+  m_legsValue.rr.hight = hightR;
+  m_legsValue.rr.shift = shiftR;
+  m_legsValue.rr.lifted = false;
 }
 
 // get servo motor steps
-allLegs getWalkPatterns(void) {
+void getWalkPatterns(void) {
   leg legSet;
   if (walkingMode) {
     legSet = _getWalkStep(m_sequenceCounter.fl, speedL);
-    legsValue.fl.hight = legSet.hight;
-    legsValue.fl.shift = legSet.shift;
-    legsValue.fl.lifted = legSet.lifted;
+    m_legsValue.fl.hight = legSet.hight;
+    m_legsValue.fl.shift = legSet.shift;
+    m_legsValue.fl.lifted = legSet.lifted;
     legSet = _getWalkStep(m_sequenceCounter.fr, speedR);
-    legsValue.fr.hight = legSet.hight;
-    legsValue.fr.shift = legSet.shift;
-    legsValue.fr.lifted = legSet.lifted;
+    m_legsValue.fr.hight = legSet.hight;
+    m_legsValue.fr.shift = legSet.shift;
+    m_legsValue.fr.lifted = legSet.lifted;
     legSet = _getWalkStep(m_sequenceCounter.rl, speedL);
-    legsValue.rl.hight = legSet.hight;
-    legsValue.rl.shift = legSet.shift;
-    legsValue.rl.lifted = legSet.lifted;
+    m_legsValue.rl.hight = legSet.hight;
+    m_legsValue.rl.shift = legSet.shift;
+    m_legsValue.rl.lifted = legSet.lifted;
     legSet = _getWalkStep(m_sequenceCounter.rr, speedR);
-    legsValue.rr.hight = legSet.hight;
-    legsValue.rr.shift = legSet.shift;
-    legsValue.rr.lifted = legSet.lifted;
+    m_legsValue.rr.hight = legSet.hight;
+    m_legsValue.rr.shift = legSet.shift;
+    m_legsValue.rr.lifted = legSet.lifted;
   } else {
     _setLegsValuesBySide(m_robotState.legHightNow, 0, m_robotState.legHightNow, 0);
   }
-  return legsValue;
 }
 
 // set walk step value

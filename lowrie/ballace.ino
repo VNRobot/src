@@ -32,9 +32,10 @@ void updateBallance(void) {
     _updateStaticBallance();
     // once
     if (m_sequenceCounter.m == 0) {
+      // dynamic ballance
+      _updateDynamicBallance();
+      //
       if (m_robotState.robotStateNow == ROBOT_NORM) {
-        // dynamic ballance
-        //_updateDynamicBallance();
         // speed correction
         //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
       }
@@ -51,11 +52,11 @@ void updateBallance(void) {
 // static ballance
 void _updateStaticBallance(void) {
   if (m_robotState.robotStateNow == ROBOT_NORM) {
-    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 4); // 4 has to be tuned
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // 4 has to be tuned
   } else if (m_robotState.robotStateNow == ROBOT_INO) {
-    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 2); // 2 has to be tuned
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
   } else if (m_robotState.robotStateNow == ROBOT_CRAWL) {
-    staticForwardTemp = (short)(m_gyroState.aPitchAverage * 2); // 2 has to be tuned
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
   }
   // 
   if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
@@ -67,4 +68,33 @@ void _updateStaticBallance(void) {
 
 // dynamic ballance
 void _updateDynamicBallance(void) {
+  // get diving value
+  if (m_legsValue.fl.lifted) {
+    if (m_gyroState.aLiftFL < m_gyroState.aLiftRR) {
+      // fl leg too heavy
+      dynamicForward --;
+    }
+  } else if (m_legsValue.fr.lifted) {
+    if (m_gyroState.aLiftFR < m_gyroState.aLiftRL) {
+      // fr leg too heavy
+      dynamicForward --;
+    }
+  } else if (m_legsValue.rl.lifted) {
+    if (m_gyroState.aLiftRL < m_gyroState.aLiftFR) {
+      // rl leg too heavy
+      dynamicForward ++;
+    }
+  } else if (m_legsValue.rr.lifted) {
+    if (m_gyroState.aLiftRR < m_gyroState.aLiftFL) {
+      // rr leg too heavy
+      dynamicForward ++;
+    }
+  }
+  if (dynamicForward > 20) {
+    dynamicForward = 20;
+  }
+  if (dynamicForward < -20) {
+    dynamicForward = -20;
+  }
+  dynamicForward = 0;
 }

@@ -228,6 +228,8 @@ robotState m_robotState = {
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
+// leg values for 4 legs
+allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 //----------------------------------------------------------
@@ -314,7 +316,8 @@ void setTaskAndPattern(void) {
 // set motors and read sensors
 void doCycle(void) {
   // update servo motors values, move motors
-  updateLegsServo(getWalkPatterns());
+  getWalkPatterns();
+  updateLegsServo();
   doPWMServo(TIME_DELAY);
   cycleDone = true;
 }
