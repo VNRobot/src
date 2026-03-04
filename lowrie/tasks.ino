@@ -1,9 +1,12 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 List of tasks. Every task contains movement patterns.
 */
+
+// pattern repeat counter
+#define REPEAT_COUNTER_END      8
 
 // Array to store currently executed task. contains list of patterns
 unsigned char currentTask[16] = {Q_DOSTAND, Q_DONE};

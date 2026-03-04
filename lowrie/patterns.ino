@@ -1,9 +1,13 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
 */
+
+#define SERVO_FULL_CYCLE        72
+#define SERVO_HALF_CYCLE        36
+#define SERVO_PAIR_SHIFT        18
 
 // main counter
 unsigned char mainCounter = 0;

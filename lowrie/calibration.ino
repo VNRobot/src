@@ -1,9 +1,14 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 motors calibration
 */
+
+// software version hardcoded. should be changed manually
+#define ROBOT_VERSION           97
+// calibration current in ma default 640 or 2000 to disable
+#define CALIBRATION_CURRENT     2000
 
 // device mode enumerator
 enum calMode {

@@ -1,9 +1,12 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Operates servo motors
 */
+
+// center position in the leg forward shift. bigger the number more weight on front
+#define FORWARD_BALLANCE_SHIFT  0
 
 #include <Servo.h>
 

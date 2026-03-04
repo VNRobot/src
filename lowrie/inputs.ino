@@ -1,5 +1,5 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Gets analog inputs
@@ -12,6 +12,14 @@ Gets analog inputs
     25     250
     60     100
 */
+
+// robot size
+#define ROBOT_SIZE_DIVIDER      2
+// sensors geometry
+#define SENSOR_ANGLE            20     // down angle
+#define SENSOR_HIGHT            10     // mm hight relative to legs
+#define SENSOR_DISTANCE_MIN     12     // cm
+#define SENSOR_DISTANCE_MAX     48     // cm
 
 // sensor state
 enum senState {

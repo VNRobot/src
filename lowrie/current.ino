@@ -1,5 +1,5 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Gets analog current inputs
@@ -9,6 +9,12 @@ Gets analog current inputs
     current2: A3 power current on connectors D6, D7, D8, D9
     current3: A2 power current on connectors D10, D11, D12, D13
 */
+
+// maximal pair of legs current in ma 2000 to disable
+#define MAX_CURRENT             1000
+// low battery level in mv
+#define LOW_BATTERY             6200
+#define DEAD_BATTERY            6000
 
 // analog sensors structure
 struct aCurrent {

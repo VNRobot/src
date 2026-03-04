@@ -1,10 +1,10 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 State Manager file
 */
-
+/*
 // new an old robot state
 unsigned char newRobotState = ROBOT_NORM;
 unsigned char oldRobotState = ROBOT_NORM;
@@ -121,3 +121,4 @@ void _printStateDebug(unsigned char stateNow) {
       Serial.println(F(" Wrong state "));
   }
 }
+*/

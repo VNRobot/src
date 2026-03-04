@@ -1,5 +1,5 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Main file
@@ -7,15 +7,6 @@ Main file
 
 #include <EEPROM.h>
 
-// software version hardcoded. should be changed manually
-#define ROBOT_VERSION           77
-// calibration current in ma default 640 or 2000 to disable
-#define CALIBRATION_CURRENT     2000
-// maximal pair of legs current in ma 2000 to disable
-#define MAX_CURRENT             1000
-// low battery level in mv
-#define LOW_BATTERY             6200
-#define DEAD_BATTERY            6000
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
@@ -26,30 +17,12 @@ Main file
 #define HIGHT_DEFAULT           125
 // normal leg lift in mm
 #define LEG_LIFT                40
-// center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
-// sensors geometry
-#define SENSOR_ANGLE            20     // down angle
-#define SENSOR_HIGHT            10     // mm hight relative to legs
-#define SENSOR_DISTANCE_MIN     12     // cm
-#define SENSOR_DISTANCE_MAX     48     // cm
 // robot phisics
-#define OFFROAD_ANGLE           4
-#define SLOP_ANGLE              12
-#define FALLING_ANGLE           45
+#define OFFROAD_ANGLE           4   // to be moved to gyro
+#define SLOP_ANGLE              12  // to be moved to gyro
+#define FALLING_ANGLE           45  // to be moved to gyro
 // main servo pattern counter end
-#define SERVO_FULL_CYCLE        72
-#define SERVO_HALF_CYCLE        36
-#define SERVO_PAIR_SHIFT        18
 #define MAIN_FULL_CYCLE         36
-#define MAIN_HALF_CYCLE         18
-// robot size
-#define ROBOT_SIZE_DIVIDER      2
-// ballance correction max value
-#define STATIC_BALLANCE_MAX     60
-#define DYNAMIC_BALLANCE_MAX    20
-// pattern repeat counter
-#define REPEAT_COUNTER_END      8
 
 // input state
 enum inState {
@@ -170,9 +143,9 @@ struct allLegs {
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
   short aPitchNow;             // relative pitch now
-  short aRollAverage;                 // roll       right - positive   -90 0 90 upsidedown also 0
-  short aPitchAverage;                // pitch      up - positive   -90 0 90 upsidedown also 0
-  short aUpsideAverage;               // z          upside down - negative
+  short aRollAverage;          // roll       right - positive   -90 0 90 upsidedown also 0
+  short aPitchAverage;         // pitch      up - positive   -90 0 90 upsidedown also 0
+  short aUpsideAverage;        // z          upside down - negative
   short aLiftFL;
   short aLiftFR;
   short aLiftRL;
@@ -207,8 +180,10 @@ typedef struct robotState {
 //---------------global variables---------------------------
 // motors calibration values for all motors
 allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
+motors m_centerCalibrationData = {0, 0};
 // servo motor value
 short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+short m_centerMotorAngleValue[2] = {0, 0};
 // sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
@@ -340,10 +315,10 @@ void loop() {
       //printInputsDebug();
       //printCurrentStateDebug();
       // set robot state
-      setRobotState();
+      //setRobotState();        *** disable for now
     }
     // update ballance
-    updateBallance();
+    // updateBallance();        *** disable for now
     updateBallanceServo();
   }
   // once in a pattern

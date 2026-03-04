@@ -4,7 +4,7 @@ Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot center motors motion patterns
 */
-
+/*
 // turning dividers. divides 20
 char mCenter[36] = {50,-5,-4,-3,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-3,-4,-5,50, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5};
 // recovering
@@ -112,3 +112,4 @@ motors getValueCenter(unsigned char counter) {
   }
   return valueCenter;
 }
+*/

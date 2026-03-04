@@ -1,9 +1,13 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot static and dynamic ballance
 */
+/*
+// ballance correction max value
+#define STATIC_BALLANCE_MAX     60
+#define DYNAMIC_BALLANCE_MAX    20
 
 // ballance enabled flag
 bool ballanceEnabled = true;
@@ -98,3 +102,4 @@ void _updateDynamicBallance(void) {
   }
   dynamicForward = 0;
 }
+*/
