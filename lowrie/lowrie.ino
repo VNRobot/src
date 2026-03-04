@@ -6,6 +6,7 @@ Main file
 */
 
 #include <EEPROM.h>
+#include <Servo.h>
 
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
@@ -205,8 +206,10 @@ robotState m_robotState = {
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
+motors m_centerValue = {0, 0};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
+motors m_centerCorrect = {0, 0};
 //----------------------------------------------------------
 // servo cycle is done flag
 bool cycleDone = true;
@@ -224,8 +227,11 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // init servo motors
+  initCenter();
   initServo();
+  doPWMCenter();
   doPWMServo(200);
+  setCenter(0);
   setServo(HIGHT_LOW, HIGHT_LOW, 20);
   // init gyro MPU6050 using I2C
   initGyro();
@@ -237,6 +243,7 @@ void setup() {
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
+    setCenter(0);
     setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
     doPWMServo(200);
     // init current readings
@@ -292,6 +299,7 @@ void setTaskAndPattern(void) {
 void doCycle(void) {
   // update servo motors values, move motors
   getWalkPatterns();
+  updateCenter();
   updateLegsServo();
   doPWMServo(TIME_DELAY);
   cycleDone = true;
@@ -319,6 +327,7 @@ void loop() {
     }
     // update ballance
     // updateBallance();        *** disable for now
+    updateBallanceCenter();
     updateBallanceServo();
   }
   // once in a pattern
@@ -354,16 +363,19 @@ void loop() {
       break;
       case Q_DOLOW:
       {
+        setCenter(0);
         setServo(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
       case Q_DOSTAND:
       {
+        setCenter(0);
         setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
       case Q_DORECOVER:
       {
+        setCenter(-20);
         setServo(HIGHT_LOW, HIGHT_LOW, 0);
         if (m_gyroState.aRollAverage < 0) {
           m_robotState.flipStateLNow = 1;
@@ -371,6 +383,7 @@ void loop() {
           setServo(180, 180, 0);
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = 1;
+          setCenter(30);
           setServo(180, 180, 0);
         } else {
           m_robotState.flipStateLNow = -1;
@@ -378,10 +391,12 @@ void loop() {
           setServo(180, 180, 0);
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
+          setCenter(30);
           setServo(180, 180, 0);
         }
         m_robotState.flipStateLNow = 1;
         m_robotState.flipStateRNow = 1;
+        setCenter(0);
         setServo(HIGHT_LOW, HIGHT_LOW, 0);
       }
       break;
@@ -406,8 +421,10 @@ void loop() {
       case Q_DODOWN:
       {
         // disable motors
+        setCenter(0);
         setServo(HIGHT_LOW, HIGHT_LOW, 20);
         detachServo();
+        detachCenter();
       }
       break;
       case Q_SETPRIORITY_HIGH:

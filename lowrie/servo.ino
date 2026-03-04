@@ -8,8 +8,6 @@ Operates servo motors
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT  0
 
-#include <Servo.h>
-
 // pin numbers for servo motors
 enum dPinsServo {
   FL1_MOTOR = 6,
@@ -61,7 +59,7 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 12; // nalf distance between motors in mm
+  Sval -= 16; //12; // nalf distance between motors in mm
   Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
@@ -70,7 +68,7 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;    5100
   //AngleB = (acos((Lval * Lval + 70 * 70 - 104 * 104) / (2 * Lval * 70)) * 180) / 3.14;    5916
   //AngleB = (acos((Lval * Lval + 70 * 70 - 112 * 112) / (2 * Lval * 70)) * 180) / 3.14;    7644
-  AngleB = (acos((Lval * Lval - 7644) / (Lval * 140)) * 180) / 3.14;
+  AngleB = (acos((Lval * Lval - 5100) / (Lval * 140)) * 180) / 3.14;
   return (char)(90 - AngleB - AngleC);
 }
 
@@ -237,6 +235,7 @@ void doPWMServo(short timeDelay) {
   }
 }
 
+// update robot ballance
 void updateBallanceServo(void) {
   staticBallance.fl.hight = m_legCorrect.fl.hight;
   staticBallance.fl.shift = FORWARD_BALLANCE_SHIFT + m_legCorrect.fl.shift;
