@@ -1,5 +1,5 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
@@ -7,341 +7,243 @@ Robot legs motion patterns
 
 // main counter
 unsigned char mainCounter = 0;
-// leg values for 4 legs
-allLegs legsValue = {125, 0, 125, 0, 125, 0, 125, 0, 125, 0, 125, 0};
-// leg phase
-phase legPhase = {0, 0, 0, 0, 0, 0, 0};
+unsigned char walkCounter = 0;
+unsigned char walkForwardCounter = 0;
 // walking mode
 bool walkingMode = false;
 // speed relative value from -1 to 2
 char speed = 0;
 char speedL = 0;
 char speedR = 0;
-// walk and lift                                                                                                 -
-short mLiftHFlag[36]       = {  1,  1,  1,  1,  3,  5,  10,  10,  10,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10, 10, 10, 10,  10,  10,   2,  1,   1};
-char mPointWalk[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
-// ino
-short mLiftHFlagIno[36]       = {  1,  1,  1,  1, 10, 10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10,  10, 10, 10, 10, 10, 10, 10, 10,  10,  10,  10,  1,   1};
-char mPointWalkIno[36]        = {  0, -5,-10,-15,-14,-13, -12, -11, -10,  -9,  -8,  -7,  -6,  -5,  -4,  -3,  -2,  -1,   0,   1,   2,   3,   4,   5,  6,  7,  8,  9, 10, 11, 12,  13,  14,  15, 10,   5};
-// swim
-short mLiftHFlagSwim[36]   = {  1,  1,  1,  1,  1,  1,   1,   1,   1,  10,  10,  10,  10,  10,  20,1000,1000,1000,1000,1000,1000,1000,1000,1000, 20, 10, 10, 10,  2,  1,  1,   1,   1,   1,  1,   1};
-char mPointWalkSwim[36]    = {  0, -2, -4, -6, -8,-10, -12, -14, -16, -18, -16, -14, -12, -10,  -8,  -6,  -4,  -2,   0,   2,   4,   6,   8,  10, 12, 14, 16, 18, 16, 14, 12,  10,   8,   6,  4,   2};
-// recover
-short mRecoverDown[36]     = {100, 70, 50, 40, 30, 30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30,  30, 30, 30, 40, 50, 60, 70, 80,  90, 100, 110,120, 125};
-short mRecoverUp[36]       = {100, 80, 80, 80, 80, 80, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150, 150,  80,  80,  80,  80, 80, 80, 80, 80, 80, 80, 80,  90, 100, 110,120, 125};
-// pattern item buffer
-unsigned char taskItemBuffer = P_DOSTAND;
-// legshift temp value for transition
-unsigned char legShiftTemp = m_robotState.shiftCycleNow;
-
-// get walking mode
-bool getWalkingMode(void) {
-  return walkingMode;
-}
+// walking direction
+bool walkFrward = true;
+// leg pair shift
+unsigned char pairShift = 0;
 
 // get next sequence, mode and speed
-void setPattern(unsigned char currentPattern, char angleTurn) {
-  taskItemBuffer = currentPattern;
-  // set mode
-  switch (currentPattern) {
+void setPattern(void) {
+  // set speed
+  switch (m_robotState.patternNow) {
+    case P_STANDGOLEFT:
+    case P_STANDGORIGHT:
+    case P_GOFORWARD:
+    case P_GOLEFT:
+    case P_GORIGHT:
+    case P_GOBACK:
+    case P_GOBACKLEFT:
+    case P_GOBACKRIGHT:
+    {
+      if (speed < 1) {
+        speed = 1;
+      } else {
+        speed = 2;
+      }
+    }
+    break;
     case P_STANDGO:
     {
       speed = 0;
-      speedL = speed;
-      speedR = speed;
-      if (angleTurn > 4) {
-        speedL = 1;
-        speedR = 0; //-1;
-      } else if (angleTurn < -4) {
-        speedL = 0; //-1;
-        speedR = 1;
-      }
-      walkingMode = true;
-    }
-    break;
-    case P_STANDGOLEFT:
-    case P_STANDGOSHIFTLEFT:
-    {
-      speed = 0;
-      speedL = 0; //-1;
-      speedR = 1;
-      walkingMode = true;
-    }
-    break;
-    case P_STANDGORIGHT:
-    case P_STANDGOSHIFTRIGHT:
-    {
-      speed = 0;
-      speedL = 1;
-      speedR = 0; //-1;
-      walkingMode = true;
-    }
-    break;
-    case P_GOFORWARD:
-    {
-      // increase speed
-      if (speed < 2) {
-        speed ++;
-      }
-      speedL = speed;
-      speedR = speed;
-      if (angleTurn > 4) {
-        speedR = speedL - 1;
-      } else if (angleTurn < -4) {
-        speedL = speedR - 1;
-      }
-      walkingMode = true;
-    }
-    break;
-    case P_GOLEFT:
-    case P_GOSHIFTLEFT:
-    {
-      // increase speed
-      if (speed < 2) {
-        speed ++;
-      }
-      speedL = speed - 1;
-      speedR = speed;
-      walkingMode = true;
-    }
-    break;
-    case P_GORIGHT:
-    case P_GOSHIFTRIGHT:
-    {
-      // increase speed
-      if (speed < 2) {
-        speed ++;
-      }
-      speedL = speed;
-      speedR = speed - 1;
-      walkingMode = true;
-    }
-    break;
-    case P_GOBACK:
-    {
-      speed = -1;
-      speedL = speed;
-      speedR = speed;
-      walkingMode = true;
-    }
-    break;
-    case P_GOBACKLEFT:
-    {
-      speed = -1;
-      speedL = -1;
-      speedR = 0;
-      walkingMode = true;
-    }
-    break;
-    case P_GOBACKRIGHT:
-    {
-      speed = -1;
-      speedL = 0;
-      speedR = -1;
-      walkingMode = true;
     }
     break;
     default:
     {
       speed = 0;
-      speedL = speed;
-      speedR = speed;
-      walkingMode = false;
     }
     break;
   }
-  if (!m_robotState.stepSteeringNow) {
-    speedL = speed;
-    speedR = speed;
+  // set mode and direction
+  switch (m_robotState.patternNow) {
+    case P_STANDGO:
+    case P_GOFORWARD:
+    case P_GOLEFT:
+    case P_GORIGHT:
+    {
+      walkingMode = true;
+      walkFrward = true;
+    }
+    break;
+    case P_GOBACK:
+    case P_GOBACKLEFT:
+    case P_GOBACKRIGHT:
+    case P_STANDGOLEFT:
+    case P_STANDGORIGHT:
+    {
+      walkingMode = true;
+      walkFrward = false;
+    }
+    break;
+    default:
+    {
+      walkingMode = false;
+      walkFrward = true;
+    }
+    break;
+  }
+  // set speed by side
+  switch (m_robotState.patternNow) {
+    case P_STANDGOLEFT:
+    {
+      speedL = speed;
+      speedR = 0;
+    }
+    break;
+    case P_STANDGORIGHT:
+    {
+      speedL = 0;
+      speedR = speed;
+    }
+    break;
+    case P_GOLEFT:
+    case P_GOBACKRIGHT:
+    {
+      speedL = speed - 1;
+      speedR = speed;
+    }
+    break;
+    case P_GORIGHT:
+    case P_GOBACKLEFT:
+    {
+      speedL = speed;
+      speedR = speed - 1;
+    }
+    break;
+    default:
+    {
+      speedL = speed;
+      speedR = speed;
+    }
+    break;
+  }
+  if (walkFrward) {
+    m_robotState.speedNow = speed;
+  } else {
+    m_robotState.speedNow = -speed;
   }
 }
 
 // update servo motors values
-phase updateCountPatterns(unsigned char legShift, unsigned char fullCycle) {
-  // update sequence shift 
+void updateCountPatterns(void) {
+  // update main counter
   mainCounter ++;
-  if (mainCounter >= fullCycle) {
+  walkForwardCounter += m_robotState.speedMuliplierNow;
+  if (mainCounter >= MAIN_FULL_CYCLE) {
     mainCounter = 0;
-    // update shift
-    if (legShiftTemp < legShift) {
-      legShiftTemp ++;
-    } else if (legShiftTemp > legShift) {
-      legShiftTemp --;
+    if (walkForwardCounter >= SERVO_FULL_CYCLE) {
+      walkForwardCounter = 0;
     }
   }
-  legPhase.m = mainCounter;
-  if (m_robotState.robotStateNow == ROBOT_INO) {
-    // ino walk
-    legPhase.rr = mainCounter;
-    legPhase.rl = legPhase.rr + m_robotState.halfCycleNow;
-    legPhase.fl = mainCounter + legShift; 
-    legPhase.fr = legPhase.fl + m_robotState.halfCycleNow;
+  // set servo counter
+  if (walkFrward) {
+      walkCounter = walkForwardCounter;
   } else {
-    // regular walk
-    legPhase.rr = mainCounter;
-    legPhase.rl = legPhase.rr + m_robotState.halfCycleNow;
-    legPhase.fl = mainCounter + legShiftTemp; 
-    legPhase.fr = legPhase.fl + m_robotState.halfCycleNow;
+    walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
   }
-  if (m_init.motorsCount == 12) {
-    // 12 motors
-    legPhase.hr = mainCounter + legShiftTemp * 2;
-    legPhase.hl = legPhase.hr + m_robotState.halfCycleNow;
-    if (legPhase.hl >= fullCycle) {
-      legPhase.hl -= fullCycle;
+  // remember main counter
+  m_sequenceCounter.m = mainCounter;
+  // update pair shift
+  if (m_robotState.robotStateNow == ROBOT_INO) {
+    if (pairShift < SERVO_PAIR_SHIFT) {
+      pairShift ++;
     }
-    if (legPhase.hr >= fullCycle) {
-      legPhase.hr -= fullCycle;
+  } else {
+    if (pairShift > 0) {
+      pairShift --;
     }
   }
-  if (legPhase.fl >= fullCycle) {
-    legPhase.fl -= fullCycle;
+  // set counters
+  m_sequenceCounter.fl = walkCounter + pairShift;
+  m_sequenceCounter.fr = walkCounter + SERVO_HALF_CYCLE + pairShift;
+  m_sequenceCounter.rl = walkCounter + SERVO_HALF_CYCLE;
+  m_sequenceCounter.rr = walkCounter;
+  //
+  if (m_sequenceCounter.fl >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.fl -= SERVO_FULL_CYCLE;
   }
-  if (legPhase.fr >= fullCycle) {
-    legPhase.fr -= fullCycle;
+  if (m_sequenceCounter.fr >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.fr -= SERVO_FULL_CYCLE;
   }
-  if (legPhase.rl >= fullCycle) {
-    legPhase.rl -= fullCycle;
+  if (m_sequenceCounter.rl >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.rl -= SERVO_FULL_CYCLE;
   }
-  if (legPhase.rr >= fullCycle) {
-    legPhase.rr -= fullCycle;
+  if (m_sequenceCounter.rr >= SERVO_FULL_CYCLE) {
+    m_sequenceCounter.rr -= SERVO_FULL_CYCLE;
   }
-  // no need for rr
-  return legPhase;
 }
 
 // set same values for legs
 void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shiftR) {
-  legsValue.hl.hight = hightL;
-  legsValue.hl.shift = shiftL;
-  legsValue.hr.hight = hightR;
-  legsValue.hr.shift = shiftR;
-  legsValue.fl.hight = hightL;
-  legsValue.fl.shift = shiftL;
-  legsValue.fr.hight = hightR;
-  legsValue.fr.shift = shiftR;
-  legsValue.rl.hight = hightL;
-  legsValue.rl.shift = shiftL;
-  legsValue.rr.hight = hightR;
-  legsValue.rr.shift = shiftR;
+  m_legsValue.fl.hight = hightL;
+  m_legsValue.fl.shift = shiftL;
+  m_legsValue.fl.lifted = false;
+  m_legsValue.fr.hight = hightR;
+  m_legsValue.fr.shift = shiftR;
+  m_legsValue.fr.lifted = false;
+  m_legsValue.rl.hight = hightL;
+  m_legsValue.rl.shift = shiftL;
+  m_legsValue.rl.lifted = false;
+  m_legsValue.rr.hight = hightR;
+  m_legsValue.rr.shift = shiftR;
+  m_legsValue.rr.lifted = false;
 }
 
 // get servo motor steps
-allLegs getWalkPatterns(void) {
+void getWalkPatterns(void) {
   leg legSet;
-  switch (taskItemBuffer) {
-    case P_STANDTOGO:
-    {
-      m_robotState.inputDistanceNow = m_init.normalInputDistance;
-      _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
-    }
-    break;
-    case P_GOTOSTAND:
-    {
-      m_robotState.inputDistanceNow = m_init.normalInputDistance / 2;
-      _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
-    }
-    break;
-    case P_RECOVERLEFT:
-    {
-      _setLegsValuesBySide(mRecoverDown[mainCounter], 0, mRecoverUp[mainCounter], 0);
-    }
-    break;
-    case P_RECOVERRIGHT:
-    {
-      _setLegsValuesBySide(mRecoverUp[mainCounter], 0, mRecoverDown[mainCounter], 0);
-    }
-    break;
-    default:
-    {
-      if (walkingMode) {
-        if (m_init.motorsCount == 12) {
-          legSet = _getWalkStep(legPhase.hl, speedL);
-          legsValue.hl.hight = legSet.hight;
-          legsValue.hl.shift = legSet.shift;
-          legSet = _getWalkStep(legPhase.hr, speedR);
-          legsValue.hr.hight = legSet.hight;
-          legsValue.hr.shift = legSet.shift;
-        }
-        legSet = _getWalkStep(legPhase.fl, speedL);
-        legsValue.fl.hight = legSet.hight;
-        legsValue.fl.shift = legSet.shift;
-        legSet = _getWalkStep(legPhase.fr, speedR);
-        legsValue.fr.hight = legSet.hight;
-        legsValue.fr.shift = legSet.shift;
-        legSet = _getWalkStep(legPhase.rl, speedL);
-        legsValue.rl.hight = legSet.hight;
-        legsValue.rl.shift = legSet.shift;
-        legSet = _getWalkStep(legPhase.rr, speedR);
-        legsValue.rr.hight = legSet.hight;
-        legsValue.rr.shift = legSet.shift;
-      } else {
-        _setLegsValuesBySide(m_init.defaultHight, 0, m_init.defaultHight, 0);
-      }
-    }
-    break;
+  if (walkingMode) {
+    legSet = _getWalkStep(m_sequenceCounter.fl, speedL);
+    m_legsValue.fl.hight = legSet.hight;
+    m_legsValue.fl.shift = legSet.shift;
+    m_legsValue.fl.lifted = legSet.lifted;
+    legSet = _getWalkStep(m_sequenceCounter.fr, speedR);
+    m_legsValue.fr.hight = legSet.hight;
+    m_legsValue.fr.shift = legSet.shift;
+    m_legsValue.fr.lifted = legSet.lifted;
+    legSet = _getWalkStep(m_sequenceCounter.rl, speedL);
+    m_legsValue.rl.hight = legSet.hight;
+    m_legsValue.rl.shift = legSet.shift;
+    m_legsValue.rl.lifted = legSet.lifted;
+    legSet = _getWalkStep(m_sequenceCounter.rr, speedR);
+    m_legsValue.rr.hight = legSet.hight;
+    m_legsValue.rr.shift = legSet.shift;
+    m_legsValue.rr.lifted = legSet.lifted;
+  } else {
+    _setLegsValuesBySide(m_robotState.legHightNow, 0, m_robotState.legHightNow, 0);
   }
-  return legsValue;
 }
 
 // set walk step value
 leg _getWalkStep(unsigned char counter, char speedValue) {
-  short shift = 0;
   // leg step values
-  leg legStep = {0, 0};
-  // forward shift
-  switch (speedValue) {
-    case -1:
-    {
-      if (m_robotState.robotStateNow == ROBOT_SWIM) {
-        shift =  - mPointWalkSwim[counter];
-      } else {
-        if (m_robotState.robotStateNow == ROBOT_INO) {
-          shift =  - mPointWalkIno[counter];
-        } else {
-          shift =  - mPointWalk[counter];
-        }
-      }
-    }
-    break;
-    case 1:
-    {
-      if (m_robotState.robotStateNow == ROBOT_SWIM) {
-        shift = mPointWalkSwim[counter];
-      } else {
-        if (m_robotState.robotStateNow == ROBOT_INO) {
-          shift = mPointWalkIno[counter];
-        } else {
-          shift = mPointWalk[counter];
-        }
-      }
-    }
-    break;
-    case 2:
-    {
-      if (m_robotState.robotStateNow == ROBOT_SWIM) {
-         shift = mPointWalkSwim[counter] * 2;
-      } else {
-        if (m_robotState.robotStateNow == ROBOT_INO) {
-          shift = mPointWalkIno[counter] * 2;
-        } else {
-          shift = mPointWalk[counter] * 2;
-        }
-      }
-    }
-    break;
-    default:
-    break;
-  }
-  if (m_robotState.robotStateNow == ROBOT_SWIM) {
-    legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlagSwim[counter]);
+  leg legStep = {0, 0, false};
+  // lift timing point
+  unsigned char liftPoint = (2 + speedValue) * m_robotState.speedMuliplierNow;
+  // quick shift multiplier
+  unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
+  //
+  if (counter < liftPoint) {
+    legStep.shift = -counter * quickShiftMultiplier;
+    legStep.hight = -m_robotState.legLiftNow; // lifted
+    legStep.lifted = true;
+  } else if (counter > SERVO_FULL_CYCLE - liftPoint) {
+    legStep.shift = (SERVO_FULL_CYCLE - counter) * quickShiftMultiplier;
+    legStep.hight = -m_robotState.legLiftNow; // lifted
+    legStep.lifted = true;
   } else {
-    if (m_robotState.robotStateNow == ROBOT_INO) {
-      legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlagIno[counter]);
+    legStep.lifted = false;
+    legStep.shift = counter - SERVO_HALF_CYCLE;
+    if ((counter > SERVO_HALF_CYCLE - liftPoint) && (counter < SERVO_HALF_CYCLE + liftPoint)) {
+      legStep.hight = 0; // one leg touch
     } else {
-      legStep.hight = m_robotState.legHightNow - (int)(m_robotState.legLiftNow / mLiftHFlag[counter]);
+      if (counter == liftPoint) {
+        legStep.hight = -6; // touch the ground
+      } else {
+        legStep.hight = -2; // compensate legs flexibility
+      }
     }
   }
-  legStep.shift = shift * m_robotState.speedMuliplierNow;
+  // hight
+  legStep.hight += m_robotState.legHightNow;
+  // forward shift
+  legStep.shift = legStep.shift * speedValue;
   return legStep;
 }

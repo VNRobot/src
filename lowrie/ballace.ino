@@ -1,211 +1,100 @@
 /*
-Walking Robot Lowrie
+Walking Robot TurtleV1
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot static and dynamic ballance
 */
 
-struct surface {
-  char hl;
-  char hr;
-  char fl;
-  char fr;
-  char rl;
-  char rr;
-};
+// ballance enabled flag
+bool ballanceEnabled = true;
+// static forward ballance value
+char staticForward = 0;
+char staticForwardTemp = 0;
+// dynamic forward ballance value
+char dynamicForward = 0;
+// speed correction
+char speedCorrection = 0;
+// final forward shift
+char finalForwardShift = 0;
 
-// touch map 0 - lifted, 1 - touched, 2 - any, 3 - reset
-char mTouchFlag[36]     = { 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 0};
-//char mLiftHFlag[36]   = { 3, 3, 3, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 3};
-//----------------configuration flags-----------------
-// roll ballance enable flag
-bool rollBallanceEnabled = false;
-// pitch ballance enable flag 
-bool pitchBallanceEnabled = false;
-// forward ballance enable flag
-bool forwardBallanceEnabled = false; 
-// touch enable flag
-bool touchBallanceEnabled = false; 
-//----------------------------------------------------
-
-// ballance correction
-allLegs legCorrect = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// heignt position correction
-char correctRollL  = 0;
-char correctRollR  = 0;
-// shift position correction
-char correctPitch = 0;
-// bigger the number more weight on front
-// forward ballance
-char centerForward = 0;
-// surface levels
-surface surfacelevel = {0, 0, 0, 0, 0, 0};
-// surface level step multiplier
-char surfacelevelStep = 10; // mm
-char surfacelevelMax = 50; // mm
-
-// update roll data
-void _updateRoll(int angleX, unsigned char sCounter) {
-  if (angleX < -8) {
-    if (correctRollR > -10) {
-      correctRollR --;
-    }
-    correctRollL = 0;
-  } else if (angleX > 8) {
-    if (correctRollL > -10) {
-      correctRollL --;
-    }
-    correctRollR = 0;
-  } else {
-    // try to return to normal position
-    if (sCounter == 0) {
-      if (correctRollL < 0) {
-        correctRollL ++;
-      }
-      if (correctRollR < 0) {
-        correctRollR ++;
-      }
-    }
-  }
-}
-
-// update pitch data
-void _updatePitch(int angleY, unsigned char sCounter) {
-  if (angleY > 4) {
-    if (correctPitch > -20) {
-      correctPitch --;
-    }
-  } else if (angleY < -4) {
-    if (correctPitch < 20) {
-      correctPitch ++;
-    }
-  } else {
-    // try to return to normal position
-    if (sCounter == 0) {
-      if (correctPitch > 0) {
-        correctPitch --;
-      } else if (correctPitch < 0) {
-        correctPitch ++;
-      }
-    }
-  }
-}
-
-// update forward ballance
-void _updateForwardBallance(accRoll gyroState) {
-  if (gyroState.rollMax - gyroState.rollMin > 2) {
-    // body rolls
-    if ((gyroState.rollMinTime < SERVO_HALF_CYCLE) && (gyroState.rollMaxTime > SERVO_HALF_CYCLE - 1)) {
-      // front is too heavy
-      if (centerForward > -20) {
-        centerForward --;
-      }
-    }
-    if ((gyroState.rollMinTime > SERVO_HALF_CYCLE - 1) && (gyroState.rollMaxTime < SERVO_HALF_CYCLE)) {
-      // rear is too heavy
-      if (centerForward < 20) {
-        centerForward ++;
-      }
-    }
-  }
-}
-
-// check touch
-char _updateSurfaceLevel(char level, unsigned char counter, bool touch) {
-  // check touch
-  if (mTouchFlag[counter] == 0 && touch) {
-    // should be lifted
-    if (level > -surfacelevelMax) {
-      level -=surfacelevelStep;
-    }
-  } else if (mTouchFlag[counter] == 1 && !touch) {
-    // should be touched
-    if (level < surfacelevelMax) {
-      level +=surfacelevelStep;
-    }
-  } else if (mTouchFlag[counter] == 3) {
-    // reset level
-    level = 0;
-  }
-  return level;
-}
-
-// update touch
-void _updateTouch(phase sCounter, touch touchInputs) {
-  // head equilize
-  /*
-  if (m_init.motorsCount == 12) {
-    if ((surfacelevel.hl < 0) && (surfacelevel.hr < 0)) {
-      surfacelevel.hl ++;
-      surfacelevel.hr ++;
-    }
-    if ((surfacelevel.hl > 0) && (surfacelevel.hr > 0)) {
-      surfacelevel.hl --;
-      surfacelevel.hr --;
-    }
-  }
-    */
-  // front equilize
-  /*
-  if (surfacelevel.fl < 0 && surfacelevel.fr < 0) {
-    surfacelevel.fl ++;
-    surfacelevel.fr ++;
-  }
-  if (surfacelevel.fl > 0 && surfacelevel.fr > 0) {
-    surfacelevel.fl --;
-    surfacelevel.fr --;
-  }
-  // rear equilize
-  if (surfacelevel.rl < 0 && surfacelevel.rr < 0) {
-    surfacelevel.rl ++;
-    surfacelevel.rr ++;
-  }
-  if (surfacelevel.rl > 0 && surfacelevel.rr > 0) {
-    surfacelevel.rl --;
-    surfacelevel.rr --;
-  }
-    */
-  // check and conpensate touch
-  if (m_init.motorsCount == 12) {
-    //surfacelevel.hl = _updateSurfaceLevel(surfacelevel.hl, sCounter.hl, touchInputs.set1);
-    //surfacelevel.hr = _updateSurfaceLevel(surfacelevel.hr, sCounter.hr, touchInputs.set2);
-  }
-  surfacelevel.fl = _updateSurfaceLevel(surfacelevel.fl, sCounter.fl, touchInputs.set1);
-  surfacelevel.fr = _updateSurfaceLevel(surfacelevel.fr, sCounter.fr, touchInputs.set2);
-  //surfacelevel.rl = _updateSurfaceLevel(surfacelevel.rl, sCounter.rl, touchInputs.set3);
-  //surfacelevel.rr = _updateSurfaceLevel(surfacelevel.rr, sCounter.rr, touchInputs.set3);
-}
-
-allLegs getStaticBallance(accRoll gyroState, phase sCounter, touch touchInputs, bool walkingMode) {
-  // roll
-  if (rollBallanceEnabled) {
-    _updateRoll(gyroState.accAngleX, sCounter.m);
-  }
-  // pitch
-  if (pitchBallanceEnabled) {
-    _updatePitch(gyroState.accAngleY, sCounter.m);
-  }
+void updateBallance(void) {
+  // hight
+  //m_legCorrect.fl.hight = 0;
+  //m_legCorrect.fr.hight = 0;
+  //m_legCorrect.rl.hight = 0;
+  //m_legCorrect.rr.hight = 0;
+  //
   // forward ballance
-  if (forwardBallanceEnabled && sCounter.m == 0 && walkingMode) {
-    _updateForwardBallance(gyroState);
+  // bigger the number more weight on front
+  // pitch up - positive. require more weight on front
+  if (ballanceEnabled) {
+    // static ballance
+    _updateStaticBallance();
+    // once
+    if (m_sequenceCounter.m == 0) {
+      // dynamic ballance
+      _updateDynamicBallance();
+      //
+      if (m_robotState.robotStateNow == ROBOT_NORM) {
+        // speed correction
+        //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
+      }
+    }
+    // correct legs
+    finalForwardShift = staticForward + dynamicForward + speedCorrection;
+    m_legCorrect.fl.shift = finalForwardShift;
+    m_legCorrect.fr.shift = finalForwardShift;
+    m_legCorrect.rl.shift = finalForwardShift;
+    m_legCorrect.rr.shift = finalForwardShift;
   }
-  // touch inputs
-  if (touchBallanceEnabled && walkingMode) {
-    _updateTouch(sCounter, touchInputs);
+}
+
+// static ballance
+void _updateStaticBallance(void) {
+  if (m_robotState.robotStateNow == ROBOT_NORM) {
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // 4 has to be tuned
+  } else if (m_robotState.robotStateNow == ROBOT_INO) {
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
+  } else if (m_robotState.robotStateNow == ROBOT_CRAWL) {
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
   }
-  if (m_init.motorsCount == 12) {
-    legCorrect.hl.hight = correctRollL + surfacelevel.hl;
-    legCorrect.hl.shift = correctPitch + centerForward;
-    legCorrect.hr.hight = correctRollR + surfacelevel.hr;
-    legCorrect.hr.shift = correctPitch + centerForward;
+  // 
+  if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
+    staticForward --;
+  } else if ((staticForward < staticForwardTemp) && (staticForward < STATIC_BALLANCE_MAX)) {
+    staticForward ++;
   }
-  legCorrect.fl.hight = correctRollL + surfacelevel.fl;
-  legCorrect.fl.shift = correctPitch + centerForward;
-  legCorrect.fr.hight = correctRollR + surfacelevel.fr;
-  legCorrect.fr.shift = correctPitch + centerForward;
-  legCorrect.rl.hight = correctRollL + surfacelevel.rl;
-  legCorrect.rl.shift = correctPitch + centerForward;
-  legCorrect.rr.hight = correctRollR + surfacelevel.rr;
-  legCorrect.rr.shift = correctPitch + centerForward;
-  return legCorrect;
+}
+
+// dynamic ballance
+void _updateDynamicBallance(void) {
+  // get diving value
+  if (m_legsValue.fl.lifted) {
+    if (m_gyroState.aLiftFL < m_gyroState.aLiftRR) {
+      // fl leg too heavy
+      dynamicForward --;
+    }
+  } else if (m_legsValue.fr.lifted) {
+    if (m_gyroState.aLiftFR < m_gyroState.aLiftRL) {
+      // fr leg too heavy
+      dynamicForward --;
+    }
+  } else if (m_legsValue.rl.lifted) {
+    if (m_gyroState.aLiftRL < m_gyroState.aLiftFR) {
+      // rl leg too heavy
+      dynamicForward ++;
+    }
+  } else if (m_legsValue.rr.lifted) {
+    if (m_gyroState.aLiftRR < m_gyroState.aLiftFL) {
+      // rr leg too heavy
+      dynamicForward ++;
+    }
+  }
+  if (dynamicForward > 20) {
+    dynamicForward = 20;
+  }
+  if (dynamicForward < -20) {
+    dynamicForward = -20;
+  }
+  dynamicForward = 0;
 }
