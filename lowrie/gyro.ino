@@ -245,7 +245,7 @@ void resetGyro(void) {
 }
 
 // get walking direction
-int getDirectionGyro(void) {
+short getDirectionGyro(void) {
   return m_gyroState.direction - walkingDirection;
 }
 

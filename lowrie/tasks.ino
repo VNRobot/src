@@ -184,6 +184,13 @@ void _setWalkBackTask(void) {
   currentTask[3] = Q_DONE;
 }
 
+// set stand walk task
+void _setStandWalkTask(void) {
+  currentTask[0] = Q_SETPRIORITY_LOW;
+  currentTask[1] = P_STANDGO;
+  currentTask[2] = Q_DONE;
+}
+
 // set task by name
 void applyTask(unsigned char task) {
   switch (task) {
@@ -222,6 +229,9 @@ void applyTask(unsigned char task) {
     break;
     case GOBACK_TASK:
       _setWalkBackTask();
+    break;
+    case STANDGO_TASK:
+      _setStandWalkTask();
     break;
     case STAND_TASK:
       _setStandTask();
@@ -539,6 +549,9 @@ void _printTaskNameDebug(unsigned char taskName) {
     break;
     case GO_TASK:
       Serial.println(F(" GO_TASK "));
+    break;
+    case STANDGO_TASK:
+      Serial.println(F(" STANDGO_TASK "));
     break;
     case STAND_TASK:
       Serial.println(F(" STAND_TASK "));

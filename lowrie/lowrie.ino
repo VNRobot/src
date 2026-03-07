@@ -86,6 +86,7 @@ enum rTasks {
   STANDTURNLEFT2_TASK,
   GO_TASK,
   GOBACK_TASK,
+  STANDGO_TASK,
   STAND_TASK,
   DOWN_TASK,
   FLIP_TASK,
@@ -214,9 +215,9 @@ motors m_centerCorrect = {0, 0};
 // servo cycle is done flag
 bool cycleDone = true;
 // default task from rTasks
-unsigned char defaultTask = GO_TASK;
+unsigned char defaultTask = STANDGO_TASK;
 // next task
-unsigned char taskNext = STAND_TASK;
+unsigned char taskNext = STANDGO_TASK;
 // variable for temporary use
 unsigned char i;
 
@@ -320,6 +321,7 @@ void loop() {
     updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
+      setDirectionCenter(getDirectionGyro());
       //printInputsDebug();
       //printCurrentStateDebug();
       // set robot state

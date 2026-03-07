@@ -71,7 +71,7 @@ void checkSurface(void) {
     sensorsActive = false;
     return;
   }
-  sensorsActive = true;
+  sensorsActive = false; //true;
 }
 
 // init inputs
@@ -102,7 +102,7 @@ void initInputs(void) {
   } else {
     // all good
     edgeEnabled = true;
-    sensorsEnabled = true;
+    sensorsEnabled = false; //true;
   }
 }
 
