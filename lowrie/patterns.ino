@@ -23,59 +23,67 @@ char speedR = 0;
 bool walkFrward = true;
 // leg pair shift
 unsigned char pairShift = 0;
+// distance to the target mm
+short distanceTotarget = 0;
+
+// set distance to target in mm
+void setDistancePatternZero(short distance) {
+  distanceTotarget = distance;
+}
 
 // get next sequence, mode and speed
-void setPattern(void) {
-  // set speed
-  switch (m_robotState.patternNow) {
-    //{
-    //  if (speed < 1) {
-    //    speed = 1;
-    //  } else {
-    //    speed = 2;
-    //  }
-    //}
-    //break;
-    case P_STANDGO:
-    {
-      // process direction and distance
+void setPatternZero(short direction) {
+  if (m_robotState.patternNow == P_STANDGO) {
+    // walking mode
+    if (distanceTotarget > 0) {
+      // plan to go
+      if ((direction < 40) && (direction > -40)) {
+        // go forward
+        if (speed < 1) {
+          speed = 1;
+        } else {
+          speed = 2;
+        }
+        walkingMode = true;
+        walkFrward = true;
+      } else if ((direction < 140) && (direction > -140)) {
+        // stand and turn
+        speed = 0;
+        walkingMode = true;
+        walkFrward = true;
+      } else {
+        // go back
+        if (speed < 1) {
+          speed = 1;
+        } else {
+          speed = 2;
+        }
+        walkingMode = true;
+        walkFrward = false;
+      }
+    } else {
+      // arrived to the destnation
       speed = 0;
-    }
-    break;
-    default:
-    {
-      speed = 0;
-    }
-    break;
-  }
-  // set mode and direction
-  switch (m_robotState.patternNow) {
-    case P_STANDGO:
-    {
       walkingMode = true;
       walkFrward = true;
     }
-    break;
-    //{
-    //  walkingMode = true;
-    //  walkFrward = false;
-    //}
-    //break;
-    default:
-    {
-      walkingMode = false;
-      walkFrward = true;
-    }
-    break;
+  } else {
+    // not walking
+    walkingMode = false;
+    walkFrward = true;
   }
   // set speed by side
   speedL = speed;
   speedR = speed;
   //
-  if (walkFrward) {
-    m_robotState.speedNow = speed;
+  m_robotState.speedNow = speed;
+  // step size
+  short stepSize = (SERVO_HALF_CYCLE - (2 + speed))* speed * m_robotState.speedMuliplierNow;
+  // update distance to target
+  if (distanceTotarget > stepSize) {
+    distanceTotarget -= stepSize;
   } else {
-    m_robotState.speedNow = -speed;
+    distanceTotarget = 0;
   }
 }
 

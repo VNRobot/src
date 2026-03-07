@@ -329,7 +329,7 @@ bool doCalibration(void) {
       { 
         Serial.println(F("Done. Please restart me."));
         // disable motors
-        detachServo();
+        detachServoZero();
         return true;
       }
       break;

@@ -99,7 +99,7 @@ void _setStandWalkTask(void) {
 }
 
 // set task by name
-void applyTask(unsigned char task) {
+void applyTaskZero(unsigned char task) {
   switch (task) {
     case BEGIN_TASK:
       _setBeginTask();
@@ -133,7 +133,7 @@ void applyTask(unsigned char task) {
 }
 
 // set next pattern in task
-void setNextPatternInTask(void) {
+void setNextPatternInTaskZero(void) {
   // update task point to the next pattern
   if (currentTask[currentTaskPoint] == Q_DONE) {
     // task is done. do nothing
@@ -154,7 +154,7 @@ void setNextPatternInTask(void) {
   return;
 }
 
-unsigned char getHighPriorityTask(void) {
+unsigned char getHighPriorityTaskZero(void) {
   if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
     return DOWN_TASK;
   }
@@ -182,7 +182,7 @@ unsigned char getHighPriorityTask(void) {
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getNormalTask(int direction) {
+unsigned char getNormalTaskZero(int direction) {
   // slop up or down
   switch (m_gyroState.stateGyro) {
     case GYRO_FELL_FRONT:

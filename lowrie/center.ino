@@ -53,7 +53,7 @@ void initCenter(void) {
 }
 
 // detach hardware
-void detachCenter(void) {
+void detachCenterZero(void) {
   if (centerAttached) {
     m_servo_st_1.detach();
     m_servo_st_2.detach();
@@ -70,22 +70,22 @@ void doPWMCenter(void) {
 }
 
 // set servo motors
-void setCenter(char angle) {
+void setCenterZero(char angle) {
   centerSetValueF = angle;
   centerSetValueR = angle;
   updateCenter();
 }
 
 // set direction. 10 deg max
-void setDirectionCenter(short direction) {
-    directionValue = direction;
+void setDirectionCenterZero(short direction) {
+  directionValue = direction;
 }
 
 // set side shift // 0.42 servo reduction // ((HIGHT_DEFAULT / 2) + 18) * 2 * 3.14    l=502
 // approx 1 mm shift for 1 deg
 // set side shift. in mm
-void setSideShiftCenter(short distance) {
-    sideShiftValue = distance;
+void setSideShiftCenterZero(short distance) {
+  sideShiftValue = distance;
 }
       
 // reduce shift value
@@ -202,8 +202,8 @@ void updateCenter(void) {
     }
   }
   // set motor angle
-  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1 - m_centerValue.motor1 * 2 - dynamicCenterBallance.motor1);
-  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2 - m_centerValue.motor2 * 2 - dynamicCenterBallance.motor2);
+  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1 - m_centerValue.motor1 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor1);
+  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2 - m_centerValue.motor2 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor2);
   // move motors
   doPWMCenter();
 }

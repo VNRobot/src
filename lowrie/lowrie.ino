@@ -214,20 +214,20 @@ void setup() {
   initServo();
   doPWMCenter();
   doPWMServo(200);
-  setCenter(0);
-  setServo(HIGHT_LOW, HIGHT_LOW, 20);
+  setCenterZero(0);
+  setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
   // init gyro MPU6050 using I2C
   initGyro();
   doPWMServo(200);
   updateGyro();
   doPWMServo(20);
-  resetGyro();
+  resetGyroZero();
   doPWMServo(20);
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
-    setCenter(0);
-    setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+    setCenterZero(0);
+    setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
     doPWMServo(200);
     // init current readings
     initCurrent();
@@ -239,15 +239,15 @@ void setup() {
     updateInputs();
     // explore mode
     Serial.println(F("Entering explore mode"));
-    applyTask(doManageTasks(BEGIN_TASK));
+    applyTaskZero(doManageTasks(BEGIN_TASK));
     // load task and pattern. direction is 0
-    setPattern();
+    setPatternZero(0);
     updateCountPatterns();
   }
 }
 
 // set new task and new pattern
-void setTaskAndPattern(void) {
+void _setTaskAndPatternZero(void) {
   if (m_robotState.patternNow == Q_END) {
     // this is the end. do nothing
     delay(10);
@@ -256,30 +256,30 @@ void setTaskAndPattern(void) {
   // not high priority or end of high priority task
   if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == Q_DONE)) {
     // override with high priority task
-    taskNext = getHighPriorityTask();
+    taskNext = getHighPriorityTaskZero();
     if (taskNext == DEFAULT_TASK) {
       taskNext = m_robotState.taskNow;
     } else {
-      applyTask(doManageTasks(taskNext));
+      applyTaskZero(taskNext); //doManageTasks(taskNext));
       return;
     }
   }
   // any priority end of task
   if (m_robotState.patternNow == Q_DONE) {
     // check for normal priority
-    taskNext = getNormalTask(getDirectionGyro());
+    taskNext = getNormalTaskZero(getDirectionGyro());
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
-    applyTask(doManageTasks(taskNext));
+    applyTaskZero(taskNext); //doManageTasks(taskNext));
     return;
   }
   // set next pattern
-  setNextPatternInTask();
+  setNextPatternInTaskZero();
 }
 
 // set motors and read sensors
-void doCycle(void) {
+void _doCycle(void) {
   // update servo motors values, move motors
   getWalkPatterns();
   updateCenter();
@@ -303,8 +303,9 @@ void loop() {
     updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
-      setDirectionCenter(getDirectionGyro());
-      // setSideShiftCenter(0); *** to do
+      setDirectionCenterZero(getDirectionGyro());
+      // setSideShiftCenterZero(0); *** to do
+      // setDistancePatternZero(1000); *** to do
       //printInputsDebug();
       //printCurrentStateDebug();
       // set robot state
@@ -318,71 +319,71 @@ void loop() {
   // once in a pattern
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
-    setTaskAndPattern();
+    _setTaskAndPatternZero();
     //printPatternNameDebug(m_robotState.patternNow); // DEBUG
     switch (m_robotState.patternNow) {
       case Q_SETDIRECTION:
       {
-        setDirectionGyro();
+        setDirectionGyroZero();
       }
       break;
       case Q_RESETDIRECTION:
       {
-        resetDirectionGyro();
+        resetDirectionGyroZero();
       }
       break;
       case Q_REVERSEDIRECTION:
       {
-        reverseDirectionGyro();
+        reverseDirectionGyroZero();
       }
       break;
       case Q_RESETGIRO:
       {
-        resetGyro();
+        resetGyroZero();
       }
       break;
       case Q_RESTOREDIRECTION:
       {
-        restoreDirectionGyro();
+        restoreDirectionGyroZero();
       }
       break;
       case Q_DOLOW:
       {
-        setCenter(0);
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
+        setCenterZero(0);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
       case Q_DOSTAND:
       {
-        setCenter(0);
-        setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
+        setCenterZero(0);
+        setServoZero(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
       case Q_DORECOVER:
       {
-        setCenter(-20);
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
+        setCenterZero(-20);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
         if (m_gyroState.aRollAverage < 0) {
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
-          setServo(180, 180, 0);
+          setServoZero(180, 180, 0);
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = 1;
-          setCenter(30);
-          setServo(180, 180, 0);
+          setCenterZero(30);
+          setServoZero(180, 180, 0);
         } else {
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = 1;
-          setServo(180, 180, 0);
+          setServoZero(180, 180, 0);
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
-          setCenter(30);
-          setServo(180, 180, 0);
+          setCenterZero(30);
+          setServoZero(180, 180, 0);
         }
         m_robotState.flipStateLNow = 1;
         m_robotState.flipStateRNow = 1;
-        setCenter(0);
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
+        setCenterZero(0);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
       }
       break;
       case Q_DOFLIP:
@@ -406,10 +407,10 @@ void loop() {
       case Q_DODOWN:
       {
         // disable motors
-        setCenter(0);
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
-        detachServo();
-        detachCenter();
+        setCenterZero(0);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+        detachServoZero();
+        detachCenterZero();
       }
       break;
       case Q_SETPRIORITY_HIGH:
@@ -430,14 +431,14 @@ void loop() {
       default:
       {
         // set pattern
-        setPattern();
-        doCycle();
+        setPatternZero(getDirectionGyro());
+        _doCycle();
       }
       break;
     }
   } else {
     // cycle in the middle of pattern
-    doCycle();
+    _doCycle();
   }
 }
 

@@ -230,7 +230,7 @@ void updateGyro(void) {
 }
 
 // reset gyro data
-void resetGyro(void) {
+void resetGyroZero(void) {
   floatDirection = 0;
   m_gyroState.direction = 0;
   m_gyroState.stateGyro = GYRO_NORM;
@@ -250,23 +250,23 @@ short getDirectionGyro(void) {
 }
 
 // remember horizontal direction
-void setDirectionGyro(void) {
+void setDirectionGyroZero(void) {
   walkingDirection = m_gyroState.direction;
   walkingDirectionOld = walkingDirection;
 }
 
 // correct horizontal direction
-void resetDirectionGyro(void) {
+void resetDirectionGyroZero(void) {
   walkingDirection = m_gyroState.direction;
 }
 
 // return to old horizontal direction
-void restoreDirectionGyro(void) {
+void restoreDirectionGyroZero(void) {
   walkingDirection = walkingDirectionOld;
 }
 
 // reverse horizontal direction
-void reverseDirectionGyro(void) {
+void reverseDirectionGyroZero(void) {
   if ((walkingDirection < 30) && (walkingDirection > -30)) {
     // not reverset yet
     if (m_gyroState.direction < 0) {

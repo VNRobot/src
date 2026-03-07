@@ -180,7 +180,7 @@ void initServo(void) {
 }
 
 // detach hardware
-void detachServo(void) {
+void detachServoZero(void) {
   if (attached) {
     m_servo_fl_1.detach();
     m_servo_fr_1.detach();
@@ -196,7 +196,7 @@ void detachServo(void) {
 }
 
 // set servo motors
-void setServo(short hightL, short hightR, short timeDelay) {
+void setServoZero(short hightL, short hightR, short timeDelay) {
   if (attached) {
     if (timeDelay == 0) {
       // set motors values fast
