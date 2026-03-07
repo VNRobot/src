@@ -47,14 +47,6 @@ enum cState {
 // patterns
 enum rPatterns {
   P_STANDGO,
-  P_STANDGOLEFT,
-  P_STANDGORIGHT,
-  P_GOFORWARD,
-  P_GOLEFT,
-  P_GORIGHT,
-  P_GOBACK,
-  P_GOBACKLEFT,
-  P_GOBACKRIGHT,
   Q_DOLOW,
   Q_DODOWN,
   Q_DOSTAND,
@@ -76,16 +68,6 @@ enum rPatterns {
 // tasks
 enum rTasks {
   BEGIN_TASK = 0,
-  GOBACKLEFT_TASK,
-  GOBACKRIGHT_TASK,
-  GOTURNRIGHT_TASK,
-  GOTURNLEFT_TASK,
-  STANDTURNRIGHT_TASK,
-  STANDTURNLEFT_TASK,
-  STANDTURNRIGHT2_TASK,
-  STANDTURNLEFT2_TASK,
-  GO_TASK,
-  GOBACK_TASK,
   STANDGO_TASK,
   STAND_TASK,
   DOWN_TASK,
@@ -322,6 +304,7 @@ void loop() {
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
       setDirectionCenter(getDirectionGyro());
+      // setSideShiftCenter(0); *** to do
       //printInputsDebug();
       //printCurrentStateDebug();
       // set robot state
@@ -466,30 +449,6 @@ void printPatternNameDebug(unsigned char patternNow) {
     break;
     case P_STANDGO:
       Serial.print(F(" P_STANDGO "));
-    break;
-    case P_STANDGOLEFT:
-      Serial.print(F(" P_STANDGOLEFT "));
-    break;
-    case P_STANDGORIGHT:
-      Serial.print(F(" P_STANDGORIGHT "));
-    break;
-    case P_GOFORWARD:
-      Serial.print(F(" P_GOFORWARD "));
-    break;
-    case P_GOLEFT:
-      Serial.print(F(" P_GOLEFT "));
-    break;
-    case P_GORIGHT:
-      Serial.print(F(" P_GORIGHT "));
-    break;
-    case P_GOBACK:
-      Serial.print(F(" P_GOBACK "));
-    break;
-    case P_GOBACKLEFT:
-      Serial.print(F(" P_GOBACKLEFT "));
-    break;
-    case P_GOBACKRIGHT:
-      Serial.print(F(" P_GOBACKRIGHT "));
     break;
     case Q_DOLOW:
       Serial.print(F(" Q_DOLOW "));

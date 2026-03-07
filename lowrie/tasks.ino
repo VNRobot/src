@@ -91,99 +91,6 @@ void _setBeginTask(void) {
   currentTask[6] = Q_DONE;
 }
 
-// set walk back left task
-void _setWalkBackLeftTask(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_GOBACK;
-  currentTask[2] = P_GOBACKLEFT;
-  currentTask[3] = P_GOBACKLEFT;
-  currentTask[4] = P_GOBACKLEFT;
-  currentTask[5] = P_GOBACKLEFT;
-  currentTask[6] = P_GOBACKLEFT;
-  currentTask[7] = Q_RESETDIRECTION;
-  currentTask[8] = Q_DONE;
-}
-
-// set walk back right task
-void _setWalkBackRightTask(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_GOBACK;
-  currentTask[2] = P_GOBACKRIGHT;
-  currentTask[3] = P_GOBACKRIGHT;
-  currentTask[4] = P_GOBACKRIGHT;
-  currentTask[5] = P_GOBACKRIGHT;
-  currentTask[6] = P_GOBACKRIGHT;
-  currentTask[7] = Q_RESETDIRECTION;
-  currentTask[8] = Q_DONE;
-}
-
-// set stand Turn right task
-void _setStandTurnRightTask(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGORIGHT;
-  currentTask[2] = P_STANDGORIGHT;
-  currentTask[3] = Q_RESETDIRECTION;
-  currentTask[4] = Q_DONE;
-}
-
-// set stand Turn left task
-void _setStandTurnLeftTask(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGOLEFT;
-  currentTask[2] = P_STANDGOLEFT;
-  currentTask[3] = Q_RESETDIRECTION;
-  currentTask[4] = Q_DONE;
-}
-
-// set stand Turn right sharp task
-void _setStandTurnRight2Task(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGORIGHT; 
-  currentTask[2] = P_STANDGORIGHT;
-  currentTask[3] = P_STANDGORIGHT; 
-  currentTask[4] = Q_RESETDIRECTION;
-  currentTask[5] = Q_DONE;
-}
-
-// set stand Turn left sharp task
-void _setStandTurnLeft2Task(void) {
-  currentTask[0] = Q_SETPRIORITY_NORM;
-  currentTask[1] = P_STANDGOLEFT; 
-  currentTask[2] = P_STANDGOLEFT;
-  currentTask[3] = P_STANDGOLEFT; 
-  currentTask[4] = Q_RESETDIRECTION;
-  currentTask[5] = Q_DONE;
-}
-
-// set Turn right task
-void _setWalkTurnRightTask(void) {
-  currentTask[0] = Q_SETPRIORITY_LOW;
-  currentTask[1] = P_GORIGHT;
-  currentTask[2] = Q_DONE;
-}
-
-// set Turn left task
-void _setWalkTurnLeftTask(void) {
-  currentTask[0] = Q_SETPRIORITY_LOW;
-  currentTask[1] = P_GOLEFT;
-  currentTask[2] = Q_DONE;
-}
-
-// set walk task
-void _setWalkTask(void) {
-  currentTask[0] = Q_SETPRIORITY_LOW;
-  currentTask[1] = P_GOFORWARD;
-  currentTask[2] = Q_DONE;
-}
-
-// set walk back task
-void _setWalkBackTask(void) {
-  currentTask[0] = Q_SETPRIORITY_LOW;
-  currentTask[1] = P_GOBACK;
-  currentTask[2] = Q_REVERSEDIRECTION;
-  currentTask[3] = Q_DONE;
-}
-
 // set stand walk task
 void _setStandWalkTask(void) {
   currentTask[0] = Q_SETPRIORITY_LOW;
@@ -199,36 +106,6 @@ void applyTask(unsigned char task) {
     break;
     case DOWN_TASK:
       _setDownTask();
-    break;
-    case GOBACKLEFT_TASK:
-      _setWalkBackLeftTask();
-    break;
-    case GOBACKRIGHT_TASK:
-      _setWalkBackRightTask();
-    break;
-    case GOTURNRIGHT_TASK:
-      _setWalkTurnRightTask();
-    break;
-    case GOTURNLEFT_TASK:
-      _setWalkTurnLeftTask();
-    break;
-    case STANDTURNRIGHT_TASK:
-      _setStandTurnRightTask();
-    break;
-    case STANDTURNLEFT_TASK:
-      _setStandTurnLeftTask();
-    break;
-    case STANDTURNRIGHT2_TASK:
-      _setStandTurnRight2Task();
-    break;
-    case STANDTURNLEFT2_TASK:
-      _setStandTurnLeft2Task();
-    break;
-    case GO_TASK:
-      _setWalkTask();
-    break;
-    case GOBACK_TASK:
-      _setWalkBackTask();
     break;
     case STANDGO_TASK:
       _setStandWalkTask();
@@ -309,10 +186,10 @@ unsigned char getNormalTask(int direction) {
   // slop up or down
   switch (m_gyroState.stateGyro) {
     case GYRO_FELL_FRONT:
-      return GO_TASK;
+      return STANDGO_TASK;
     break;
     case GYRO_FELL_BACK:
-      return GOBACK_TASK;
+      return STANDGO_TASK;
     break;
     default:
     break;
@@ -321,76 +198,76 @@ unsigned char getNormalTask(int direction) {
   if (m_gyroState.aPitchAverage < -SLOP_ANGLE) {
     // down
     if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
-      return GOTURNLEFT_TASK;
+      return STANDGO_TASK;
     }
     if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
-      return GOTURNRIGHT_TASK;
+      return STANDGO_TASK;
     }
     if (direction > 4) {
-      return GOTURNLEFT_TASK;
+      return STANDGO_TASK;
     }
     if (direction < -4) {
-      return GOTURNRIGHT_TASK;
+      return STANDGO_TASK;
     }
-    return GO_TASK;
+    return STANDGO_TASK;
   }
   if (m_gyroState.aPitchAverage > SLOP_ANGLE) {
     // up
     if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
-      return GOBACKRIGHT_TASK;
+      return STANDGO_TASK;
     }
     if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
-      return GOBACKLEFT_TASK;
+      return STANDGO_TASK;
     }
-    return GOBACK_TASK;
+    return STANDGO_TASK;
   }
   if (m_gyroState.aRollAverage < -SLOP_ANGLE) {
     // left
-    return GOTURNLEFT_TASK;
+    return STANDGO_TASK;
   }
   if (m_gyroState.aRollAverage > SLOP_ANGLE) {
     // left
-    return GOTURNRIGHT_TASK;
+    return STANDGO_TASK;
   }
   // obstacle state
   switch (m_robotState.inputStateNow) {
     case IN_WALL_FRONTLEFT:
-      return GOBACKRIGHT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_WALL_FRONTRIGHT:
-      return GOBACKLEFT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_WALL_LEFT:
-      return STANDTURNRIGHT2_TASK;
+      return STANDGO_TASK;
     break;
     case IN_WALL_RIGHT:
-      return STANDTURNLEFT2_TASK;
+      return STANDGO_TASK;
     break;
     case IN_OBSTACLE_FRONTLEFT:
-      return STANDTURNRIGHT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_OBSTACLE_FRONTRIGHT:
-      return STANDTURNLEFT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_OBSTACLE_LEFT:
-      return GOTURNRIGHT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_OBSTACLE_RIGHT:
-      return GOTURNLEFT_TASK;
+      return STANDGO_TASK;
     break;
     case IN_NORMAL:
       {
         if (direction > 90) {
-          return GOBACKLEFT_TASK;
+          return STANDGO_TASK;
         }
         if (direction < -90) {
-          return GOBACKRIGHT_TASK;
+          return STANDGO_TASK;
         }
         if (direction > 4) {
-          return GOTURNLEFT_TASK;
+          return STANDGO_TASK;
         }
         if (direction < -4) {
-          return GOTURNRIGHT_TASK;
+          return STANDGO_TASK;
         }
         if (m_robotState.currentStateNow == C_LOW_BATTERY) {
           return DEFAULT_TASK;
@@ -451,49 +328,7 @@ void _getCommonTask(unsigned char * countArray) {
 
 // get opposite task
 unsigned char getOppositeTask(void) {
-  switch (commonTask) {
-    case GOBACKLEFT_TASK:
-      return STANDTURNRIGHT2_TASK;
-    break;
-    case GOBACKRIGHT_TASK:
-      return STANDTURNLEFT2_TASK;
-    break;
-    case STANDTURNRIGHT_TASK:
-      return STANDTURNLEFT2_TASK;
-    break;
-    case STANDTURNLEFT_TASK:
-      return STANDTURNRIGHT2_TASK;
-    break;
-    case STANDTURNRIGHT2_TASK:
-      return GOBACKLEFT_TASK;
-    break;
-    case STANDTURNLEFT2_TASK:
-      return GOBACKRIGHT_TASK;
-    break;
-    case FLIP_TASK:
-      return RECOVER_TASK;
-    break;
-    case RECOVER_TASK:
-      return FLIP_TASK;
-    break;
-    case BEGIN_TASK:
-      return DOWN_TASK;
-    break;
-    case GOBACK_TASK:
-      return GO_TASK;
-    break;
-    case DOWN_TASK:
-    case STAND_TASK:
-    case GO_TASK:
-    case GOTURNRIGHT_TASK:
-    case GOTURNLEFT_TASK:
-    case DEFAULT_TASK:
-      return DEFAULT_TASK;
-    break;
-    default:
-      return DEFAULT_TASK;
-    break;
-  }
+  return DEFAULT_TASK;
 }
 
 // call manager
@@ -522,33 +357,6 @@ void _printTaskNameDebug(unsigned char taskName) {
     break;
     case DOWN_TASK:
       Serial.println(F(" DOWN_TASK "));
-    break;
-    case GOBACKLEFT_TASK:
-      Serial.println(F(" GOBACKLEFT_TASK "));
-    break;
-    case GOBACKRIGHT_TASK:
-      Serial.println(F(" GOBACKRIGHT_TASK "));
-    break;
-    case GOTURNRIGHT_TASK:
-      Serial.println(F(" GOTURNRIGHT_TASK "));
-    break;
-    case GOTURNLEFT_TASK:
-      Serial.println(F(" GOTURNLEFT_TASK "));
-    break;
-    case STANDTURNRIGHT_TASK:
-      Serial.println(F(" STANDTURNRIGHT_TASK "));
-    break;
-    case STANDTURNLEFT_TASK:
-      Serial.println(F(" STANDTURNLEFT_TASK "));
-    break;
-    case STANDTURNRIGHT2_TASK:
-      Serial.println(F(" STANDTURNRIGHT2_TASK "));
-    break;
-    case STANDTURNLEFT2_TASK:
-      Serial.println(F(" STANDTURNLEFT2_TASK "));
-    break;
-    case GO_TASK:
-      Serial.println(F(" GO_TASK "));
     break;
     case STANDGO_TASK:
       Serial.println(F(" STANDGO_TASK "));

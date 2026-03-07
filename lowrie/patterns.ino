@@ -28,24 +28,17 @@ unsigned char pairShift = 0;
 void setPattern(void) {
   // set speed
   switch (m_robotState.patternNow) {
-    case P_STANDGOLEFT:
-    case P_STANDGORIGHT:
-    case P_GOFORWARD:
-    case P_GOLEFT:
-    case P_GORIGHT:
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    {
-      if (speed < 1) {
-        speed = 1;
-      } else {
-        speed = 2;
-      }
-    }
-    break;
+    //{
+    //  if (speed < 1) {
+    //    speed = 1;
+    //  } else {
+    //    speed = 2;
+    //  }
+    //}
+    //break;
     case P_STANDGO:
     {
+      // process direction and distance
       speed = 0;
     }
     break;
@@ -58,24 +51,16 @@ void setPattern(void) {
   // set mode and direction
   switch (m_robotState.patternNow) {
     case P_STANDGO:
-    case P_GOFORWARD:
-    case P_GOLEFT:
-    case P_GORIGHT:
     {
       walkingMode = true;
       walkFrward = true;
     }
     break;
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    case P_STANDGOLEFT:
-    case P_STANDGORIGHT:
-    {
-      walkingMode = true;
-      walkFrward = false;
-    }
-    break;
+    //{
+    //  walkingMode = true;
+    //  walkFrward = false;
+    //}
+    //break;
     default:
     {
       walkingMode = false;
@@ -84,40 +69,9 @@ void setPattern(void) {
     break;
   }
   // set speed by side
-  switch (m_robotState.patternNow) {
-    case P_STANDGOLEFT:
-    {
-      speedL = speed;
-      speedR = 0;
-    }
-    break;
-    case P_STANDGORIGHT:
-    {
-      speedL = 0;
-      speedR = speed;
-    }
-    break;
-    case P_GOLEFT:
-    case P_GOBACKRIGHT:
-    {
-      speedL = speed - 1;
-      speedR = speed;
-    }
-    break;
-    case P_GORIGHT:
-    case P_GOBACKLEFT:
-    {
-      speedL = speed;
-      speedR = speed - 1;
-    }
-    break;
-    default:
-    {
-      speedL = speed;
-      speedR = speed;
-    }
-    break;
-  }
+  speedL = speed;
+  speedR = speed;
+  //
   if (walkFrward) {
     m_robotState.speedNow = speed;
   } else {

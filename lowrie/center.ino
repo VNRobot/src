@@ -100,10 +100,10 @@ void _reduceSideShiftvalue(void) {
 // process direction
 void _processDiretion(void) {
   short directionMax = directionValue;
-  if (directionMax > 10) {
-    directionMax = 10;
-  } else if (directionMax < -10) {
-    directionMax = -10;
+  if (directionMax > 20) {
+    directionMax = 20;
+  } else if (directionMax < -20) {
+    directionMax = -20;
   }
   if (directionMax > 0) {
     // turn left
@@ -138,11 +138,10 @@ void _processDiretion(void) {
 // process side shift
 void _processSideShift(void) {
   short sideShiftMax = sideShiftValue;
-  if (sideShiftMax > 10) {
-    sideShiftMax = 10;
-  }
-  if (sideShiftMax < -10) {
-    sideShiftMax = -10;
+  if (sideShiftMax > 20) {
+    sideShiftMax = 20;
+  } else if (sideShiftMax < -20) {
+    sideShiftMax = -20;
   }
   if (sideShiftMax > 0) {
     // shift right
@@ -214,113 +213,3 @@ void updateBallanceCenter(void) {
   dynamicCenterBallance.motor1 = m_centerCorrect.motor1;
   dynamicCenterBallance.motor2 = m_centerCorrect.motor2;
 }
-
-/*
-// turning dividers. divides 20
-char mCenter[36] = {50,-5,-4,-3,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-2,-3,-4,-5,50, 5, 4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 4, 5};
-// recovering
-char mRecoverCenter[36] = { 0,-10,-20,-30,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-40,-20,  0, 20, 50, 50, 50, 50, 50, 50, 50, 50, 50, 40, 30, 20, 10, 0, 0};
-// current pattern
-unsigned char centerPatternBuffer = 0;
-// turn angle
-char centerTurnF = 0;
-char centerTurnR = 0;
-//
-motors valueCenter = {0, 0};
-// center motor default. range: -40 50
-char centerDefault = 0;
-
-// set center value return legs steering flag
-bool setCenter(unsigned char currentPattern, char angleTurn, char centerDefaultTarget) {
-  // maximal direction correction is 5
-  if (angleTurn > CENTER_MAX_TURN / 2) {
-    angleTurn = CENTER_MAX_TURN / 2;
-  }
-  if (angleTurn < -CENTER_MAX_TURN / 2) {
-    angleTurn = -CENTER_MAX_TURN / 2;
-  }
-  // remember current pattern
-  centerPatternBuffer = currentPattern;
-  // remember center default target
-  if (centerDefaultTarget > centerDefault) {
-    if ((centerDefaultTarget - centerDefault) > CENTER_MAX_TURN) {
-      centerDefault += CENTER_MAX_TURN;
-    } else {
-      centerDefault = centerDefaultTarget;
-    }
-  }
-  if (centerDefaultTarget < centerDefault) {
-    if ((centerDefault - centerDefaultTarget) > CENTER_MAX_TURN) {
-      centerDefault -= CENTER_MAX_TURN;
-    } else {
-      centerDefault = centerDefaultTarget;
-    }
-  }
-  if ((centerDefault > CENTER_MAX_TURN * 2) || (centerDefault < -CENTER_MAX_TURN * 2)) {
-    centerTurnF = 0;
-    centerTurnR = 0;
-    return true;
-  }
-  // set turn angle
-  switch (centerPatternBuffer) {
-    case P_STANDGO:
-    case P_GOFORWARD:
-    {
-      // remember turn angle
-      centerTurnF = angleTurn;
-      centerTurnR = angleTurn;
-    }
-    break;
-    case P_STANDGOLEFT:
-    case P_GOLEFT:
-    case P_GOBACKLEFT:
-    {
-      centerTurnF = -CENTER_MAX_TURN;
-      centerTurnR = -CENTER_MAX_TURN;
-    }
-    break;
-    case P_STANDGORIGHT:
-    case P_GORIGHT:
-    case P_GOBACKRIGHT:
-    {
-      centerTurnF = CENTER_MAX_TURN;
-      centerTurnR = CENTER_MAX_TURN;
-    }
-    break;
-    case P_STANDGOSHIFTLEFT:
-    case P_GOSHIFTLEFT:
-    {
-      centerTurnF = -CENTER_MAX_TURN;
-      centerTurnR = CENTER_MAX_TURN;
-    }
-    break;
-    case P_STANDGOSHIFTRIGHT:
-    case P_GOSHIFTRIGHT:
-    {
-      centerTurnF = CENTER_MAX_TURN;
-      centerTurnR = -CENTER_MAX_TURN;
-    }
-    break;
-    default:
-    {
-      centerTurnF = 0;
-      centerTurnR = 0;
-    }
-    break;
-  }
-  return false;
-}
-
-// get servo motors values
-motors getValueCenter(unsigned char counter) {
-  // set motors angle values
-  if ((centerPatternBuffer == P_RECOVERLEFT) || (centerPatternBuffer == P_RECOVERRIGHT)) {
-    valueCenter.motor1 = mRecoverCenter[counter];
-    valueCenter.motor2 = mRecoverCenter[counter];
-  } else {
-    valueCenter.motor1 = centerDefault + centerTurnF / mCenter[counter];
-    valueCenter.motor2 = centerDefault + centerTurnR / mCenter[counter];
-  }
-  return valueCenter;
-}
-*/
