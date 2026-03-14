@@ -167,9 +167,11 @@ typedef struct robotState {
 // motors calibration values for all motors
 allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
 motors m_centerCalibrationData = {0, 0};
+motors m_sensorCalibrationData = {0, 0};
 // servo motor value
 short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 short m_centerMotorAngleValue[2] = {0, 0};
+short m_sensorMotorAngleValue[2] = {0, 0};
 // sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
@@ -192,6 +194,7 @@ accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 motors m_centerValue = {0, 0};
+motors m_sensorValue = {0, 0};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 motors m_centerCorrect = {0, 0};
@@ -213,24 +216,26 @@ void setup() {
   delay(200);
   // init servo motors
   initCenter();
+  initSensor();
   initServo();
-  doPWMCenter();
-  doPWMServo(200);
+  delay(200);
   setCenterZero(0);
+  setSensorZero(0);
   setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
   // init gyro MPU6050 using I2C
   initGyro();
-  doPWMServo(200);
+  delay(200);
   updateGyro();
-  doPWMServo(20);
+  delay(20);
   resetGyroZero();
-  doPWMServo(20);
+  delay(20);
   updateGyro();
   // check for Mode button press or if not calibrated
   if (!doCalibration()) {
     setCenterZero(0);
+    setSensorZero(0);
     setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
-    doPWMServo(200);
+    delay(200);
     // init current readings
     initCurrent();
     // init digital sensors
@@ -252,7 +257,7 @@ void setup() {
 void _setTaskAndPatternZero(void) {
   if (m_robotState.patternNow == Q_END) {
     // this is the end. do nothing
-    delay(10);
+    delay(1000);
     return;
   }
   // not high priority or end of high priority task
@@ -285,8 +290,9 @@ void _doCycle(void) {
   // update servo motors values, move motors
   getWalkPatterns();
   updateCenter();
+  updateSensor();
   updateLegsServo();
-  doPWMServo(TIME_DELAY);
+  delay(TIME_DELAY);
   cycleDone = true;
 }
 
@@ -410,9 +416,11 @@ void loop() {
       {
         // disable motors
         setCenterZero(0);
+        setSensorZero(0);
         setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
         detachServoZero();
         detachCenterZero();
+        detachSensorZero();
       }
       break;
       case Q_SETPRIORITY_HIGH:

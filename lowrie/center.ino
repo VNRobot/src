@@ -6,14 +6,14 @@ Robot center motors motion patterns
 */
 
 // pin numbers for servo motors
-enum sPinsServo {
-  ST1_MOTOR = 4,
-  ST2_MOTOR = 5
+enum cPinsServo {
+  CT1_MOTOR = 4,
+  CT2_MOTOR = 5
 };
 
 // init servo library
-Servo m_servo_st_1;
-Servo m_servo_st_2;
+Servo m_servo_ct_1;
+Servo m_servo_ct_2;
 
 // motors attached flag
 bool centerAttached = false;
@@ -43,20 +43,21 @@ void initCenter(void) {
   m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1);
   m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2);
   // init motors one by one
-  m_servo_st_1.attach(ST1_MOTOR, 500, 2500);
+  m_servo_ct_1.attach(CT1_MOTOR, 500, 2500);
   doPWMCenter();
   delay(100);
-  m_servo_st_2.attach(ST2_MOTOR, 500, 2500);
+  m_servo_ct_2.attach(CT2_MOTOR, 500, 2500);
   doPWMCenter();
   delay(100);
   centerAttached = true;
+  doPWMCenter();
 }
 
 // detach hardware
 void detachCenterZero(void) {
   if (centerAttached) {
-    m_servo_st_1.detach();
-    m_servo_st_2.detach();
+    m_servo_ct_1.detach();
+    m_servo_ct_2.detach();
   }
   centerAttached = false;
   doPWMCenter();
@@ -65,8 +66,8 @@ void detachCenterZero(void) {
 
 // do servo pwm cycle 500, 2500
 void doPWMCenter(void) {
-  m_servo_st_1.write(m_centerMotorAngleValue[0]);
-  m_servo_st_2.write(m_centerMotorAngleValue[1]);
+  m_servo_ct_1.write(m_centerMotorAngleValue[0]);
+  m_servo_ct_2.write(m_centerMotorAngleValue[1]);
 }
 
 // set servo motors

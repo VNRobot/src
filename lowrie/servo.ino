@@ -113,7 +113,8 @@ void _moveLinearServo(short hi1, char fw1, short hi2, char fw2, short timeDelay)
     m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
     m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
     m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
-    doPWMServo(timeDelay);
+    doPWMServo();
+    delay(timeDelay);
   }
 }
 
@@ -135,7 +136,8 @@ void _moveServo(short hi1, char fw1, short hi2, char fw2) {
   m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
   m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
   m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
-  doPWMServo(500);
+  doPWMServo();
+  delay(500);
 }
 
 // limit angle value
@@ -161,21 +163,29 @@ void initServo(void) {
   m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2);
   // init motors one by one
   m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  doPWMServo(100);
+  doPWMServo();
+  delay(100);
   attached = true;
 }
 
@@ -192,7 +202,8 @@ void detachServoZero(void) {
     m_servo_rr_2.detach();
   }
   attached = false;
-  doPWMServo(1000);
+  doPWMServo();
+  delay(1000);
 }
 
 // set servo motors
@@ -218,10 +229,11 @@ void updateLegsServo(void) {
   m_motorAngleValue[5] = _limitMotorValue(90 - m_calibrationData.rl.motor2 - m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.rl.hight + staticBallance.rl.hight, m_legsValue.rl.shift + staticBallance.rl.shift, 2)));
   m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 1)));
   m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 2)));
+  doPWMServo();
 }
 
 // do servo pwm cycle 500, 2500
-void doPWMServo(short timeDelay) {
+void doPWMServo(void) {
   m_servo_fl_1.write(m_motorAngleValue[0]);
   m_servo_fl_2.write(m_motorAngleValue[1]);
   m_servo_fr_1.write(m_motorAngleValue[2]);
@@ -230,9 +242,6 @@ void doPWMServo(short timeDelay) {
   m_servo_rl_2.write(m_motorAngleValue[5]);
   m_servo_rr_1.write(m_motorAngleValue[6]);
   m_servo_rr_2.write(m_motorAngleValue[7]);
-  if (timeDelay > 0) {
-    delay(timeDelay);
-  }
 }
 
 // update robot ballance
