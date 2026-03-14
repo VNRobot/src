@@ -71,9 +71,13 @@ void doPWMCenter(void) {
 
 // set servo motors
 void setCenterZero(char angle) {
-  centerSetValueF = angle;
-  centerSetValueR = angle;
-  updateCenter();
+  centerSetValueF = 0;
+  centerSetValueR = 0;
+  // set motor angle
+  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1 - angle);
+  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2 - angle);
+  // move motors
+  doPWMCenter();
 }
 
 // set direction. 10 deg max

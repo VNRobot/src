@@ -25,6 +25,8 @@ bool walkFrward = true;
 unsigned char pairShift = 0;
 // distance to the target mm
 short distanceTotarget = 0;
+// speed dependent pattern
+bool speedFlexMode = true;
 
 // set distance to target in mm
 void setDistancePatternZero(short distance) {
@@ -37,7 +39,7 @@ void setPatternZero(short direction) {
     // walking mode
     if (distanceTotarget > 0) {
       // plan to go
-      if ((direction < 40) && (direction > -40)) {
+      if ((direction < 30) && (direction > -30)) {
         // go forward
         if (speed < 1) {
           speed = 1;
@@ -46,7 +48,7 @@ void setPatternZero(short direction) {
         }
         walkingMode = true;
         walkFrward = true;
-      } else if ((direction < 140) && (direction > -140)) {
+      } else if ((direction < 150) && (direction > -150)) {
         // stand and turn
         speed = 0;
         walkingMode = true;
@@ -182,7 +184,11 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   // leg step values
   leg legStep = {0, 0, false};
   // lift timing point
-  unsigned char liftPoint = (2 + speedValue) * m_robotState.speedMuliplierNow;
+  char speedBuffer = 2;
+  if (speedFlexMode) {
+    speedBuffer = speedValue;
+  }
+  unsigned char liftPoint = (2 + speedBuffer) * m_robotState.speedMuliplierNow;
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //

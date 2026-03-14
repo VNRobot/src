@@ -16,6 +16,8 @@ Main file
 #define HIGHT_LOW               88
 // normal hight
 #define HIGHT_DEFAULT           125
+// maximal hight
+#define HIGHT_MAX               165
 // normal leg lift in mm
 #define LEG_LIFT                40
 // robot phisics
@@ -312,7 +314,7 @@ void loop() {
       //setRobotState();        *** disable for now
     }
     // update ballance
-    // updateBallance();        *** disable for now
+    updateBallance();
     updateBallanceCenter();
     updateBallanceServo();
   }
@@ -366,20 +368,20 @@ void loop() {
         if (m_gyroState.aRollAverage < 0) {
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
-          setServoZero(180, 180, 0);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = 1;
-          setCenterZero(30);
-          setServoZero(180, 180, 0);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         } else {
           m_robotState.flipStateLNow = -1;
           m_robotState.flipStateRNow = 1;
-          setServoZero(180, 180, 0);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
           m_robotState.flipStateLNow = 1;
           m_robotState.flipStateRNow = -1;
-          setCenterZero(30);
-          setServoZero(180, 180, 0);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         }
+        setCenterZero(30);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
         m_robotState.flipStateLNow = 1;
         m_robotState.flipStateRNow = 1;
         setCenterZero(0);
