@@ -26,6 +26,7 @@ Main file
 #define FALLING_ANGLE           45  // to be moved to gyro
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
+#define MAIN_HALF_CYCLE         18
 
 // input state
 enum inState {
@@ -193,11 +194,18 @@ robotState m_robotState = {
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
+// center motor positive - outside
 motors m_centerValue = {0, 0};
+// sensor angle positive - right
 motors m_sensorValue = {0, 0};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 motors m_centerCorrect = {0, 0};
+// sensor distance array
+unsigned short m_inputDistanceFU[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceFL[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceRU[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceRL[6] = {0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
 // servo cycle is done flag
 bool cycleDone = true;
@@ -239,11 +247,11 @@ void setup() {
     // init current readings
     initCurrent();
     // init digital sensors
-    initInputs();
+    //initInputs();
     // update current readings
     updateCurrent();
     // read proximity sensors
-    updateInputs();
+    //updateInputs();
     // explore mode
     Serial.println(F("Entering explore mode"));
     applyTaskZero(doManageTasks(BEGIN_TASK));
@@ -308,7 +316,7 @@ void loop() {
     // update gyro readings
     updateGyro();
     // read proximity sensors
-    updateInputs();
+    //updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
       setDirectionCenterZero(getDirectionGyro());

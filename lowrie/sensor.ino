@@ -17,7 +17,14 @@ Servo m_servo_st_2;
 
 // motors attached flag
 bool sensorAttached = false;
-// motors values
+// turn direction
+bool turnRightDirection = false;
+// head angle
+char headAngle = 0;
+char headAngleOld = 0;
+char headAngleCounter = 0;
+// array pointer
+unsigned char sensorArrayPointer = 0;
 
 // limit angle value
 short _limitSensorMotorValue(short mAngle) {
@@ -73,12 +80,80 @@ void setSensorZero(char angle) {
 
 // move leg motors.
 void updateSensor(void) {
-  // process angle
-  // m_sensorValue.motor1
-  // m_sensorValue.motor2
+  if (m_sequenceCounter.m == 0) {
+    // _printSensorArrays();
+    turnRightDirection = !turnRightDirection;
+  }
+  // process angle m_sequenceCounter.m MAIN_FULL_CYCLE
+  headAngle = (m_sequenceCounter.m - MAIN_HALF_CYCLE) / 6;
+  if (!turnRightDirection) {
+    headAngle = -headAngle;
+  }
+  // find timing
+  if (headAngleOld == headAngle) {
+    headAngleCounter ++;
+  } else {
+    headAngleCounter = 0;
+    headAngleOld = headAngle;
+  }
+  // time to get inputs
+  if (headAngleCounter == 4) {
+    sensorArrayPointer = headAngle + 3;
+    if (turnRightDirection) {
+      sensorArrayPointer --;
+    }
+    // read analog sensors
+    m_inputDistanceFU[sensorArrayPointer] = _getDistance(analogRead(A0));
+    m_inputDistanceFL[sensorArrayPointer] = _getDistance(analogRead(A1));
+    m_inputDistanceRU[sensorArrayPointer] = _getDistance(analogRead(A3));
+    m_inputDistanceRL[sensorArrayPointer] = _getDistance(analogRead(A2));
+  }
+  // set angle value
+  m_sensorValue.motor1 = headAngle * 10;
+  m_sensorValue.motor2 = headAngle * 10;
   // set motor angle
   m_sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor1 - m_sensorValue.motor1);
   m_sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor2 - m_sensorValue.motor2);
   // move motors
   doPWMSensor();
+}
+
+// calculate sensor distance 
+/*
+Gets analog inputs
+ - Reads analog sensors raw values and converts to cm
+    cm     value    700-     devider
+    5      640      60        12
+    10     420      280       28
+    15     320      380       25
+    20     260      440       22
+    25     250      450       18
+    60     100      600       10
+*/
+unsigned short _getDistance(int sensorRead) {
+  if (sensorRead > 700) {
+    sensorRead == 700;
+  }
+  return (unsigned short)((700 - sensorRead) / 10);
+}
+
+// print arrays
+void _printSensorArrays(void) {
+  Serial.println(F(" FU "));
+  _printSensorArray(m_inputDistanceFU);
+  Serial.println(F(" FL "));
+  _printSensorArray(m_inputDistanceFL);
+  Serial.println(F(" RU "));
+  _printSensorArray(m_inputDistanceRU);
+  Serial.println(F(" RL "));
+  _printSensorArray(m_inputDistanceRL);
+}
+
+// print one array
+void _printSensorArray(unsigned short * distanceArray) {
+  for (i = 0; i < 6; i ++) {
+    Serial.print(F(" "));
+    Serial.print((int)distanceArray[i]);
+  }
+  Serial.println(F(" "));
 }
