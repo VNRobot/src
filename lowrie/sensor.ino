@@ -102,7 +102,7 @@ void updateSensor(void) {
     if (turnRightDirection) {
       sensorArrayPointer --;
     }
-    // read analog sensors
+    // read analog sensors. norm: 36 - 42 average 38      max - 60
     m_inputDistanceFU[sensorArrayPointer] = _getDistance(analogRead(A0));
     m_inputDistanceFL[sensorArrayPointer] = _getDistance(analogRead(A1));
     m_inputDistanceRU[sensorArrayPointer] = _getDistance(analogRead(A3));

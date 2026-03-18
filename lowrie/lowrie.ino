@@ -15,9 +15,9 @@ Main file
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               88
 // normal hight
-#define HIGHT_DEFAULT           125
+#define HIGHT_DEFAULT           130
 // maximal hight
-#define HIGHT_MAX               165
+#define HIGHT_MAX               175
 // normal leg lift in mm
 #define LEG_LIFT                40
 // robot phisics
@@ -30,10 +30,7 @@ Main file
 
 // input state
 enum inState {
-  IN_WALL_FRONTLEFT,
-  IN_WALL_FRONTRIGHT,
-  IN_WALL_LEFT,
-  IN_WALL_RIGHT,
+  IN_OBSTACLE_FRONT,
   IN_OBSTACLE_FRONTLEFT,
   IN_OBSTACLE_FRONTRIGHT,
   IN_OBSTACLE_LEFT,
@@ -162,6 +159,7 @@ typedef struct robotState {
   unsigned char patternNow;
   unsigned char taskNow;
   char speedNow;
+  bool forwardNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -188,7 +186,8 @@ robotState m_robotState = {
   PRIORITY_LOW,            // taskPriorityNow;
   Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
-  0                        // speedNow
+  0,                       // speedNow
+  true                     // forwardNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
@@ -247,11 +246,11 @@ void setup() {
     // init current readings
     initCurrent();
     // init digital sensors
-    //initInputs();
+    initInputs();
     // update current readings
     updateCurrent();
     // read proximity sensors
-    //updateInputs();
+    updateInputsZero();
     // explore mode
     Serial.println(F("Entering explore mode"));
     applyTaskZero(doManageTasks(BEGIN_TASK));
@@ -315,14 +314,21 @@ void loop() {
     updateCurrent();
     // update gyro readings
     updateGyro();
-    // read proximity sensors
-    //updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
       setDirectionCenterZero(getDirectionGyro());
+      // process proximity sensors
+      updateInputsZero();
+      // process distance and direction
+
+      // getDistancePatternZero()
+      // setDistancePatternZero(100)
+      // m_gyroState.direction
+      // setDirectionGyroZero(90)
+
+      // find turning
       // setSideShiftCenterZero(0); *** to do
-      // setDistancePatternZero(1000); *** to do
-      //printInputsDebug();
+      // setDistancePatternZero(100); *** to do
       //printCurrentStateDebug();
       // set robot state
       //setRobotState();        *** disable for now
@@ -508,42 +514,6 @@ void printPatternNameDebug(unsigned char patternNow) {
     default:
       Serial.print(F(" unknown pattern "));
     break;
-  }
-}
-
-// print sensor inputs state
-void printInputsDebug(void) {
-  // print input state
-  switch (m_robotState.inputStateNow) {
-    case IN_WALL_FRONTLEFT:
-      Serial.println(F(" IN_WALL_FRONTLEFT "));
-    break;
-    case IN_WALL_FRONTRIGHT:
-      Serial.println(F(" IN_WALL_FRONTRIGHT "));
-    break;
-    case IN_WALL_LEFT:
-      Serial.println(F(" IN_WALL_LEFT "));
-    break;
-    case IN_WALL_RIGHT:
-      Serial.println(F(" IN_WALL_RIGHT "));
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
-      Serial.println(F(" IN_OBSTACLE_FRONTLEFT "));
-    break;
-    case IN_OBSTACLE_FRONTRIGHT:
-      Serial.println(F(" IN_OBSTACLE_FRONTRIGHT "));
-    break;
-    case IN_OBSTACLE_LEFT:
-      Serial.println(F(" IN_OBSTACLE_LEFT "));
-    break;
-    case IN_OBSTACLE_RIGHT:
-      Serial.println(F(" IN_OBSTACLE_RIGHT "));
-    break;
-    case IN_NORMAL:
-      Serial.println(F(" IN_NORMAL "));
-    break;
-    default:
-      Serial.println(F(" Wrong inputs state "));
   }
 }
 

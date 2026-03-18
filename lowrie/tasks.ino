@@ -231,16 +231,7 @@ unsigned char getNormalTaskZero(int direction) {
   }
   // obstacle state
   switch (m_robotState.inputStateNow) {
-    case IN_WALL_FRONTLEFT:
-      return STANDGO_TASK;
-    break;
-    case IN_WALL_FRONTRIGHT:
-      return STANDGO_TASK;
-    break;
-    case IN_WALL_LEFT:
-      return STANDGO_TASK;
-    break;
-    case IN_WALL_RIGHT:
+    case IN_OBSTACLE_FRONT:
       return STANDGO_TASK;
     break;
     case IN_OBSTACLE_FRONTLEFT:

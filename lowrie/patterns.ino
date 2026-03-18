@@ -28,9 +28,14 @@ short distanceTotarget = 0;
 // speed dependent pattern
 bool speedFlexMode = true;
 
-// set distance to target in mm
+// set distance to target in cm
 void setDistancePatternZero(short distance) {
-  distanceTotarget = distance;
+  distanceTotarget = distance * 10;
+}
+
+// get distance to target in cm
+short getDistancePatternZero(void) {
+  return distanceTotarget / 10;
 }
 
 // get next sequence, mode and speed
@@ -79,6 +84,7 @@ void setPatternZero(short direction) {
   speedR = speed;
   //
   m_robotState.speedNow = speed;
+  m_robotState.forwardNow = walkFrward;
   // step size
   short stepSize = (SERVO_HALF_CYCLE - (2 + speed))* speed * m_robotState.speedMuliplierNow;
   // update distance to target
