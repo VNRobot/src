@@ -8,6 +8,8 @@ Main file
 #include <EEPROM.h>
 #include <Servo.h>
 
+// software version hardcoded. should be changed manually
+#define ROBOT_VERSION           12
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
@@ -27,6 +29,9 @@ Main file
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
+// calibration angle
+#define CALIBRATION_ANGLE_MIN   -10
+#define CALIBRATION_ANGLE_MAX   10
 
 // input state
 enum inState {
@@ -163,14 +168,6 @@ typedef struct robotState {
 } robotState;
 
 //---------------global variables---------------------------
-// motors calibration values for all motors
-allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
-motors m_centerCalibrationData = {0, 0};
-motors m_sensorCalibrationData = {0, 0};
-// servo motor value
-short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-short m_centerMotorAngleValue[2] = {0, 0};
-short m_sensorMotorAngleValue[2] = {0, 0};
 // sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
@@ -193,13 +190,8 @@ robotState m_robotState = {
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// center motor positive - outside
-motors m_centerValue = {0, 0};
-// sensor angle positive - right
-motors m_sensorValue = {0, 0};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
-motors m_centerCorrect = {0, 0};
 // sensor distance array
 unsigned short m_inputDistanceFU[6] = {0, 0, 0, 0, 0, 0};
 unsigned short m_inputDistanceFL[6] = {0, 0, 0, 0, 0, 0};
@@ -215,49 +207,99 @@ unsigned char taskNext = STANDGO_TASK;
 // variable for temporary use
 unsigned char i;
 
+// check button pressed
+bool m_getButtonPressed(void) {
+    bool modeButtonPressed = false;
+    if (analogRead(A6) < INPUT_GROUNDED) {
+    modeButtonPressed = true;
+    // block until button released
+    while (analogRead(A6) < INPUT_GROUNDED) {
+      delay(100);
+    }
+  }
+  return modeButtonPressed;
+}
+
+// true if software version from eeprom is right
+bool _rightSoftwareVersionEeprom() {
+  unsigned char version = EEPROM.read(0);
+  // software version address is 0
+  if (version == ROBOT_VERSION) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// write software version to eeprom
+void _writeSoftwareVersionEeprom() {
+#ifdef BOARD_ESP32
+  EEPROM.write(0, ROBOT_VERSION);
+  EEPROM.commit();
+#else
+  EEPROM.update(0, ROBOT_VERSION);
+#endif
+}
+
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
-  // init servo motors
-  initCenter();
-  initSensor();
-  initServo();
-  delay(200);
-  setCenterZero(0);
-  setSensorZero(0);
-  setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
-  // init gyro MPU6050 using I2C
-  initGyro();
+  // check button press
+  bool calibrationMode = m_getButtonPressed();
+  if (!_rightSoftwareVersionEeprom()) {
+    calibrationMode = true;
+  }
+  // init center servo motors
+  initCenter(calibrationMode);
+  // init sensor servo motors
+  initSensor(calibrationMode);
+  // init legs servo motors
+  initServo(calibrationMode);
+  // lift legs for gyro calibration
+  if (calibrationMode) {
+    delay(1000);
+    m_robotState.flipStateLNow = -1;
+    m_robotState.flipStateRNow = -1;
+    setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  }
+  // init gyro
+  initGyro(calibrationMode);
   delay(200);
   updateGyro();
   delay(20);
   resetGyroZero();
   delay(20);
   updateGyro();
-  // check for Mode button press or if not calibrated
-  if (!doCalibration()) {
-    setCenterZero(0);
-    setSensorZero(0);
-    setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
-    delay(200);
-    // init current readings
-    initCurrent();
-    // init digital sensors
-    initInputs();
-    // update current readings
-    updateCurrent();
-    // read proximity sensors
-    updateInputsZero();
-    // explore mode
-    Serial.println(F("Entering explore mode"));
-    applyTaskZero(doManageTasks(BEGIN_TASK));
-    // load task and pattern. direction is 0
-    setPatternZero(0);
-    updateCountPatterns();
+  // disable motors
+  if (calibrationMode) {
+    // write software version
+    _writeSoftwareVersionEeprom();
+    detachCenterZero();
+    detachSensorZero();
+    detachServoZero();
+    delay(20000);
   }
+  delay(200);
+  setCenterZero(0);
+  setSensorZero(0);
+  setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+  // init current readings
+  initCurrent();
+  // init digital sensors
+  initInputs();
+  // update current readings
+  updateCurrent();
+  // read proximity sensors
+  updateInputsZero();
+  // explore mode
+  Serial.println(F("Entering explore mode"));
+  applyTaskZero(doManageTasks(BEGIN_TASK));
+  // load task and pattern. direction is 0
+  setPatternZero(0);
+  updateCountPatterns();
 }
 
 // set new task and new pattern

@@ -91,8 +91,15 @@ void _readWire(float * regData, unsigned char code) {
 }
 
 // init gyroscope and accelerometer MPU6050 using I2C
-void initGyro() {
+void initGyro(bool calibrationMode) {
   int i;
+  // check for calibration mode
+  if (calibrationMode) {
+    while (!m_getButtonPressed()) {
+      delay(100);
+    }
+    delay(1000);
+  }
   _initWire();
   // calculate gyro errors
   for (i = 0; i < 200; i++) {
@@ -118,7 +125,7 @@ void initGyro() {
   gyroErrors.GyroErrorY /= 200;
   gyroErrors.GyroErrorZ /= 200;
   // write gyro calibration when button pressed
-  if (analogRead(A6) < INPUT_GROUNDED) {
+  if (calibrationMode) {
     EEPROM.put(16, gyroErrors);
     Serial.println(" writing gyro errors ");
   } else {

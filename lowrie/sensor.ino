@@ -12,8 +12,8 @@ enum sPinsServo {
 };
 
 // init servo library
-Servo m_servo_st_1;
-Servo m_servo_st_2;
+Servo servo_st_1;
+Servo servo_st_2;
 
 // motors attached flag
 bool sensorAttached = false;
@@ -25,6 +25,22 @@ char headAngleOld = 0;
 char headAngleCounter = 0;
 // array pointer
 unsigned char sensorArrayPointer = 0;
+// motor angle value
+short sensorMotorAngleValue[2] = {0, 0};
+// calibration value
+motors sensorCalibrationData = {0, 0};
+// sensor angle positive - right
+motors sensorValue = {0, 0};
+
+/*
+uses
+m_sequenceCounter
+m_inputDistanceFU
+m_inputDistanceFL
+m_inputDistanceRU
+m_inputDistanceRL
+m_getButtonPressed()
+*/
 
 // limit angle value
 short _limitSensorMotorValue(short mAngle) {
@@ -37,26 +53,81 @@ short _limitSensorMotorValue(short mAngle) {
 }
 
 // init servo motors
-void initSensor(void) {
+void initSensor(bool calibrationMode) {
   // set motors value
-  m_sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor1);
-  m_sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor2);
+  sensorMotorAngleValue[0] = _limitSensorMotorValue(90);
+  sensorMotorAngleValue[1] = _limitSensorMotorValue(90);
   // init motors one by one
-  m_servo_st_1.attach(ST1_MOTOR, 500, 2500);
-  doPWMSensor();
+  servo_st_1.attach(ST1_MOTOR, 500, 2500);
+  servo_st_1.write(sensorMotorAngleValue[0]);
   delay(100);
-  m_servo_st_2.attach(ST2_MOTOR, 500, 2500);
-  doPWMSensor();
+  servo_st_2.attach(ST2_MOTOR, 500, 2500);
+  servo_st_2.write(sensorMotorAngleValue[1]);
   delay(100);
   sensorAttached = true;
+  // check for calibration mode
+  if (calibrationMode) {
+    // do calibration
+    unsigned char calibrationStage = 0;
+    sensorCalibrationData.motor1 = 0;
+    sensorCalibrationData.motor2 = 0;
+    // motors one by one
+    while (calibrationMode) {
+      sensorMotorAngleValue[0] = _limitMotorValue(90 - sensorCalibrationData.motor1);
+      sensorMotorAngleValue[1] = _limitMotorValue(90 - sensorCalibrationData.motor2);
+      doPWMSensor();
+      delay(200);
+      // check button press
+      if (m_getButtonPressed()) {
+        calibrationStage ++;
+      }
+      switch (calibrationStage) {
+        case 0:
+          // assembly stage. do nothing
+        break;
+        case 1:
+        {
+          sensorCalibrationData.motor1 ++;
+          if (sensorCalibrationData.motor1 > CALIBRATION_ANGLE_MAX) {
+            sensorCalibrationData.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 2:
+        {
+          sensorCalibrationData.motor2 ++;
+          if (sensorCalibrationData.motor2 > CALIBRATION_ANGLE_MAX) {
+            sensorCalibrationData.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 3:
+        {
+          EEPROM.update(11, (unsigned char)(sensorCalibrationData.motor1 + 128));
+          EEPROM.update(12, (unsigned char)(sensorCalibrationData.motor2 + 128));
+          calibrationStage ++;
+          calibrationMode = false;
+        }
+        break;
+        default:
+        break;
+      }
+    }
+  }
+  // read calibration
+  sensorCalibrationData.motor1 = (char)(EEPROM.read(11) - 128);
+  sensorCalibrationData.motor2 = (char)(EEPROM.read(12) - 128);
+  sensorMotorAngleValue[0] = _limitMotorValue(90 - sensorCalibrationData.motor1);
+  sensorMotorAngleValue[1] = _limitMotorValue(90 - sensorCalibrationData.motor2);
   doPWMSensor();
+  delay(100);
 }
 
 // detach hardware
 void detachSensorZero(void) {
   if (sensorAttached) {
-    m_servo_st_1.detach();
-    m_servo_st_2.detach();
+    servo_st_1.detach();
+    servo_st_2.detach();
   }
   sensorAttached = false;
   doPWMSensor();
@@ -65,15 +136,15 @@ void detachSensorZero(void) {
 
 // do servo pwm cycle 500, 2500
 void doPWMSensor(void) {
-  m_servo_st_1.write(m_sensorMotorAngleValue[0]);
-  m_servo_st_2.write(m_sensorMotorAngleValue[1]);
+  servo_st_1.write(sensorMotorAngleValue[0]);
+  servo_st_2.write(sensorMotorAngleValue[1]);
 }
 
 // set servo motors
 void setSensorZero(char angle) {
   // set motor angle
-  m_sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor1 - angle);
-  m_sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor2 - angle);
+  sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - sensorCalibrationData.motor1 - angle);
+  sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - sensorCalibrationData.motor2 - angle);
   // move motors
   doPWMSensor();
 }
@@ -109,11 +180,11 @@ void updateSensor(void) {
     m_inputDistanceRL[sensorArrayPointer] = _getDistance(analogRead(A2));
   }
   // set angle value
-  m_sensorValue.motor1 = headAngle * 10;
-  m_sensorValue.motor2 = headAngle * 10;
+  sensorValue.motor1 = headAngle * 10;
+  sensorValue.motor2 = headAngle * 10;
   // set motor angle
-  m_sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor1 - m_sensorValue.motor1);
-  m_sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - m_sensorCalibrationData.motor2 - m_sensorValue.motor2);
+  sensorMotorAngleValue[0] = _limitSensorMotorValue(90 - sensorCalibrationData.motor1 - sensorValue.motor1);
+  sensorMotorAngleValue[1] = _limitSensorMotorValue(90 - sensorCalibrationData.motor2 - sensorValue.motor2);
   // move motors
   doPWMSensor();
 }

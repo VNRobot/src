@@ -21,14 +21,14 @@ enum dPinsServo {
 };
 
 // init servo library
-Servo m_servo_fl_1;
-Servo m_servo_fl_2;
-Servo m_servo_fr_1;
-Servo m_servo_fr_2;
-Servo m_servo_rl_1;
-Servo m_servo_rl_2;
-Servo m_servo_rr_1;
-Servo m_servo_rr_2;
+Servo servo_fl_1;
+Servo servo_fl_2;
+Servo servo_fr_1;
+Servo servo_fr_2;
+Servo servo_rl_1;
+Servo servo_rl_2;
+Servo servo_rr_1;
+Servo servo_rr_2;
 
 // static ballance
 allLegs staticBallance = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
@@ -39,6 +39,18 @@ short hightSetValueL = 0;
 short hightSetValueR = 0;
 char forwardSetValueL = 0;
 char forwardSetValueR = 0;
+// motors calibration values for all motors
+allMotors servoCalibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
+// servo motor value
+short servoMotorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+/*
+uses
+m_robotState
+m_legsValue
+m_legCorrect
+m_getButtonPressed()
+*/
 
 // calculate motor 1 and motor 2 angles
 char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
@@ -103,16 +115,16 @@ void _moveLinearServo(short hi1, char fw1, short hi2, char fw2, short timeDelay)
     }
     char mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)forwardSetValueL, 1);
     char mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)forwardSetValueL, 2);
-    m_motorAngleValue[0] = _limitMotorValue(90 + m_calibrationData.fl.motor1 + m_robotState.flipStateLNow * mValue1);
-    m_motorAngleValue[1] = _limitMotorValue(90 - m_calibrationData.fl.motor2 - m_robotState.flipStateLNow * mValue2);
-    m_motorAngleValue[4] = _limitMotorValue(90 + m_calibrationData.rl.motor1 + m_robotState.flipStateLNow * mValue1);
-    m_motorAngleValue[5] = _limitMotorValue(90 - m_calibrationData.rl.motor2 - m_robotState.flipStateLNow * mValue2);
+    servoMotorAngleValue[0] = _limitMotorValue(90 + servoCalibrationData.fl.motor1 + m_robotState.flipStateLNow * mValue1);
+    servoMotorAngleValue[1] = _limitMotorValue(90 - servoCalibrationData.fl.motor2 - m_robotState.flipStateLNow * mValue2);
+    servoMotorAngleValue[4] = _limitMotorValue(90 + servoCalibrationData.rl.motor1 + m_robotState.flipStateLNow * mValue1);
+    servoMotorAngleValue[5] = _limitMotorValue(90 - servoCalibrationData.rl.motor2 - m_robotState.flipStateLNow * mValue2);
     mValue1 = _calculateMotorAngle((int)hightSetValueR, (int)forwardSetValueR, 1);
     mValue2 = _calculateMotorAngle((int)hightSetValueR, (int)forwardSetValueR, 2);
-    m_motorAngleValue[2] = _limitMotorValue(90 - m_calibrationData.fr.motor1 - m_robotState.flipStateRNow * mValue1);
-    m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
-    m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
-    m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
+    servoMotorAngleValue[2] = _limitMotorValue(90 - servoCalibrationData.fr.motor1 - m_robotState.flipStateRNow * mValue1);
+    servoMotorAngleValue[3] = _limitMotorValue(90 + servoCalibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
+    servoMotorAngleValue[6] = _limitMotorValue(90 - servoCalibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
+    servoMotorAngleValue[7] = _limitMotorValue(90 + servoCalibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
     doPWMServo();
     delay(timeDelay);
   }
@@ -126,16 +138,16 @@ void _moveServo(short hi1, char fw1, short hi2, char fw2) {
   hightSetValueR = hi2;
   char mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)forwardSetValueL, 1);
   char mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)forwardSetValueL, 2);
-  m_motorAngleValue[0] = _limitMotorValue(90 + m_calibrationData.fl.motor1 + m_robotState.flipStateLNow * mValue1);
-  m_motorAngleValue[1] = _limitMotorValue(90 - m_calibrationData.fl.motor2 - m_robotState.flipStateLNow * mValue2);
-  m_motorAngleValue[4] = _limitMotorValue(90 + m_calibrationData.rl.motor1 + m_robotState.flipStateLNow * mValue1);
-  m_motorAngleValue[5] = _limitMotorValue(90 - m_calibrationData.rl.motor2 - m_robotState.flipStateLNow * mValue2);
+  servoMotorAngleValue[0] = _limitMotorValue(90 + servoCalibrationData.fl.motor1 + m_robotState.flipStateLNow * mValue1);
+  servoMotorAngleValue[1] = _limitMotorValue(90 - servoCalibrationData.fl.motor2 - m_robotState.flipStateLNow * mValue2);
+  servoMotorAngleValue[4] = _limitMotorValue(90 + servoCalibrationData.rl.motor1 + m_robotState.flipStateLNow * mValue1);
+  servoMotorAngleValue[5] = _limitMotorValue(90 - servoCalibrationData.rl.motor2 - m_robotState.flipStateLNow * mValue2);
   mValue1 = _calculateMotorAngle((int)hightSetValueR, (int)forwardSetValueR, 1);
   mValue2 = _calculateMotorAngle((int)hightSetValueR, (int)forwardSetValueR, 2);
-  m_motorAngleValue[2] = _limitMotorValue(90 - m_calibrationData.fr.motor1 - m_robotState.flipStateRNow * mValue1);
-  m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
-  m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
-  m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
+  servoMotorAngleValue[2] = _limitMotorValue(90 - servoCalibrationData.fr.motor1 - m_robotState.flipStateRNow * mValue1);
+  servoMotorAngleValue[3] = _limitMotorValue(90 + servoCalibrationData.fr.motor2 + m_robotState.flipStateRNow * mValue2);
+  servoMotorAngleValue[6] = _limitMotorValue(90 - servoCalibrationData.rr.motor1 - m_robotState.flipStateRNow * mValue1);
+  servoMotorAngleValue[7] = _limitMotorValue(90 + servoCalibrationData.rr.motor2 + m_robotState.flipStateRNow * mValue2);
   doPWMServo();
   delay(500);
 }
@@ -151,55 +163,189 @@ short _limitMotorValue(short mAngle) {
 }
 
 // init servo motors
-void initServo(void) {
+void initServo(bool calibrationMode) {
   // set motors value
-  m_motorAngleValue[0] = _limitMotorValue(90 + m_calibrationData.fl.motor1);
-  m_motorAngleValue[1] = _limitMotorValue(90 - m_calibrationData.fl.motor2);
-  m_motorAngleValue[2] = _limitMotorValue(90 - m_calibrationData.fr.motor1);
-  m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2);
-  m_motorAngleValue[4] = _limitMotorValue(90 + m_calibrationData.rl.motor1);
-  m_motorAngleValue[5] = _limitMotorValue(90 - m_calibrationData.rl.motor2);
-  m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1);
-  m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2);
+  servoMotorAngleValue[0] = _limitMotorValue(90);
+  servoMotorAngleValue[1] = _limitMotorValue(90);
+  servoMotorAngleValue[2] = _limitMotorValue(90);
+  servoMotorAngleValue[3] = _limitMotorValue(90);
+  servoMotorAngleValue[4] = _limitMotorValue(90);
+  servoMotorAngleValue[5] = _limitMotorValue(90);
+  servoMotorAngleValue[6] = _limitMotorValue(90);
+  servoMotorAngleValue[7] = _limitMotorValue(90);
   // init motors one by one
-  m_servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_fl_1.attach(FL1_MOTOR, 500, 2500);
+  servo_fl_1.write(servoMotorAngleValue[0]);
   delay(100);
-  m_servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_fr_1.attach(FR1_MOTOR, 500, 2500);
+  servo_fr_1.write(servoMotorAngleValue[1]);
   delay(100);
-  m_servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_rl_1.attach(RL1_MOTOR, 500, 2500);
+  servo_rl_1.write(servoMotorAngleValue[2]);
   delay(100);
-  m_servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_rr_1.attach(RR1_MOTOR, 500, 2500);
+  servo_rr_1.write(servoMotorAngleValue[3]);
   delay(100);
-  m_servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_fl_2.attach(FL2_MOTOR, 500, 2500);
+  servo_fl_2.write(servoMotorAngleValue[4]);
   delay(100);
-  m_servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_fr_2.attach(FR2_MOTOR, 500, 2500);
+  servo_fr_2.write(servoMotorAngleValue[5]);
   delay(100);
-  m_servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_rl_2.attach(RL2_MOTOR, 500, 2500);
+  servo_rl_2.write(servoMotorAngleValue[6]);
   delay(100);
-  m_servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  doPWMServo();
+  servo_rr_2.attach(RR2_MOTOR, 500, 2500);
+  servo_rr_2.write(servoMotorAngleValue[7]);
   delay(100);
   attached = true;
+  // check for calibration mode
+  if (calibrationMode) {
+    // do calibration
+    unsigned char calibrationStage = 0;
+    servoCalibrationData.fl.motor1 = 0;
+    servoCalibrationData.fl.motor2 = 0;
+    servoCalibrationData.fr.motor1 = 0;
+    servoCalibrationData.fr.motor2 = 0;
+    servoCalibrationData.rl.motor1 = 0;
+    servoCalibrationData.rl.motor2 = 0;
+    servoCalibrationData.rr.motor1 = 0;
+    servoCalibrationData.rr.motor2 = 0;
+    // motors one by one
+    while (calibrationMode) {
+      servoMotorAngleValue[0] = _limitMotorValue(90 + servoCalibrationData.fl.motor1);
+      servoMotorAngleValue[1] = _limitMotorValue(90 - servoCalibrationData.fl.motor2);
+      servoMotorAngleValue[2] = _limitMotorValue(90 - servoCalibrationData.fr.motor1);
+      servoMotorAngleValue[3] = _limitMotorValue(90 + servoCalibrationData.fr.motor2);
+      servoMotorAngleValue[4] = _limitMotorValue(90 + servoCalibrationData.rl.motor1);
+      servoMotorAngleValue[5] = _limitMotorValue(90 - servoCalibrationData.rl.motor2);
+      servoMotorAngleValue[6] = _limitMotorValue(90 - servoCalibrationData.rr.motor1);
+      servoMotorAngleValue[7] = _limitMotorValue(90 + servoCalibrationData.rr.motor2);
+      doPWMServo();
+      delay(200);
+      // check button press
+      if (m_getButtonPressed()) {
+        calibrationStage ++;
+      }
+      switch (calibrationStage) {
+        case 0:
+          // assembly stage. do nothing
+        break;
+        case 1:
+        {
+          servoCalibrationData.fl.motor1 ++;
+          if (servoCalibrationData.fl.motor1 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.fl.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 2:
+        {
+          servoCalibrationData.fl.motor2 ++;
+          if (servoCalibrationData.fl.motor2 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.fl.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 3:
+        {
+          servoCalibrationData.fr.motor1 ++;
+          if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.fr.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 4:
+        {
+          servoCalibrationData.fr.motor2 ++;
+          if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.fr.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 5:
+        {
+          servoCalibrationData.rl.motor1 ++;
+          if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.rl.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 6:
+        {
+          servoCalibrationData.rl.motor2 ++;
+          if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.rl.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 7:
+        {
+          servoCalibrationData.rr.motor1 ++;
+          if (servoCalibrationData.rr.motor1 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.rr.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 8:
+        {
+          servoCalibrationData.rr.motor2 ++;
+          if (servoCalibrationData.rr.motor2 > CALIBRATION_ANGLE_MAX) {
+            servoCalibrationData.rr.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 9:
+        {
+          EEPROM.update(1, (unsigned char)(servoCalibrationData.fl.motor1 + 128));
+          EEPROM.update(2, (unsigned char)(servoCalibrationData.fl.motor2 + 128));
+          EEPROM.update(3, (unsigned char)(servoCalibrationData.fr.motor1 + 128));
+          EEPROM.update(4, (unsigned char)(servoCalibrationData.fr.motor2 + 128));
+          EEPROM.update(5, (unsigned char)(servoCalibrationData.rl.motor1 + 128));
+          EEPROM.update(6, (unsigned char)(servoCalibrationData.rl.motor2 + 128));
+          EEPROM.update(7, (unsigned char)(servoCalibrationData.rr.motor1 + 128));
+          EEPROM.update(8, (unsigned char)(servoCalibrationData.rr.motor2 + 128));
+          calibrationStage ++;
+          calibrationMode = false;
+        }
+        break;
+        default:
+        break;
+      }
+    }
+  }
+  // read calibration
+  servoCalibrationData.fl.motor1 = (char)(EEPROM.read(1) - 128);
+  servoCalibrationData.fl.motor2 = (char)(EEPROM.read(2) - 128);
+  servoCalibrationData.fr.motor1 = (char)(EEPROM.read(3) - 128);
+  servoCalibrationData.fr.motor2 = (char)(EEPROM.read(4) - 128);
+  servoCalibrationData.rl.motor1 = (char)(EEPROM.read(5) - 128);
+  servoCalibrationData.rl.motor2 = (char)(EEPROM.read(6) - 128);
+  servoCalibrationData.rr.motor1 = (char)(EEPROM.read(7) - 128);
+  servoCalibrationData.rr.motor2 = (char)(EEPROM.read(8) - 128);
+  servoMotorAngleValue[0] = _limitMotorValue(90 + servoCalibrationData.fl.motor1);
+  servoMotorAngleValue[1] = _limitMotorValue(90 - servoCalibrationData.fl.motor2);
+  servoMotorAngleValue[2] = _limitMotorValue(90 - servoCalibrationData.fr.motor1);
+  servoMotorAngleValue[3] = _limitMotorValue(90 + servoCalibrationData.fr.motor2);
+  servoMotorAngleValue[4] = _limitMotorValue(90 + servoCalibrationData.rl.motor1);
+  servoMotorAngleValue[5] = _limitMotorValue(90 - servoCalibrationData.rl.motor2);
+  servoMotorAngleValue[6] = _limitMotorValue(90 - servoCalibrationData.rr.motor1);
+  servoMotorAngleValue[7] = _limitMotorValue(90 + servoCalibrationData.rr.motor2);
+  doPWMServo();
+  delay(100);
 }
 
 // detach hardware
 void detachServoZero(void) {
   if (attached) {
-    m_servo_fl_1.detach();
-    m_servo_fr_1.detach();
-    m_servo_rl_1.detach();
-    m_servo_rr_1.detach();
-    m_servo_fl_2.detach();
-    m_servo_fr_2.detach();
-    m_servo_rl_2.detach();
-    m_servo_rr_2.detach();
+    servo_fl_1.detach();
+    servo_fr_1.detach();
+    servo_rl_1.detach();
+    servo_rr_1.detach();
+    servo_fl_2.detach();
+    servo_fr_2.detach();
+    servo_rl_2.detach();
+    servo_rr_2.detach();
   }
   attached = false;
   doPWMServo();
@@ -221,27 +367,27 @@ void setServoZero(short hightL, short hightR, short timeDelay) {
 
 // move leg motors.
 void updateLegsServo(void) {
-  m_motorAngleValue[0] = _limitMotorValue(90 + m_calibrationData.fl.motor1 + m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.fl.hight + staticBallance.fl.hight, m_legsValue.fl.shift + staticBallance.fl.shift, 1)));
-  m_motorAngleValue[1] = _limitMotorValue(90 - m_calibrationData.fl.motor2 - m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.fl.hight + staticBallance.fl.hight, m_legsValue.fl.shift + staticBallance.fl.shift, 2)));
-  m_motorAngleValue[2] = _limitMotorValue(90 - m_calibrationData.fr.motor1 - m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.fr.hight + staticBallance.fr.hight, m_legsValue.fr.shift + staticBallance.fr.shift, 1)));
-  m_motorAngleValue[3] = _limitMotorValue(90 + m_calibrationData.fr.motor2 + m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.fr.hight + staticBallance.fr.hight, m_legsValue.fr.shift + staticBallance.fr.shift, 2)));
-  m_motorAngleValue[4] = _limitMotorValue(90 + m_calibrationData.rl.motor1 + m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.rl.hight + staticBallance.rl.hight, m_legsValue.rl.shift + staticBallance.rl.shift, 1)));
-  m_motorAngleValue[5] = _limitMotorValue(90 - m_calibrationData.rl.motor2 - m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.rl.hight + staticBallance.rl.hight, m_legsValue.rl.shift + staticBallance.rl.shift, 2)));
-  m_motorAngleValue[6] = _limitMotorValue(90 - m_calibrationData.rr.motor1 - m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 1)));
-  m_motorAngleValue[7] = _limitMotorValue(90 + m_calibrationData.rr.motor2 + m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 2)));
+  servoMotorAngleValue[0] = _limitMotorValue(90 + servoCalibrationData.fl.motor1 + m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.fl.hight + staticBallance.fl.hight, m_legsValue.fl.shift + staticBallance.fl.shift, 1)));
+  servoMotorAngleValue[1] = _limitMotorValue(90 - servoCalibrationData.fl.motor2 - m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.fl.hight + staticBallance.fl.hight, m_legsValue.fl.shift + staticBallance.fl.shift, 2)));
+  servoMotorAngleValue[2] = _limitMotorValue(90 - servoCalibrationData.fr.motor1 - m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.fr.hight + staticBallance.fr.hight, m_legsValue.fr.shift + staticBallance.fr.shift, 1)));
+  servoMotorAngleValue[3] = _limitMotorValue(90 + servoCalibrationData.fr.motor2 + m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.fr.hight + staticBallance.fr.hight, m_legsValue.fr.shift + staticBallance.fr.shift, 2)));
+  servoMotorAngleValue[4] = _limitMotorValue(90 + servoCalibrationData.rl.motor1 + m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.rl.hight + staticBallance.rl.hight, m_legsValue.rl.shift + staticBallance.rl.shift, 1)));
+  servoMotorAngleValue[5] = _limitMotorValue(90 - servoCalibrationData.rl.motor2 - m_robotState.flipStateLNow * (_calculateMotorAngle(m_legsValue.rl.hight + staticBallance.rl.hight, m_legsValue.rl.shift + staticBallance.rl.shift, 2)));
+  servoMotorAngleValue[6] = _limitMotorValue(90 - servoCalibrationData.rr.motor1 - m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 1)));
+  servoMotorAngleValue[7] = _limitMotorValue(90 + servoCalibrationData.rr.motor2 + m_robotState.flipStateRNow * (_calculateMotorAngle(m_legsValue.rr.hight + staticBallance.rr.hight, m_legsValue.rr.shift + staticBallance.rr.shift, 2)));
   doPWMServo();
 }
 
 // do servo pwm cycle 500, 2500
 void doPWMServo(void) {
-  m_servo_fl_1.write(m_motorAngleValue[0]);
-  m_servo_fl_2.write(m_motorAngleValue[1]);
-  m_servo_fr_1.write(m_motorAngleValue[2]);
-  m_servo_fr_2.write(m_motorAngleValue[3]);
-  m_servo_rl_1.write(m_motorAngleValue[4]);
-  m_servo_rl_2.write(m_motorAngleValue[5]);
-  m_servo_rr_1.write(m_motorAngleValue[6]);
-  m_servo_rr_2.write(m_motorAngleValue[7]);
+  servo_fl_1.write(servoMotorAngleValue[0]);
+  servo_fl_2.write(servoMotorAngleValue[1]);
+  servo_fr_1.write(servoMotorAngleValue[2]);
+  servo_fr_2.write(servoMotorAngleValue[3]);
+  servo_rl_1.write(servoMotorAngleValue[4]);
+  servo_rl_2.write(servoMotorAngleValue[5]);
+  servo_rr_1.write(servoMotorAngleValue[6]);
+  servo_rr_2.write(servoMotorAngleValue[7]);
 }
 
 // update robot ballance

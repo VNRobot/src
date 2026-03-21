@@ -12,20 +12,35 @@ enum cPinsServo {
 };
 
 // init servo library
-Servo m_servo_ct_1;
-Servo m_servo_ct_2;
+Servo servo_ct_1;
+Servo servo_ct_2;
 
 // motors attached flag
 bool centerAttached = false;
 // motors values
 char centerSetValueF = 0;
 char centerSetValueR = 0;
+// calibration data
+motors centerCalibrationData = {0, 0};
+// servo motor value
+short centerMotorAngleValue[2] = {0, 0};
 // dynamic ballance
 motors dynamicCenterBallance = {0, 0};
+// center motor value for turning/shifting positive - outside
+motors centerValue = {0, 0};
+// ballance correction
+motors centerCorrect = {0, 0};
 // direction
 short directionValue = 0;
 // side shift value
 short sideShiftValue = 0;
+
+/*
+uses
+m_robotState
+m_legsValue
+m_getButtonPressed()
+*/
 
 // limit angle value
 short _limitCenterMotorValue(short mAngle) {
@@ -38,26 +53,81 @@ short _limitCenterMotorValue(short mAngle) {
 }
 
 // init servo motors
-void initCenter(void) {
+void initCenter(bool calibrationMode) {
   // set motors value
-  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1);
-  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90); 
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
   // init motors one by one
-  m_servo_ct_1.attach(CT1_MOTOR, 500, 2500);
-  doPWMCenter();
+  servo_ct_1.attach(CT1_MOTOR, 500, 2500);
+  servo_ct_1.write(centerMotorAngleValue[0]);
   delay(100);
-  m_servo_ct_2.attach(CT2_MOTOR, 500, 2500);
-  doPWMCenter();
+  servo_ct_2.attach(CT2_MOTOR, 500, 2500);
+  servo_ct_2.write(centerMotorAngleValue[1]);
   delay(100);
   centerAttached = true;
+  // check for calibration mode
+  if (calibrationMode) {
+    // do calibration
+    unsigned char calibrationStage = 0;
+    centerCalibrationData.motor1 = 0;
+    centerCalibrationData.motor2 = 0;
+    // motors one by one
+    while (calibrationMode) {
+      centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.motor1);
+      centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.motor2);
+      doPWMCenter();
+      delay(200);
+      // check button press
+      if (m_getButtonPressed()) {
+        calibrationStage ++;
+      }
+      switch (calibrationStage) {
+        case 0:
+          // assembly stage. do nothing
+        break;
+        case 1:
+        {
+          centerCalibrationData.motor1 ++;
+          if (centerCalibrationData.motor1 > CALIBRATION_ANGLE_MAX) {
+            centerCalibrationData.motor1 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 2:
+        {
+          centerCalibrationData.motor2 ++;
+          if (centerCalibrationData.motor2 > CALIBRATION_ANGLE_MAX) {
+            centerCalibrationData.motor2 = CALIBRATION_ANGLE_MIN;
+          }
+        }
+        break;
+        case 3:
+        {
+          EEPROM.update(9, (unsigned char)(centerCalibrationData.motor1 + 128));
+          EEPROM.update(10, (unsigned char)(centerCalibrationData.motor2 + 128));
+          calibrationStage ++;
+          calibrationMode = false;
+        }
+        break;
+        default:
+        break;
+      }
+    }
+  }
+  // read calibration
+  centerCalibrationData.motor1 = (char)(EEPROM.read(9) - 128);
+  centerCalibrationData.motor2 = (char)(EEPROM.read(10) - 128);
+  centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.motor1);
+  centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.motor2);
   doPWMCenter();
+  delay(100);
 }
 
 // detach hardware
 void detachCenterZero(void) {
   if (centerAttached) {
-    m_servo_ct_1.detach();
-    m_servo_ct_2.detach();
+    servo_ct_1.detach();
+    servo_ct_2.detach();
   }
   centerAttached = false;
   doPWMCenter();
@@ -66,8 +136,8 @@ void detachCenterZero(void) {
 
 // do servo pwm cycle 500, 2500
 void doPWMCenter(void) {
-  m_servo_ct_1.write(m_centerMotorAngleValue[0]);
-  m_servo_ct_2.write(m_centerMotorAngleValue[1]);
+  servo_ct_1.write(centerMotorAngleValue[0]);
+  servo_ct_2.write(centerMotorAngleValue[1]);
 }
 
 // set servo motors
@@ -75,8 +145,8 @@ void setCenterZero(char angle) {
   centerSetValueF = 0;
   centerSetValueR = 0;
   // set motor angle
-  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1 - angle);
-  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2 - angle);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - angle);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - angle);
   // move motors
   doPWMCenter();
 }
@@ -178,7 +248,7 @@ void _processSideShift(void) {
   }
 }
 
-// move leg motors.
+// move center motors.
 void updateCenter(void) {
   if (sideShiftValue == 0) {
     // process direction
@@ -189,32 +259,32 @@ void updateCenter(void) {
   }
   // apply shift correction
   if ((m_legsValue.fl.lifted) || (m_legsValue.fr.lifted)) {
-    if (centerSetValueF > m_centerValue.motor1) {
-      m_centerValue.motor1 ++;
+    if (centerSetValueF > centerValue.motor1) {
+      centerValue.motor1 ++;
       // reduce shift value
       _reduceSideShiftvalue();
-    } else if (centerSetValueF < m_centerValue.motor1) {
-      m_centerValue.motor1 --;
+    } else if (centerSetValueF < centerValue.motor1) {
+      centerValue.motor1 --;
       // reduce shift value
       _reduceSideShiftvalue();
     }
   }
   if ((m_legsValue.rl.lifted) || (m_legsValue.rr.lifted)) {
-    if (centerSetValueR > m_centerValue.motor2) {
-      m_centerValue.motor2 ++;
-    } else if (centerSetValueR < m_centerValue.motor2) {
-      m_centerValue.motor2 --;
+    if (centerSetValueR > centerValue.motor2) {
+      centerValue.motor2 ++;
+    } else if (centerSetValueR < centerValue.motor2) {
+      centerValue.motor2 --;
     }
   }
   // set motor angle
-  m_centerMotorAngleValue[0] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor1 - m_centerValue.motor1 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor1);
-  m_centerMotorAngleValue[1] = _limitCenterMotorValue(90 - m_centerCalibrationData.motor2 - m_centerValue.motor2 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor2);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - centerValue.motor1 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor1);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - centerValue.motor2 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor2);
   // move motors
   doPWMCenter();
 }
 
 // update robot ballance
 void updateBallanceCenter(void) {
-  dynamicCenterBallance.motor1 = m_centerCorrect.motor1;
-  dynamicCenterBallance.motor2 = m_centerCorrect.motor2;
+  dynamicCenterBallance.motor1 = centerCorrect.motor1;
+  dynamicCenterBallance.motor2 = centerCorrect.motor2;
 }
