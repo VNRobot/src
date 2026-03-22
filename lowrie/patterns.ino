@@ -5,95 +5,14 @@ Arduino nano
 Robot legs motion patterns
 */
 
-#define SERVO_FULL_CYCLE        72
-#define SERVO_HALF_CYCLE        36
-#define SERVO_PAIR_SHIFT        18
-
 // main counter
 unsigned char mainCounter = 0;
 unsigned char walkCounter = 0;
 unsigned char walkForwardCounter = 0;
-// walking mode
-bool walkingMode = false;
-// speed relative value from -1 to 2
-char speed = 0;
-char speedL = 0;
-char speedR = 0;
-// walking direction
-bool walkFrward = true;
 // leg pair shift
 unsigned char pairShift = 0;
-// distance to the target mm
-short distanceTotarget = 0;
 // speed dependent pattern
 bool speedFlexMode = true;
-
-// set distance to target in cm
-void setDistancePatternZero(short distance) {
-  distanceTotarget = distance * 10;
-}
-
-// get distance to target in cm
-short getDistancePatternZero(void) {
-  return distanceTotarget / 10;
-}
-
-// get next sequence, mode and speed
-void setPatternZero(short direction) {
-  if (m_robotState.patternNow == P_STANDGO) {
-    // walking mode
-    if (distanceTotarget > 0) {
-      // plan to go
-      if ((direction < 30) && (direction > -30)) {
-        // go forward
-        if (speed < 1) {
-          speed = 1;
-        } else {
-          speed = 2;
-        }
-        walkingMode = true;
-        walkFrward = true;
-      } else if ((direction < 150) && (direction > -150)) {
-        // stand and turn
-        speed = 0;
-        walkingMode = true;
-        walkFrward = true;
-      } else {
-        // go back
-        if (speed < 1) {
-          speed = 1;
-        } else {
-          speed = 2;
-        }
-        walkingMode = true;
-        walkFrward = false;
-      }
-    } else {
-      // arrived to the destnation
-      speed = 0;
-      walkingMode = true;
-      walkFrward = true;
-    }
-  } else {
-    // not walking
-    walkingMode = false;
-    walkFrward = true;
-  }
-  // set speed by side
-  speedL = speed;
-  speedR = speed;
-  //
-  m_robotState.speedNow = speed;
-  m_robotState.forwardNow = walkFrward;
-  // step size
-  short stepSize = (SERVO_HALF_CYCLE - (2 + speed))* speed * m_robotState.speedMuliplierNow;
-  // update distance to target
-  if (distanceTotarget > stepSize) {
-    distanceTotarget -= stepSize;
-  } else {
-    distanceTotarget = 0;
-  }
-}
 
 // update servo motors values
 void updateCountPatterns(void) {
@@ -107,7 +26,7 @@ void updateCountPatterns(void) {
     }
   }
   // set servo counter
-  if (walkFrward) {
+  if (m_robotState.forwardNow) {
       walkCounter = walkForwardCounter;
   } else {
     walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
@@ -163,20 +82,20 @@ void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shift
 // get servo motor steps
 void getWalkPatterns(void) {
   leg legSet;
-  if (walkingMode) {
-    legSet = _getWalkStep(m_sequenceCounter.fl, speedL);
+  if (m_robotState.walkingModeNow) {
+    legSet = _getWalkStep(m_sequenceCounter.fl, m_robotState.speedLNow);
     m_legsValue.fl.hight = legSet.hight;
     m_legsValue.fl.shift = legSet.shift;
     m_legsValue.fl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.fr, speedR);
+    legSet = _getWalkStep(m_sequenceCounter.fr, m_robotState.speedRNow);
     m_legsValue.fr.hight = legSet.hight;
     m_legsValue.fr.shift = legSet.shift;
     m_legsValue.fr.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rl, speedL);
+    legSet = _getWalkStep(m_sequenceCounter.rl, m_robotState.speedLNow);
     m_legsValue.rl.hight = legSet.hight;
     m_legsValue.rl.shift = legSet.shift;
     m_legsValue.rl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rr, speedR);
+    legSet = _getWalkStep(m_sequenceCounter.rr, m_robotState.speedRNow);
     m_legsValue.rr.hight = legSet.hight;
     m_legsValue.rr.shift = legSet.shift;
     m_legsValue.rr.lifted = legSet.lifted;

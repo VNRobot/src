@@ -277,8 +277,8 @@ void updateCenter(void) {
     }
   }
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - centerValue.motor1 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor1);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - centerValue.motor2 * (6 - m_robotState.speedNow * 2) - dynamicCenterBallance.motor2);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - centerValue.motor1 * (6 - m_robotState.speedLNow - m_robotState.speedRNow) - dynamicCenterBallance.motor1);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - centerValue.motor2 * (6 - m_robotState.speedLNow - m_robotState.speedRNow) - dynamicCenterBallance.motor2);
   // move motors
   doPWMCenter();
 }

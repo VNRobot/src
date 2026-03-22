@@ -15,6 +15,7 @@ unsigned char currentTaskPoint = 0;
 // repeat counter
 unsigned char repeatCounter = 0;
 // -----------------tasks manager----------------------
+/*
 // remember tasks
 unsigned char tasksMemory[16] = {DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
                                  DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
@@ -27,6 +28,7 @@ unsigned char commonTask = DEFAULT_TASK;
 unsigned char commonTaskCount = 0;
 // suggested task
 unsigned char suggestedTask = DEFAULT_TASK;
+*/
 
 // set down task
 void _setDownTask(void) {
@@ -98,6 +100,17 @@ void _setStandWalkTask(void) {
   currentTask[2] = Q_DONE;
 }
 
+// set walking mode
+void _setWalkingMode(void) {
+  if (m_robotState.patternNow == P_STANDGO) {
+    // walking mode
+    m_robotState.walkingModeNow = true;
+  } else {
+    // not walking
+    m_robotState.walkingModeNow = false;
+  }
+}
+
 // set task by name
 void applyTaskZero(unsigned char task) {
   switch (task) {
@@ -128,6 +141,7 @@ void applyTaskZero(unsigned char task) {
   repeatCounter = 0;
   currentTaskPoint = 0;
   m_robotState.patternNow = currentTask[currentTaskPoint];
+  _setWalkingMode();
   m_robotState.taskNow = task;
   //_printTaskNameDebug(task); // DEBUG
 }
@@ -138,6 +152,7 @@ void setNextPatternInTaskZero(void) {
   if (currentTask[currentTaskPoint] == Q_DONE) {
     // task is done. do nothing
     m_robotState.patternNow = Q_DONE;
+    _setWalkingMode();
     return;
   }
   if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < REPEAT_COUNTER_END)) {
@@ -150,6 +165,7 @@ void setNextPatternInTaskZero(void) {
   currentTaskPoint ++;
   if (currentTask[currentTaskPoint] != Q_REPEAT) {
     m_robotState.patternNow = currentTask[currentTaskPoint];
+    _setWalkingMode();
   }
   return;
 }
@@ -274,7 +290,7 @@ unsigned char getNormalTaskZero(int direction) {
 }
 
 // -----------------tasks manager----------------------
-
+/*
 // remember item
 void _remeberItem(unsigned char item, unsigned char * itemArray) {
   // shift values
@@ -338,6 +354,7 @@ unsigned char doManageTasks(unsigned char taskNext) {
   }
   return taskNext;
 }
+*/
 
 // print task  name
 void _printTaskNameDebug(unsigned char taskName) {

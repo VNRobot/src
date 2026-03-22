@@ -29,6 +29,9 @@ Main file
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
+#define SERVO_FULL_CYCLE        72
+#define SERVO_HALF_CYCLE        36
+#define SERVO_PAIR_SHIFT        18
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -10
 #define CALIBRATION_ANGLE_MAX   10
@@ -163,8 +166,10 @@ typedef struct robotState {
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
-  char speedNow;
+  char speedLNow;
+  char speedRNow;
   bool forwardNow;
+  bool walkingModeNow;
 } robotState;
 
 //---------------global variables---------------------------
@@ -183,8 +188,10 @@ robotState m_robotState = {
   PRIORITY_LOW,            // taskPriorityNow;
   Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
-  0,                       // speedNow
-  true                     // forwardNow
+  0,                       // speedLNow
+  0,                       // speedRNow
+  true,                    // forwardNow
+  true                     // walkingModeNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
@@ -296,10 +303,12 @@ void setup() {
   updateInputsZero();
   // explore mode
   Serial.println(F("Entering explore mode"));
-  applyTaskZero(doManageTasks(BEGIN_TASK));
+  applyTaskZero(BEGIN_TASK); //doManageTasks(BEGIN_TASK));
   // load task and pattern. direction is 0
-  setPatternZero(0);
+  updatePathZero(0);
   updateCountPatterns();
+  // set distance to target
+  setDistancePathZero(100);
 }
 
 // set new task and new pattern
@@ -496,8 +505,8 @@ void loop() {
       break;
       default:
       {
-        // set pattern
-        setPatternZero(getDirectionGyro());
+        // set speed and direction
+        updatePathZero(getDirectionGyro());
         _doCycle();
       }
       break;
