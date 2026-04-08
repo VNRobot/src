@@ -161,8 +161,6 @@ typedef struct robotState {
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
-  char flipStateLNow;
-  char flipStateRNow;
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
@@ -183,8 +181,6 @@ robotState m_robotState = {
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow; 1 or 2
-  1,                       // char flipStateLNow;
-  1,                       // char flipStateRNow;
   PRIORITY_LOW,            // taskPriorityNow;
   Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
@@ -268,8 +264,8 @@ void setup() {
   // lift legs for gyro calibration
   if (calibrationMode) {
     delay(1000);
-    m_robotState.flipStateLNow = -1;
-    m_robotState.flipStateRNow = -1;
+    setFlippedGyro(true);
+    setFlippedServo(-1, -1);
     setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   }
   // init gyro
@@ -437,24 +433,20 @@ void loop() {
         setCenterZero(-20);
         setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
         if (m_gyroState.aRollAverage < 0) {
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = -1;
+          setFlippedServo(1, -1);
           setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = 1;
+          setFlippedServo(-1, 1);
           setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         } else {
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = 1;
+          setFlippedServo(-1, 1);
           setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = -1;
+          setFlippedServo(1, -1);
           setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         }
         setCenterZero(30);
         setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
-        m_robotState.flipStateLNow = 1;
-        m_robotState.flipStateRNow = 1;
+        setFlippedGyro(false);
+        setFlippedServo(1, 1);
         setCenterZero(0);
         setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
       }
@@ -464,11 +456,11 @@ void loop() {
       case Q_DORESET:
       {
         if (m_gyroState.aUpsideAverage < 0) {
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = -1;
+          setFlippedGyro(true);
+          setFlippedServo(-1, -1);
         } else {
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = 1;
+          setFlippedGyro(false);
+          setFlippedServo(1, 1);
         }
       }
       break;

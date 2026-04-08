@@ -47,6 +47,8 @@ short pitchAverageOld = 0;
 // walking direction
 short walkingDirection = 0;
 short walkingDirectionOld = 0;
+// flipped state
+bool gyroFlipped = false;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -88,6 +90,11 @@ void _readWire(float * regData, unsigned char code) {
   regData[0] = Wire.read() << 8 | Wire.read();
   regData[1] = Wire.read() << 8 | Wire.read();
   regData[2] = Wire.read() << 8 | Wire.read();
+}
+
+// set flipped state
+void setFlippedGyro(bool flipped) {
+  gyroFlipped = flipped;
 }
 
 // init gyroscope and accelerometer MPU6050 using I2C
@@ -306,17 +313,17 @@ unsigned char _statusGyro(void) {
       return GYRO_FELL_BACK;
     }
     // check upside down
-    if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == 1) && (m_robotState.flipStateRNow == 1)) {
+    if ((m_gyroState.aUpsideAverage < 0) && (!gyroFlipped)) {
       // flip event. update flip state
       return GYRO_UPSIDEDOWN;
     }
     // position normal reset walking
-    if ((m_gyroState.aUpsideAverage > 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+    if ((m_gyroState.aUpsideAverage > 0) && (gyroFlipped)) {
       return GYRO_RESET;
     }
   }
   // upside down. recover fail
-  if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+  if ((m_gyroState.aUpsideAverage < 0) && (gyroFlipped)) {
     // do nothing for now
   }
   return GYRO_NORM;
