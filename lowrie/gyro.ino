@@ -1,5 +1,5 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 use MPU6050 to read gyroscope and accelerometer
@@ -47,6 +47,8 @@ short pitchAverageOld = 0;
 // walking direction
 short walkingDirection = 0;
 short walkingDirectionOld = 0;
+// flipped state
+bool gyroFlipped = false;
 
 // init gyroscope wire
 void _initWire(void) {
@@ -90,9 +92,21 @@ void _readWire(float * regData, unsigned char code) {
   regData[2] = Wire.read() << 8 | Wire.read();
 }
 
+// set flipped state
+void setFlippedGyro(bool flipped) {
+  gyroFlipped = flipped;
+}
+
 // init gyroscope and accelerometer MPU6050 using I2C
-void initGyro() {
+void initGyro(bool calibrationMode) {
   int i;
+  // check for calibration mode
+  if (calibrationMode) {
+    while (!m_getButtonPressed()) {
+      delay(100);
+    }
+    delay(1000);
+  }
   _initWire();
   // calculate gyro errors
   for (i = 0; i < 200; i++) {
@@ -118,7 +132,7 @@ void initGyro() {
   gyroErrors.GyroErrorY /= 200;
   gyroErrors.GyroErrorZ /= 200;
   // write gyro calibration when button pressed
-  if (analogRead(A6) < INPUT_GROUNDED) {
+  if (calibrationMode) {
     EEPROM.put(16, gyroErrors);
     Serial.println(" writing gyro errors ");
   } else {
@@ -230,7 +244,7 @@ void updateGyro(void) {
 }
 
 // reset gyro data
-void resetGyro(void) {
+void resetGyroZero(void) {
   floatDirection = 0;
   m_gyroState.direction = 0;
   m_gyroState.stateGyro = GYRO_NORM;
@@ -245,28 +259,28 @@ void resetGyro(void) {
 }
 
 // get walking direction
-int getDirectionGyro(void) {
+short getDirectionGyro(void) {
   return m_gyroState.direction - walkingDirection;
 }
 
 // remember horizontal direction
-void setDirectionGyro(void) {
+void setDirectionGyroZero(void) {
   walkingDirection = m_gyroState.direction;
   walkingDirectionOld = walkingDirection;
 }
 
 // correct horizontal direction
-void resetDirectionGyro(void) {
+void resetDirectionGyroZero(void) {
   walkingDirection = m_gyroState.direction;
 }
 
 // return to old horizontal direction
-void restoreDirectionGyro(void) {
+void restoreDirectionGyroZero(void) {
   walkingDirection = walkingDirectionOld;
 }
 
 // reverse horizontal direction
-void reverseDirectionGyro(void) {
+void reverseDirectionGyroZero(void) {
   if ((walkingDirection < 30) && (walkingDirection > -30)) {
     // not reverset yet
     if (m_gyroState.direction < 0) {
@@ -299,17 +313,17 @@ unsigned char _statusGyro(void) {
       return GYRO_FELL_BACK;
     }
     // check upside down
-    if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == 1) && (m_robotState.flipStateRNow == 1)) {
+    if ((m_gyroState.aUpsideAverage < 0) && (!gyroFlipped)) {
       // flip event. update flip state
       return GYRO_UPSIDEDOWN;
     }
     // position normal reset walking
-    if ((m_gyroState.aUpsideAverage > 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+    if ((m_gyroState.aUpsideAverage > 0) && (gyroFlipped)) {
       return GYRO_RESET;
     }
   }
   // upside down. recover fail
-  if ((m_gyroState.aUpsideAverage < 0) && (m_robotState.flipStateLNow == -1) && (m_robotState.flipStateRNow == -1)) {
+  if ((m_gyroState.aUpsideAverage < 0) && (gyroFlipped)) {
     // do nothing for now
   }
   return GYRO_NORM;

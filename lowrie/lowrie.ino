@@ -1,21 +1,15 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Main file
 */
 
 #include <EEPROM.h>
+#include <Servo.h>
 
 // software version hardcoded. should be changed manually
-#define ROBOT_VERSION           77
-// calibration current in ma default 640 or 2000 to disable
-#define CALIBRATION_CURRENT     2000
-// maximal pair of legs current in ma 2000 to disable
-#define MAX_CURRENT             1000
-// low battery level in mv
-#define LOW_BATTERY             6200
-#define DEAD_BATTERY            6000
+#define ROBOT_VERSION           12
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
@@ -23,40 +17,28 @@ Main file
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               88
 // normal hight
-#define HIGHT_DEFAULT           125
+#define HIGHT_DEFAULT           130
+// maximal hight
+#define HIGHT_MAX               175
 // normal leg lift in mm
 #define LEG_LIFT                40
-// center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
-// sensors geometry
-#define SENSOR_ANGLE            20     // down angle
-#define SENSOR_HIGHT            10     // mm hight relative to legs
-#define SENSOR_DISTANCE_MIN     12     // cm
-#define SENSOR_DISTANCE_MAX     48     // cm
 // robot phisics
-#define OFFROAD_ANGLE           4
-#define SLOP_ANGLE              12
-#define FALLING_ANGLE           45
+#define OFFROAD_ANGLE           4   // to be moved to gyro
+#define SLOP_ANGLE              12  // to be moved to gyro
+#define FALLING_ANGLE           45  // to be moved to gyro
 // main servo pattern counter end
+#define MAIN_FULL_CYCLE         36
+#define MAIN_HALF_CYCLE         18
 #define SERVO_FULL_CYCLE        72
 #define SERVO_HALF_CYCLE        36
 #define SERVO_PAIR_SHIFT        18
-#define MAIN_FULL_CYCLE         36
-#define MAIN_HALF_CYCLE         18
-// robot size
-#define ROBOT_SIZE_DIVIDER      2
-// ballance correction max value
-#define STATIC_BALLANCE_MAX     60
-#define DYNAMIC_BALLANCE_MAX    20
-// pattern repeat counter
-#define REPEAT_COUNTER_END      8
+// calibration angle
+#define CALIBRATION_ANGLE_MIN   -10
+#define CALIBRATION_ANGLE_MAX   10
 
 // input state
 enum inState {
-  IN_WALL_FRONTLEFT,
-  IN_WALL_FRONTRIGHT,
-  IN_WALL_LEFT,
-  IN_WALL_RIGHT,
+  IN_OBSTACLE_FRONT,
   IN_OBSTACLE_FRONTLEFT,
   IN_OBSTACLE_FRONTRIGHT,
   IN_OBSTACLE_LEFT,
@@ -73,14 +55,6 @@ enum cState {
 // patterns
 enum rPatterns {
   P_STANDGO,
-  P_STANDGOLEFT,
-  P_STANDGORIGHT,
-  P_GOFORWARD,
-  P_GOLEFT,
-  P_GORIGHT,
-  P_GOBACK,
-  P_GOBACKLEFT,
-  P_GOBACKRIGHT,
   Q_DOLOW,
   Q_DODOWN,
   Q_DOSTAND,
@@ -102,16 +76,7 @@ enum rPatterns {
 // tasks
 enum rTasks {
   BEGIN_TASK = 0,
-  GOBACKLEFT_TASK,
-  GOBACKRIGHT_TASK,
-  GOTURNRIGHT_TASK,
-  GOTURNLEFT_TASK,
-  STANDTURNRIGHT_TASK,
-  STANDTURNLEFT_TASK,
-  STANDTURNRIGHT2_TASK,
-  STANDTURNLEFT2_TASK,
-  GO_TASK,
-  GOBACK_TASK,
+  STANDGO_TASK,
   STAND_TASK,
   DOWN_TASK,
   FLIP_TASK,
@@ -170,9 +135,9 @@ struct allLegs {
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
   short aPitchNow;             // relative pitch now
-  short aRollAverage;                 // roll       right - positive   -90 0 90 upsidedown also 0
-  short aPitchAverage;                // pitch      up - positive   -90 0 90 upsidedown also 0
-  short aUpsideAverage;               // z          upside down - negative
+  short aRollAverage;          // roll       right - positive   -90 0 90 upsidedown also 0
+  short aPitchAverage;         // pitch      up - positive   -90 0 90 upsidedown also 0
+  short aUpsideAverage;        // z          upside down - negative
   short aLiftFL;
   short aLiftFR;
   short aLiftRL;
@@ -196,19 +161,16 @@ typedef struct robotState {
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
-  char flipStateLNow;
-  char flipStateRNow;
   unsigned char taskPriorityNow;
   unsigned char patternNow;
   unsigned char taskNow;
-  char speedNow;
+  char speedLNow;
+  char speedRNow;
+  bool forwardNow;
+  bool walkingModeNow;
 } robotState;
 
 //---------------global variables---------------------------
-// motors calibration values for all motors
-allMotors m_calibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
-// servo motor value
-short m_motorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
@@ -219,12 +181,13 @@ robotState m_robotState = {
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow; 1 or 2
-  1,                       // char flipStateLNow;
-  1,                       // char flipStateRNow;
   PRIORITY_LOW,            // taskPriorityNow;
   Q_DOSTAND,               // patternNow
   STAND_TASK,              // taskNow
-  0                        // speedNow
+  0,                       // speedLNow
+  0,                       // speedRNow
+  true,                    // forwardNow
+  true                     // walkingModeNow
 };
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
@@ -232,15 +195,54 @@ accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
+// sensor distance array
+unsigned short m_inputDistanceFU[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceFL[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceRU[6] = {0, 0, 0, 0, 0, 0};
+unsigned short m_inputDistanceRL[6] = {0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
 // servo cycle is done flag
 bool cycleDone = true;
 // default task from rTasks
-unsigned char defaultTask = GO_TASK;
+unsigned char defaultTask = STANDGO_TASK;
 // next task
-unsigned char taskNext = STAND_TASK;
+unsigned char taskNext = STANDGO_TASK;
 // variable for temporary use
 unsigned char i;
+
+// check button pressed
+bool m_getButtonPressed(void) {
+    bool modeButtonPressed = false;
+    if (analogRead(A6) < INPUT_GROUNDED) {
+    modeButtonPressed = true;
+    // block until button released
+    while (analogRead(A6) < INPUT_GROUNDED) {
+      delay(100);
+    }
+  }
+  return modeButtonPressed;
+}
+
+// true if software version from eeprom is right
+bool _rightSoftwareVersionEeprom() {
+  unsigned char version = EEPROM.read(0);
+  // software version address is 0
+  if (version == ROBOT_VERSION) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+// write software version to eeprom
+void _writeSoftwareVersionEeprom() {
+#ifdef BOARD_ESP32
+  EEPROM.write(0, ROBOT_VERSION);
+  EEPROM.commit();
+#else
+  EEPROM.update(0, ROBOT_VERSION);
+#endif
+}
 
 // runs once on boot or reset
 void setup() {
@@ -248,77 +250,93 @@ void setup() {
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
-  // init servo motors
-  initServo();
-  doPWMServo(200);
-  setServo(HIGHT_LOW, HIGHT_LOW, 20);
-  // init gyro MPU6050 using I2C
-  initGyro();
-  doPWMServo(200);
-  updateGyro();
-  doPWMServo(20);
-  resetGyro();
-  doPWMServo(20);
-  updateGyro();
-  // check for Mode button press or if not calibrated
-  if (!doCalibration()) {
-    setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
-    doPWMServo(200);
-    // init current readings
-    initCurrent();
-    // init digital sensors
-    initInputs();
-    // update current readings
-    updateCurrent();
-    // read proximity sensors
-    updateInputs();
-    // explore mode
-    Serial.println(F("Entering explore mode"));
-    applyTask(doManageTasks(BEGIN_TASK));
-    // load task and pattern. direction is 0
-    setPattern();
-    updateCountPatterns();
+  // check button press
+  bool calibrationMode = m_getButtonPressed();
+  if (!_rightSoftwareVersionEeprom()) {
+    calibrationMode = true;
   }
+  // init legs servo motors
+  initServo(calibrationMode);
+  // lift legs for gyro calibration
+  if (calibrationMode) {
+    delay(1000);
+    setFlippedGyro(true);
+    setFlippedServo(-1, -1);
+    setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  }
+  // init gyro
+  initGyro(calibrationMode);
+  delay(200);
+  updateGyro();
+  delay(20);
+  resetGyroZero();
+  delay(20);
+  updateGyro();
+  // disable motors
+  if (calibrationMode) {
+    // write software version
+    _writeSoftwareVersionEeprom();
+    detachServoZero();
+    delay(20000);
+  }
+  delay(200);
+  setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+  // init current readings
+  initCurrent();
+  // init digital sensors
+  initInputs();
+  // update current readings
+  updateCurrent();
+  // read proximity sensors
+  updateInputsZero();
+  // explore mode
+  Serial.println(F("Entering explore mode"));
+  applyTaskZero(BEGIN_TASK); //doManageTasks(BEGIN_TASK));
+  // load task and pattern. direction is 0
+  updatePathZero(0);
+  updateCountPatterns();
+  // set distance to target
+  setDistancePathZero(100);
 }
 
 // set new task and new pattern
-void setTaskAndPattern(void) {
+void _setTaskAndPatternZero(void) {
   if (m_robotState.patternNow == Q_END) {
     // this is the end. do nothing
-    delay(10);
+    delay(1000);
     return;
   }
   // not high priority or end of high priority task
   if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == Q_DONE)) {
     // override with high priority task
-    taskNext = getHighPriorityTask();
+    taskNext = getHighPriorityTaskZero();
     if (taskNext == DEFAULT_TASK) {
       taskNext = m_robotState.taskNow;
     } else {
-      applyTask(doManageTasks(taskNext));
+      applyTaskZero(taskNext); //doManageTasks(taskNext));
       return;
     }
   }
   // any priority end of task
   if (m_robotState.patternNow == Q_DONE) {
     // check for normal priority
-    taskNext = getNormalTask(getDirectionGyro());
+    taskNext = getNormalTaskZero(getDirectionGyro());
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
-    applyTask(doManageTasks(taskNext));
+    applyTaskZero(taskNext); //doManageTasks(taskNext));
     return;
   }
   // set next pattern
-  setNextPatternInTask();
+  setNextPatternInTaskZero();
 }
 
 // set motors and read sensors
-void doCycle(void) {
+void _doCycle(void) {
   // update servo motors values, move motors
   getWalkPatterns();
   updateLegsServo();
-  doPWMServo(TIME_DELAY);
+  delay(TIME_DELAY);
   cycleDone = true;
 }
 
@@ -333,14 +351,24 @@ void loop() {
     updateCurrent();
     // update gyro readings
     updateGyro();
-    // read proximity sensors
-    updateInputs();
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
-      //printInputsDebug();
+      //setDirectionCenterZero(getDirectionGyro());
+      // process proximity sensors
+      updateInputsZero();
+      // process distance and direction
+
+      // getDistancePatternZero()
+      // setDistancePatternZero(100)
+      // m_gyroState.direction
+      // setDirectionGyroZero(90)
+
+      // find turning
+      // setSideShiftCenterZero(0); *** to do
+      // setDistancePatternZero(100); *** to do
       //printCurrentStateDebug();
       // set robot state
-      setRobotState();
+      //setRobotState();        *** disable for now
     }
     // update ballance
     updateBallance();
@@ -349,65 +377,62 @@ void loop() {
   // once in a pattern
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
-    setTaskAndPattern();
+    _setTaskAndPatternZero();
     //printPatternNameDebug(m_robotState.patternNow); // DEBUG
     switch (m_robotState.patternNow) {
       case Q_SETDIRECTION:
       {
-        setDirectionGyro();
+        setDirectionGyroZero();
       }
       break;
       case Q_RESETDIRECTION:
       {
-        resetDirectionGyro();
+        resetDirectionGyroZero();
       }
       break;
       case Q_REVERSEDIRECTION:
       {
-        reverseDirectionGyro();
+        reverseDirectionGyroZero();
       }
       break;
       case Q_RESETGIRO:
       {
-        resetGyro();
+        resetGyroZero();
       }
       break;
       case Q_RESTOREDIRECTION:
       {
-        restoreDirectionGyro();
+        restoreDirectionGyroZero();
       }
       break;
       case Q_DOLOW:
       {
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
       case Q_DOSTAND:
       {
-        setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
+        setServoZero(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
       case Q_DORECOVER:
       {
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
         if (m_gyroState.aRollAverage < 0) {
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = -1;
-          setServo(180, 180, 0);
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = 1;
-          setServo(180, 180, 0);
+          setFlippedServo(1, -1);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setFlippedServo(-1, 1);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         } else {
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = 1;
-          setServo(180, 180, 0);
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = -1;
-          setServo(180, 180, 0);
+          setFlippedServo(-1, 1);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setFlippedServo(1, -1);
+          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
         }
-        m_robotState.flipStateLNow = 1;
-        m_robotState.flipStateRNow = 1;
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
+        setFlippedGyro(false);
+        setFlippedServo(1, 1);
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
       }
       break;
       case Q_DOFLIP:
@@ -415,11 +440,11 @@ void loop() {
       case Q_DORESET:
       {
         if (m_gyroState.aUpsideAverage < 0) {
-          m_robotState.flipStateLNow = -1;
-          m_robotState.flipStateRNow = -1;
+          setFlippedGyro(true);
+          setFlippedServo(-1, -1);
         } else {
-          m_robotState.flipStateLNow = 1;
-          m_robotState.flipStateRNow = 1;
+          setFlippedGyro(false);
+          setFlippedServo(1, 1);
         }
       }
       break;
@@ -431,8 +456,8 @@ void loop() {
       case Q_DODOWN:
       {
         // disable motors
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
-        detachServo();
+        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+        detachServoZero();
       }
       break;
       case Q_SETPRIORITY_HIGH:
@@ -452,15 +477,15 @@ void loop() {
       break;
       default:
       {
-        // set pattern
-        setPattern();
-        doCycle();
+        // set speed and direction
+        updatePathZero(getDirectionGyro());
+        _doCycle();
       }
       break;
     }
   } else {
     // cycle in the middle of pattern
-    doCycle();
+    _doCycle();
   }
 }
 
@@ -472,30 +497,6 @@ void printPatternNameDebug(unsigned char patternNow) {
     break;
     case P_STANDGO:
       Serial.print(F(" P_STANDGO "));
-    break;
-    case P_STANDGOLEFT:
-      Serial.print(F(" P_STANDGOLEFT "));
-    break;
-    case P_STANDGORIGHT:
-      Serial.print(F(" P_STANDGORIGHT "));
-    break;
-    case P_GOFORWARD:
-      Serial.print(F(" P_GOFORWARD "));
-    break;
-    case P_GOLEFT:
-      Serial.print(F(" P_GOLEFT "));
-    break;
-    case P_GORIGHT:
-      Serial.print(F(" P_GORIGHT "));
-    break;
-    case P_GOBACK:
-      Serial.print(F(" P_GOBACK "));
-    break;
-    case P_GOBACKLEFT:
-      Serial.print(F(" P_GOBACKLEFT "));
-    break;
-    case P_GOBACKRIGHT:
-      Serial.print(F(" P_GOBACKRIGHT "));
     break;
     case Q_DOLOW:
       Serial.print(F(" Q_DOLOW "));
@@ -536,42 +537,6 @@ void printPatternNameDebug(unsigned char patternNow) {
     default:
       Serial.print(F(" unknown pattern "));
     break;
-  }
-}
-
-// print sensor inputs state
-void printInputsDebug(void) {
-  // print input state
-  switch (m_robotState.inputStateNow) {
-    case IN_WALL_FRONTLEFT:
-      Serial.println(F(" IN_WALL_FRONTLEFT "));
-    break;
-    case IN_WALL_FRONTRIGHT:
-      Serial.println(F(" IN_WALL_FRONTRIGHT "));
-    break;
-    case IN_WALL_LEFT:
-      Serial.println(F(" IN_WALL_LEFT "));
-    break;
-    case IN_WALL_RIGHT:
-      Serial.println(F(" IN_WALL_RIGHT "));
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
-      Serial.println(F(" IN_OBSTACLE_FRONTLEFT "));
-    break;
-    case IN_OBSTACLE_FRONTRIGHT:
-      Serial.println(F(" IN_OBSTACLE_FRONTRIGHT "));
-    break;
-    case IN_OBSTACLE_LEFT:
-      Serial.println(F(" IN_OBSTACLE_LEFT "));
-    break;
-    case IN_OBSTACLE_RIGHT:
-      Serial.println(F(" IN_OBSTACLE_RIGHT "));
-    break;
-    case IN_NORMAL:
-      Serial.println(F(" IN_NORMAL "));
-    break;
-    default:
-      Serial.println(F(" Wrong inputs state "));
   }
 }
 

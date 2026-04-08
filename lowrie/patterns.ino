@@ -1,5 +1,5 @@
 /*
-Walking Robot TurtleV1
+Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot legs motion patterns
@@ -9,117 +9,10 @@ Robot legs motion patterns
 unsigned char mainCounter = 0;
 unsigned char walkCounter = 0;
 unsigned char walkForwardCounter = 0;
-// walking mode
-bool walkingMode = false;
-// speed relative value from -1 to 2
-char speed = 0;
-char speedL = 0;
-char speedR = 0;
-// walking direction
-bool walkFrward = true;
 // leg pair shift
 unsigned char pairShift = 0;
-
-// get next sequence, mode and speed
-void setPattern(void) {
-  // set speed
-  switch (m_robotState.patternNow) {
-    case P_STANDGOLEFT:
-    case P_STANDGORIGHT:
-    case P_GOFORWARD:
-    case P_GOLEFT:
-    case P_GORIGHT:
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    {
-      if (speed < 1) {
-        speed = 1;
-      } else {
-        speed = 2;
-      }
-    }
-    break;
-    case P_STANDGO:
-    {
-      speed = 0;
-    }
-    break;
-    default:
-    {
-      speed = 0;
-    }
-    break;
-  }
-  // set mode and direction
-  switch (m_robotState.patternNow) {
-    case P_STANDGO:
-    case P_GOFORWARD:
-    case P_GOLEFT:
-    case P_GORIGHT:
-    {
-      walkingMode = true;
-      walkFrward = true;
-    }
-    break;
-    case P_GOBACK:
-    case P_GOBACKLEFT:
-    case P_GOBACKRIGHT:
-    case P_STANDGOLEFT:
-    case P_STANDGORIGHT:
-    {
-      walkingMode = true;
-      walkFrward = false;
-    }
-    break;
-    default:
-    {
-      walkingMode = false;
-      walkFrward = true;
-    }
-    break;
-  }
-  // set speed by side
-  switch (m_robotState.patternNow) {
-    case P_STANDGOLEFT:
-    {
-      speedL = speed;
-      speedR = 0;
-    }
-    break;
-    case P_STANDGORIGHT:
-    {
-      speedL = 0;
-      speedR = speed;
-    }
-    break;
-    case P_GOLEFT:
-    case P_GOBACKRIGHT:
-    {
-      speedL = speed - 1;
-      speedR = speed;
-    }
-    break;
-    case P_GORIGHT:
-    case P_GOBACKLEFT:
-    {
-      speedL = speed;
-      speedR = speed - 1;
-    }
-    break;
-    default:
-    {
-      speedL = speed;
-      speedR = speed;
-    }
-    break;
-  }
-  if (walkFrward) {
-    m_robotState.speedNow = speed;
-  } else {
-    m_robotState.speedNow = -speed;
-  }
-}
+// speed dependent pattern
+bool speedFlexMode = true;
 
 // update servo motors values
 void updateCountPatterns(void) {
@@ -133,7 +26,7 @@ void updateCountPatterns(void) {
     }
   }
   // set servo counter
-  if (walkFrward) {
+  if (m_robotState.forwardNow) {
       walkCounter = walkForwardCounter;
   } else {
     walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
@@ -189,20 +82,20 @@ void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shift
 // get servo motor steps
 void getWalkPatterns(void) {
   leg legSet;
-  if (walkingMode) {
-    legSet = _getWalkStep(m_sequenceCounter.fl, speedL);
+  if (m_robotState.walkingModeNow) {
+    legSet = _getWalkStep(m_sequenceCounter.fl, m_robotState.speedLNow);
     m_legsValue.fl.hight = legSet.hight;
     m_legsValue.fl.shift = legSet.shift;
     m_legsValue.fl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.fr, speedR);
+    legSet = _getWalkStep(m_sequenceCounter.fr, m_robotState.speedRNow);
     m_legsValue.fr.hight = legSet.hight;
     m_legsValue.fr.shift = legSet.shift;
     m_legsValue.fr.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rl, speedL);
+    legSet = _getWalkStep(m_sequenceCounter.rl, m_robotState.speedLNow);
     m_legsValue.rl.hight = legSet.hight;
     m_legsValue.rl.shift = legSet.shift;
     m_legsValue.rl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rr, speedR);
+    legSet = _getWalkStep(m_sequenceCounter.rr, m_robotState.speedRNow);
     m_legsValue.rr.hight = legSet.hight;
     m_legsValue.rr.shift = legSet.shift;
     m_legsValue.rr.lifted = legSet.lifted;
@@ -216,7 +109,11 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   // leg step values
   leg legStep = {0, 0, false};
   // lift timing point
-  unsigned char liftPoint = (2 + speedValue) * m_robotState.speedMuliplierNow;
+  char speedBuffer = 2;
+  if (speedFlexMode) {
+    speedBuffer = speedValue;
+  }
+  unsigned char liftPoint = (2 + speedBuffer) * m_robotState.speedMuliplierNow;
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //
