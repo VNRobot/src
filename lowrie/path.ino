@@ -97,9 +97,9 @@ void updatePathZero(short direction) {
     speedAbsolute = 0;
     walkFrward = true;
   }
-  // uncomment for step turning
-  m_robotState.speedLNow = speedAbsolute; //_turnStep(-direction, speedAbsolute);
-  m_robotState.speedRNow = speedAbsolute; //_turnStep(direction, speedAbsolute);
+  // step turning
+  m_robotState.speedLNow = _turnStep(-direction, speedAbsolute);
+  m_robotState.speedRNow = _turnStep(direction, speedAbsolute);
   m_robotState.forwardNow = walkFrward;
   // step size
   short stepSize = (SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * m_robotState.speedMuliplierNow;

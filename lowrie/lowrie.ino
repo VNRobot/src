@@ -9,7 +9,7 @@ Main file
 #include <Servo.h>
 
 // software version hardcoded. should be changed manually
-#define ROBOT_VERSION           12
+#define ROBOT_VERSION           11
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
@@ -23,15 +23,15 @@ Main file
 // normal leg lift in mm
 #define LEG_LIFT                40
 // robot phisics
-#define OFFROAD_ANGLE           4   // to be moved to gyro
-#define SLOP_ANGLE              12  // to be moved to gyro
-#define FALLING_ANGLE           45  // to be moved to gyro
+#define OFFROAD_ANGLE           4
+#define SLOP_ANGLE              12
+#define FALLING_ANGLE           45
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
 #define SERVO_FULL_CYCLE        72
 #define SERVO_HALF_CYCLE        36
-#define SERVO_PAIR_SHIFT        18
+#define SERVO_PAIR_SHIFT        18  // used for ino
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -10
 #define CALIBRATION_ANGLE_MAX   10
@@ -43,6 +43,8 @@ enum inState {
   IN_OBSTACLE_FRONTRIGHT,
   IN_OBSTACLE_LEFT,
   IN_OBSTACLE_RIGHT,
+  IN_FAR_OBSTACLE_LEFT,
+  IN_FAR_OBSTACLE_RIGHT,
   IN_NORMAL             
 };
 // current state
@@ -138,12 +140,12 @@ typedef struct accRoll {
   short aRollAverage;          // roll       right - positive   -90 0 90 upsidedown also 0
   short aPitchAverage;         // pitch      up - positive   -90 0 90 upsidedown also 0
   short aUpsideAverage;        // z          upside down - negative
-  short aLiftFL;
-  short aLiftFR;
-  short aLiftRL;
-  short aLiftRR;
-  short direction;                // direction  turn right - positive
-  unsigned char stateGyro;
+  short aLiftFL;               // dynamic ballance when leg is lifted
+  short aLiftFR;               // dynamic ballance when leg is lifted
+  short aLiftRL;               // dynamic ballance when leg is lifted
+  short aLiftRR;               // dynamic ballance when leg is lifted
+  short direction;             // absolute direction  turn right - positive
+  unsigned char stateGyro;     // state from gState
 } accRoll;
 // leg timing phase. main m
 struct phase {
@@ -195,11 +197,6 @@ accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
-// sensor distance array
-unsigned short m_inputDistanceFU[6] = {0, 0, 0, 0, 0, 0};
-unsigned short m_inputDistanceFL[6] = {0, 0, 0, 0, 0, 0};
-unsigned short m_inputDistanceRU[6] = {0, 0, 0, 0, 0, 0};
-unsigned short m_inputDistanceRL[6] = {0, 0, 0, 0, 0, 0};
 //----------------------------------------------------------
 // servo cycle is done flag
 bool cycleDone = true;
@@ -255,6 +252,10 @@ void setup() {
   if (!_rightSoftwareVersionEeprom()) {
     calibrationMode = true;
   }
+  // init digital sensors
+  initInputs(calibrationMode);
+  // init current readings
+  initCurrent(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   // lift legs for gyro calibration
@@ -267,11 +268,11 @@ void setup() {
   // init gyro
   initGyro(calibrationMode);
   delay(200);
-  updateGyro();
+  updateGyro(0);
   delay(20);
   resetGyroZero();
   delay(20);
-  updateGyro();
+  updateGyro(0);
   // disable motors
   if (calibrationMode) {
     // write software version
@@ -281,14 +282,10 @@ void setup() {
   }
   delay(200);
   setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
-  // init current readings
-  initCurrent();
-  // init digital sensors
-  initInputs();
   // update current readings
-  updateCurrent();
+  updateCurrent(0);
   // read proximity sensors
-  updateInputsZero();
+  updateInputsZero(true);
   // explore mode
   Serial.println(F("Entering explore mode"));
   applyTaskZero(BEGIN_TASK); //doManageTasks(BEGIN_TASK));
@@ -348,14 +345,14 @@ void loop() {
     // update motor pattern point
     updateCountPatterns();
     // update current readings
-    updateCurrent();
+    updateCurrent(m_sequenceCounter.m);
     // update gyro readings
-    updateGyro();
+    updateGyro(m_sequenceCounter.m);
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
       //setDirectionCenterZero(getDirectionGyro());
       // process proximity sensors
-      updateInputsZero();
+      updateInputsZero(getSurfaceFlatGyro());
       // process distance and direction
 
       // getDistancePatternZero()

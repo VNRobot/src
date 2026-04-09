@@ -248,7 +248,7 @@ void initServo(bool calibrationMode) {
           }
         }
         break;
-        case 3:
+        case 5:
         {
           servoCalibrationData.fr.motor1 ++;
           if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
@@ -256,7 +256,7 @@ void initServo(bool calibrationMode) {
           }
         }
         break;
-        case 4:
+        case 6:
         {
           servoCalibrationData.fr.motor2 ++;
           if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
@@ -264,7 +264,7 @@ void initServo(bool calibrationMode) {
           }
         }
         break;
-        case 5:
+        case 3:
         {
           servoCalibrationData.rl.motor1 ++;
           if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
@@ -272,7 +272,7 @@ void initServo(bool calibrationMode) {
           }
         }
         break;
-        case 6:
+        case 4:
         {
           servoCalibrationData.rl.motor2 ++;
           if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {

@@ -50,6 +50,12 @@ short walkingDirectionOld = 0;
 // flipped state
 bool gyroFlipped = false;
 
+/*
+uses
+m_gyroState
+m_getButtonPressed()
+*/
+
 // init gyroscope wire
 void _initWire(void) {
   Wire.begin();                      
@@ -164,7 +170,7 @@ float _fixAngle(float angle, float limit){
 }
 
 // read gyroscope and accelerometer data
-void updateGyro(void) {
+void updateGyro(unsigned char counter) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
@@ -203,7 +209,7 @@ void updateGyro(void) {
   m_gyroState.aLiftRL = deltaRoll - deltaPitch;
   m_gyroState.aLiftRR = -deltaRoll - deltaPitch;
   // cycle statrt
-  if (m_sequenceCounter.m == 0) {
+  if (counter == 0) {
     // remember roll and pitch
     m_gyroState.aRollAverage = rollAverage / MAIN_FULL_CYCLE;
     m_gyroState.aPitchAverage = pitchAverage / MAIN_FULL_CYCLE;
@@ -328,6 +334,20 @@ unsigned char _statusGyro(void) {
   }
   return GYRO_NORM;
 }
+
+// check surface
+bool getSurfaceFlatGyro(void) {
+  // check robot roll
+  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
+    return false;
+  }
+  // check robot pitch
+  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
+    return false;
+  }
+  return true;
+}
+
 /*
 // print gyro values
 void _printGyro(void) {
