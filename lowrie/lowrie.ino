@@ -15,17 +15,13 @@ Main file
 // main time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              10
 // low hight in mm. upper arm is horizontal
-#define HIGHT_LOW               88
+#define HIGHT_LOW               80
 // normal hight
 #define HIGHT_DEFAULT           130
 // maximal hight
-#define HIGHT_MAX               175
+#define HIGHT_MAX               170
 // normal leg lift in mm
 #define LEG_LIFT                40
-// robot phisics
-#define OFFROAD_ANGLE           4
-#define SLOP_ANGLE              12
-#define FALLING_ANGLE           45
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
@@ -64,10 +60,6 @@ enum rPatterns {
   Q_DORECOVER,
   Q_DOFLIP,
   Q_DONE,
-  Q_SETDIRECTION,
-  Q_RESETDIRECTION,
-  Q_RESTOREDIRECTION,
-  Q_REVERSEDIRECTION,
   Q_RESETGIRO,
   Q_REPEAT,
   Q_SETPRIORITY_HIGH,
@@ -144,8 +136,6 @@ typedef struct accRoll {
   short aLiftFR;               // dynamic ballance when leg is lifted
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
-  short direction;             // absolute direction  turn right - positive
-  unsigned char stateGyro;     // state from gState
 } accRoll;
 // leg timing phase. main m
 struct phase {
@@ -157,15 +147,10 @@ struct phase {
 };
 // robot state structure
 typedef struct robotState {
-  unsigned char inputStateNow;
-  unsigned char currentStateNow;
   unsigned char robotStateNow;
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
-  unsigned char taskPriorityNow;
-  unsigned char patternNow;
-  unsigned char taskNow;
   char speedLNow;
   char speedRNow;
   bool forwardNow;
@@ -177,33 +162,28 @@ typedef struct robotState {
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // robot state
 robotState m_robotState = {
-  IN_NORMAL,               // unsigned char inputStateNow;
-  C_NORMAL,                // unsigned char currentStateNow;
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
   2,                       // char speedMuliplierNow; 1 or 2
-  PRIORITY_LOW,            // taskPriorityNow;
-  Q_DOSTAND,               // patternNow
-  STAND_TASK,              // taskNow
   0,                       // speedLNow
   0,                       // speedRNow
   true,                    // forwardNow
   true                     // walkingModeNow
 };
 // gyro state
-accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, GYRO_NORM};
+accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
 // ballance correction
 allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 //----------------------------------------------------------
 // servo cycle is done flag
-bool cycleDone = true;
+bool m_cycleDone = true;
 // default task from rTasks
-unsigned char defaultTask = STANDGO_TASK;
+unsigned char m_defaultTask = STANDGO_TASK;
 // next task
-unsigned char taskNext = STANDGO_TASK;
+unsigned char m_taskPriority = PRIORITY_LOW;
 // variable for temporary use
 unsigned char i;
 
@@ -263,173 +243,108 @@ void setup() {
     delay(1000);
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    setServoZero(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+    setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
   initGyro(calibrationMode);
   delay(200);
-  updateGyro(0);
+  updateGyroCount(0);
   delay(20);
-  resetGyroZero();
+  resetGyro();
   delay(20);
-  updateGyro(0);
+  updateGyroCount(0);
   // disable motors
   if (calibrationMode) {
     // write software version
     _writeSoftwareVersionEeprom();
-    detachServoZero();
+    detachServo();
     delay(20000);
   }
   delay(200);
-  setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
-  updateCurrent(0);
+  updateCurrentCount(0);
   // read proximity sensors
-  updateInputsZero(true);
+  updateInputState(true, 0, false);
   // explore mode
   Serial.println(F("Entering explore mode"));
-  applyTaskZero(BEGIN_TASK); //doManageTasks(BEGIN_TASK));
+  applyTask(BEGIN_TASK);
   // load task and pattern. direction is 0
-  updatePathZero(0);
-  updateCountPatterns();
+  updatePath(0);
+  updatePatternsCount();
   // set distance to target
-  setDistancePathZero(100);
-}
-
-// set new task and new pattern
-void _setTaskAndPatternZero(void) {
-  if (m_robotState.patternNow == Q_END) {
-    // this is the end. do nothing
-    delay(1000);
-    return;
-  }
-  // not high priority or end of high priority task
-  if ((m_robotState.taskPriorityNow != PRIORITY_HIGH) || (m_robotState.patternNow == Q_DONE)) {
-    // override with high priority task
-    taskNext = getHighPriorityTaskZero();
-    if (taskNext == DEFAULT_TASK) {
-      taskNext = m_robotState.taskNow;
-    } else {
-      applyTaskZero(taskNext); //doManageTasks(taskNext));
-      return;
-    }
-  }
-  // any priority end of task
-  if (m_robotState.patternNow == Q_DONE) {
-    // check for normal priority
-    taskNext = getNormalTaskZero(getDirectionGyro());
-    if (taskNext == DEFAULT_TASK) {
-      taskNext = defaultTask;
-    }
-    applyTaskZero(taskNext); //doManageTasks(taskNext));
-    return;
-  }
-  // set next pattern
-  setNextPatternInTaskZero();
+  setDistancePath(100);
 }
 
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  getWalkPatterns();
-  updateLegsServo();
+  setWalkPatternsCount(getWalkingModeInTask());
+  updateLegsServoCount();
   delay(TIME_DELAY);
-  cycleDone = true;
+  m_cycleDone = true;
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  if (cycleDone) {
+  if (m_cycleDone) {
     // runs only after delay
-    cycleDone = false;
+    m_cycleDone = false;
     // update motor pattern point
-    updateCountPatterns();
+    updatePatternsCount();
     // update current readings
-    updateCurrent(m_sequenceCounter.m);
+    updateCurrentCount(m_sequenceCounter.m);
     // update gyro readings
-    updateGyro(m_sequenceCounter.m);
+    updateGyroCount(m_sequenceCounter.m);
+    // update sensor readings
+    updateInputsCount(m_sequenceCounter.m);
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
-      //setDirectionCenterZero(getDirectionGyro());
       // process proximity sensors
-      updateInputsZero(getSurfaceFlatGyro());
-      // process distance and direction
-
-      // getDistancePatternZero()
-      // setDistancePatternZero(100)
-      // m_gyroState.direction
-      // setDirectionGyroZero(90)
-
-      // find turning
-      // setSideShiftCenterZero(0); *** to do
-      // setDistancePatternZero(100); *** to do
-      //printCurrentStateDebug();
-      // set robot state
-      //setRobotState();        *** disable for now
+      updateInputState(getSurfaceFlatGyro(), getDirectionGyro(), false);
     }
     // update ballance
-    updateBallance();
-    updateBallanceServo();
+    updateBallanceCount();
+    updateBallanceServoCount();
   }
   // once in a pattern
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
-    _setTaskAndPatternZero();
-    //printPatternNameDebug(m_robotState.patternNow); // DEBUG
-    switch (m_robotState.patternNow) {
-      case Q_SETDIRECTION:
-      {
-        setDirectionGyroZero();
-      }
-      break;
-      case Q_RESETDIRECTION:
-      {
-        resetDirectionGyroZero();
-      }
-      break;
-      case Q_REVERSEDIRECTION:
-      {
-        reverseDirectionGyroZero();
-      }
-      break;
+    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState(), getDirectionGyro(), m_taskPriority);
+    switch (getPatternOfTask()) {
       case Q_RESETGIRO:
       {
-        resetGyroZero();
-      }
-      break;
-      case Q_RESTOREDIRECTION:
-      {
-        restoreDirectionGyroZero();
+        resetGyro();
       }
       break;
       case Q_DOLOW:
       {
-        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
+        setServo(HIGHT_LOW, HIGHT_LOW, 20);
       }
       break;
       case Q_DOSTAND:
       {
-        setServoZero(m_robotState.legHightNow, m_robotState.legHightNow, 20);
+        setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
       }
       break;
       case Q_DORECOVER:
       {
-        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
+        setServo(HIGHT_LOW, HIGHT_LOW, 0);
         if (m_gyroState.aRollAverage < 0) {
           setFlippedServo(1, -1);
-          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setServo(HIGHT_MAX, HIGHT_MAX, 0);
           setFlippedServo(-1, 1);
-          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setServo(HIGHT_MAX, HIGHT_MAX, 0);
         } else {
           setFlippedServo(-1, 1);
-          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setServo(HIGHT_MAX, HIGHT_MAX, 0);
           setFlippedServo(1, -1);
-          setServoZero(HIGHT_MAX, HIGHT_MAX, 0);
+          setServo(HIGHT_MAX, HIGHT_MAX, 0);
         }
-        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
+        setServo(HIGHT_LOW, HIGHT_LOW, 0);
         setFlippedGyro(false);
         setFlippedServo(1, 1);
-        setServoZero(HIGHT_LOW, HIGHT_LOW, 0);
+        setServo(HIGHT_LOW, HIGHT_LOW, 0);
       }
       break;
       case Q_DOFLIP:
@@ -453,29 +368,32 @@ void loop() {
       case Q_DODOWN:
       {
         // disable motors
-        setServoZero(HIGHT_LOW, HIGHT_LOW, 20);
-        detachServoZero();
+        setServo(HIGHT_LOW, HIGHT_LOW, 20);
+        detachServo();
       }
       break;
       case Q_SETPRIORITY_HIGH:
       {
-        m_robotState.taskPriorityNow = PRIORITY_HIGH;
+        m_taskPriority = PRIORITY_HIGH;
       }
       break;
       case Q_SETPRIORITY_NORM:
       {
-        m_robotState.taskPriorityNow = PRIORITY_NORM;
+        m_taskPriority = PRIORITY_NORM;
       }
       break;
       case Q_SETPRIORITY_LOW:
       {
-        m_robotState.taskPriorityNow = PRIORITY_LOW;
+        m_taskPriority = PRIORITY_LOW;
       }
       break;
       default:
       {
+        // P_STANDGO
+        // getWallAngleInputs() getInputState() getCurrentState() getDirectionGyro() getGyroState()
+        //
         // set speed and direction
-        updatePathZero(getDirectionGyro());
+        updatePath(getDirectionGyro());
         _doCycle();
       }
       break;
@@ -483,77 +401,5 @@ void loop() {
   } else {
     // cycle in the middle of pattern
     _doCycle();
-  }
-}
-
-// print task  name
-void printPatternNameDebug(unsigned char patternNow) {
-  switch (patternNow) {
-    case Q_DOSTAND:
-      Serial.print(F(" Q_DOSTAND "));
-    break;
-    case P_STANDGO:
-      Serial.print(F(" P_STANDGO "));
-    break;
-    case Q_DOLOW:
-      Serial.print(F(" Q_DOLOW "));
-    break;
-    case Q_DODOWN:
-      Serial.print(F(" Q_DODOWN "));
-    break;
-    case Q_DORESET:
-      Serial.print(F(" Q_DORESET "));
-    break;
-    case Q_DONE:
-      Serial.print(F(" Q_DONE "));
-    break;
-    case Q_RESETDIRECTION:
-      Serial.print(F(" Q_RESETDIRECTION "));
-    break;
-    case Q_RESTOREDIRECTION:
-      Serial.print(F(" Q_RESTOREDIRECTION "));
-    break;
-    case Q_RESETGIRO:
-      Serial.print(F(" Q_RESETGIRO "));
-    break;
-    case Q_REPEAT:
-      Serial.print(F(" Q_REPEAT "));
-    break;
-    case Q_SETPRIORITY_HIGH:
-      Serial.print(F(" Q_SETPRIORITY_HIGH "));
-    break;
-    case Q_SETPRIORITY_NORM:
-      Serial.print(F(" Q_SETPRIORITY_NORM "));
-    break;
-    case Q_SETPRIORITY_LOW:
-      Serial.print(F(" Q_SETPRIORITY_LOW "));
-    break;
-    case Q_END:
-      Serial.print(F(" Q_END "));
-    break;
-    default:
-      Serial.print(F(" unknown pattern "));
-    break;
-  }
-}
-
-// print current state
-void printCurrentStateDebug(void) {
-  // print input state
-  switch (m_robotState.currentStateNow) {
-    case C_DEAD_BATTERY:
-      Serial.print(F(" C_DEAD_BATTERY "));
-    break;
-    case C_LOW_BATTERY:
-      Serial.print(F(" C_LOW_BATTERY "));
-    break;
-    case C_HIGH_CURRENT:
-      Serial.print(F(" C_HIGH_CURRENT "));
-    break;
-    case C_NORMAL:
-      Serial.print(F(" C_NORMAL "));
-    break;
-    default:
-      Serial.println(F(" Wrong inputs state "));
   }
 }

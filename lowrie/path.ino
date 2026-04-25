@@ -5,6 +5,11 @@ Arduino nano
 Robot walking path
 */
 
+// robot size devider
+#define ROBOT_SIZE_DEVIDER       2
+
+// enable steps distance count
+bool stepsDistanceCountEnable = false;
 // speed relative value from 0 to 2
 char speedAbsolute = 0;
 // walking direction
@@ -20,21 +25,6 @@ output
   m_robotState.speedRNow
   m_robotState.forwardNow
 */
-
-// set distance to target in cm
-void setDistancePathZero(short distance) {
-  distanceToTarget = distance * 10;
-}
-
-// update distance to target in cm
-void updateDistancePathZero(short distance) {
-  distanceToTarget += distance * 10;
-}
-
-// get distance to target in cm
-short getDistancePathZero(void) {
-  return distanceToTarget / 10;
-}
 
 // step rotation
 char _turnStep(short direction, char speed) {
@@ -67,7 +57,7 @@ char _turnStep(short direction, char speed) {
 }
 
 // get speed
-void updatePathZero(short direction) {
+void updatePath(short direction) {
   // walking mode
   if (distanceToTarget > 0) {
     // plan to go
@@ -101,12 +91,29 @@ void updatePathZero(short direction) {
   m_robotState.speedLNow = _turnStep(-direction, speedAbsolute);
   m_robotState.speedRNow = _turnStep(direction, speedAbsolute);
   m_robotState.forwardNow = walkFrward;
-  // step size
-  short stepSize = (SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * m_robotState.speedMuliplierNow;
-  // update distance to target
-  if (distanceToTarget > stepSize) {
-    distanceToTarget -= stepSize;
-  } else {
-    distanceToTarget = 0;
+  if (stepsDistanceCountEnable) {
+    // step size
+    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * m_robotState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
+    // update distance to target
+    if (distanceToTarget > stepSize) {
+      distanceToTarget -= stepSize;
+    } else {
+      distanceToTarget = 0;
+    }
   }
+}
+
+// set distance to target in cm
+void setDistancePath(short distance) {
+  distanceToTarget = distance * 10;
+}
+
+// update distance to target in cm
+void updateDistancePath(short distance) {
+  distanceToTarget += distance * 10;
+}
+
+// get distance to target in cm
+short getDistancePath(void) {
+  return distanceToTarget / 10;
 }

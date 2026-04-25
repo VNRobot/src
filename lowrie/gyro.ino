@@ -5,6 +5,11 @@ Arduino nano
 use MPU6050 to read gyroscope and accelerometer
 */
 
+// robot phisics
+#define OFFROAD_ANGLE           4
+#define SLOP_ANGLE              12
+#define FALLING_ANGLE           45
+
 #include <Wire.h>
 
 // gyro errors structure
@@ -30,6 +35,7 @@ unsigned long currentTime = 0;
 unsigned long oldTime;
 // gyro state
 unsigned char stateGyroOld = GYRO_NORM;
+unsigned char stateGyro = GYRO_NORM;
 // roll data
 // shake parameters
 short shakeNow = 0;
@@ -46,7 +52,7 @@ short rollAverageOld = 0;
 short pitchAverageOld = 0;
 // walking direction
 short walkingDirection = 0;
-short walkingDirectionOld = 0;
+short walkingDirectionAbs = 0;
 // flipped state
 bool gyroFlipped = false;
 
@@ -98,9 +104,52 @@ void _readWire(float * regData, unsigned char code) {
   regData[2] = Wire.read() << 8 | Wire.read();
 }
 
-// set flipped state
-void setFlippedGyro(bool flipped) {
-  gyroFlipped = flipped;
+// fix rotation angle
+float _fixAngle(float angle, float limit){
+  if (angle > limit) {
+    angle -= limit;
+  } else if (angle < -limit) {
+    angle += limit;
+  }
+  return angle;
+}
+
+// status of gyro
+unsigned char _statusGyro(void) {
+  // if shaken wait
+  if (shakeNow < (shakeOld * 2)) {
+    // not shaken 
+    // fell left
+    if (m_gyroState.aRollAverage < -FALLING_ANGLE) {
+      return GYRO_FELL_LEFT;
+    }
+    // fell right
+    if (m_gyroState.aRollAverage > FALLING_ANGLE) {
+      return GYRO_FELL_RIGHT;
+    }
+    // fell front
+    if (m_gyroState.aPitchAverage < -FALLING_ANGLE) {
+      return GYRO_FELL_FRONT;
+    }
+    // fell back
+    if (m_gyroState.aPitchAverage > FALLING_ANGLE) {
+      return GYRO_FELL_BACK;
+    }
+    // check upside down
+    if ((m_gyroState.aUpsideAverage < 0) && (!gyroFlipped)) {
+      // flip event. update flip state
+      return GYRO_UPSIDEDOWN;
+    }
+    // position normal reset walking
+    if ((m_gyroState.aUpsideAverage > 0) && (gyroFlipped)) {
+      return GYRO_RESET;
+    }
+  }
+  // upside down. recover fail
+  if ((m_gyroState.aUpsideAverage < 0) && (gyroFlipped)) {
+    // do nothing for now
+  }
+  return GYRO_NORM;
 }
 
 // init gyroscope and accelerometer MPU6050 using I2C
@@ -159,18 +208,8 @@ void initGyro(bool calibrationMode) {
   //AccErrorX 0 AccErrorY -2 GyroErrorX -2 GyroErrorY -5 GyroErrorZ -1
 }
 
-// fix rotation angle
-float _fixAngle(float angle, float limit){
-  if (angle > limit) {
-    angle -= limit;
-  } else if (angle < -limit) {
-    angle += limit;
-  }
-  return angle;
-}
-
 // read gyroscope and accelerometer data
-void updateGyro(unsigned char counter) {
+void updateGyroCount(unsigned char counter) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
@@ -233,11 +272,11 @@ void updateGyro(unsigned char counter) {
     // fix rotation angle value
     floatDirection  = _fixAngle(floatDirection, 180);
     // get gyro data
-    m_gyroState.direction =  -((short)floatDirection * 2);
+    walkingDirectionAbs =  -((short)floatDirection * 2);
     // get status
-    m_gyroState.stateGyro = _statusGyro();
-    if (stateGyroOld != m_gyroState.stateGyro) {
-      stateGyroOld = m_gyroState.stateGyro;
+    stateGyro = _statusGyro();
+    if (stateGyroOld != stateGyro) {
+      stateGyroOld = stateGyro;
       // debug print
       //_printGyro();
     }
@@ -250,11 +289,10 @@ void updateGyro(unsigned char counter) {
 }
 
 // reset gyro data
-void resetGyroZero(void) {
+void resetGyro(void) {
   floatDirection = 0;
-  m_gyroState.direction = 0;
-  m_gyroState.stateGyro = GYRO_NORM;
-  walkingDirectionOld = 0;
+  walkingDirectionAbs = 0;
+  stateGyro = GYRO_NORM;
   walkingDirection = 0;
   shakeOld = 0;
   shakeNow = 0;
@@ -266,76 +304,20 @@ void resetGyroZero(void) {
 
 // get walking direction
 short getDirectionGyro(void) {
-  return m_gyroState.direction - walkingDirection;
+  return walkingDirectionAbs - walkingDirection;
 }
 
 // remember horizontal direction
-void setDirectionGyroZero(void) {
-  walkingDirection = m_gyroState.direction;
-  walkingDirectionOld = walkingDirection;
+void setDirectionGyro(short newDirection) {
+  walkingDirection = walkingDirectionAbs + newDirection;
 }
 
-// correct horizontal direction
-void resetDirectionGyroZero(void) {
-  walkingDirection = m_gyroState.direction;
+// gyro state
+unsigned char getGyroState(void) {
+  return stateGyro;
 }
 
-// return to old horizontal direction
-void restoreDirectionGyroZero(void) {
-  walkingDirection = walkingDirectionOld;
-}
-
-// reverse horizontal direction
-void reverseDirectionGyroZero(void) {
-  if ((walkingDirection < 30) && (walkingDirection > -30)) {
-    // not reverset yet
-    if (m_gyroState.direction < 0) {
-      walkingDirection = m_gyroState.direction + 180;
-    } else {
-      walkingDirection = m_gyroState.direction - 180;
-    }
-  }
-}
-
-// status of gyro
-unsigned char _statusGyro(void) {
-  // if shaken wait
-  if (shakeNow < (shakeOld * 2)) {
-    // not shaken 
-    // fell left
-    if (m_gyroState.aRollAverage < -FALLING_ANGLE) {
-      return GYRO_FELL_LEFT;
-    }
-    // fell right
-    if (m_gyroState.aRollAverage > FALLING_ANGLE) {
-      return GYRO_FELL_RIGHT;
-    }
-    // fell front
-    if (m_gyroState.aPitchAverage < -FALLING_ANGLE) {
-      return GYRO_FELL_FRONT;
-    }
-    // fell back
-    if (m_gyroState.aPitchAverage > FALLING_ANGLE) {
-      return GYRO_FELL_BACK;
-    }
-    // check upside down
-    if ((m_gyroState.aUpsideAverage < 0) && (!gyroFlipped)) {
-      // flip event. update flip state
-      return GYRO_UPSIDEDOWN;
-    }
-    // position normal reset walking
-    if ((m_gyroState.aUpsideAverage > 0) && (gyroFlipped)) {
-      return GYRO_RESET;
-    }
-  }
-  // upside down. recover fail
-  if ((m_gyroState.aUpsideAverage < 0) && (gyroFlipped)) {
-    // do nothing for now
-  }
-  return GYRO_NORM;
-}
-
-// check surface
+// check surface flat
 bool getSurfaceFlatGyro(void) {
   // check robot roll
   if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
@@ -348,11 +330,28 @@ bool getSurfaceFlatGyro(void) {
   return true;
 }
 
-/*
+// check surface bumpy
+bool getSurfaceBumpyGyro(void) {
+  // a bit left or right
+  if ((m_gyroState.aRollAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aRollAverage > OFFROAD_ANGLE + 1)) {
+    return true;
+  }
+  // a bit front or back
+  if ((m_gyroState.aPitchAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aPitchAverage > OFFROAD_ANGLE + 1)) {
+    return true;
+  }
+  return false;
+}
+
+// set flipped state
+void setFlippedGyro(bool flipped) {
+  gyroFlipped = flipped;
+}
+
 // print gyro values
 void _printGyro(void) {
   // print gyro status
-  switch (m_gyroState.stateGyro) {
+  switch (stateGyro) {
     case GYRO_NORM:
       Serial.println(F(" GYRO_NORM "));
     break;
@@ -390,7 +389,7 @@ void _printLineGyroDebug(void) {
   Serial.print(" Z ");
   Serial.print((int)m_gyroState.aUpsideAverage);
   Serial.print(" direction ");
-  Serial.println((int)m_gyroState.direction);
+  Serial.println((int)walkingDirectionAbs);
 }
 
 // print gyro values
@@ -404,4 +403,3 @@ void _printRollGyroDebug(void) {
   Serial.print(" aLiftRR ");
   Serial.println((int)m_gyroState.aLiftRR);
 }
-*/

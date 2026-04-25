@@ -14,21 +14,10 @@ unsigned char currentTask[16] = {Q_DOSTAND, Q_DONE};
 unsigned char currentTaskPoint = 0;
 // repeat counter
 unsigned char repeatCounter = 0;
-// -----------------tasks manager----------------------
-/*
-// remember tasks
-unsigned char tasksMemory[16] = {DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
-                                 DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
-                                 DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, 
-                                 DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK, DEFAULT_TASK};
-// counter for tasks
-unsigned char tasksCounter[17] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-// common task
-unsigned char commonTask = DEFAULT_TASK;
-unsigned char commonTaskCount = 0;
-// suggested task
-unsigned char suggestedTask = DEFAULT_TASK;
-*/
+// current pattern
+unsigned char patternNow = Q_DOSTAND;
+// current task
+unsigned char taskNow = BEGIN_TASK;
 
 // set down task
 void _setDownTask(void) {
@@ -100,20 +89,10 @@ void _setStandWalkTask(void) {
   currentTask[2] = Q_DONE;
 }
 
-// set walking mode
-void _setWalkingMode(void) {
-  if (m_robotState.patternNow == P_STANDGO) {
-    // walking mode
-    m_robotState.walkingModeNow = true;
-  } else {
-    // not walking
-    m_robotState.walkingModeNow = false;
-  }
-}
-
 // set task by name
-void applyTaskZero(unsigned char task) {
-  switch (task) {
+void applyTask(unsigned char task) {
+  taskNow = task;
+  switch (taskNow) {
     case BEGIN_TASK:
       _setBeginTask();
     break;
@@ -140,19 +119,17 @@ void applyTaskZero(unsigned char task) {
   }
   repeatCounter = 0;
   currentTaskPoint = 0;
-  m_robotState.patternNow = currentTask[currentTaskPoint];
-  _setWalkingMode();
-  m_robotState.taskNow = task;
-  //_printTaskNameDebug(task); // DEBUG
+  patternNow = currentTask[currentTaskPoint];
+  //_printTaskNameDebug(taskNow); // DEBUG
+  //_printPatternNameDebug(patternNow); // DEBUG
 }
 
 // set next pattern in task
-void setNextPatternInTaskZero(void) {
+void _setNextPatternInTask(void) {
   // update task point to the next pattern
   if (currentTask[currentTaskPoint] == Q_DONE) {
     // task is done. do nothing
-    m_robotState.patternNow = Q_DONE;
-    _setWalkingMode();
+    patternNow = Q_DONE;
     return;
   }
   if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < REPEAT_COUNTER_END)) {
@@ -164,20 +141,19 @@ void setNextPatternInTaskZero(void) {
   repeatCounter = 0;
   currentTaskPoint ++;
   if (currentTask[currentTaskPoint] != Q_REPEAT) {
-    m_robotState.patternNow = currentTask[currentTaskPoint];
-    _setWalkingMode();
+    patternNow = currentTask[currentTaskPoint];
   }
-  return;
+  //_printPatternNameDebug(patternNow); // DEBUG
 }
 
-unsigned char getHighPriorityTaskZero(void) {
-  if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
+unsigned char _getHighPriorityTask(unsigned char currentState, unsigned char gyroState) {
+  if (currentState == C_DEAD_BATTERY) {
     return DOWN_TASK;
   }
-  if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
+  if (currentState == C_HIGH_CURRENT) {
     return STAND_TASK;
   }
-  switch (m_gyroState.stateGyro) {
+  switch (gyroState) {
     case GYRO_UPSIDEDOWN:
       return FLIP_TASK;
     break;
@@ -198,163 +174,58 @@ unsigned char getHighPriorityTaskZero(void) {
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char getNormalTaskZero(int direction) {
-  // slop up or down
-  switch (m_gyroState.stateGyro) {
-    case GYRO_FELL_FRONT:
-      return STANDGO_TASK;
-    break;
-    case GYRO_FELL_BACK:
-      return STANDGO_TASK;
-    break;
-    default:
-    break;
-  }
-  // check slop
-  if (m_gyroState.aPitchAverage < -SLOP_ANGLE) {
-    // down
-    if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
-      return STANDGO_TASK;
-    }
-    if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
-      return STANDGO_TASK;
-    }
-    if (direction > 4) {
-      return STANDGO_TASK;
-    }
-    if (direction < -4) {
-      return STANDGO_TASK;
-    }
-    return STANDGO_TASK;
-  }
-  if (m_gyroState.aPitchAverage > SLOP_ANGLE) {
-    // up
-    if (m_gyroState.aRollAverage < -OFFROAD_ANGLE) {
-      return STANDGO_TASK;
-    }
-    if (m_gyroState.aRollAverage > OFFROAD_ANGLE) {
-      return STANDGO_TASK;
-    }
-    return STANDGO_TASK;
-  }
-  if (m_gyroState.aRollAverage < -SLOP_ANGLE) {
-    // left
-    return STANDGO_TASK;
-  }
-  if (m_gyroState.aRollAverage > SLOP_ANGLE) {
-    // left
-    return STANDGO_TASK;
-  }
-  // obstacle state
-  switch (m_robotState.inputStateNow) {
-    case IN_OBSTACLE_FRONT:
-      return STANDGO_TASK;
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
-      return STANDGO_TASK;
-    break;
-    case IN_OBSTACLE_FRONTRIGHT:
-      return STANDGO_TASK;
-    break;
-    case IN_OBSTACLE_LEFT:
-      return STANDGO_TASK;
-    break;
-    case IN_OBSTACLE_RIGHT:
-      return STANDGO_TASK;
-    break;
-    case IN_NORMAL:
-      {
-        if (direction > 90) {
-          return STANDGO_TASK;
-        }
-        if (direction < -90) {
-          return STANDGO_TASK;
-        }
-        if (direction > 4) {
-          return STANDGO_TASK;
-        }
-        if (direction < -4) {
-          return STANDGO_TASK;
-        }
-        if (m_robotState.currentStateNow == C_LOW_BATTERY) {
-          return DEFAULT_TASK;
-        }
-        return DEFAULT_TASK;
-      }
-    break;
-    default:
-      return DEFAULT_TASK;
-    break;
-  }
+unsigned char _getNormalTask(int direction) {
   return DEFAULT_TASK;
 }
 
-// -----------------tasks manager----------------------
-/*
-// remember item
-void _remeberItem(unsigned char item, unsigned char * itemArray) {
-  // shift values
-  for (i = 15; i > 0; i --) {
-    itemArray[i] = itemArray[i - 1];
-  }
-  itemArray[0] = item;
+// get pattern
+unsigned char getPatternOfTask(void) {
+  return patternNow;
 }
 
-// replace item
-void _replaceItem(unsigned char item, unsigned char * itemArray) {
-  itemArray[0] = item;
+// get task
+unsigned char getTask(void) {
+  return taskNow;
 }
 
-// count items
-void _countItems(unsigned char * countArray, unsigned char * itemArray) {
-  // reset counts
-  for (i = 0; i < 17; i ++) {
-    countArray[i] = 0;
+// set new task and new pattern
+void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState, unsigned char directionGyro, unsigned char taskPriority) {
+  if (patternNow == Q_END) {
+    // this is the end. do nothing
+    delay(1000);
+    return;
   }
-  // add counts
-  for (i = 0; i < 16; i ++) {
-    countArray[itemArray[i]] ++;
-  }
-}
-
-// get common item
-void _getCommonTask(unsigned char * countArray) {
-  commonTask = DEFAULT_TASK;
-  commonTaskCount = 0;
-  for (i = 0; i < 17; i ++) {
-    if (countArray[i] > commonTaskCount) {
-      commonTaskCount = countArray[i];
-      commonTask = i;
+  // not high priority or end of high priority task
+  if ((taskPriority != PRIORITY_HIGH) || (patternNow == Q_DONE)) {
+    // override with high priority task
+    unsigned char taskNext = _getHighPriorityTask(currentState, gyroState);
+    if (taskNext != DEFAULT_TASK) {
+      applyTask(taskNext);
+      return;
     }
   }
-  // for now repeat same task 4 times
-  if (commonTaskCount < 4) {
-    commonTask = DEFAULT_TASK;
+  // any priority end of task
+  if (patternNow == Q_DONE) {
+    // check for normal priority
+    unsigned char taskNext = _getNormalTask(directionGyro);
+    if (taskNext == DEFAULT_TASK) {
+      taskNext = defaultTask;
+    }
+    applyTask(taskNext);
+    return;
   }
+  // set next pattern
+  _setNextPatternInTask();
 }
 
-// get opposite task
-unsigned char getOppositeTask(void) {
-  return DEFAULT_TASK;
-}
-
-// call manager
-unsigned char doManageTasks(unsigned char taskNext) {
-  // add task to array
-  _remeberItem(taskNext, tasksMemory);
-  // count items
-  _countItems(tasksCounter, tasksMemory);
-  // find common task item
-  _getCommonTask(tasksCounter);
-  // opposite suggested task
-  suggestedTask = getOppositeTask();
-  if (suggestedTask != DEFAULT_TASK) {
-    taskNext = suggestedTask;
-    _replaceItem(taskNext, tasksMemory);
+// get walking mode
+bool getWalkingModeInTask(void) {
+  if (patternNow == P_STANDGO) {
+    // walking mode
+    return true;
   }
-  return taskNext;
+  return false;
 }
-*/
 
 // print task  name
 void _printTaskNameDebug(unsigned char taskName) {
@@ -385,6 +256,51 @@ void _printTaskNameDebug(unsigned char taskName) {
       Serial.print(F(" unknown task "));
       Serial.print((int)taskName);
       Serial.println(F(" "));
+    break;
+  }
+}
+
+// print task  name
+void _printPatternNameDebug(unsigned char patternNow) {
+  switch (patternNow) {
+    case Q_DOSTAND:
+      Serial.print(F(" Q_DOSTAND "));
+    break;
+    case P_STANDGO:
+      Serial.print(F(" P_STANDGO "));
+    break;
+    case Q_DOLOW:
+      Serial.print(F(" Q_DOLOW "));
+    break;
+    case Q_DODOWN:
+      Serial.print(F(" Q_DODOWN "));
+    break;
+    case Q_DORESET:
+      Serial.print(F(" Q_DORESET "));
+    break;
+    case Q_DONE:
+      Serial.print(F(" Q_DONE "));
+    break;
+    case Q_RESETGIRO:
+      Serial.print(F(" Q_RESETGIRO "));
+    break;
+    case Q_REPEAT:
+      Serial.print(F(" Q_REPEAT "));
+    break;
+    case Q_SETPRIORITY_HIGH:
+      Serial.print(F(" Q_SETPRIORITY_HIGH "));
+    break;
+    case Q_SETPRIORITY_NORM:
+      Serial.print(F(" Q_SETPRIORITY_NORM "));
+    break;
+    case Q_SETPRIORITY_LOW:
+      Serial.print(F(" Q_SETPRIORITY_LOW "));
+    break;
+    case Q_END:
+      Serial.print(F(" Q_END "));
+    break;
+    default:
+      Serial.print(F(" unknown pattern "));
     break;
   }
 }

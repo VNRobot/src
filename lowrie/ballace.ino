@@ -10,7 +10,7 @@ Robot static and dynamic ballance
 #define DYNAMIC_BALLANCE_MAX    20
 
 // ballance enabled flag
-bool ballanceEnabled = true;
+bool ballanceEnabled = false;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;
@@ -21,7 +21,7 @@ char speedCorrection = 0;
 // final forward shift
 char finalForwardShift = 0;
 
-void updateBallance(void) {
+void updateBallanceCount(void) {
   // hight
   //m_legCorrect.fl.hight = 0;
   //m_legCorrect.fr.hight = 0;

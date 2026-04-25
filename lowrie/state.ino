@@ -47,48 +47,6 @@ void _setState(unsigned char newState) {
 // check for slop
 unsigned char _inputsCheck(void) {
   return ROBOT_NORM;
-  // check current
-  if (m_robotState.currentStateNow == C_DEAD_BATTERY) {
-    return ROBOT_NORM;
-  }
-  if (m_robotState.currentStateNow == C_HIGH_CURRENT) {
-    return ROBOT_NORM;
-  }
-   // check gyro high priority state
-  switch (m_gyroState.stateGyro) {
-    case GYRO_UPSIDEDOWN:
-    case GYRO_RESET:
-    case GYRO_FELL_LEFT:
-    case GYRO_FELL_RIGHT:
-      return ROBOT_NORM;
-    break;
-    case GYRO_FELL_FRONT:
-    case GYRO_FELL_BACK:
-      return ROBOT_CRAWL;
-    break;
-      default:
-    break;
-  }
-  // check normal priority state
-  // a bit left or right
-  if ((m_gyroState.aRollAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aRollAverage > OFFROAD_ANGLE + 1)) {
-    return ROBOT_INO;
-  }
-  // a bit front or back
-  if ((m_gyroState.aPitchAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aPitchAverage > OFFROAD_ANGLE + 1)) {
-    return ROBOT_INO;
-  }
-  // slop left or right
-  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
-    return ROBOT_CRAWL;
-    return;
-  }
-  // slop front or back
-  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
-    return ROBOT_CRAWL;
-    return;
-  }
-  return ROBOT_NORM;
 }
 
 // do state manager

@@ -28,29 +28,44 @@ enum senState {
 
 // sensors enabled flag disable for testing
 bool sensorsEnabled = true;
-// bool edge enabled flag
-bool edgeEnabled = false;
+// sensors values sum
+int leftSensorValueSum = 0;
+int rightSensorValueSum = 0;
+// sensors values
+unsigned short leftSensorValue = SENSOR_DISTANCE_NORM;
+unsigned short rightSensorValue = SENSOR_DISTANCE_NORM;
+// assume wall angle
+short wallAngle = 0;
+// inputs state
+unsigned char inputStateNow = IN_NORMAL;
 
 /*
 uses
-m_robotState
 m_getButtonPressed()
 */
 
 // init inputs
 void initInputs(bool calibrationMode) {
+  unsigned char counter = 0;
   while (calibrationMode) {
-    delay(1000);
+    counter ++;
+    if (counter >= MAIN_FULL_CYCLE) {
+      counter = 0;
+    }
+    delay(100);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
-    updateInputsZero(true);
-    _printInputState();
+    updateInputsCount(counter);
+    if (counter == 0) {
+      updateInputState(true, 0, true);
+      _printInputState();
+    }
   }
 }
 
 // process data distance
-unsigned char _getStateFromRaw(unsigned short inputValue) {
+unsigned char _getStateFromRaw(unsigned short inputValue, bool edgeEnabled) {
   if (inputValue > SENSOR_DISTANCE_BLOCK) {
     return SEN_BLOCK;
   }
@@ -113,28 +128,55 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
   return IN_NORMAL;
 }
 
+// update sensor readings
+void updateInputsCount(unsigned char counter) {
+  leftSensorValueSum += analogRead(A0);
+  rightSensorValueSum += analogRead(A1);
+  if (counter == 0) {
+    leftSensorValue = leftSensorValueSum / MAIN_FULL_CYCLE;
+    rightSensorValue = rightSensorValueSum / MAIN_FULL_CYCLE;
+    leftSensorValueSum = 0;
+    rightSensorValueSum = 0;
+  }
+}
+
 // process analog sensors readings
-void updateInputsZero(bool surfaceFlat) {
+void updateInputState(bool surfaceFlat, short directionAngle, bool edgeEnabled) {
   // read analog sensors
   // crossconnection left senor is facing right and right sensor is facing left
   unsigned char sensorStateLeft = SEN_NORMAL;
   unsigned char sensorStateRight = SEN_NORMAL;
-  // check edge Enabled
-  // todo ***
-  // check roll and pitch and check sensors active
-  if (surfaceFlat && sensorsEnabled) {
+  // check roll and pitch and check sensors active and angle to target
+  if (surfaceFlat && sensorsEnabled && (directionAngle < 30) && (directionAngle > -30)) {
     // surface is ok
-    sensorStateLeft = _getStateFromRaw((unsigned short)analogRead(A1)); // right
-    sensorStateRight = _getStateFromRaw((unsigned short)analogRead(A0)); // left
+    wallAngle = rightSensorValue - leftSensorValue;
+    if (wallAngle > 80) {
+      wallAngle = 80;
+    } else if (wallAngle < -80) {
+      wallAngle = -80;
+    }
+    // crossconnection
+    sensorStateLeft = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
+    sensorStateRight = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
+    // get input state
+    inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
   }
-  //
-  m_robotState.inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
-  //
+  inputStateNow = IN_NORMAL;
+}
+
+// get wall angle
+short getWallAngleInputs(void) {
+  return wallAngle;
+}
+
+// get inputs state
+unsigned char getInputState(void) {
+  return inputStateNow;
 }
 
 // print input state
 void _printInputState(void) {
-  switch (m_robotState.inputStateNow) {
+  switch (inputStateNow) {
     case IN_OBSTACLE_FRONT:
       Serial.print(F(" IN_OBSTACLE_FRONT "));
     break;
@@ -165,5 +207,7 @@ void _printInputState(void) {
   Serial.print(F(" left "));
   Serial.print((int)analogRead(A0));
   Serial.print(F(" Right "));
-  Serial.println((int)analogRead(A1));
+  Serial.print((int)analogRead(A1));
+  Serial.print(F(" Angle "));
+  Serial.println((int)wallAngle);
 }
