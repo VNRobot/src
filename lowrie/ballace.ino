@@ -21,45 +21,13 @@ char speedCorrection = 0;
 // final forward shift
 char finalForwardShift = 0;
 
-void updateBallanceCount(void) {
-  // hight
-  //m_legCorrect.fl.hight = 0;
-  //m_legCorrect.fr.hight = 0;
-  //m_legCorrect.rl.hight = 0;
-  //m_legCorrect.rr.hight = 0;
-  //
-  // forward ballance
-  // bigger the number more weight on front
-  // pitch up - positive. require more weight on front
-  if (ballanceEnabled) {
-    // static ballance
-    _updateStaticBallance();
-    // once
-    if (m_sequenceCounter.m == 0) {
-      // dynamic ballance
-      _updateDynamicBallance();
-      //
-      if (m_robotState.robotStateNow == ROBOT_NORM) {
-        // speed correction
-        //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
-      }
-    }
-    // correct legs
-    finalForwardShift = staticForward + dynamicForward + speedCorrection;
-    m_legCorrect.fl.shift = finalForwardShift;
-    m_legCorrect.fr.shift = finalForwardShift;
-    m_legCorrect.rl.shift = finalForwardShift;
-    m_legCorrect.rr.shift = finalForwardShift;
-  }
-}
-
 // static ballance
-void _updateStaticBallance(void) {
-  if (m_robotState.robotStateNow == ROBOT_NORM) {
+void _updateStaticBallance(unsigned char robotState) {
+  if (robotState == ROBOT_NORM) {
     staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // 4 has to be tuned
-  } else if (m_robotState.robotStateNow == ROBOT_INO) {
+  } else if (robotState == ROBOT_INO) {
     staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
-  } else if (m_robotState.robotStateNow == ROBOT_CRAWL) {
+  } else if (robotState == ROBOT_CRAWL) {
     staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
   }
   // 
@@ -101,4 +69,36 @@ void _updateDynamicBallance(void) {
     dynamicForward = -20;
   }
   dynamicForward = 0;
+}
+
+void updateBallanceCount(unsigned char robotState) {
+  // hight
+  //m_legCorrect.fl.hight = 0;
+  //m_legCorrect.fr.hight = 0;
+  //m_legCorrect.rl.hight = 0;
+  //m_legCorrect.rr.hight = 0;
+  //
+  // forward ballance
+  // bigger the number more weight on front
+  // pitch up - positive. require more weight on front
+  if (ballanceEnabled) {
+    // static ballance
+    _updateStaticBallance(robotState);
+    // once
+    if (m_sequenceCounter.m == 0) {
+      // dynamic ballance
+      _updateDynamicBallance();
+      //
+      if (robotState == ROBOT_NORM) {
+        // speed correction
+        //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
+      }
+    }
+    // correct legs
+    finalForwardShift = staticForward + dynamicForward + speedCorrection;
+    m_legCorrect.fl.shift = finalForwardShift;
+    m_legCorrect.fr.shift = finalForwardShift;
+    m_legCorrect.rl.shift = finalForwardShift;
+    m_legCorrect.rr.shift = finalForwardShift;
+  }
 }

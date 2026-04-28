@@ -155,8 +155,10 @@ unsigned char _statusGyro(void) {
 // init gyroscope and accelerometer MPU6050 using I2C
 void initGyro(bool calibrationMode) {
   int i;
+  Serial.println(F("initGyro"));
   // check for calibration mode
   if (calibrationMode) {
+    Serial.println(F(" Put robot on flat horizontal surface and press the button"));
     while (!m_getButtonPressed()) {
       delay(100);
     }
@@ -189,10 +191,10 @@ void initGyro(bool calibrationMode) {
   // write gyro calibration when button pressed
   if (calibrationMode) {
     EEPROM.put(16, gyroErrors);
-    Serial.println(" writing gyro errors ");
+    Serial.println(" Writing gyro data ");
   } else {
     EEPROM.get(16, gyroErrors);
-    Serial.println(" reading gyro errors ");
+    Serial.println(" Reading gyro data ");
   }
   // print error values
   Serial.print(F(" AccErrorX "));

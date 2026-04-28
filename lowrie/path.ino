@@ -16,15 +16,9 @@ char speedAbsolute = 0;
 bool walkFrward = true;
 // distance to the target mm
 short distanceToTarget = 0;
-
-/*
-uses
-  m_robotState
-output
-  m_robotState.speedLNow
-  m_robotState.speedRNow
-  m_robotState.forwardNow
-*/
+// absolute speed
+char  speedLNow = 0;
+char  speedRNow = 0;
 
 // step rotation
 char _turnStep(short direction, char speed) {
@@ -57,7 +51,7 @@ char _turnStep(short direction, char speed) {
 }
 
 // get speed
-void updatePath(short direction) {
+void updatePath(short direction, char speedMuliplier) {
   // walking mode
   if (distanceToTarget > 0) {
     // plan to go
@@ -88,12 +82,11 @@ void updatePath(short direction) {
     walkFrward = true;
   }
   // step turning
-  m_robotState.speedLNow = _turnStep(-direction, speedAbsolute);
-  m_robotState.speedRNow = _turnStep(direction, speedAbsolute);
-  m_robotState.forwardNow = walkFrward;
+  speedLNow = _turnStep(-direction, speedAbsolute);
+  speedRNow = _turnStep(direction, speedAbsolute);
   if (stepsDistanceCountEnable) {
     // step size
-    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * m_robotState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
+    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * speedMuliplier) / ROBOT_SIZE_DEVIDER;
     // update distance to target
     if (distanceToTarget > stepSize) {
       distanceToTarget -= stepSize;
@@ -101,6 +94,21 @@ void updatePath(short direction) {
       distanceToTarget = 0;
     }
   }
+}
+
+// get left speed
+char getspeedLPath(void) {
+  return speedLNow;
+}
+
+// get right speed
+char getspeedRPath(void) {
+  return speedRNow;
+}
+
+// get direction flag
+bool getforwardPath(void) {
+  return walkFrward;
 }
 
 // set distance to target in cm
@@ -116,4 +124,81 @@ void updateDistancePath(short distance) {
 // get distance to target in cm
 short getDistancePath(void) {
   return distanceToTarget / 10;
+}
+
+// calculate new direction
+short calculateNewDirectionPath(short wallAngle, unsigned char inputState) {
+  short newDirection = 0;
+  switch (inputState) {
+    case IN_OBSTACLE_FRONT:
+      {
+        if (wallAngle > 0) {
+          newDirection = 90 - wallAngle;
+        } else {
+          newDirection = - 90 - wallAngle;
+        }
+      }
+    break;
+    case IN_OBSTACLE_FRONTLEFT:
+      {
+        if (wallAngle > 20) {
+          newDirection = 90 - wallAngle;
+        } else {
+          newDirection = 60;
+        }
+      }
+    break;
+    case IN_OBSTACLE_FRONTRIGHT:
+      {
+        if (wallAngle < -20) {
+          newDirection = - 90 - wallAngle;
+        } else {
+          newDirection = - 60;
+        }
+      }
+    break;
+    case IN_OBSTACLE_LEFT:
+      {
+        if (wallAngle > 40) {
+          newDirection = 90 - wallAngle;
+        } else {
+          newDirection = 30;
+        }
+      }
+    break;
+    case IN_OBSTACLE_RIGHT:
+      {
+        if (wallAngle < -40) {
+          newDirection = - 90 - wallAngle;
+        } else {
+          newDirection = - 30;
+        }
+      }
+    break;
+    case IN_FAR_OBSTACLE_LEFT:
+      {
+        if (wallAngle > 60) {
+          newDirection = 90 - wallAngle;
+        } else {
+          newDirection = 10;
+        }
+      }
+    break;
+    case IN_FAR_OBSTACLE_RIGHT:
+      {
+        if (wallAngle < -60) {
+          newDirection = - 90 - wallAngle;
+        } else {
+          newDirection = - 10;
+        }
+      }
+    break;
+    case IN_NORMAL:
+      // do nothing
+    break;
+    default:
+      Serial.print(F(" Wrong input path state "));
+    break;
+  }
+  return newDirection;
 }

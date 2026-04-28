@@ -5,6 +5,14 @@ Arduino nano
 Robot legs motion patterns
 */
 
+// robot state structure
+typedef struct robotState {
+  unsigned char robotStateNow;
+  short legHightNow;
+  short legLiftNow;
+  char speedMuliplierNow;
+} robotState;
+
 // main counter
 unsigned char mainCounter = 0;
 unsigned char walkCounter = 0;
@@ -14,10 +22,17 @@ unsigned char pairShift = 0;
 // speed dependent pattern
 bool speedFlexMode = true;
 
+// robot state
+robotState rbState = {
+  ROBOT_NORM,              // unsigned char robotStateNow;
+  HIGHT_DEFAULT,           // short legHightNow;
+  LEG_LIFT,                // short legLiftNow;
+  2                        // char speedMuliplierNow; 1 or 2
+};
+
 /*
 uses
 m_legsValue
-m_robotState
 m_sequenceCounter
 */
 
@@ -46,17 +61,17 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   if (speedFlexMode) {
     speedBuffer = speedValue;
   }
-  unsigned char liftPoint = (2 + speedBuffer) * m_robotState.speedMuliplierNow;
+  unsigned char liftPoint = (2 + speedBuffer) * rbState.speedMuliplierNow;
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //
   if (counter < liftPoint) {
     legStep.shift = -counter * quickShiftMultiplier;
-    legStep.hight = -m_robotState.legLiftNow; // lifted
+    legStep.hight = -rbState.legLiftNow; // lifted
     legStep.lifted = true;
   } else if (counter > SERVO_FULL_CYCLE - liftPoint) {
     legStep.shift = (SERVO_FULL_CYCLE - counter) * quickShiftMultiplier;
-    legStep.hight = -m_robotState.legLiftNow; // lifted
+    legStep.hight = -rbState.legLiftNow; // lifted
     legStep.lifted = true;
   } else {
     legStep.lifted = false;
@@ -72,17 +87,17 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
     }
   }
   // hight
-  legStep.hight += m_robotState.legHightNow;
+  legStep.hight += rbState.legHightNow;
   // forward shift
   legStep.shift = legStep.shift * speedValue;
   return legStep;
 }
 
 // update servo motors values
-void updatePatternsCount(void) {
+void updatePatternsCount(bool forwardNow) {
   // update main counter
   mainCounter ++;
-  walkForwardCounter += m_robotState.speedMuliplierNow;
+  walkForwardCounter += rbState.speedMuliplierNow;
   if (mainCounter >= MAIN_FULL_CYCLE) {
     mainCounter = 0;
     if (walkForwardCounter >= SERVO_FULL_CYCLE) {
@@ -90,7 +105,7 @@ void updatePatternsCount(void) {
     }
   }
   // set servo counter
-  if (m_robotState.forwardNow) {
+  if (forwardNow) {
       walkCounter = walkForwardCounter;
   } else {
     walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
@@ -98,7 +113,7 @@ void updatePatternsCount(void) {
   // remember main counter
   m_sequenceCounter.m = mainCounter;
   // update pair shift
-  if (m_robotState.robotStateNow == ROBOT_INO) {
+  if (rbState.robotStateNow == ROBOT_INO) {
     if (pairShift < SERVO_PAIR_SHIFT) {
       pairShift ++;
     }
@@ -128,26 +143,68 @@ void updatePatternsCount(void) {
 }
 
 // get servo motor steps
-void setWalkPatternsCount(bool walkingModeNow) {
+void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
   leg legSet;
   if (walkingModeNow) {
-    legSet = _getWalkStep(m_sequenceCounter.fl, m_robotState.speedLNow);
+    legSet = _getWalkStep(m_sequenceCounter.fl, speedLNow);
     m_legsValue.fl.hight = legSet.hight;
     m_legsValue.fl.shift = legSet.shift;
     m_legsValue.fl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.fr, m_robotState.speedRNow);
+    legSet = _getWalkStep(m_sequenceCounter.fr, speedRNow);
     m_legsValue.fr.hight = legSet.hight;
     m_legsValue.fr.shift = legSet.shift;
     m_legsValue.fr.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rl, m_robotState.speedLNow);
+    legSet = _getWalkStep(m_sequenceCounter.rl, speedLNow);
     m_legsValue.rl.hight = legSet.hight;
     m_legsValue.rl.shift = legSet.shift;
     m_legsValue.rl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rr, m_robotState.speedRNow);
+    legSet = _getWalkStep(m_sequenceCounter.rr, speedRNow);
     m_legsValue.rr.hight = legSet.hight;
     m_legsValue.rr.shift = legSet.shift;
     m_legsValue.rr.lifted = legSet.lifted;
   } else {
-    _setLegsValuesBySide(m_robotState.legHightNow, 0, m_robotState.legHightNow, 0);
+    _setLegsValuesBySide(rbState.legHightNow, 0, rbState.legHightNow, 0);
   }
+}
+
+// set robot state
+void setStatePattern(unsigned char newState) {
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      rbState.robotStateNow = ROBOT_NORM;
+      rbState.legHightNow = HIGHT_DEFAULT;
+      rbState.legLiftNow = LEG_LIFT;
+      rbState.speedMuliplierNow = 2;
+    }
+    break;
+    case ROBOT_INO:
+    {
+      rbState.robotStateNow = ROBOT_INO;
+      rbState.legHightNow = HIGHT_DEFAULT;
+      rbState.legLiftNow = LEG_LIFT * 2;
+      rbState.speedMuliplierNow = 1;
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      rbState.robotStateNow = ROBOT_CRAWL;
+      rbState.legHightNow = HIGHT_DEFAULT;
+      rbState.legLiftNow = LEG_LIFT * 2;
+      rbState.speedMuliplierNow = 1;
+    }
+    break;
+    default:
+    break;
+  }
+}
+
+// get speed multilpier
+char getspeedMuliplierPattern(void) {
+  return rbState.speedMuliplierNow;
+}
+
+// get robot state
+char getRobotStatePattern(void) {
+  return rbState.robotStateNow;
 }

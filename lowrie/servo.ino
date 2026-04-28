@@ -163,42 +163,50 @@ void setFlippedServo(char flipL, char flipR) {
 }
 
 // init servo motors
+void attachServo(void) {
+  Serial.println(F("attachServo"));
+  if (!attached) {
+    // set motors value
+    servoMotorAngleValue[0] = _limitMotorValue(90 - MOTOR_ANGLE);
+    servoMotorAngleValue[1] = _limitMotorValue(90 + MOTOR_ANGLE);
+    servoMotorAngleValue[2] = _limitMotorValue(90 + MOTOR_ANGLE);
+    servoMotorAngleValue[3] = _limitMotorValue(90 - MOTOR_ANGLE);
+    servoMotorAngleValue[4] = _limitMotorValue(90 - MOTOR_ANGLE);
+    servoMotorAngleValue[5] = _limitMotorValue(90 + MOTOR_ANGLE);
+    servoMotorAngleValue[6] = _limitMotorValue(90 + MOTOR_ANGLE);
+    servoMotorAngleValue[7] = _limitMotorValue(90 - MOTOR_ANGLE);
+    // init motors one by one
+    servo_fl_1.attach(FL1_MOTOR, 500, 2500);
+    servo_fl_1.write(servoMotorAngleValue[0]);
+    delay(100);
+    servo_fr_1.attach(FR1_MOTOR, 500, 2500);
+    servo_fr_1.write(servoMotorAngleValue[1]);
+    delay(100);
+    servo_rl_1.attach(RL1_MOTOR, 500, 2500);
+    servo_rl_1.write(servoMotorAngleValue[2]);
+    delay(100);
+    servo_rr_1.attach(RR1_MOTOR, 500, 2500);
+    servo_rr_1.write(servoMotorAngleValue[3]);
+    delay(100);
+    servo_fl_2.attach(FL2_MOTOR, 500, 2500);
+    servo_fl_2.write(servoMotorAngleValue[4]);
+    delay(100);
+    servo_fr_2.attach(FR2_MOTOR, 500, 2500);
+    servo_fr_2.write(servoMotorAngleValue[5]);
+    delay(100);
+    servo_rl_2.attach(RL2_MOTOR, 500, 2500);
+    servo_rl_2.write(servoMotorAngleValue[6]);
+    delay(100);
+    servo_rr_2.attach(RR2_MOTOR, 500, 2500);
+    servo_rr_2.write(servoMotorAngleValue[7]);
+    delay(100);
+    attached = true;
+  }
+}
+
+// init servo motors
 void initServo(bool calibrationMode) {
-  // set motors value
-  servoMotorAngleValue[0] = _limitMotorValue(90 - MOTOR_ANGLE);
-  servoMotorAngleValue[1] = _limitMotorValue(90 + MOTOR_ANGLE);
-  servoMotorAngleValue[2] = _limitMotorValue(90 + MOTOR_ANGLE);
-  servoMotorAngleValue[3] = _limitMotorValue(90 - MOTOR_ANGLE);
-  servoMotorAngleValue[4] = _limitMotorValue(90 - MOTOR_ANGLE);
-  servoMotorAngleValue[5] = _limitMotorValue(90 + MOTOR_ANGLE);
-  servoMotorAngleValue[6] = _limitMotorValue(90 + MOTOR_ANGLE);
-  servoMotorAngleValue[7] = _limitMotorValue(90 - MOTOR_ANGLE);
-  // init motors one by one
-  servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-  servo_fl_1.write(servoMotorAngleValue[0]);
-  delay(100);
-  servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-  servo_fr_1.write(servoMotorAngleValue[1]);
-  delay(100);
-  servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-  servo_rl_1.write(servoMotorAngleValue[2]);
-  delay(100);
-  servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-  servo_rr_1.write(servoMotorAngleValue[3]);
-  delay(100);
-  servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-  servo_fl_2.write(servoMotorAngleValue[4]);
-  delay(100);
-  servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-  servo_fr_2.write(servoMotorAngleValue[5]);
-  delay(100);
-  servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-  servo_rl_2.write(servoMotorAngleValue[6]);
-  delay(100);
-  servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-  servo_rr_2.write(servoMotorAngleValue[7]);
-  delay(100);
-  attached = true;
+  Serial.println(F("initServo"));
   // check for calibration mode
   if (calibrationMode) {
     // do calibration

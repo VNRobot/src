@@ -8,6 +8,13 @@ List of tasks. Every task contains movement patterns.
 // pattern repeat counter
 #define REPEAT_COUNTER_END      8
 
+// task priority
+enum tPriority {
+  PRIORITY_HIGH,
+  PRIORITY_NORM,
+  PRIORITY_LOW,
+};
+
 // Array to store currently executed task. contains list of patterns
 unsigned char currentTask[16] = {Q_DOSTAND, Q_DONE};
 // pattern counter points to currentTask
@@ -18,6 +25,8 @@ unsigned char repeatCounter = 0;
 unsigned char patternNow = Q_DOSTAND;
 // current task
 unsigned char taskNow = BEGIN_TASK;
+// task priority
+unsigned char taskPriority = PRIORITY_LOW;
 
 // set down task
 void _setDownTask(void) {
@@ -89,39 +98,32 @@ void _setStandWalkTask(void) {
   currentTask[2] = Q_DONE;
 }
 
-// set task by name
-void applyTask(unsigned char task) {
-  taskNow = task;
-  switch (taskNow) {
-    case BEGIN_TASK:
-      _setBeginTask();
+// set pattern now
+void _setPatternNow(unsigned char taskPointValue) {
+  patternNow = taskPointValue;
+  switch (patternNow) {
+    case Q_SETPRIORITY_HIGH:
+    {
+      taskPriority = PRIORITY_HIGH;
+      patternNow = Q_PROCESSED;
+    }
     break;
-    case DOWN_TASK:
-      _setDownTask();
+    case Q_SETPRIORITY_NORM:
+    {
+      taskPriority = PRIORITY_NORM;
+      patternNow = Q_PROCESSED;
+    }
     break;
-    case STANDGO_TASK:
-      _setStandWalkTask();
-    break;
-    case STAND_TASK:
-      _setStandTask();
-    break;
-    case FLIP_TASK:
-      _setFlipTask();
-    break;
-    case RECOVER_TASK:
-      _setRecoverTask();
-    break;
-    case RESET_TASK:
-      _setResetTask();
+    case Q_SETPRIORITY_LOW:
+    {
+      taskPriority = PRIORITY_LOW;
+      patternNow = Q_PROCESSED;
+    }
     break;
     default:
+      // do nothing
     break;
   }
-  repeatCounter = 0;
-  currentTaskPoint = 0;
-  patternNow = currentTask[currentTaskPoint];
-  //_printTaskNameDebug(taskNow); // DEBUG
-  //_printPatternNameDebug(patternNow); // DEBUG
 }
 
 // set next pattern in task
@@ -129,7 +131,7 @@ void _setNextPatternInTask(void) {
   // update task point to the next pattern
   if (currentTask[currentTaskPoint] == Q_DONE) {
     // task is done. do nothing
-    patternNow = Q_DONE;
+    _setPatternNow(Q_DONE);
     return;
   }
   if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < REPEAT_COUNTER_END)) {
@@ -141,7 +143,7 @@ void _setNextPatternInTask(void) {
   repeatCounter = 0;
   currentTaskPoint ++;
   if (currentTask[currentTaskPoint] != Q_REPEAT) {
-    patternNow = currentTask[currentTaskPoint];
+    _setPatternNow(currentTask[currentTaskPoint]);
   }
   //_printPatternNameDebug(patternNow); // DEBUG
 }
@@ -178,6 +180,41 @@ unsigned char _getNormalTask(int direction) {
   return DEFAULT_TASK;
 }
 
+// set task by name
+void applyTask(unsigned char task) {
+  taskNow = task;
+  switch (taskNow) {
+    case BEGIN_TASK:
+      _setBeginTask();
+    break;
+    case DOWN_TASK:
+      _setDownTask();
+    break;
+    case STANDGO_TASK:
+      _setStandWalkTask();
+    break;
+    case STAND_TASK:
+      _setStandTask();
+    break;
+    case FLIP_TASK:
+      _setFlipTask();
+    break;
+    case RECOVER_TASK:
+      _setRecoverTask();
+    break;
+    case RESET_TASK:
+      _setResetTask();
+    break;
+    default:
+    break;
+  }
+  repeatCounter = 0;
+  currentTaskPoint = 0;
+  _setPatternNow(currentTask[currentTaskPoint]);
+  //_printTaskNameDebug(taskNow); // DEBUG
+  //_printPatternNameDebug(patternNow); // DEBUG
+}
+
 // get pattern
 unsigned char getPatternOfTask(void) {
   return patternNow;
@@ -189,7 +226,7 @@ unsigned char getTask(void) {
 }
 
 // set new task and new pattern
-void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState, unsigned char directionGyro, unsigned char taskPriority) {
+void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState, unsigned char directionGyro) {
   if (patternNow == Q_END) {
     // this is the end. do nothing
     delay(1000);

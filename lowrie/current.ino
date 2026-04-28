@@ -40,9 +40,14 @@ m_getButtonPressed()
 
 // init current inputs
 void initCurrent(bool calibrationMode) {
+  Serial.println(F("initCurrent"));
   unsigned char counter = 0;
   while (calibrationMode) {
-    delay(100);
+    counter ++;
+    if (counter >= MAIN_FULL_CYCLE) {
+      counter = 0;
+    }
+    delay(10);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
@@ -50,10 +55,6 @@ void initCurrent(bool calibrationMode) {
     if (counter == 0) {
       _printCurrentStateDebug();
       _printLineCurrent();
-    }
-    counter ++;
-    if (counter >= MAIN_FULL_CYCLE) {
-      counter = 0;
     }
   }
 }
@@ -87,6 +88,10 @@ void updateCurrentCount(unsigned char counter) {
       analogValueCurrent.current3 = 0;
     }
     analogValueCurrent.battery = (batteryV * 25) / 3;
+    // check voltage measuring is functional
+    if (analogValueCurrent.battery < 4000) {
+      analogValueCurrent.battery = 8000;
+    }
     // get current state
     if (analogValueCurrent.battery < DEAD_BATTERY) {
       // battery dead

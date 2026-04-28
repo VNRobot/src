@@ -36,6 +36,9 @@ unsigned short leftSensorValue = SENSOR_DISTANCE_NORM;
 unsigned short rightSensorValue = SENSOR_DISTANCE_NORM;
 // assume wall angle
 short wallAngle = 0;
+// sensors state
+unsigned char sensorStateLeft = SEN_NORMAL;
+unsigned char sensorStateRight = SEN_NORMAL;
 // inputs state
 unsigned char inputStateNow = IN_NORMAL;
 
@@ -46,19 +49,22 @@ m_getButtonPressed()
 
 // init inputs
 void initInputs(bool calibrationMode) {
+  Serial.println(F("initInputs"));
   unsigned char counter = 0;
   while (calibrationMode) {
     counter ++;
     if (counter >= MAIN_FULL_CYCLE) {
       counter = 0;
     }
-    delay(100);
+    delay(10);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
     updateInputsCount(counter);
     if (counter == 0) {
       updateInputState(true, 0, true);
+      _printSensorState(sensorStateLeft);
+      _printSensorState(sensorStateRight);
       _printInputState();
     }
   }
@@ -144,8 +150,6 @@ void updateInputsCount(unsigned char counter) {
 void updateInputState(bool surfaceFlat, short directionAngle, bool edgeEnabled) {
   // read analog sensors
   // crossconnection left senor is facing right and right sensor is facing left
-  unsigned char sensorStateLeft = SEN_NORMAL;
-  unsigned char sensorStateRight = SEN_NORMAL;
   // check roll and pitch and check sensors active and angle to target
   if (surfaceFlat && sensorsEnabled && (directionAngle < 30) && (directionAngle > -30)) {
     // surface is ok
@@ -160,8 +164,9 @@ void updateInputState(bool surfaceFlat, short directionAngle, bool edgeEnabled) 
     sensorStateRight = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
     // get input state
     inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
+  } else {
+    inputStateNow = IN_NORMAL;
   }
-  inputStateNow = IN_NORMAL;
 }
 
 // get wall angle
@@ -210,4 +215,24 @@ void _printInputState(void) {
   Serial.print((int)analogRead(A1));
   Serial.print(F(" Angle "));
   Serial.println((int)wallAngle);
+}
+
+// print input state
+void _printSensorState(unsigned char senState) {
+  switch (senState) {
+    case SEN_BLOCK:
+      Serial.print(F(" SEN_BLOCK "));
+    break;
+    case SEN_WALL:
+      Serial.print(F(" SEN_WALL "));
+    break;
+    case SEN_OBSTACLE:
+      Serial.print(F(" SEN_OBSTACLE "));
+    break;
+    case SEN_NORMAL:
+      Serial.print(F(" SEN_NORMAL "));
+    break;
+    default:
+      Serial.print(F(" Wrong sensor state "));
+  }
 }

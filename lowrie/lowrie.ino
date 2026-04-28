@@ -29,8 +29,8 @@ Main file
 #define SERVO_HALF_CYCLE        36
 #define SERVO_PAIR_SHIFT        18  // used for ino
 // calibration angle
-#define CALIBRATION_ANGLE_MIN   -10
-#define CALIBRATION_ANGLE_MAX   10
+#define CALIBRATION_ANGLE_MIN   -15
+#define CALIBRATION_ANGLE_MAX   15
 
 // input state
 enum inState {
@@ -65,6 +65,7 @@ enum rPatterns {
   Q_SETPRIORITY_HIGH,
   Q_SETPRIORITY_NORM,
   Q_SETPRIORITY_LOW,
+  Q_PROCESSED,
   Q_END
 };
 // tasks
@@ -87,12 +88,6 @@ enum gState {
   GYRO_FELL_RIGHT,
   GYRO_FELL_FRONT,
   GYRO_FELL_BACK
-};
-// task priority
-enum tPriority {
-  PRIORITY_HIGH,
-  PRIORITY_NORM,
-  PRIORITY_LOW,
 };
 // robot state
 enum rState {
@@ -145,32 +140,10 @@ struct phase {
   unsigned char rl;
   unsigned char rr;
 };
-// robot state structure
-typedef struct robotState {
-  unsigned char robotStateNow;
-  short legHightNow;
-  short legLiftNow;
-  char speedMuliplierNow;
-  char speedLNow;
-  char speedRNow;
-  bool forwardNow;
-  bool walkingModeNow;
-} robotState;
 
 //---------------global variables---------------------------
 // sequence counters
 phase m_sequenceCounter = {0, 0, 0, 0, 0};
-// robot state
-robotState m_robotState = {
-  ROBOT_NORM,              // unsigned char robotStateNow;
-  HIGHT_DEFAULT,           // short legHightNow;
-  LEG_LIFT,                // short legLiftNow;
-  2,                       // char speedMuliplierNow; 1 or 2
-  0,                       // speedLNow
-  0,                       // speedRNow
-  true,                    // forwardNow
-  true                     // walkingModeNow
-};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
@@ -182,8 +155,6 @@ allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 bool m_cycleDone = true;
 // default task from rTasks
 unsigned char m_defaultTask = STANDGO_TASK;
-// next task
-unsigned char m_taskPriority = PRIORITY_LOW;
 // variable for temporary use
 unsigned char i;
 
@@ -221,6 +192,85 @@ void _writeSoftwareVersionEeprom() {
 #endif
 }
 
+// quick and other patterns
+void _doQuickAndOther(unsigned char patternNow) {
+  switch (patternNow) {
+    case Q_RESETGIRO:
+    {
+      resetGyro();
+    }
+    break;
+    case Q_DOLOW:
+    {
+      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+    }
+    break;
+    case Q_DOSTAND:
+    {
+      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+    }
+    break;
+    case Q_DORECOVER:
+    {
+      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+      if (m_gyroState.aRollAverage < 0) {
+        setFlippedServo(1, -1);
+        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setFlippedServo(-1, 1);
+        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+      } else {
+        setFlippedServo(-1, 1);
+        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setFlippedServo(1, -1);
+        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+      }
+      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+      setFlippedGyro(false);
+      setFlippedServo(1, 1);
+      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+    }
+    break;
+    case Q_DOFLIP:
+      // do nothing for now
+    case Q_DORESET:
+    {
+      if (m_gyroState.aUpsideAverage < 0) {
+        setFlippedGyro(true);
+        setFlippedServo(-1, -1);
+      } else {
+        setFlippedGyro(false);
+        setFlippedServo(1, 1);
+      }
+    }
+    break;
+    case Q_REPEAT:
+    case Q_DONE:
+    case Q_PROCESSED:
+    // do nothing
+    // immediatelly run loop again
+    break;
+    case Q_DODOWN:
+    {
+      // disable motors
+      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+      detachServo();
+    }
+    break;
+    default:
+      Serial.println(F("Wrong pattern"));
+    break;
+  }
+}
+
+// set motors and read sensors
+void _doCycle(void) {
+  // update servo motors values, move motors
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+  updateLegsServoCount();
+  delay(TIME_DELAY);
+  m_cycleDone = true;
+}
+
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
@@ -234,6 +284,8 @@ void setup() {
   }
   // init digital sensors
   initInputs(calibrationMode);
+  // attach servo
+  attachServo();
   // init current readings
   initCurrent(calibrationMode);
   // init legs servo motors
@@ -259,6 +311,7 @@ void setup() {
     _writeSoftwareVersionEeprom();
     detachServo();
     delay(20000);
+    Serial.println(F(" Calibration complete. Please restart now"));
   }
   delay(200);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
@@ -270,19 +323,12 @@ void setup() {
   Serial.println(F("Entering explore mode"));
   applyTask(BEGIN_TASK);
   // load task and pattern. direction is 0
-  updatePath(0);
-  updatePatternsCount();
-  // set distance to target
+  updatePath(0, getspeedMuliplierPattern());
+  updatePatternsCount(true);
+  // set distance to target cm
   setDistancePath(100);
-}
-
-// set motors and read sensors
-void _doCycle(void) {
-  // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask());
-  updateLegsServoCount();
-  delay(TIME_DELAY);
-  m_cycleDone = true;
+  // set state
+  setStatePattern(ROBOT_NORM);
 }
 
 // the loop function runs over and over again forever
@@ -291,7 +337,7 @@ void loop() {
     // runs only after delay
     m_cycleDone = false;
     // update motor pattern point
-    updatePatternsCount();
+    updatePatternsCount(getforwardPath());
     // update current readings
     updateCurrentCount(m_sequenceCounter.m);
     // update gyro readings
@@ -304,99 +350,24 @@ void loop() {
       updateInputState(getSurfaceFlatGyro(), getDirectionGyro(), false);
     }
     // update ballance
-    updateBallanceCount();
+    updateBallanceCount(getRobotStatePattern());
     updateBallanceServoCount();
   }
   // once in a pattern
   if (m_sequenceCounter.m == 0) {
     // set new task and next pattern
-    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState(), getDirectionGyro(), m_taskPriority);
-    switch (getPatternOfTask()) {
-      case Q_RESETGIRO:
-      {
-        resetGyro();
-      }
-      break;
-      case Q_DOLOW:
-      {
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
-      }
-      break;
-      case Q_DOSTAND:
-      {
-        setServo(m_robotState.legHightNow, m_robotState.legHightNow, 20);
-      }
-      break;
-      case Q_DORECOVER:
-      {
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
-        if (m_gyroState.aRollAverage < 0) {
-          setFlippedServo(1, -1);
-          setServo(HIGHT_MAX, HIGHT_MAX, 0);
-          setFlippedServo(-1, 1);
-          setServo(HIGHT_MAX, HIGHT_MAX, 0);
-        } else {
-          setFlippedServo(-1, 1);
-          setServo(HIGHT_MAX, HIGHT_MAX, 0);
-          setFlippedServo(1, -1);
-          setServo(HIGHT_MAX, HIGHT_MAX, 0);
-        }
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
-        setFlippedGyro(false);
-        setFlippedServo(1, 1);
-        setServo(HIGHT_LOW, HIGHT_LOW, 0);
-      }
-      break;
-      case Q_DOFLIP:
-        // do nothing for now
-      case Q_DORESET:
-      {
-        if (m_gyroState.aUpsideAverage < 0) {
-          setFlippedGyro(true);
-          setFlippedServo(-1, -1);
-        } else {
-          setFlippedGyro(false);
-          setFlippedServo(1, 1);
-        }
-      }
-      break;
-      case Q_REPEAT:
-      case Q_DONE:
-      // do nothing
-      // immediatelly run loop again
-      break;
-      case Q_DODOWN:
-      {
-        // disable motors
-        setServo(HIGHT_LOW, HIGHT_LOW, 20);
-        detachServo();
-      }
-      break;
-      case Q_SETPRIORITY_HIGH:
-      {
-        m_taskPriority = PRIORITY_HIGH;
-      }
-      break;
-      case Q_SETPRIORITY_NORM:
-      {
-        m_taskPriority = PRIORITY_NORM;
-      }
-      break;
-      case Q_SETPRIORITY_LOW:
-      {
-        m_taskPriority = PRIORITY_LOW;
-      }
-      break;
-      default:
-      {
-        // P_STANDGO
-        // getWallAngleInputs() getInputState() getCurrentState() getDirectionGyro() getGyroState()
-        //
-        // set speed and direction
-        updatePath(getDirectionGyro());
-        _doCycle();
-      }
-      break;
+    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState(), getDirectionGyro());
+    unsigned char patternNow = getPatternOfTask();
+    if (patternNow == P_STANDGO) {
+      // normal walking pattern
+      // getWallAngleInputs() getInputState() getCurrentState() getDirectionGyro() getGyroState()
+      // set direction
+      // setDirectionGyro(calculateNewDirectionPath(getWallAngleInputs(), getInputState()));
+      updatePath(getDirectionGyro(), getspeedMuliplierPattern());
+      _doCycle();
+    } else {
+      // quick and non walking patterns
+      _doQuickAndOther(patternNow);
     }
   } else {
     // cycle in the middle of pattern
