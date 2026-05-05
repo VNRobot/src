@@ -6,7 +6,7 @@ Operates servo motors
 */
 
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
+#define FORWARD_BALLANCE_SHIFT  5
 // motor center position down from horizontal
 #define MOTOR_ANGLE             0
 // shift to increase distance between front and rear legs

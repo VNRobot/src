@@ -51,7 +51,6 @@ long pitchAverage = 0;
 short rollAverageOld = 0;
 short pitchAverageOld = 0;
 // walking direction
-short walkingDirection = 0;
 short walkingDirectionAbs = 0;
 // flipped state
 bool gyroFlipped = false;
@@ -295,7 +294,6 @@ void resetGyro(void) {
   floatDirection = 0;
   walkingDirectionAbs = 0;
   stateGyro = GYRO_NORM;
-  walkingDirection = 0;
   shakeOld = 0;
   shakeNow = 0;
   rollOld = 0;
@@ -306,12 +304,14 @@ void resetGyro(void) {
 
 // get walking direction
 short getDirectionGyro(void) {
-  return walkingDirectionAbs - walkingDirection;
+  return walkingDirectionAbs;
 }
 
 // remember horizontal direction
 void setDirectionGyro(short newDirection) {
-  walkingDirection = walkingDirectionAbs + newDirection;
+  //Serial.print(" New direction ");
+  //Serial.println((int)newDirection);
+  floatDirection = (float)(- newDirection / 2);
 }
 
 // gyro state

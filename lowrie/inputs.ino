@@ -62,7 +62,7 @@ void initInputs(bool calibrationMode) {
     }
     updateInputsCount(counter);
     if (counter == 0) {
-      updateInputState(true, 0, true);
+      updateInputState(false);
       _printSensorState(sensorStateLeft);
       _printSensorState(sensorStateRight);
       _printInputState();
@@ -108,7 +108,6 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
     break;
     case 15: // SEN_BLOCK     SEN_BLOCK
     case 10: // SEN_WALL      SEN_WALL
-    case 5: // SEN_OBSTACLE   SEN_OBSTACLE
       return IN_OBSTACLE_FRONT;
     break;
     case 3: // SEN_NORMAL     SEN_BLOCK
@@ -117,6 +116,8 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
     break;
     case 4: // SEN_OBSTACLE   SEN_NORMAL
       return IN_FAR_OBSTACLE_LEFT;
+    case 5: // SEN_OBSTACLE   SEN_OBSTACLE
+      return IN_FAR_OBSTACLE_FRONT;
     break;
     case 12: // SEN_BLOCK     SEN_NORMAL
     case 2: // SEN_NORMAL     SEN_WALL
@@ -136,37 +137,42 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
 
 // update sensor readings
 void updateInputsCount(unsigned char counter) {
-  leftSensorValueSum += analogRead(A0);
-  rightSensorValueSum += analogRead(A1);
+  if ((counter > MAIN_HALF_CYCLE) || (counter == 0)) {
+    leftSensorValueSum += analogRead(A0);
+    rightSensorValueSum += analogRead(A1);
+  }
   if (counter == 0) {
-    leftSensorValue = leftSensorValueSum / MAIN_FULL_CYCLE;
-    rightSensorValue = rightSensorValueSum / MAIN_FULL_CYCLE;
+    leftSensorValue = leftSensorValueSum / MAIN_HALF_CYCLE;
+    rightSensorValue = rightSensorValueSum / MAIN_HALF_CYCLE;
     leftSensorValueSum = 0;
     rightSensorValueSum = 0;
   }
 }
 
 // process analog sensors readings
-void updateInputState(bool surfaceFlat, short directionAngle, bool edgeEnabled) {
+void updateInputState(bool edgeEnabled) {
   // read analog sensors
   // crossconnection left senor is facing right and right sensor is facing left
   // check roll and pitch and check sensors active and angle to target
-  if (surfaceFlat && sensorsEnabled && (directionAngle < 30) && (directionAngle > -30)) {
+  if (sensorsEnabled) {
     // surface is ok
-    wallAngle = rightSensorValue - leftSensorValue;
+    wallAngle = - rightSensorValue + leftSensorValue;
     if (wallAngle > 80) {
       wallAngle = 80;
     } else if (wallAngle < -80) {
       wallAngle = -80;
     }
-    // crossconnection
-    sensorStateLeft = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
-    sensorStateRight = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
+    //
+    sensorStateRight = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
+    sensorStateLeft = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
     // get input state
     inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
   } else {
     inputStateNow = IN_NORMAL;
   }
+  //_printSensorState(sensorStateLeft);
+  //_printSensorState(sensorStateRight);
+  //_printInputState();
 }
 
 // get wall angle
@@ -196,6 +202,9 @@ void _printInputState(void) {
     break;
     case IN_OBSTACLE_RIGHT:
       Serial.print(F(" IN_OBSTACLE_RIGHT "));
+    break;
+    case IN_FAR_OBSTACLE_FRONT:
+      Serial.print(F(" IN_FAR_OBSTACLE_FRONT "));
     break;
     case IN_FAR_OBSTACLE_LEFT:
       Serial.print(F(" IN_FAR_OBSTACLE_LEFT "));

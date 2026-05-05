@@ -10,7 +10,7 @@ Robot static and dynamic ballance
 #define DYNAMIC_BALLANCE_MAX    20
 
 // ballance enabled flag
-bool ballanceEnabled = false;
+bool ballanceEnabled = true;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;

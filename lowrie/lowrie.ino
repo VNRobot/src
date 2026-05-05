@@ -39,6 +39,7 @@ enum inState {
   IN_OBSTACLE_FRONTRIGHT,
   IN_OBSTACLE_LEFT,
   IN_OBSTACLE_RIGHT,
+  IN_FAR_OBSTACLE_FRONT,
   IN_FAR_OBSTACLE_LEFT,
   IN_FAR_OBSTACLE_RIGHT,
   IN_NORMAL             
@@ -246,6 +247,7 @@ void _doQuickAndOther(unsigned char patternNow) {
     case Q_REPEAT:
     case Q_DONE:
     case Q_PROCESSED:
+    case Q_END:
     // do nothing
     // immediatelly run loop again
     break;
@@ -318,7 +320,7 @@ void setup() {
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
-  updateInputState(true, 0, false);
+  updateInputState(false);
   // explore mode
   Serial.println(F("Entering explore mode"));
   applyTask(BEGIN_TASK);
@@ -347,7 +349,7 @@ void loop() {
     // once in a pattern after delay
     if (m_sequenceCounter.m == 0) {
       // process proximity sensors
-      updateInputState(getSurfaceFlatGyro(), getDirectionGyro(), false);
+      updateInputState(false);
     }
     // update ballance
     updateBallanceCount(getRobotStatePattern());
@@ -355,14 +357,19 @@ void loop() {
   }
   // once in a pattern
   if (m_sequenceCounter.m == 0) {
-    // set new task and next pattern
-    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState(), getDirectionGyro());
+    // set new pattern and task
+    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState());
+    // get pattern
     unsigned char patternNow = getPatternOfTask();
     if (patternNow == P_STANDGO) {
-      // normal walking pattern
-      // getWallAngleInputs() getInputState() getCurrentState() getDirectionGyro() getGyroState()
+      // normal walking to avoid obstacles
+      // get new direction
+      short newDirection = calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getSurfaceFlatGyro(), getDirectionGyro());
       // set direction
-      // setDirectionGyro(calculateNewDirectionPath(getWallAngleInputs(), getInputState()));
+      if (newDirection != 0) {
+        setDirectionGyro(newDirection);
+      }
+      //
       updatePath(getDirectionGyro(), getspeedMuliplierPattern());
       _doCycle();
     } else {

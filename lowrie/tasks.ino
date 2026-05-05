@@ -176,7 +176,7 @@ unsigned char _getHighPriorityTask(unsigned char currentState, unsigned char gyr
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char _getNormalTask(int direction) {
+unsigned char _getNormalTask(void) {
   return DEFAULT_TASK;
 }
 
@@ -226,9 +226,10 @@ unsigned char getTask(void) {
 }
 
 // set new task and new pattern
-void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState, unsigned char directionGyro) {
+void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState) {
   if (patternNow == Q_END) {
     // this is the end. do nothing
+    //Serial.println(F(" Q_END "));
     delay(1000);
     return;
   }
@@ -244,7 +245,7 @@ void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, un
   // any priority end of task
   if (patternNow == Q_DONE) {
     // check for normal priority
-    unsigned char taskNext = _getNormalTask(directionGyro);
+    unsigned char taskNext = _getNormalTask();
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }

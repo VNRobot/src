@@ -8,6 +8,16 @@ Robot walking path
 // robot size devider
 #define ROBOT_SIZE_DEVIDER       2
 
+// direction state
+enum diState {
+  DI_FORWARD = 5,
+  DI_FORWARD_FAR_TURN = 10,
+  DI_FORWARD_TURN = 20,
+  DI_FORWARD_STAND = 30,
+  DI_BACKWARD_STAND = 40,
+  DI_BACKWARD_TURN = 50
+};
+
 // enable steps distance count
 bool stepsDistanceCountEnable = false;
 // speed relative value from 0 to 2
@@ -19,29 +29,31 @@ short distanceToTarget = 0;
 // absolute speed
 char  speedLNow = 0;
 char  speedRNow = 0;
+// on the path flag
+bool onThePath = false;
 
 // step rotation
 char _turnStep(short direction, char speed) {
   if (walkFrward) {
     // forward
-    if (direction > 4) {
+    if (direction >= DI_FORWARD) {
       if (speed < 2) {
         speed ++;
       }
     }
-    if (direction < -4) {
+    if (direction <= - DI_FORWARD) {
       if (speed > 0) {
         speed --;
       }
     }
   } else {
     // backward
-    if (direction < -4) {
+    if (direction <= - DI_FORWARD) {
       if (speed < 2) {
         speed ++;
       }
     }
-    if (direction > 4) {
+    if (direction >= DI_FORWARD) {
       if (speed > 0) {
         speed --;
       }
@@ -55,7 +67,7 @@ void updatePath(short direction, char speedMuliplier) {
   // walking mode
   if (distanceToTarget > 0) {
     // plan to go
-    if ((direction < 30) && (direction > -30)) {
+    if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward
       if (speedAbsolute < 1) {
         speedAbsolute = 1;
@@ -63,10 +75,14 @@ void updatePath(short direction, char speedMuliplier) {
         speedAbsolute = 2;
       }
       walkFrward = true;
-    } else if ((direction < 150) && (direction > -150)) {
+    } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
       // stand and turn
       speedAbsolute = 0;
       walkFrward = true;
+    } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
+      // stand and turn
+      speedAbsolute = 0;
+      walkFrward = false;
     } else {
       // go back
       if (speedAbsolute < 1) {
@@ -127,78 +143,140 @@ short getDistancePath(void) {
 }
 
 // calculate new direction
-short calculateNewDirectionPath(short wallAngle, unsigned char inputState) {
-  short newDirection = 0;
-  switch (inputState) {
-    case IN_OBSTACLE_FRONT:
-      {
-        if (wallAngle > 0) {
-          newDirection = 90 - wallAngle;
-        } else {
-          newDirection = - 90 - wallAngle;
-        }
-      }
-    break;
-    case IN_OBSTACLE_FRONTLEFT:
-      {
-        if (wallAngle > 20) {
-          newDirection = 90 - wallAngle;
-        } else {
-          newDirection = 60;
-        }
-      }
-    break;
-    case IN_OBSTACLE_FRONTRIGHT:
-      {
-        if (wallAngle < -20) {
-          newDirection = - 90 - wallAngle;
-        } else {
-          newDirection = - 60;
-        }
-      }
-    break;
-    case IN_OBSTACLE_LEFT:
-      {
-        if (wallAngle > 40) {
-          newDirection = 90 - wallAngle;
-        } else {
-          newDirection = 30;
-        }
-      }
-    break;
-    case IN_OBSTACLE_RIGHT:
-      {
-        if (wallAngle < -40) {
-          newDirection = - 90 - wallAngle;
-        } else {
-          newDirection = - 30;
-        }
-      }
-    break;
-    case IN_FAR_OBSTACLE_LEFT:
-      {
-        if (wallAngle > 60) {
-          newDirection = 90 - wallAngle;
-        } else {
-          newDirection = 10;
-        }
-      }
-    break;
-    case IN_FAR_OBSTACLE_RIGHT:
-      {
-        if (wallAngle < -60) {
-          newDirection = - 90 - wallAngle;
-        } else {
-          newDirection = - 10;
-        }
-      }
-    break;
-    case IN_NORMAL:
-      // do nothing
-    break;
-    default:
-      Serial.print(F(" Wrong input path state "));
-    break;
+short calculateNewDirectionPath(unsigned char inputState, short wallAngle, bool surfaceFlat, short direction) {
+  if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
+    // direction is close to the target
+    onThePath = true;
   }
-  return newDirection;
+  if (!surfaceFlat) {
+    // on the slop. keep going forward
+    return 0;
+  }
+  if (inputState == IN_NORMAL) {
+    // no obstacle
+    if (!onThePath) {
+      // stop turning
+      if (direction > DI_FORWARD) {
+        direction = DI_FORWARD;
+      } else if (direction < - DI_FORWARD) {
+        direction = - DI_FORWARD;
+      }
+      return direction;
+    }
+    return 0;
+  }
+  // surface is flat
+  // obstacle present
+  if (onThePath) {
+    onThePath = false;
+    switch (inputState) {
+      case IN_OBSTACLE_FRONT:
+        {
+          if (wallAngle > 0) {
+            direction = DI_BACKWARD_TURN;
+          } else {
+            direction = - DI_BACKWARD_TURN;
+          }
+        }
+      break;
+      case IN_OBSTACLE_FRONTLEFT:
+        {
+          direction = DI_BACKWARD_STAND;
+        }
+      break;
+      case IN_OBSTACLE_FRONTRIGHT:
+        {
+          direction = - DI_BACKWARD_STAND;
+        }
+      break;
+      case IN_OBSTACLE_LEFT:
+        {
+          direction = DI_FORWARD_STAND;
+        }
+      break;
+      case IN_OBSTACLE_RIGHT:
+        {
+          direction = - DI_FORWARD_STAND;
+        }
+      break;
+      case IN_FAR_OBSTACLE_FRONT:
+        {
+          if (wallAngle > 0) {
+            direction = DI_FORWARD_TURN;
+          } else {
+            direction = - DI_FORWARD_TURN;
+          }
+        }
+      break;
+      case IN_FAR_OBSTACLE_LEFT:
+        {
+          direction = DI_FORWARD_FAR_TURN;
+        }
+      break;
+      case IN_FAR_OBSTACLE_RIGHT:
+        {
+          direction = - DI_FORWARD_FAR_TURN;
+        }
+      break;
+      default:
+        Serial.print(F(" Wrong input path state "));
+      break;
+    }
+  } else {
+    // keep turning
+    switch (inputState) {
+      case IN_OBSTACLE_FRONT:
+        {
+          if (direction > 0) {
+            direction = DI_BACKWARD_TURN;
+          } else {
+            direction = - DI_BACKWARD_TURN;
+          }
+        }
+      break;
+      case IN_OBSTACLE_FRONTLEFT:
+      case IN_OBSTACLE_FRONTRIGHT:
+        {
+          if (direction > 0) {
+            direction = DI_BACKWARD_STAND;
+          } else {
+            direction = - DI_BACKWARD_STAND;
+          }
+        }
+      break;
+      case IN_OBSTACLE_LEFT:
+      case IN_OBSTACLE_RIGHT:
+        {
+          if (direction > 0) {
+            direction = DI_FORWARD_STAND;
+          } else {
+            direction = - DI_FORWARD_STAND;
+          }
+        }
+      break;
+      case IN_FAR_OBSTACLE_FRONT:
+        {
+          if (direction > 0) {
+            direction = DI_FORWARD_TURN;
+          } else {
+            direction = - DI_FORWARD_TURN;
+          }
+        }
+      break;
+      case IN_FAR_OBSTACLE_LEFT:
+        {
+          direction = DI_FORWARD_FAR_TURN;
+        }
+      break;
+      case IN_FAR_OBSTACLE_RIGHT:
+        {
+          direction = - DI_FORWARD_FAR_TURN;
+        }
+      break;
+      default:
+        Serial.print(F(" Wrong input path state "));
+      break;
+    }
+  }
+  return direction;
 }
