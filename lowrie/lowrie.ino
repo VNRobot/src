@@ -371,6 +371,14 @@ void loop() {
       }
       //
       updatePath(getDirectionGyro(), getspeedMuliplierPattern());
+      // check for robot state
+      if (!getSurfaceFlatGyro()) {
+        setStatePattern(ROBOT_CRAWL);
+      } else if (getSurfaceBumpyGyro()) {
+        setStatePattern(ROBOT_INO);
+      } else {
+        setStatePattern(ROBOT_NORM);
+      }
       _doCycle();
     } else {
       // quick and non walking patterns

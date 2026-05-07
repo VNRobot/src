@@ -13,10 +13,11 @@ Process analog inputs
     60     100
 */
 
-#define SENSOR_DISTANCE_BLOCK   640    // 5  cm
+#define SENSOR_DISTANCE_BLOCK   600    // blocked
 #define SENSOR_DISTANCE_MIN     260    // 20 cm
 #define SENSOR_DISTANCE_NORM    170    // 40 cm
 #define SENSOR_DISTANCE_MAX     120    // 60 cm
+#define SENSOR_NO_DATA          80     // no data
 
 // sensor state
 enum senState {
@@ -156,17 +157,28 @@ void updateInputState(bool edgeEnabled) {
   // check roll and pitch and check sensors active and angle to target
   if (sensorsEnabled) {
     // surface is ok
-    wallAngle = - rightSensorValue + leftSensorValue;
-    if (wallAngle > 80) {
-      wallAngle = 80;
-    } else if (wallAngle < -80) {
-      wallAngle = -80;
+    if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
+      // data received
+      wallAngle = - rightSensorValue + leftSensorValue;
+      if (wallAngle > 80) {
+        wallAngle = 80;
+      } else if (wallAngle < -80) {
+        wallAngle = -80;
+      }
+      //
+      sensorStateRight = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
+      sensorStateLeft = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
+      // get input state
+      inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
+    } else {
+      // no data
+      wallAngle = 0;
+      if (edgeEnabled) {
+        inputStateNow = IN_OBSTACLE_FRONT;
+      } else {
+        inputStateNow = IN_NORMAL;
+      }
     }
-    //
-    sensorStateRight = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
-    sensorStateLeft = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
-    // get input state
-    inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
   } else {
     inputStateNow = IN_NORMAL;
   }

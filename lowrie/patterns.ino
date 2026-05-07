@@ -11,6 +11,7 @@ typedef struct robotState {
   short legHightNow;
   short legLiftNow;
   char speedMuliplierNow;
+  unsigned char pairShiftNow;
 } robotState;
 
 // main counter
@@ -27,7 +28,8 @@ robotState rbState = {
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
   LEG_LIFT,                // short legLiftNow;
-  2                        // char speedMuliplierNow; 1 or 2
+  2,                       // char speedMuliplierNow; 1 or 2
+  0                        // unsigned char pairShiftNow
 };
 
 /*
@@ -113,14 +115,10 @@ void updatePatternsCount(bool forwardNow) {
   // remember main counter
   m_sequenceCounter.m = mainCounter;
   // update pair shift
-  if (rbState.robotStateNow == ROBOT_INO) {
-    if (pairShift < SERVO_PAIR_SHIFT) {
-      pairShift ++;
-    }
-  } else {
-    if (pairShift > 0) {
-      pairShift --;
-    }
+  if (pairShift < rbState.pairShiftNow) {
+    pairShift ++;
+  } else if (pairShift > rbState.pairShiftNow) {
+    pairShift --;
   }
   // set counters
   m_sequenceCounter.fl = walkCounter + pairShift;
@@ -176,6 +174,7 @@ void setStatePattern(unsigned char newState) {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = LEG_LIFT;
       rbState.speedMuliplierNow = 2;
+      rbState.pairShiftNow = 0;
     }
     break;
     case ROBOT_INO:
@@ -184,6 +183,7 @@ void setStatePattern(unsigned char newState) {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = LEG_LIFT * 2;
       rbState.speedMuliplierNow = 1;
+      rbState.pairShiftNow = SERVO_PAIR_SHIFT;
     }
     break;
     case ROBOT_CRAWL:
@@ -192,6 +192,7 @@ void setStatePattern(unsigned char newState) {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = LEG_LIFT * 2;
       rbState.speedMuliplierNow = 1;
+      rbState.pairShiftNow = SERVO_PAIR_SHIFT;
     }
     break;
     default:
