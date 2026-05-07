@@ -5,6 +5,11 @@ Arduino nano
 use MPU6050 to read gyroscope and accelerometer
 */
 
+// robot phisics
+#define OFFROAD_ANGLE           4
+#define SLOP_ANGLE              12
+#define FALLING_ANGLE           45
+
 #include <Wire.h>
 
 // gyro errors structure
@@ -30,6 +35,7 @@ unsigned long currentTime = 0;
 unsigned long oldTime;
 // gyro state
 unsigned char stateGyroOld = GYRO_NORM;
+unsigned char stateGyro = GYRO_NORM;
 // roll data
 // shake parameters
 short shakeNow = 0;
@@ -45,10 +51,15 @@ long pitchAverage = 0;
 short rollAverageOld = 0;
 short pitchAverageOld = 0;
 // walking direction
-short walkingDirection = 0;
-short walkingDirectionOld = 0;
+short walkingDirectionAbs = 0;
 // flipped state
 bool gyroFlipped = false;
+
+/*
+uses
+m_gyroState
+m_getButtonPressed()
+*/
 
 // init gyroscope wire
 void _initWire(void) {
@@ -92,67 +103,6 @@ void _readWire(float * regData, unsigned char code) {
   regData[2] = Wire.read() << 8 | Wire.read();
 }
 
-// set flipped state
-void setFlippedGyro(bool flipped) {
-  gyroFlipped = flipped;
-}
-
-// init gyroscope and accelerometer MPU6050 using I2C
-void initGyro(bool calibrationMode) {
-  int i;
-  // check for calibration mode
-  if (calibrationMode) {
-    while (!m_getButtonPressed()) {
-      delay(100);
-    }
-    delay(1000);
-  }
-  _initWire();
-  // calculate gyro errors
-  for (i = 0; i < 200; i++) {
-    _readWire(floatBuffer, 0x3B);
-    floatBuffer[0] /= 16384.0;
-    floatBuffer[1] /= 16384.0;
-    floatBuffer[2] /= 16384.0;
-    gyroErrors.AccErrorX += atan((floatBuffer[1]) / sqrt(pow((floatBuffer[0]), 2) + pow((floatBuffer[2]), 2))) * 180 / PI;
-    gyroErrors.AccErrorY += atan(-1 * (floatBuffer[0]) / sqrt(pow((floatBuffer[1]), 2) + pow((floatBuffer[2]), 2))) * 180 / PI;
-  }
-  gyroErrors.AccErrorX /= 200; // deg, positive-turn right, negative-turn left, 0-90. upsige down is the same
-  gyroErrors.AccErrorY /= 200; // deg, positive-fase down, negative-face up, 0-90. upsige down is the same
-  for (i = 0; i < 200; i++) {
-    _readWire(floatBuffer, 0x43);
-    floatBuffer[0] /= 131.0;
-    floatBuffer[1] /= 131.0;
-    floatBuffer[2] /= 131.0;
-    gyroErrors.GyroErrorX += floatBuffer[0];
-    gyroErrors.GyroErrorY += floatBuffer[1];
-    gyroErrors.GyroErrorZ += floatBuffer[2];
-  }
-  gyroErrors.GyroErrorX /= 200;
-  gyroErrors.GyroErrorY /= 200;
-  gyroErrors.GyroErrorZ /= 200;
-  // write gyro calibration when button pressed
-  if (calibrationMode) {
-    EEPROM.put(16, gyroErrors);
-    Serial.println(" writing gyro errors ");
-  } else {
-    EEPROM.get(16, gyroErrors);
-    Serial.println(" reading gyro errors ");
-  }
-  // print error values
-  Serial.print(F(" AccErrorX "));
-  Serial.print((int)(gyroErrors.AccErrorX * 10));
-  Serial.print(F(" AccErrorY "));
-  Serial.print((int)(gyroErrors.AccErrorY * 10));
-  Serial.print(F(" GyroErrorX "));
-  Serial.print((int)(gyroErrors.GyroErrorX * 10));
-  Serial.print(F(" GyroErrorY "));
-  Serial.print((int)(gyroErrors.GyroErrorY * 10));
-  Serial.print(F(" GyroErrorZ "));
-  Serial.println((int)(gyroErrors.GyroErrorZ * 10));
-  //AccErrorX 0 AccErrorY -2 GyroErrorX -2 GyroErrorY -5 GyroErrorZ -1
-}
-
 // fix rotation angle
 float _fixAngle(float angle, float limit){
   if (angle > limit) {
@@ -161,134 +111,6 @@ float _fixAngle(float angle, float limit){
     angle += limit;
   }
   return angle;
-}
-
-// read gyroscope and accelerometer data
-void updateGyro(void) {
-  // accelerometer
-  _readWire(floatBuffer, 0x3B);
-  floatBuffer[0] /= 16384.0;
-  floatBuffer[1] /= 16384.0;
-  floatBuffer[2] /= 16384.0;
-  floatRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
-  floatPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
-  m_gyroState.aUpsideAverage = (short)((floatBuffer[2]) * 100);
-  // gyroscope
-  oldTime = currentTime;
-  currentTime = millis();
-  timeInterval = (currentTime - oldTime) / 1000.0;
-  _readWire(floatBuffer, 0x43);
-  floatBuffer[0] = floatBuffer[0] / 131.0 - gyroErrors.GyroErrorX;
-  floatBuffer[1] = floatBuffer[1] / 131.0 - gyroErrors.GyroErrorY;
-  floatBuffer[2] = floatBuffer[2] / 131.0 - gyroErrors.GyroErrorZ;
-  floatDirection  += floatBuffer[2] * timeInterval;
-  // short data
-  rollNow = (short)floatRollX;
-  pitchNow = -(short)floatPitchY;
-  // data now
-  m_gyroState.aRollNow = rollNow;
-  m_gyroState.aPitchNow = pitchNow;
-  // deltas
-  deltaRoll = rollNow - rollOld;
-  deltaPitch = pitchNow - pitchOld;
-  // remember position
-  rollOld = rollNow;
-  pitchOld = pitchNow;
-  // add average
-  rollAverage += rollNow;
-  pitchAverage += pitchNow;
-  // get lift value
-  m_gyroState.aLiftFL = deltaRoll + deltaPitch;
-  m_gyroState.aLiftFR = -deltaRoll + deltaPitch;
-  m_gyroState.aLiftRL = deltaRoll - deltaPitch;
-  m_gyroState.aLiftRR = -deltaRoll - deltaPitch;
-  // cycle statrt
-  if (m_sequenceCounter.m == 0) {
-    // remember roll and pitch
-    m_gyroState.aRollAverage = rollAverage / MAIN_FULL_CYCLE;
-    m_gyroState.aPitchAverage = pitchAverage / MAIN_FULL_CYCLE;
-    // reset average
-    rollAverage = 0;
-    pitchAverage = 0;
-    // shake data processing
-    if (m_gyroState.aRollAverage > rollAverageOld) {
-      shakeNow += m_gyroState.aRollAverage - rollAverageOld;
-    } else {
-      shakeNow -= m_gyroState.aRollAverage - rollAverageOld;
-    }
-    if (m_gyroState.aPitchAverage > pitchAverageOld) {
-      shakeNow += m_gyroState.aPitchAverage - pitchAverageOld;
-    } else {
-      shakeNow -= m_gyroState.aPitchAverage - pitchAverageOld;
-    }
-    rollAverageOld = m_gyroState.aRollAverage;
-    pitchAverageOld = m_gyroState.aPitchAverage;
-    // process direction
-    // fix rotation angle value
-    floatDirection  = _fixAngle(floatDirection, 180);
-    // get gyro data
-    m_gyroState.direction =  -((short)floatDirection * 2);
-    // get status
-    m_gyroState.stateGyro = _statusGyro();
-    if (stateGyroOld != m_gyroState.stateGyro) {
-      stateGyroOld = m_gyroState.stateGyro;
-      // debug print
-      //_printGyro();
-    }
-    //_printLineGyroDebug();
-    // remember shake values
-    shakeOld = shakeNow;
-    shakeNow = 0;
-  }
-  //_printRollGyroDebug();
-}
-
-// reset gyro data
-void resetGyroZero(void) {
-  floatDirection = 0;
-  m_gyroState.direction = 0;
-  m_gyroState.stateGyro = GYRO_NORM;
-  walkingDirectionOld = 0;
-  walkingDirection = 0;
-  shakeOld = 0;
-  shakeNow = 0;
-  rollOld = 0;
-  pitchOld = 0;
-  rollAverageOld = 0;
-  pitchAverageOld = 0;
-}
-
-// get walking direction
-short getDirectionGyro(void) {
-  return m_gyroState.direction - walkingDirection;
-}
-
-// remember horizontal direction
-void setDirectionGyroZero(void) {
-  walkingDirection = m_gyroState.direction;
-  walkingDirectionOld = walkingDirection;
-}
-
-// correct horizontal direction
-void resetDirectionGyroZero(void) {
-  walkingDirection = m_gyroState.direction;
-}
-
-// return to old horizontal direction
-void restoreDirectionGyroZero(void) {
-  walkingDirection = walkingDirectionOld;
-}
-
-// reverse horizontal direction
-void reverseDirectionGyroZero(void) {
-  if ((walkingDirection < 30) && (walkingDirection > -30)) {
-    // not reverset yet
-    if (m_gyroState.direction < 0) {
-      walkingDirection = m_gyroState.direction + 180;
-    } else {
-      walkingDirection = m_gyroState.direction - 180;
-    }
-  }
 }
 
 // status of gyro
@@ -328,11 +150,210 @@ unsigned char _statusGyro(void) {
   }
   return GYRO_NORM;
 }
-/*
+
+// init gyroscope and accelerometer MPU6050 using I2C
+void initGyro(bool calibrationMode) {
+  int i;
+  Serial.println(F("initGyro"));
+  // check for calibration mode
+  if (calibrationMode) {
+    Serial.println(F(" Put robot on flat horizontal surface and press the button"));
+    while (!m_getButtonPressed()) {
+      delay(100);
+    }
+    delay(1000);
+  }
+  _initWire();
+  // calculate gyro errors
+  for (i = 0; i < 200; i++) {
+    _readWire(floatBuffer, 0x3B);
+    floatBuffer[0] /= 16384.0;
+    floatBuffer[1] /= 16384.0;
+    floatBuffer[2] /= 16384.0;
+    gyroErrors.AccErrorX += atan((floatBuffer[1]) / sqrt(pow((floatBuffer[0]), 2) + pow((floatBuffer[2]), 2))) * 180 / PI;
+    gyroErrors.AccErrorY += atan(-1 * (floatBuffer[0]) / sqrt(pow((floatBuffer[1]), 2) + pow((floatBuffer[2]), 2))) * 180 / PI;
+  }
+  gyroErrors.AccErrorX /= 200; // deg, positive-turn right, negative-turn left, 0-90. upsige down is the same
+  gyroErrors.AccErrorY /= 200; // deg, positive-fase down, negative-face up, 0-90. upsige down is the same
+  for (i = 0; i < 200; i++) {
+    _readWire(floatBuffer, 0x43);
+    floatBuffer[0] /= 131.0;
+    floatBuffer[1] /= 131.0;
+    floatBuffer[2] /= 131.0;
+    gyroErrors.GyroErrorX += floatBuffer[0];
+    gyroErrors.GyroErrorY += floatBuffer[1];
+    gyroErrors.GyroErrorZ += floatBuffer[2];
+  }
+  gyroErrors.GyroErrorX /= 200;
+  gyroErrors.GyroErrorY /= 200;
+  gyroErrors.GyroErrorZ /= 200;
+  // write gyro calibration when button pressed
+  if (calibrationMode) {
+    EEPROM.put(16, gyroErrors);
+    Serial.println(" Writing gyro data ");
+  } else {
+    EEPROM.get(16, gyroErrors);
+    Serial.println(" Reading gyro data ");
+  }
+  // print error values
+  Serial.print(F(" AccErrorX "));
+  Serial.print((int)(gyroErrors.AccErrorX * 10));
+  Serial.print(F(" AccErrorY "));
+  Serial.print((int)(gyroErrors.AccErrorY * 10));
+  Serial.print(F(" GyroErrorX "));
+  Serial.print((int)(gyroErrors.GyroErrorX * 10));
+  Serial.print(F(" GyroErrorY "));
+  Serial.print((int)(gyroErrors.GyroErrorY * 10));
+  Serial.print(F(" GyroErrorZ "));
+  Serial.println((int)(gyroErrors.GyroErrorZ * 10));
+  //AccErrorX 0 AccErrorY -2 GyroErrorX -2 GyroErrorY -5 GyroErrorZ -1
+}
+
+// read gyroscope and accelerometer data
+void updateGyroCount(unsigned char counter) {
+  // accelerometer
+  _readWire(floatBuffer, 0x3B);
+  floatBuffer[0] /= 16384.0;
+  floatBuffer[1] /= 16384.0;
+  floatBuffer[2] /= 16384.0;
+  floatRollX  = (atan(floatBuffer[1] / sqrt(pow(floatBuffer[0], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorX;
+  floatPitchY = (atan(-1 * floatBuffer[0] / sqrt(pow(floatBuffer[1], 2) + pow(floatBuffer[2], 2))) * 180 / PI) - gyroErrors.AccErrorY;
+  m_gyroState.aUpsideAverage = (short)((floatBuffer[2]) * 100);
+  // gyroscope
+  oldTime = currentTime;
+  currentTime = millis();
+  timeInterval = (currentTime - oldTime) / 1000.0;
+  _readWire(floatBuffer, 0x43);
+  floatBuffer[0] = floatBuffer[0] / 131.0 - gyroErrors.GyroErrorX;
+  floatBuffer[1] = floatBuffer[1] / 131.0 - gyroErrors.GyroErrorY;
+  floatBuffer[2] = floatBuffer[2] / 131.0 - gyroErrors.GyroErrorZ;
+  floatDirection  += floatBuffer[2] * timeInterval;
+  // short data
+  rollNow = (short)floatRollX;
+  pitchNow = -(short)floatPitchY;
+  // data now
+  m_gyroState.aRollNow = rollNow;
+  m_gyroState.aPitchNow = pitchNow;
+  // deltas
+  deltaRoll = rollNow - rollOld;
+  deltaPitch = pitchNow - pitchOld;
+  // remember position
+  rollOld = rollNow;
+  pitchOld = pitchNow;
+  // add average
+  rollAverage += rollNow;
+  pitchAverage += pitchNow;
+  // get lift value
+  m_gyroState.aLiftFL = deltaRoll + deltaPitch;
+  m_gyroState.aLiftFR = -deltaRoll + deltaPitch;
+  m_gyroState.aLiftRL = deltaRoll - deltaPitch;
+  m_gyroState.aLiftRR = -deltaRoll - deltaPitch;
+  // cycle statrt
+  if (counter == 0) {
+    // remember roll and pitch
+    m_gyroState.aRollAverage = rollAverage / MAIN_FULL_CYCLE;
+    m_gyroState.aPitchAverage = pitchAverage / MAIN_FULL_CYCLE;
+    // reset average
+    rollAverage = 0;
+    pitchAverage = 0;
+    // shake data processing
+    if (m_gyroState.aRollAverage > rollAverageOld) {
+      shakeNow += m_gyroState.aRollAverage - rollAverageOld;
+    } else {
+      shakeNow -= m_gyroState.aRollAverage - rollAverageOld;
+    }
+    if (m_gyroState.aPitchAverage > pitchAverageOld) {
+      shakeNow += m_gyroState.aPitchAverage - pitchAverageOld;
+    } else {
+      shakeNow -= m_gyroState.aPitchAverage - pitchAverageOld;
+    }
+    rollAverageOld = m_gyroState.aRollAverage;
+    pitchAverageOld = m_gyroState.aPitchAverage;
+    // process direction
+    // fix rotation angle value
+    floatDirection  = _fixAngle(floatDirection, 180);
+    // get gyro data
+    walkingDirectionAbs =  -((short)floatDirection * 2);
+    // get status
+    stateGyro = _statusGyro();
+    if (stateGyroOld != stateGyro) {
+      stateGyroOld = stateGyro;
+      // debug print
+      //_printGyro();
+    }
+    //_printLineGyroDebug();
+    // remember shake values
+    shakeOld = shakeNow;
+    shakeNow = 0;
+  }
+  //_printRollGyroDebug();
+}
+
+// reset gyro data
+void resetGyro(void) {
+  floatDirection = 0;
+  walkingDirectionAbs = 0;
+  stateGyro = GYRO_NORM;
+  shakeOld = 0;
+  shakeNow = 0;
+  rollOld = 0;
+  pitchOld = 0;
+  rollAverageOld = 0;
+  pitchAverageOld = 0;
+}
+
+// get walking direction
+short getDirectionGyro(void) {
+  return walkingDirectionAbs;
+}
+
+// remember horizontal direction
+void setDirectionGyro(short newDirection) {
+  //Serial.print(" New direction ");
+  //Serial.println((int)newDirection);
+  floatDirection = (float)(- newDirection / 2);
+}
+
+// gyro state
+unsigned char getGyroState(void) {
+  return stateGyro;
+}
+
+// check surface flat
+bool getSurfaceFlatGyro(void) {
+  // check robot roll
+  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
+    return false;
+  }
+  // check robot pitch
+  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
+    return false;
+  }
+  return true;
+}
+
+// check surface bumpy
+bool getSurfaceBumpyGyro(void) {
+  // a bit left or right
+  if ((m_gyroState.aRollAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aRollAverage > OFFROAD_ANGLE + 1)) {
+    return true;
+  }
+  // a bit front or back
+  if ((m_gyroState.aPitchAverage < -OFFROAD_ANGLE - 1) || (m_gyroState.aPitchAverage > OFFROAD_ANGLE + 1)) {
+    return true;
+  }
+  return false;
+}
+
+// set flipped state
+void setFlippedGyro(bool flipped) {
+  gyroFlipped = flipped;
+}
+
 // print gyro values
 void _printGyro(void) {
   // print gyro status
-  switch (m_gyroState.stateGyro) {
+  switch (stateGyro) {
     case GYRO_NORM:
       Serial.println(F(" GYRO_NORM "));
     break;
@@ -370,7 +391,7 @@ void _printLineGyroDebug(void) {
   Serial.print(" Z ");
   Serial.print((int)m_gyroState.aUpsideAverage);
   Serial.print(" direction ");
-  Serial.println((int)m_gyroState.direction);
+  Serial.println((int)walkingDirectionAbs);
 }
 
 // print gyro values
@@ -384,4 +405,3 @@ void _printRollGyroDebug(void) {
   Serial.print(" aLiftRR ");
   Serial.println((int)m_gyroState.aLiftRR);
 }
-*/

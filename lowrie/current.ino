@@ -20,60 +20,140 @@ Gets analog current inputs
 struct aCurrent {
   unsigned short battery;   // A6
   unsigned short current1;  // A7 current1
+  unsigned short current2;  // A3 current2
+  unsigned short current3;  // A2 current3
 };
 
 // analog input values array
-aCurrent analogValueCurrent = {LOW_BATTERY, 0}; // processed values
+aCurrent analogValueCurrent = {LOW_BATTERY, 0, 0, 0}; // processed values
 unsigned long batteryV = 0;
-unsigned long currentSum = 0;
+unsigned long currentSum1 = 0;
+unsigned long currentSum2 = 0;
+unsigned long currentSum3 = 0;
+// state of current and voltage
+unsigned char currentStateNow = C_NORMAL;
+
+/*
+uses
+m_getButtonPressed()
+*/
 
 // init current inputs
-void initCurrent(void) {
+void initCurrent(bool calibrationMode) {
+  Serial.println(F("initCurrent"));
+  unsigned char counter = 0;
+  while (calibrationMode) {
+    counter ++;
+    if (counter >= MAIN_FULL_CYCLE) {
+      counter = 0;
+    }
+    delay(10);
+    if (m_getButtonPressed()) {
+      calibrationMode = false;
+    }
+    updateCurrentCount(counter);
+    if (counter == 0) {
+      _printCurrentStateDebug();
+      _printLineCurrent();
+    }
+  }
 }
 
 // read and remember analog current sensors readings
-void updateCurrent(void) {
+void updateCurrentCount(unsigned char counter) {
   // end of previous cycle
-  if (m_sequenceCounter.m == 0) {
+  if (counter == 0) {
     // average
     batteryV /= MAIN_FULL_CYCLE;
-    currentSum /= MAIN_FULL_CYCLE;
+    currentSum1 /= MAIN_FULL_CYCLE;
+    currentSum2 /= MAIN_FULL_CYCLE;
+    currentSum3 /= MAIN_FULL_CYCLE;
     // to ma
-    if (batteryV > currentSum) {
-      analogValueCurrent.current1 = (batteryV - currentSum) * 3; // 8;
+    // current 1
+    if (batteryV > currentSum1) {
+      analogValueCurrent.current1 = (batteryV - currentSum1) * 8;
     } else {
       analogValueCurrent.current1 = 0;
     }
+    // current 2
+    if (batteryV > currentSum2) {
+      analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
+    } else {
+      analogValueCurrent.current2 = 0;
+    }
+    // current 3
+    if (batteryV > currentSum3) {
+      analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
+    } else {
+      analogValueCurrent.current3 = 0;
+    }
     analogValueCurrent.battery = (batteryV * 25) / 3;
+    // check voltage measuring is functional
+    if (analogValueCurrent.battery < 4000) {
+      analogValueCurrent.battery = 8000;
+    }
     // get current state
     if (analogValueCurrent.battery < DEAD_BATTERY) {
       // battery dead
-      m_robotState.currentStateNow = C_DEAD_BATTERY;
-    } else if (analogValueCurrent.current1 > MAX_CURRENT) {
+      currentStateNow = C_DEAD_BATTERY;
+    } else if ((analogValueCurrent.current1 > MAX_CURRENT) || (analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
       // current too high
-      m_robotState.currentStateNow = C_HIGH_CURRENT;
+      currentStateNow = C_HIGH_CURRENT;
     } else if (analogValueCurrent.battery < LOW_BATTERY) {
       // battery low
-      m_robotState.currentStateNow = C_LOW_BATTERY;
+      currentStateNow = C_LOW_BATTERY;
     } else {
-      m_robotState.currentStateNow = C_NORMAL;
+      currentStateNow = C_NORMAL;
     }
-    //_printLineCurrent();
     // new value
     batteryV = (unsigned short)analogRead(A6);
-    currentSum = (unsigned short)analogRead(A7);
+    currentSum1 = (unsigned short)analogRead(A7);
+    currentSum2 = (unsigned short)analogRead(A3);
+    currentSum3 = (unsigned short)analogRead(A2);
   } else {
     // add to value
     batteryV += (unsigned short)analogRead(A6);
-    currentSum += (unsigned short)analogRead(A7);
+    currentSum1 += (unsigned short)analogRead(A7);
+    currentSum2 += (unsigned short)analogRead(A3);
+    currentSum3 += (unsigned short)analogRead(A2);
   }
 }
-/*
+
+// current state
+unsigned char getCurrentState(void) {
+  return currentStateNow;
+}
+
+
 // print raw data
 void _printLineCurrent(void) {
   Serial.print(F(" Battery "));
   Serial.print((int)analogValueCurrent.battery);
-  Serial.print(F(" Current "));
+  Serial.print(F(" Current1 "));
   Serial.print((int)analogValueCurrent.current1);
+  Serial.print(F(" Current2 "));
+  Serial.print((int)analogValueCurrent.current2);
+  Serial.print(F(" Current3 "));
+  Serial.println((int)analogValueCurrent.current3);
 }
-*/
+
+// print current state
+void _printCurrentStateDebug(void) {
+  // print input state
+  switch (currentStateNow) {
+    case C_DEAD_BATTERY:
+      Serial.print(F(" C_DEAD_BATTERY "));
+    break;
+    case C_LOW_BATTERY:
+      Serial.print(F(" C_LOW_BATTERY "));
+    break;
+    case C_HIGH_CURRENT:
+      Serial.print(F(" C_HIGH_CURRENT "));
+    break;
+    case C_NORMAL:
+      Serial.print(F(" C_NORMAL "));
+    break;
+    default:
+      Serial.println(F(" Wrong inputs state "));
+  }
+}

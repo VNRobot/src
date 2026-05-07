@@ -3,182 +3,132 @@ Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Process analog inputs
-read analog sensors. norm: 36 - 42 
+ - Reads analog sensors raw values and converts to cm
+    cm     value
+    5      640
+    10     420
+    15     320
+    20     260
+    25     250
+    60     100
 */
 
-// robot size
-#define ROBOT_SIZE_DIVIDER      2
-// sensors geometry
-#define SENSOR_ANGLE            30     // down angle
-#define SENSOR_HIGHT            20     // mm hight relative to legs
-#define SENSOR_DISTANCE_BLOCK   5      // cm
-#define SENSOR_DISTANCE_MIN     20     // cm
-#define SENSOR_DISTANCE_NORM    38     // cm
-#define SENSOR_DISTANCE_MAX     55     // cm
+#define SENSOR_DISTANCE_BLOCK   600    // blocked
+#define SENSOR_DISTANCE_MIN     260    // 20 cm
+#define SENSOR_DISTANCE_NORM    170    // 40 cm
+#define SENSOR_DISTANCE_MAX     120    // 60 cm
+#define SENSOR_NO_DATA          80     // no data
 
 // sensor state
 enum senState {
-  SEN_BLOCK    = 0,
-  SEN_WALL     = 1,
-  SEN_OBSTACLE = 2,
-  SEN_EDGE     = 3,
-  SEN_NORMAL   = 4
+  SEN_NORMAL   = 0,
+  SEN_OBSTACLE = 1,
+  SEN_WALL     = 2,
+  SEN_BLOCK    = 3
 };
 
 // sensors enabled flag disable for testing
 bool sensorsEnabled = true;
-// bool edge enabled flag
-bool edgeEnabled = false;
-// sensors active
-bool sensorsActive = false;
-// distance ratio * 10
-//unsigned char distanceRatio = 2;
-// state array
-unsigned short inputStateF[6] = {0, 0, 0, 0, 0, 0};
-unsigned short inputStateR[6] = {0, 0, 0, 0, 0, 0};
-// sensor state left, center, right
-unsigned short stateFront[3] = {0, 0, 0}; // processed values
-unsigned short stateRear[3] = {0, 0, 0};  // processed values
+// sensors values sum
+int leftSensorValueSum = 0;
+int rightSensorValueSum = 0;
+// sensors values
+unsigned short leftSensorValue = SENSOR_DISTANCE_NORM;
+unsigned short rightSensorValue = SENSOR_DISTANCE_NORM;
+// assume wall angle
+short wallAngle = 0;
+// sensors state
+unsigned char sensorStateLeft = SEN_NORMAL;
+unsigned char sensorStateRight = SEN_NORMAL;
+// inputs state
+unsigned char inputStateNow = IN_NORMAL;
 
-// check surface
-void _checkSurface(void) {
-  // check robot roll
-  if ((m_gyroState.aRollAverage < -SLOP_ANGLE) || (m_gyroState.aRollAverage > SLOP_ANGLE)) {
-    sensorsActive = false;
-    return;
-  }
-  // check robot pitch
-  if ((m_gyroState.aPitchAverage < -SLOP_ANGLE) || (m_gyroState.aPitchAverage > SLOP_ANGLE)) {
-    sensorsActive = false;
-    return;
-  }
-  sensorsActive = true;
-}
-
-// get hight in mm
-unsigned char _getSensorHight(void) {
-  return (unsigned char)(SENSOR_HIGHT + m_robotState.legHightNow / ROBOT_SIZE_DIVIDER);
-}
+/*
+uses
+m_getButtonPressed()
+*/
 
 // init inputs
-void initInputs(void) {
-  // 3800 / (20 + 130 / 2) = 44
-  //distanceRatio = (unsigned char)((SENSOR_DISTANCE_NORM * 100) / (SENSOR_HIGHT + HIGHT_DEFAULT / ROBOT_SIZE_DIVIDER));
+void initInputs(bool calibrationMode) {
+  Serial.println(F("initInputs"));
+  unsigned char counter = 0;
+  while (calibrationMode) {
+    counter ++;
+    if (counter >= MAIN_FULL_CYCLE) {
+      counter = 0;
+    }
+    delay(10);
+    if (m_getButtonPressed()) {
+      calibrationMode = false;
+    }
+    updateInputsCount(counter);
+    if (counter == 0) {
+      updateInputState(false);
+      _printSensorState(sensorStateLeft);
+      _printSensorState(sensorStateRight);
+      _printInputState();
+    }
+  }
 }
 
-// process data pair
-unsigned char _getstateFromPair(unsigned char upper1, unsigned char lower1) {
-  if (sensorsEnabled && sensorsActive) {
-    if ((upper1 < SENSOR_DISTANCE_BLOCK) || (lower1 < SENSOR_DISTANCE_BLOCK)) {
-      return SEN_BLOCK;
-    }
-    if ((upper1 < SENSOR_DISTANCE_MIN) && (lower1 < SENSOR_DISTANCE_MIN)) {
-      return SEN_WALL;
-    }
-    if ((upper1 < SENSOR_DISTANCE_MIN) || (lower1 < SENSOR_DISTANCE_MIN)) {
+// process data distance
+unsigned char _getStateFromRaw(unsigned short inputValue, bool edgeEnabled) {
+  if (inputValue > SENSOR_DISTANCE_BLOCK) {
+    return SEN_BLOCK;
+  }
+  if (inputValue > SENSOR_DISTANCE_MIN) {
+    return SEN_WALL;
+  }
+  if (inputValue > SENSOR_DISTANCE_NORM) {
+    return SEN_OBSTACLE;
+  }
+  if (inputValue < SENSOR_DISTANCE_MAX) {
+    if (edgeEnabled) {
       return SEN_OBSTACLE;
-    }
-    if ((upper1 > SENSOR_DISTANCE_MAX) && (lower1 > SENSOR_DISTANCE_MAX)) {
-      if (edgeEnabled) {
-        return SEN_EDGE;
-      } else {
-        return SEN_NORMAL;
-      }
     }
   }
   return SEN_NORMAL;
 }
 
-// get minimal
-unsigned char _getMin(unsigned char value1, unsigned char value2) {
-  if (value1 < value2) {
-    return value1;
-  } else {
-    return value2;
-  }
-}
-
-// process analog sensors readings
-void updateInputsZero(void) {
-  // check roll and pitch and make sensors active
-  _checkSurface();
-  // pair status
-  for (i = 0; i < 6; i ++) {
-    inputStateF[i] = _getstateFromPair(m_inputDistanceFU[i], m_inputDistanceFL[i]);
-    inputStateR[i] = _getstateFromPair(m_inputDistanceRU[i], m_inputDistanceRL[i]);
-  }
-  // reduce number of points
-  if (m_gyroState.aUpsideAverage < 0) {
-    // upside down
-    for (i = 0; i < 3; i ++) {
-      stateFront[2 - i] = _getMin(inputStateF[i * 2], inputStateF[i * 2 + 1]);
-      stateRear[2 - i] = _getMin(inputStateR[i * 2], inputStateR[i * 2 + 1]);
-    }
-  } else {
-    // normal
-    for (i = 0; i < 3; i ++) {
-      stateFront[i] = _getMin(inputStateF[i * 2], inputStateF[i * 2 + 1]);
-      stateRear[i] = _getMin(inputStateR[i * 2], inputStateR[i * 2 + 1]);
-    }
-  }
-  //
-  m_robotState.inputStateNow = _getInputState();
-  //
-  _printInputState();
-}
-
 // status of inputs
-unsigned char _getInputState(void) {
-  // bits fl fc fr rl rc rr
-  //      4  2  1  4  2  1
-  char bits = 0;
-  if (m_robotState.forwardNow) {
-    if (stateFront[0] == SEN_NORMAL) {
-      bits = 4;
-    }
-    if (stateFront[1] == SEN_NORMAL) {
-      bits += 2;
-    }
-    if (stateFront[2] == SEN_NORMAL) {
-      bits += 1;
-    }
-  } else {
-    if (stateRear[0] == SEN_NORMAL) {
-      bits = 4;
-    }
-    if (stateRear[1] == SEN_NORMAL) {
-      bits += 2;
-    }
-    if (stateRear[2] == SEN_NORMAL) {
-      bits += 1;
-    }
-  }
+unsigned char _getInputState(unsigned char left, unsigned char right) {
+  // bits  fl    fr
+  //       8  4  2  1 
+  char bits = left * 4 + right;
   switch (bits) {
-    case 7:
-    // go forward
-    return IN_NORMAL;             
+    //          left          right
+    case 11: // SEN_WALL      SEN_BLOCK
+    case 7: // SEN_OBSTACLE   SEN_BLOCK
+    case 9: // SEN_WALL       SEN_OBSTACLE
+      return IN_OBSTACLE_FRONTLEFT;
     break;
-    case 6:
-    // go left
-    return IN_OBSTACLE_RIGHT;
+    case 14: // SEN_BLOCK     SEN_WALL
+    case 13: // SEN_BLOCK     SEN_OBSTACLE
+    case 6: // SEN_OBSTACLE   SEN_WALL
+      return IN_OBSTACLE_FRONTRIGHT;
     break;
-    case 4:
-    // turn left
-    return IN_OBSTACLE_FRONTRIGHT;
+    case 15: // SEN_BLOCK     SEN_BLOCK
+    case 10: // SEN_WALL      SEN_WALL
+      return IN_OBSTACLE_FRONT;
     break;
-    case 3:
-    // go right
-    return IN_OBSTACLE_LEFT;
+    case 3: // SEN_NORMAL     SEN_BLOCK
+    case 8: // SEN_WALL       SEN_NORMAL
+      return IN_OBSTACLE_LEFT;
     break;
-    case 1:
-    // turn right
-    return IN_OBSTACLE_FRONTLEFT;
+    case 4: // SEN_OBSTACLE   SEN_NORMAL
+      return IN_FAR_OBSTACLE_LEFT;
+    case 5: // SEN_OBSTACLE   SEN_OBSTACLE
+      return IN_FAR_OBSTACLE_FRONT;
     break;
-    case 0:
-    case 2:
-    case 5:
-    // go back
-    return IN_OBSTACLE_FRONT;
+    case 12: // SEN_BLOCK     SEN_NORMAL
+    case 2: // SEN_NORMAL     SEN_WALL
+      return IN_OBSTACLE_RIGHT;
+    break;
+    case 1: // SEN_NORMAL     SEN_OBSTACLE
+      return IN_FAR_OBSTACLE_RIGHT;
+    break;
+    case 0: // SEN_NORMAL     SEN_NORMAL
+      return IN_NORMAL;             
     break;
     default:
     break;
@@ -186,9 +136,70 @@ unsigned char _getInputState(void) {
   return IN_NORMAL;
 }
 
+// update sensor readings
+void updateInputsCount(unsigned char counter) {
+  if ((counter > MAIN_HALF_CYCLE) || (counter == 0)) {
+    leftSensorValueSum += analogRead(A0);
+    rightSensorValueSum += analogRead(A1);
+  }
+  if (counter == 0) {
+    leftSensorValue = leftSensorValueSum / MAIN_HALF_CYCLE;
+    rightSensorValue = rightSensorValueSum / MAIN_HALF_CYCLE;
+    leftSensorValueSum = 0;
+    rightSensorValueSum = 0;
+  }
+}
+
+// process analog sensors readings
+void updateInputState(bool edgeEnabled) {
+  // read analog sensors
+  // crossconnection left senor is facing right and right sensor is facing left
+  // check roll and pitch and check sensors active and angle to target
+  if (sensorsEnabled) {
+    // surface is ok
+    if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
+      // data received
+      wallAngle = - rightSensorValue + leftSensorValue;
+      if (wallAngle > 80) {
+        wallAngle = 80;
+      } else if (wallAngle < -80) {
+        wallAngle = -80;
+      }
+      //
+      sensorStateRight = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
+      sensorStateLeft = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
+      // get input state
+      inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
+    } else {
+      // no data
+      wallAngle = 0;
+      if (edgeEnabled) {
+        inputStateNow = IN_OBSTACLE_FRONT;
+      } else {
+        inputStateNow = IN_NORMAL;
+      }
+    }
+  } else {
+    inputStateNow = IN_NORMAL;
+  }
+  //_printSensorState(sensorStateLeft);
+  //_printSensorState(sensorStateRight);
+  //_printInputState();
+}
+
+// get wall angle
+short getWallAngleInputs(void) {
+  return wallAngle;
+}
+
+// get inputs state
+unsigned char getInputState(void) {
+  return inputStateNow;
+}
+
 // print input state
 void _printInputState(void) {
-  switch (m_robotState.inputStateNow) {
+  switch (inputStateNow) {
     case IN_OBSTACLE_FRONT:
       Serial.print(F(" IN_OBSTACLE_FRONT "));
     break;
@@ -204,10 +215,45 @@ void _printInputState(void) {
     case IN_OBSTACLE_RIGHT:
       Serial.print(F(" IN_OBSTACLE_RIGHT "));
     break;
+    case IN_FAR_OBSTACLE_FRONT:
+      Serial.print(F(" IN_FAR_OBSTACLE_FRONT "));
+    break;
+    case IN_FAR_OBSTACLE_LEFT:
+      Serial.print(F(" IN_FAR_OBSTACLE_LEFT "));
+    break;
+    case IN_FAR_OBSTACLE_RIGHT:
+      Serial.print(F(" IN_FAR_OBSTACLE_RIGHT "));
+    break;
     case IN_NORMAL:
       Serial.print(F(" IN_NORMAL "));
     break;
     default:
       Serial.print(F(" Wrong input state "));
+  }
+  Serial.print(F(" left "));
+  Serial.print((int)analogRead(A0));
+  Serial.print(F(" Right "));
+  Serial.print((int)analogRead(A1));
+  Serial.print(F(" Angle "));
+  Serial.println((int)wallAngle);
+}
+
+// print input state
+void _printSensorState(unsigned char senState) {
+  switch (senState) {
+    case SEN_BLOCK:
+      Serial.print(F(" SEN_BLOCK "));
+    break;
+    case SEN_WALL:
+      Serial.print(F(" SEN_WALL "));
+    break;
+    case SEN_OBSTACLE:
+      Serial.print(F(" SEN_OBSTACLE "));
+    break;
+    case SEN_NORMAL:
+      Serial.print(F(" SEN_NORMAL "));
+    break;
+    default:
+      Serial.print(F(" Wrong sensor state "));
   }
 }
