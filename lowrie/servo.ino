@@ -6,7 +6,7 @@ Operates servo motors
 */
 
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  5
+#define FORWARD_BALLANCE_SHIFT  4
 // motor center position down from horizontal
 #define MOTOR_ANGLE             0
 // shift to increase distance between front and rear legs
@@ -22,6 +22,19 @@ enum dPinsServo {
   RL2_MOTOR = 11,
   RR1_MOTOR = 12,
   RR2_MOTOR = 13
+};
+
+// structure for one leg motors
+struct motors {
+  char motor1;
+  char motor2;
+};
+// legs motors structure
+struct allMotors {
+  motors fl;
+  motors fr;
+  motors rl;
+  motors rr;
 };
 
 // init servo library
@@ -54,7 +67,6 @@ char flippedR = 1;
 /*
 uses
 m_legsValue
-m_legCorrect
 m_getButtonPressed()
 */
 
@@ -404,13 +416,13 @@ void _doPWMServo(void) {
 }
 
 // update robot ballance
-void updateBallanceServoCount(void) {
-  staticBallance.fl.hight = m_legCorrect.fl.hight;
-  staticBallance.fl.shift = FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT + m_legCorrect.fl.shift;
-  staticBallance.fr.hight = m_legCorrect.fr.hight;
-  staticBallance.fr.shift = FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT + m_legCorrect.fr.shift;
-  staticBallance.rl.hight = m_legCorrect.rl.hight;
-  staticBallance.rl.shift = FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT + m_legCorrect.rl.shift;
-  staticBallance.rr.hight = m_legCorrect.rr.hight;
-  staticBallance.rr.shift = FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT + m_legCorrect.rr.shift;
+void updateBallanceServoCount(char shiftCorrect) {
+  // staticBallance.fl.hight = ;
+  staticBallance.fl.shift = FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT + shiftCorrect;
+  // staticBallance.fr.hight = ;
+  staticBallance.fr.shift = FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT + shiftCorrect;
+  // staticBallance.rl.hight = ;
+  staticBallance.rl.shift = FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT + shiftCorrect;
+  // staticBallance.rr.hight = ;
+  staticBallance.rr.shift = FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT + shiftCorrect;
 }

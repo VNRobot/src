@@ -27,8 +27,18 @@ enum senState {
   SEN_BLOCK    = 3
 };
 
-// sensors enabled flag disable for testing
-bool sensorsEnabled = true;
+// robot state structure
+typedef struct roboInputState {
+  bool sensorsEnabled;
+  bool edgeEnabled;
+} roboInputState;
+
+// robot state
+roboInputState riState = {
+  true,             // unsigned char sensorsEnabled;
+  false             // unsigned char edgeEnabled;
+};
+
 // sensors values sum
 int leftSensorValueSum = 0;
 int rightSensorValueSum = 0;
@@ -63,7 +73,6 @@ void initInputs(bool calibrationMode) {
     }
     updateInputsCount(counter);
     if (counter == 0) {
-      updateInputState(false);
       _printSensorState(sensorStateLeft);
       _printSensorState(sensorStateRight);
       _printInputState();
@@ -72,7 +81,7 @@ void initInputs(bool calibrationMode) {
 }
 
 // process data distance
-unsigned char _getStateFromRaw(unsigned short inputValue, bool edgeEnabled) {
+unsigned char _getStateFromRaw(unsigned short inputValue) {
   if (inputValue > SENSOR_DISTANCE_BLOCK) {
     return SEN_BLOCK;
   }
@@ -83,7 +92,7 @@ unsigned char _getStateFromRaw(unsigned short inputValue, bool edgeEnabled) {
     return SEN_OBSTACLE;
   }
   if (inputValue < SENSOR_DISTANCE_MAX) {
-    if (edgeEnabled) {
+    if (riState.edgeEnabled) {
       return SEN_OBSTACLE;
     }
   }
@@ -147,44 +156,37 @@ void updateInputsCount(unsigned char counter) {
     rightSensorValue = rightSensorValueSum / MAIN_HALF_CYCLE;
     leftSensorValueSum = 0;
     rightSensorValueSum = 0;
-  }
-}
-
-// process analog sensors readings
-void updateInputState(bool edgeEnabled) {
-  // read analog sensors
-  // crossconnection left senor is facing right and right sensor is facing left
-  // check roll and pitch and check sensors active and angle to target
-  if (sensorsEnabled) {
-    // surface is ok
-    if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
-      // data received
-      wallAngle = - rightSensorValue + leftSensorValue;
-      if (wallAngle > 80) {
-        wallAngle = 80;
-      } else if (wallAngle < -80) {
-        wallAngle = -80;
-      }
-      //
-      sensorStateRight = _getStateFromRaw(rightSensorValue, edgeEnabled); // right
-      sensorStateLeft = _getStateFromRaw(leftSensorValue, edgeEnabled); // left
-      // get input state
-      inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
-    } else {
-      // no data
-      wallAngle = 0;
-      if (edgeEnabled) {
-        inputStateNow = IN_OBSTACLE_FRONT;
+    // process analog sensors
+    if (riState.sensorsEnabled) {
+      if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
+        // data received
+        wallAngle = - rightSensorValue + leftSensorValue;
+        if (wallAngle > 80) {
+          wallAngle = 80;
+        } else if (wallAngle < -80) {
+          wallAngle = -80;
+        }
+        //
+        sensorStateRight = _getStateFromRaw(rightSensorValue); // right
+        sensorStateLeft = _getStateFromRaw(leftSensorValue); // left
+        // get input state
+        inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
       } else {
-        inputStateNow = IN_NORMAL;
+        // no data
+        wallAngle = 0;
+        if (riState.edgeEnabled) {
+          inputStateNow = IN_OBSTACLE_FRONT;
+        } else {
+          inputStateNow = IN_NORMAL;
+        }
       }
+    } else {
+      inputStateNow = IN_NORMAL;
     }
-  } else {
-    inputStateNow = IN_NORMAL;
+    //_printSensorState(sensorStateLeft);
+    //_printSensorState(sensorStateRight);
+    //_printInputState();
   }
-  //_printSensorState(sensorStateLeft);
-  //_printSensorState(sensorStateRight);
-  //_printInputState();
 }
 
 // get wall angle
@@ -195,6 +197,32 @@ short getWallAngleInputs(void) {
 // get inputs state
 unsigned char getInputState(void) {
   return inputStateNow;
+}
+
+// set robot state
+void setStateInputs(unsigned char newState) {
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      riState.sensorsEnabled = true;
+      riState.edgeEnabled = false;
+    }
+    break;
+    case ROBOT_INO:
+    {
+      riState.sensorsEnabled = true;
+      riState.edgeEnabled = false;
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      riState.sensorsEnabled = false;
+      riState.edgeEnabled = false;
+    }
+    break;
+    default:
+    break;
+  }
 }
 
 // print input state

@@ -18,6 +18,16 @@ enum diState {
   DI_BACKWARD_TURN = 50
 };
 
+// robot state structure
+typedef struct roboPathState {
+  char speedMuliplierNow;
+} roboPathState;
+
+// robot state
+roboPathState rpState = {
+  2                       // char speedMuliplierNow; 1 or 2
+};
+
 // enable steps distance count
 bool stepsDistanceCountEnable = false;
 // speed relative value from 0 to 2
@@ -63,7 +73,7 @@ char _turnStep(short direction, char speed) {
 }
 
 // get speed
-void updatePath(short direction, char speedMuliplier) {
+void updatePath(short direction) {
   // walking mode
   if (distanceToTarget > 0) {
     // plan to go
@@ -102,7 +112,7 @@ void updatePath(short direction, char speedMuliplier) {
   speedRNow = _turnStep(direction, speedAbsolute);
   if (stepsDistanceCountEnable) {
     // step size
-    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * speedMuliplier) / ROBOT_SIZE_DEVIDER;
+    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * rpState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
     // update distance to target
     if (distanceToTarget > stepSize) {
       distanceToTarget -= stepSize;
@@ -143,14 +153,10 @@ short getDistancePath(void) {
 }
 
 // calculate new direction
-short calculateNewDirectionPath(unsigned char inputState, short wallAngle, bool surfaceFlat, short direction) {
+short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short direction) {
   if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
     // direction is close to the target
     onThePath = true;
-  }
-  if (!surfaceFlat) {
-    // on the slop. keep going forward
-    return 0;
   }
   if (inputState == IN_NORMAL) {
     // no obstacle
@@ -279,4 +285,27 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, bool 
     }
   }
   return direction;
+}
+
+// set robot state
+void setStatePath(unsigned char newState) {
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      rpState.speedMuliplierNow = 2;
+    }
+    break;
+    case ROBOT_INO:
+    {
+      rpState.speedMuliplierNow = 1;
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      rpState.speedMuliplierNow = 1;
+    }
+    break;
+    default:
+    break;
+  }
 }

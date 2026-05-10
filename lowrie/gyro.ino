@@ -309,9 +309,11 @@ short getDirectionGyro(void) {
 
 // remember horizontal direction
 void setDirectionGyro(short newDirection) {
-  //Serial.print(" New direction ");
-  //Serial.println((int)newDirection);
-  floatDirection = (float)(- newDirection / 2);
+  if (newDirection != 0) {
+    //Serial.print(" New direction ");
+    //Serial.println((int)newDirection);
+    floatDirection = (float)(- newDirection / 2);
+  }
 }
 
 // gyro state

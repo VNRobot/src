@@ -11,6 +11,12 @@ enum cPinsServo {
   CT2_MOTOR = 5
 };
 
+// structure for center motors
+struct center {
+  char front;
+  char rear;
+};
+
 // init servo library
 Servo servo_ct_1;
 Servo servo_ct_2;
@@ -21,15 +27,15 @@ bool centerAttached = false;
 char centerSetValueF = 0;
 char centerSetValueR = 0;
 // calibration data
-motors centerCalibrationData = {0, 0};
+center centerCalibrationData = {0, 0};
 // servo motor value
 short centerMotorAngleValue[2] = {0, 0};
 // dynamic ballance
-motors dynamicCenterBallance = {0, 0};
+center dynamicCenterBallance = {0, 0};
 // center motor value for turning/shifting positive - outside
-motors centerValue = {0, 0};
+center centerValue = {0, 0};
 // ballance correction
-motors centerCorrect = {0, 0};
+center centerCorrect = {0, 0};
 // direction
 short directionValue = 0;
 // side shift value
@@ -167,12 +173,12 @@ void initCenter(bool calibrationMode) {
   if (calibrationMode) {
     // do calibration
     unsigned char calibrationStage = 0;
-    centerCalibrationData.motor1 = 0;
-    centerCalibrationData.motor2 = 0;
+    centerCalibrationData.front = 0;
+    centerCalibrationData.rear = 0;
     // motors one by one
     while (calibrationMode) {
-      centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.motor1);
-      centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.motor2);
+      centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
+      centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
       _doPWMCenter();
       delay(200);
       // check button press
@@ -185,24 +191,24 @@ void initCenter(bool calibrationMode) {
         break;
         case 1:
         {
-          centerCalibrationData.motor1 ++;
-          if (centerCalibrationData.motor1 > CALIBRATION_ANGLE_MAX) {
-            centerCalibrationData.motor1 = CALIBRATION_ANGLE_MIN;
+          centerCalibrationData.front ++;
+          if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
+            centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
           }
         }
         break;
         case 2:
         {
-          centerCalibrationData.motor2 ++;
-          if (centerCalibrationData.motor2 > CALIBRATION_ANGLE_MAX) {
-            centerCalibrationData.motor2 = CALIBRATION_ANGLE_MIN;
+          centerCalibrationData.rear ++;
+          if (centerCalibrationData.rear > CALIBRATION_ANGLE_MAX) {
+            centerCalibrationData.rear = CALIBRATION_ANGLE_MIN;
           }
         }
         break;
         case 3:
         {
-          EEPROM.update(9, (unsigned char)(centerCalibrationData.motor1 + 128));
-          EEPROM.update(10, (unsigned char)(centerCalibrationData.motor2 + 128));
+          EEPROM.update(9, (unsigned char)(centerCalibrationData.front + 128));
+          EEPROM.update(10, (unsigned char)(centerCalibrationData.rear + 128));
           calibrationStage ++;
           calibrationMode = false;
         }
@@ -213,10 +219,10 @@ void initCenter(bool calibrationMode) {
     }
   }
   // read calibration
-  centerCalibrationData.motor1 = (char)(EEPROM.read(9) - 128);
-  centerCalibrationData.motor2 = (char)(EEPROM.read(10) - 128);
-  centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.motor1);
-  centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.motor2);
+  centerCalibrationData.front = (char)(EEPROM.read(9) - 128);
+  centerCalibrationData.rear = (char)(EEPROM.read(10) - 128);
+  centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
+  centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
   _doPWMCenter();
   delay(100);
 }
@@ -237,8 +243,8 @@ void setCenter(char angle) {
   centerSetValueF = 0;
   centerSetValueR = 0;
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - angle);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - angle);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - angle);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - angle);
   // move motors
   _doPWMCenter();
 }
@@ -266,32 +272,32 @@ void updateCenterCount(char speedLNow, char speedRNow) {
   }
   // apply shift correction
   if ((m_legsValue.fl.lifted) || (m_legsValue.fr.lifted)) {
-    if (centerSetValueF > centerValue.motor1) {
-      centerValue.motor1 ++;
+    if (centerSetValueF > centerValue.front) {
+      centerValue.front ++;
       // reduce shift value
       _reduceSideShiftvalue();
-    } else if (centerSetValueF < centerValue.motor1) {
-      centerValue.motor1 --;
+    } else if (centerSetValueF < centerValue.front) {
+      centerValue.front --;
       // reduce shift value
       _reduceSideShiftvalue();
     }
   }
   if ((m_legsValue.rl.lifted) || (m_legsValue.rr.lifted)) {
-    if (centerSetValueR > centerValue.motor2) {
-      centerValue.motor2 ++;
-    } else if (centerSetValueR < centerValue.motor2) {
-      centerValue.motor2 --;
+    if (centerSetValueR > centerValue.rear) {
+      centerValue.rear ++;
+    } else if (centerSetValueR < centerValue.rear) {
+      centerValue.rear --;
     }
   }
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.motor1 - centerValue.motor1 * (6 - speedLNow - speedRNow) - dynamicCenterBallance.motor1);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.motor2 - centerValue.motor2 * (6 - speedLNow - speedRNow) - dynamicCenterBallance.motor2);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - centerValue.front * (6 - speedLNow - speedRNow) - dynamicCenterBallance.front);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - centerValue.rear * (6 - speedLNow - speedRNow) - dynamicCenterBallance.rear);
   // move motors
   _doPWMCenter();
 }
 
 // update robot ballance
 void updateBallanceCenter(void) {
-  dynamicCenterBallance.motor1 = centerCorrect.motor1;
-  dynamicCenterBallance.motor2 = centerCorrect.motor2;
+  dynamicCenterBallance.front = centerCorrect.front;
+  dynamicCenterBallance.rear = centerCorrect.rear;
 }
