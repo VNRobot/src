@@ -8,6 +8,17 @@ List of tasks. Every task contains movement patterns.
 // pattern repeat counter
 #define REPEAT_COUNTER_END      8
 
+// tasks
+enum rTasks {
+  BEGIN_TASK = 0,
+  STANDGO_TASK,
+  STAND_TASK,
+  DOWN_TASK,
+  FLIP_TASK,
+  RECOVER_TASK,
+  RESET_TASK,
+  DEFAULT_TASK
+};
 // task priority
 enum tPriority {
   PRIORITY_HIGH,
@@ -27,6 +38,8 @@ unsigned char patternNow = Q_DOSTAND;
 unsigned char taskNow = BEGIN_TASK;
 // task priority
 unsigned char taskPriority = PRIORITY_LOW;
+// default task from rTasks
+unsigned char defaultTask = STANDGO_TASK;
 
 // set down task
 void _setDownTask(void) {
@@ -180,6 +193,11 @@ unsigned char _getNormalTask(void) {
   return DEFAULT_TASK;
 }
 
+// init tasks
+void initTasks(void) {
+  applyTask(BEGIN_TASK);
+}
+
 // set task by name
 void applyTask(unsigned char task) {
   taskNow = task;
@@ -226,7 +244,7 @@ unsigned char getTask(void) {
 }
 
 // set new task and new pattern
-void setPatternAndTask(unsigned char defaultTask, unsigned char currentState, unsigned char gyroState) {
+void setPatternAndTask(unsigned char currentState, unsigned char gyroState) {
   if (patternNow == Q_END) {
     // this is the end. do nothing
     //Serial.println(F(" Q_END "));

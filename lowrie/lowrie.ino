@@ -69,17 +69,6 @@ enum rPatterns {
   Q_PROCESSED,
   Q_END
 };
-// tasks
-enum rTasks {
-  BEGIN_TASK = 0,
-  STANDGO_TASK,
-  STAND_TASK,
-  DOWN_TASK,
-  FLIP_TASK,
-  RECOVER_TASK,
-  RESET_TASK,
-  DEFAULT_TASK
-};
 // gyro state
 enum gState {
   GYRO_NORM,
@@ -96,23 +85,11 @@ enum rState {
   ROBOT_INO,
   ROBOT_CRAWL
 };
-// structure for one leg motors
-struct motors {
-  char motor1;
-  char motor2;
-};
 // structure for one leg data
 struct leg {
   short hight;
   short shift;
   bool lifted;
-};
-// legs motors structure
-struct allMotors {
-  motors fl;
-  motors fr;
-  motors rl;
-  motors rr;
 };
 // legs motors structure
 struct allLegs {
@@ -133,29 +110,15 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
-// leg timing phase. main m
-struct phase {
-  unsigned char m;
-  unsigned char fl;
-  unsigned char fr;
-  unsigned char rl;
-  unsigned char rr;
-};
 
 //---------------global variables---------------------------
-// sequence counters
-phase m_sequenceCounter = {0, 0, 0, 0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// ballance correction
-allLegs m_legCorrect = {0, 0, false, 0, 0, false, 0, 0, false, 0, 0, false};
 //----------------------------------------------------------
-// servo cycle is done flag
-bool m_cycleDone = true;
-// default task from rTasks
-unsigned char m_defaultTask = STANDGO_TASK;
+// main counter
+unsigned char mCounter = 0;
 // variable for temporary use
 unsigned char i;
 
@@ -170,27 +133,6 @@ bool m_getButtonPressed(void) {
     }
   }
   return modeButtonPressed;
-}
-
-// true if software version from eeprom is right
-bool _rightSoftwareVersionEeprom() {
-  unsigned char version = EEPROM.read(0);
-  // software version address is 0
-  if (version == ROBOT_VERSION) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-// write software version to eeprom
-void _writeSoftwareVersionEeprom() {
-#ifdef BOARD_ESP32
-  EEPROM.write(0, ROBOT_VERSION);
-  EEPROM.commit();
-#else
-  EEPROM.update(0, ROBOT_VERSION);
-#endif
 }
 
 // quick and other patterns
@@ -270,7 +212,25 @@ void _doCycle(void) {
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
   delay(TIME_DELAY);
-  m_cycleDone = true;
+  // runs only after delay
+  // update motor pattern point
+  mCounter = updatePatternsCount(getforwardPath());
+  // update current readings
+  updateCurrentCount(mCounter);
+  // update gyro readings
+  updateGyroCount(mCounter);
+  // update sensor readings
+  updateInputsCount(mCounter);
+  // update ballance
+  updateBallanceServoCount(updateBallanceCount(mCounter));
+}
+
+// set robot state
+void _setState(unsigned char newState) {
+  setStatePattern(newState);
+  setStatePath(newState);
+  setStateBallance(newState);
+  setStateInputs(newState);
 }
 
 // runs once on boot or reset
@@ -281,7 +241,8 @@ void setup() {
   delay(200);
   // check button press
   bool calibrationMode = m_getButtonPressed();
-  if (!_rightSoftwareVersionEeprom()) {
+  unsigned char version = EEPROM.read(0);
+  if (version != ROBOT_VERSION) {
     calibrationMode = true;
   }
   // init digital sensors
@@ -292,9 +253,9 @@ void setup() {
   initCurrent(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
-  // lift legs for gyro calibration
   if (calibrationMode) {
     delay(1000);
+    // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
@@ -307,77 +268,58 @@ void setup() {
   resetGyro();
   delay(20);
   updateGyroCount(0);
-  // disable motors
   if (calibrationMode) {
     // write software version
-    _writeSoftwareVersionEeprom();
+    #ifdef BOARD_ESP32
+      EEPROM.write(0, ROBOT_VERSION);
+      EEPROM.commit();
+    #else
+      EEPROM.update(0, ROBOT_VERSION);
+    #endif
+    // disable motors
     detachServo();
-    delay(20000);
     Serial.println(F(" Calibration complete. Please restart now"));
+    delay(20000);
   }
   delay(200);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
-  updateInputState(false);
+  updateInputsCount(0);
   // explore mode
   Serial.println(F("Entering explore mode"));
-  applyTask(BEGIN_TASK);
+  initTasks();
   // load task and pattern. direction is 0
-  updatePath(0, getspeedMuliplierPattern());
-  updatePatternsCount(true);
+  updatePath(0);
+  mCounter = updatePatternsCount(true);
   // set distance to target cm
   setDistancePath(100);
   // set state
-  setStatePattern(ROBOT_NORM);
+  _setState(ROBOT_NORM);
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  if (m_cycleDone) {
-    // runs only after delay
-    m_cycleDone = false;
-    // update motor pattern point
-    updatePatternsCount(getforwardPath());
-    // update current readings
-    updateCurrentCount(m_sequenceCounter.m);
-    // update gyro readings
-    updateGyroCount(m_sequenceCounter.m);
-    // update sensor readings
-    updateInputsCount(m_sequenceCounter.m);
-    // once in a pattern after delay
-    if (m_sequenceCounter.m == 0) {
-      // process proximity sensors
-      updateInputState(false);
-    }
-    // update ballance
-    updateBallanceCount(getRobotStatePattern());
-    updateBallanceServoCount();
-  }
-  // once in a pattern
-  if (m_sequenceCounter.m == 0) {
+  if (mCounter == 0) {
+    // once in a pattern
     // set new pattern and task
-    setPatternAndTask(m_defaultTask, getCurrentState(), getGyroState());
+    setPatternAndTask(getCurrentState(), getGyroState());
     // get pattern
     unsigned char patternNow = getPatternOfTask();
     if (patternNow == P_STANDGO) {
       // normal walking to avoid obstacles
-      // get new direction
-      short newDirection = calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getSurfaceFlatGyro(), getDirectionGyro());
-      // set direction
-      if (newDirection != 0) {
-        setDirectionGyro(newDirection);
-      }
-      //
-      updatePath(getDirectionGyro(), getspeedMuliplierPattern());
+      // get and set new direction
+      setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
+      // update path
+      updatePath(getDirectionGyro());
       // check for robot state
       if (!getSurfaceFlatGyro()) {
-        setStatePattern(ROBOT_CRAWL);
+        _setState(ROBOT_CRAWL);
       } else if (getSurfaceBumpyGyro()) {
-        setStatePattern(ROBOT_INO);
+        _setState(ROBOT_INO);
       } else {
-        setStatePattern(ROBOT_NORM);
+        _setState(ROBOT_NORM);
       }
       _doCycle();
     } else {

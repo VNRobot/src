@@ -9,6 +9,18 @@ Robot static and dynamic ballance
 #define STATIC_BALLANCE_MAX     60
 #define DYNAMIC_BALLANCE_MAX    20
 
+// robot state structure
+typedef struct roboBallanceState {
+  unsigned char multiplierNow;
+  unsigned char speedNow;
+} roboBallanceState;
+
+// robot state
+roboBallanceState rlState = {
+  4,              // unsigned char multiplierNow;
+  2               // unsigned char speedNow
+};
+
 // ballance enabled flag
 bool ballanceEnabled = true;
 // static forward ballance value
@@ -16,20 +28,10 @@ char staticForward = 0;
 char staticForwardTemp = 0;
 // dynamic forward ballance value
 char dynamicForward = 0;
-// speed correction
-char speedCorrection = 0;
-// final forward shift
-char finalForwardShift = 0;
 
 // static ballance
-void _updateStaticBallance(unsigned char robotState) {
-  if (robotState == ROBOT_NORM) {
-    staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // 4 has to be tuned
-  } else if (robotState == ROBOT_INO) {
-    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
-  } else if (robotState == ROBOT_CRAWL) {
-    staticForwardTemp = (short)(m_gyroState.aPitchNow * 2); // 2 has to be tuned
-  }
+void _updateStaticBallance(void) {
+    staticForwardTemp = (short)(m_gyroState.aPitchNow * rlState.multiplierNow); // 4 or 2 has to be tuned
   // 
   if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
     staticForward --;
@@ -71,34 +73,45 @@ void _updateDynamicBallance(void) {
   dynamicForward = 0;
 }
 
-void updateBallanceCount(unsigned char robotState) {
-  // hight
-  //m_legCorrect.fl.hight = 0;
-  //m_legCorrect.fr.hight = 0;
-  //m_legCorrect.rl.hight = 0;
-  //m_legCorrect.rr.hight = 0;
-  //
+char updateBallanceCount(unsigned char counter) {
   // forward ballance
   // bigger the number more weight on front
   // pitch up - positive. require more weight on front
   if (ballanceEnabled) {
     // static ballance
-    _updateStaticBallance(robotState);
+    _updateStaticBallance();
     // once
-    if (m_sequenceCounter.m == 0) {
+    if (counter == 0) {
       // dynamic ballance
       _updateDynamicBallance();
-      //
-      if (robotState == ROBOT_NORM) {
-        // speed correction
-        //speedCorrection = m_robotState.speedNow * 2; // 2 has to be tuned
-      }
     }
-    // correct legs
-    finalForwardShift = staticForward + dynamicForward + speedCorrection;
-    m_legCorrect.fl.shift = finalForwardShift;
-    m_legCorrect.fr.shift = finalForwardShift;
-    m_legCorrect.rl.shift = finalForwardShift;
-    m_legCorrect.rr.shift = finalForwardShift;
+    return staticForward + dynamicForward + rlState.speedNow;
+  }
+  return 0;
+}
+
+// set robot state
+void setStateBallance(unsigned char newState) {
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      rlState.multiplierNow = 4;
+      rlState.speedNow = 4;
+    }
+    break;
+    case ROBOT_INO:
+    {
+      rlState.multiplierNow = 2;
+      rlState.speedNow = 0;
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      rlState.multiplierNow = 2;
+      rlState.speedNow = 0;
+    }
+    break;
+    default:
+    break;
   }
 }

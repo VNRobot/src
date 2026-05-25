@@ -14,14 +14,24 @@ typedef struct robotState {
   unsigned char pairShiftNow;
 } robotState;
 
-// main counter
-unsigned char mainCounter = 0;
+// leg timing phase. main m
+struct phase {
+  unsigned char m;
+  unsigned char fl;
+  unsigned char fr;
+  unsigned char rl;
+  unsigned char rr;
+};
+
+// walk counters
 unsigned char walkCounter = 0;
 unsigned char walkForwardCounter = 0;
 // leg pair shift
 unsigned char pairShift = 0;
 // speed dependent pattern
 bool speedFlexMode = true;
+// sequence counters
+phase sequenceCounter = {0, 0, 0, 0, 0};
 
 // robot state
 robotState rbState = {
@@ -35,7 +45,6 @@ robotState rbState = {
 /*
 uses
 m_legsValue
-m_sequenceCounter
 */
 
 // set same values for legs
@@ -96,12 +105,12 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
 }
 
 // update servo motors values
-void updatePatternsCount(bool forwardNow) {
+unsigned char updatePatternsCount(bool forwardNow) {
   // update main counter
-  mainCounter ++;
+  sequenceCounter.m ++;
   walkForwardCounter += rbState.speedMuliplierNow;
-  if (mainCounter >= MAIN_FULL_CYCLE) {
-    mainCounter = 0;
+  if (sequenceCounter.m >= MAIN_FULL_CYCLE) {
+    sequenceCounter.m = 0;
     if (walkForwardCounter >= SERVO_FULL_CYCLE) {
       walkForwardCounter = 0;
     }
@@ -112,8 +121,6 @@ void updatePatternsCount(bool forwardNow) {
   } else {
     walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
   }
-  // remember main counter
-  m_sequenceCounter.m = mainCounter;
   // update pair shift
   if (pairShift < rbState.pairShiftNow) {
     pairShift ++;
@@ -121,42 +128,43 @@ void updatePatternsCount(bool forwardNow) {
     pairShift --;
   }
   // set counters
-  m_sequenceCounter.fl = walkCounter + pairShift;
-  m_sequenceCounter.fr = walkCounter + SERVO_HALF_CYCLE + pairShift;
-  m_sequenceCounter.rl = walkCounter + SERVO_HALF_CYCLE;
-  m_sequenceCounter.rr = walkCounter;
+  sequenceCounter.fl = walkCounter + pairShift;
+  sequenceCounter.fr = walkCounter + SERVO_HALF_CYCLE + pairShift;
+  sequenceCounter.rl = walkCounter + SERVO_HALF_CYCLE;
+  sequenceCounter.rr = walkCounter;
   //
-  if (m_sequenceCounter.fl >= SERVO_FULL_CYCLE) {
-    m_sequenceCounter.fl -= SERVO_FULL_CYCLE;
+  if (sequenceCounter.fl >= SERVO_FULL_CYCLE) {
+    sequenceCounter.fl -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.fr >= SERVO_FULL_CYCLE) {
-    m_sequenceCounter.fr -= SERVO_FULL_CYCLE;
+  if (sequenceCounter.fr >= SERVO_FULL_CYCLE) {
+    sequenceCounter.fr -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.rl >= SERVO_FULL_CYCLE) {
-    m_sequenceCounter.rl -= SERVO_FULL_CYCLE;
+  if (sequenceCounter.rl >= SERVO_FULL_CYCLE) {
+    sequenceCounter.rl -= SERVO_FULL_CYCLE;
   }
-  if (m_sequenceCounter.rr >= SERVO_FULL_CYCLE) {
-    m_sequenceCounter.rr -= SERVO_FULL_CYCLE;
+  if (sequenceCounter.rr >= SERVO_FULL_CYCLE) {
+    sequenceCounter.rr -= SERVO_FULL_CYCLE;
   }
+  return sequenceCounter.m;
 }
 
 // get servo motor steps
 void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
   leg legSet;
   if (walkingModeNow) {
-    legSet = _getWalkStep(m_sequenceCounter.fl, speedLNow);
+    legSet = _getWalkStep(sequenceCounter.fl, speedLNow);
     m_legsValue.fl.hight = legSet.hight;
     m_legsValue.fl.shift = legSet.shift;
     m_legsValue.fl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.fr, speedRNow);
+    legSet = _getWalkStep(sequenceCounter.fr, speedRNow);
     m_legsValue.fr.hight = legSet.hight;
     m_legsValue.fr.shift = legSet.shift;
     m_legsValue.fr.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rl, speedLNow);
+    legSet = _getWalkStep(sequenceCounter.rl, speedLNow);
     m_legsValue.rl.hight = legSet.hight;
     m_legsValue.rl.shift = legSet.shift;
     m_legsValue.rl.lifted = legSet.lifted;
-    legSet = _getWalkStep(m_sequenceCounter.rr, speedRNow);
+    legSet = _getWalkStep(sequenceCounter.rr, speedRNow);
     m_legsValue.rr.hight = legSet.hight;
     m_legsValue.rr.shift = legSet.shift;
     m_legsValue.rr.lifted = legSet.lifted;
@@ -200,12 +208,3 @@ void setStatePattern(unsigned char newState) {
   }
 }
 
-// get speed multilpier
-char getspeedMuliplierPattern(void) {
-  return rbState.speedMuliplierNow;
-}
-
-// get robot state
-char getRobotStatePattern(void) {
-  return rbState.robotStateNow;
-}
