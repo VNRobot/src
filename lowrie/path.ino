@@ -28,8 +28,10 @@ roboPathState rpState = {
   2                       // char speedMuliplierNow; 1 or 2
 };
 
+// enable step turning
+bool stepTurningEnabled = false;
 // enable steps distance count
-bool stepsDistanceCountEnable = false;
+bool stepsDistanceCountEnabled = false;
 // speed relative value from 0 to 2
 char speedAbsolute = 0;
 // walking direction
@@ -110,7 +112,14 @@ void updatePath(short direction) {
   // step turning
   speedLNow = _turnStep(-direction, speedAbsolute);
   speedRNow = _turnStep(direction, speedAbsolute);
-  if (stepsDistanceCountEnable) {
+  if (!stepTurningEnabled) {
+    if (speedLNow < speedRNow) {
+      speedLNow = speedRNow;
+    } else if (speedRNow < speedLNow) {
+      speedRNow = speedLNow;
+    }
+  }
+  if (stepsDistanceCountEnabled) {
     // step size
     short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * rpState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
     // update distance to target

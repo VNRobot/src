@@ -13,10 +13,11 @@ Process analog inputs
     60     100
 */
 
-#define SENSOR_DISTANCE_BLOCK   600    // blocked
-#define SENSOR_DISTANCE_MIN     260    // 20 cm
-#define SENSOR_DISTANCE_NORM    170    // 40 cm
-#define SENSOR_DISTANCE_MAX     120    // 60 cm
+#define SENSOR_DISTANCE_BLOCK   600    // if > blocked
+#define SENSOR_DISTANCE_MIN     300    // if > wall
+#define SENSOR_DISTANCE_NORM    220    // if > obstacle
+// norm 120
+#define SENSOR_DISTANCE_MAX     100    // if < edge
 #define SENSOR_NO_DATA          80     // no data
 
 // sensor state
@@ -205,7 +206,7 @@ void setStateInputs(unsigned char newState) {
     case ROBOT_NORM:
     {
       riState.sensorsEnabled = true;
-      riState.edgeEnabled = false;
+      riState.edgeEnabled = true;
     }
     break;
     case ROBOT_INO:

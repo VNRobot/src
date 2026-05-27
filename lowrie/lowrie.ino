@@ -9,7 +9,7 @@ Main file
 #include <Servo.h>
 
 // software version hardcoded. should be changed manually
-#define ROBOT_VERSION           11
+#define ROBOT_VERSION           23
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
@@ -19,7 +19,7 @@ Main file
 // normal hight
 #define HIGHT_DEFAULT           130
 // maximal hight
-#define HIGHT_MAX               170
+#define HIGHT_MAX               160
 // normal leg lift in mm
 #define LEG_LIFT                40
 // main servo pattern counter end
@@ -198,6 +198,7 @@ void _doQuickAndOther(unsigned char patternNow) {
       // disable motors
       setServo(HIGHT_LOW, HIGHT_LOW, 20);
       detachServo();
+      detachCenter();
     }
     break;
     default:
@@ -223,6 +224,9 @@ void _doCycle(void) {
   updateInputsCount(mCounter);
   // update ballance
   updateBallanceServoCount(updateBallanceCount(mCounter));
+  updateBallanceCenter();
+  // update center motors
+  updateCenterCount(getspeedLPath(), getspeedRPath());
 }
 
 // set robot state
@@ -247,10 +251,14 @@ void setup() {
   }
   // init digital sensors
   initInputs(calibrationMode);
+  // attach center servo
+  attachCenter();
   // attach servo
   attachServo();
   // init current readings
   initCurrent(calibrationMode);
+  // init center servo motors
+  initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -258,6 +266,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
+    setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
@@ -278,10 +287,12 @@ void setup() {
     #endif
     // disable motors
     detachServo();
+    detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
+  setCenter(0);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -320,6 +331,7 @@ void loop() {
         _setState(ROBOT_INO);
       } else {
         _setState(ROBOT_NORM);
+        setDirectionCenter(getDirectionGyro());
       }
       _doCycle();
     } else {

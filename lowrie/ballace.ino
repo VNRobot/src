@@ -22,7 +22,7 @@ roboBallanceState rlState = {
 };
 
 // ballance enabled flag
-bool ballanceEnabled = true;
+bool ballanceEnabled = false;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;

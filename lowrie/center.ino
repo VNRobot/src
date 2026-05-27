@@ -228,7 +228,7 @@ void initCenter(bool calibrationMode) {
 }
 
 // detach hardware
-void detachCenterZero(void) {
+void detachCenter(void) {
   if (centerAttached) {
     servo_ct_1.detach();
     servo_ct_2.detach();
