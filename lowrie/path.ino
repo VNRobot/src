@@ -5,9 +5,6 @@ Arduino nano
 Robot walking path
 */
 
-// robot size devider
-#define ROBOT_SIZE_DEVIDER       2
-
 // direction state
 enum diState {
   DI_FORWARD = 5,
@@ -29,7 +26,7 @@ roboPathState rpState = {
 };
 
 // enable step turning
-bool stepTurningEnabled = false;
+bool stepTurningEnabled = true;
 // enable steps distance count
 bool stepsDistanceCountEnabled = false;
 // speed relative value from 0 to 2

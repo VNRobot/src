@@ -37,7 +37,7 @@ phase sequenceCounter = {0, 0, 0, 0, 0};
 robotState rbState = {
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
-  LEG_LIFT,                // short legLiftNow;
+  20,                      // short legLiftNow;
   2,                       // char speedMuliplierNow; 1 or 2
   0                        // unsigned char pairShiftNow
 };
@@ -180,27 +180,30 @@ void setStatePattern(unsigned char newState) {
     {
       rbState.robotStateNow = ROBOT_NORM;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT;
+      rbState.legLiftNow = 20;
       rbState.speedMuliplierNow = 2;
       rbState.pairShiftNow = 0;
+      speedFlexMode = true;
     }
     break;
     case ROBOT_INO:
     {
       rbState.robotStateNow = ROBOT_INO;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT * 2;
+      rbState.legLiftNow = 40;
       rbState.speedMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
+      speedFlexMode = false;
     }
     break;
     case ROBOT_CRAWL:
     {
       rbState.robotStateNow = ROBOT_CRAWL;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT * 2;
+      rbState.legLiftNow = 80;
       rbState.speedMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
+      speedFlexMode = false;
     }
     break;
     default:

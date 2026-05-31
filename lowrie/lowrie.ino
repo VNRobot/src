@@ -20,8 +20,6 @@ Main file
 #define HIGHT_DEFAULT           130
 // maximal hight
 #define HIGHT_MAX               160
-// normal leg lift in mm
-#define LEG_LIFT                40
 // main servo pattern counter end
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
@@ -31,6 +29,8 @@ Main file
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
+// robot size devider
+#define ROBOT_SIZE_DEVIDER       2
 
 // input state
 enum inState {
@@ -119,6 +119,10 @@ allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, fals
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
+// state counter
+unsigned char stateCounter = 0;
+// time delay
+unsigned char timeDelay = TIME_DELAY;
 // variable for temporary use
 unsigned char i;
 
@@ -198,7 +202,7 @@ void _doQuickAndOther(unsigned char patternNow) {
       // disable motors
       setServo(HIGHT_LOW, HIGHT_LOW, 20);
       detachServo();
-      detachCenter();
+      //detachCenter();
     }
     break;
     default:
@@ -212,7 +216,7 @@ void _doCycle(void) {
   // update servo motors values, move motors
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
-  delay(TIME_DELAY);
+  delay(timeDelay);
   // runs only after delay
   // update motor pattern point
   mCounter = updatePatternsCount(getforwardPath());
@@ -221,12 +225,12 @@ void _doCycle(void) {
   // update gyro readings
   updateGyroCount(mCounter);
   // update sensor readings
-  updateInputsCount(mCounter);
+  updateInputsCount(mCounter, getShiftedCounterInputs(mCounter), mCounter);
   // update ballance
   updateBallanceServoCount(updateBallanceCount(mCounter));
-  updateBallanceCenter();
+  //updateBallanceCenter();
   // update center motors
-  updateCenterCount(getspeedLPath(), getspeedRPath());
+  //updateCenterCount(getspeedLPath(), getspeedRPath());
 }
 
 // set robot state
@@ -235,6 +239,25 @@ void _setState(unsigned char newState) {
   setStatePath(newState);
   setStateBallance(newState);
   setStateInputs(newState);
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      timeDelay = TIME_DELAY;
+    }
+    break;
+    case ROBOT_INO:
+    {
+      timeDelay = TIME_DELAY + 3;
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      timeDelay = TIME_DELAY + 6;
+    }
+    break;
+    default:
+    break;
+  }
 }
 
 // runs once on boot or reset
@@ -252,13 +275,13 @@ void setup() {
   // init digital sensors
   initInputs(calibrationMode);
   // attach center servo
-  attachCenter();
+  //attachCenter();
   // attach servo
   attachServo();
   // init current readings
   initCurrent(calibrationMode);
   // init center servo motors
-  initCenter(calibrationMode);
+  //initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -266,7 +289,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    setCenter(20);
+    //setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
@@ -287,17 +310,17 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    detachCenter();
+    //detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
-  setCenter(0);
+  //setCenter(0);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
-  updateInputsCount(0);
+  updateInputsCount(0, 0, 0);
   // explore mode
   Serial.println(F("Entering explore mode"));
   initTasks();
@@ -325,13 +348,24 @@ void loop() {
       // update path
       updatePath(getDirectionGyro());
       // check for robot state
-      if (!getSurfaceFlatGyro()) {
-        _setState(ROBOT_CRAWL);
-      } else if (getSurfaceBumpyGyro()) {
-        _setState(ROBOT_INO);
-      } else {
+      if (!getSurfaceFlatGyro() || (getExtraInputLeft() < -20) || (getExtraInputRight() < -20) || (getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
+        stateCounter = 4;
+      } else if (getSurfaceBumpyGyro() || (getExtraInputLeft() < -10) || (getExtraInputRight() < -10) || (getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
+        if (stateCounter < 2) {
+          stateCounter = 2;
+        }
+      }
+      // set state
+      if (stateCounter == 0) {
         _setState(ROBOT_NORM);
-        setDirectionCenter(getDirectionGyro());
+        //setDirectionCenter(getDirectionGyro());
+      } else {
+        if (stateCounter <= 2) {
+          _setState(ROBOT_INO);
+        } else {
+          _setState(ROBOT_CRAWL);
+        }
+        stateCounter --;
       }
       _doCycle();
     } else {
