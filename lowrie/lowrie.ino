@@ -20,9 +20,11 @@ Main file
 #define HIGHT_DEFAULT           130
 // maximal hight
 #define HIGHT_MAX               160
-// main servo pattern counter end
+// main counters
 #define MAIN_FULL_CYCLE         36
 #define MAIN_HALF_CYCLE         18
+#define MAIN_QUARTER_CYCLE      9
+// servo counters
 #define SERVO_FULL_CYCLE        72
 #define SERVO_HALF_CYCLE        36
 #define SERVO_PAIR_SHIFT        18  // used for ino
@@ -225,7 +227,7 @@ void _doCycle(void) {
   // update gyro readings
   updateGyroCount(mCounter);
   // update sensor readings
-  updateInputsCount(mCounter, getShiftedCounterInputs(mCounter), mCounter);
+  updateInputsCount(mCounter);
   // update ballance
   updateBallanceServoCount(updateBallanceCount(mCounter));
   //updateBallanceCenter();
@@ -320,7 +322,7 @@ void setup() {
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
-  updateInputsCount(0, 0, 0);
+  updateInputsCount(0);
   // explore mode
   Serial.println(F("Entering explore mode"));
   initTasks();
@@ -335,7 +337,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  if (mCounter == 0) {
+  if ((mCounter == 0) || (mCounter == MAIN_HALF_CYCLE)) {
     // once in a pattern
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());

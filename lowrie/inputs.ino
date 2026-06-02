@@ -21,8 +21,6 @@ Process analog inputs
 #define SENSOR_NO_DATA          80     // no data
 // extra sensors hight in mm 35
 #define EXTRA_DISTANCE_NORM     35
-#define EXTRA_END_CYCLE         28
-#define EXTRA_COUNT_CYCLE       8
 
 // sensor state
 enum senState {
@@ -140,16 +138,6 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
   return IN_NORMAL;
 }
 
-// get shifted counter
-unsigned char getShiftedCounterInputs(unsigned char counter) {
-  unsigned char shiftedCount = counter + MAIN_HALF_CYCLE;
-  if (shiftedCount >= MAIN_FULL_CYCLE) {
-    shiftedCount -= MAIN_FULL_CYCLE;
-  }
-  return shiftedCount;
-}
-
-
 // init inputs
 void initInputs(bool calibrationMode) {
   Serial.println(F("initInputs"));
@@ -163,7 +151,7 @@ void initInputs(bool calibrationMode) {
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
-    updateInputsCount(counter, getShiftedCounterInputs(counter), counter);
+    updateInputsCount(counter);
     if (counter == 0) {
       _printSensorState(sensorStateLeft);
       _printSensorState(sensorStateRight);
@@ -179,10 +167,17 @@ void initInputs(bool calibrationMode) {
 }
 
 // update sensor readings
-void updateInputsCount(unsigned char counter, unsigned char counterFL, unsigned char counterFR) {
+void updateInputsCount(unsigned char counter) {
+  //
+  unsigned char counterFL = counter;
+  unsigned char counterFR = counter + MAIN_HALF_CYCLE;
+  if (counterFR >= MAIN_FULL_CYCLE) {
+    counterFR -= MAIN_FULL_CYCLE;
+  }
+  //
   if (extraInputsEnabled) {
     // extra left average
-    if ((counterFL > EXTRA_END_CYCLE) || (counterFL == 0)) {
+    if ((counterFL > MAIN_HALF_CYCLE + MAIN_QUARTER_CYCLE) || (counterFL == 0)) {
       leftExtraSensorValueSum += analogRead(A3);
     }
     if (counterFL == 0) {
@@ -191,11 +186,11 @@ void updateInputsCount(unsigned char counter, unsigned char counterFL, unsigned 
       } else if (leftExtraSensorAverage > leftExtraSensorValue) {
         leftExtraSensorAverage --;
       }
-      leftExtraSensorValue = (950 - leftExtraSensorValueSum / EXTRA_COUNT_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+      leftExtraSensorValue = (950 - leftExtraSensorValueSum / MAIN_QUARTER_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
       leftExtraSensorValueSum = 0;
     }
     // extra right average
-    if ((counterFR > EXTRA_END_CYCLE) || (counterFR == 0)) {
+    if ((counterFR > MAIN_HALF_CYCLE + MAIN_QUARTER_CYCLE) || (counterFR == 0)) {
       rightExtraSensorValueSum += analogRead(A2);
     }
     if (counterFR == 0) {
@@ -204,18 +199,22 @@ void updateInputsCount(unsigned char counter, unsigned char counterFL, unsigned 
       } else if (rightExtraSensorAverage > rightExtraSensorValue) {
         rightExtraSensorAverage --;
       }
-      rightExtraSensorValue = (950 - rightExtraSensorValueSum / EXTRA_COUNT_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+      rightExtraSensorValue = (950 - rightExtraSensorValueSum / MAIN_QUARTER_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
       rightExtraSensorValueSum = 0;
     }
   }
+  // half cycle counter
+  if (counter >= MAIN_HALF_CYCLE) {
+    counter -= MAIN_HALF_CYCLE;
+  }
   // input sensors average
-  if ((counter > MAIN_HALF_CYCLE) || (counter == 0)) {
+  if ((counter > MAIN_QUARTER_CYCLE) || (counter == 0)) {
     leftSensorValueSum += analogRead(A0);
     rightSensorValueSum += analogRead(A1);
   }
   if (counter == 0) {
-    leftSensorValue = leftSensorValueSum / MAIN_HALF_CYCLE;
-    rightSensorValue = rightSensorValueSum / MAIN_HALF_CYCLE;
+    leftSensorValue = leftSensorValueSum / MAIN_QUARTER_CYCLE;
+    rightSensorValue = rightSensorValueSum / MAIN_QUARTER_CYCLE;
     leftSensorValueSum = 0;
     rightSensorValueSum = 0;
     // process analog sensors

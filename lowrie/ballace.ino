@@ -13,12 +13,14 @@ Robot static and dynamic ballance
 typedef struct roboBallanceState {
   unsigned char multiplierNow;
   unsigned char speedNow;
+  bool dynamicEnabled;
 } roboBallanceState;
 
 // robot state
 roboBallanceState rlState = {
   4,              // unsigned char multiplierNow;
-  2               // unsigned char speedNow
+  2,              // unsigned char speedNow
+  true            // bool dynamicEnabled
 };
 
 // ballance enabled flag
@@ -83,7 +85,9 @@ char updateBallanceCount(unsigned char counter) {
     // once
     if (counter == 0) {
       // dynamic ballance
-      _updateDynamicBallance();
+      if (rlState.dynamicEnabled) {
+        _updateDynamicBallance();
+      }
     }
     return staticForward + dynamicForward + rlState.speedNow;
   }
@@ -97,18 +101,21 @@ void setStateBallance(unsigned char newState) {
     {
       rlState.multiplierNow = 4;
       rlState.speedNow = 4;
+      rlState.dynamicEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
       rlState.multiplierNow = 2;
       rlState.speedNow = 0;
+      rlState.dynamicEnabled = false;
     }
     break;
     case ROBOT_CRAWL:
     {
       rlState.multiplierNow = 2;
       rlState.speedNow = 0;
+      rlState.dynamicEnabled = false;
     }
     break;
     default:

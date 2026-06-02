@@ -62,13 +62,19 @@ void initCurrent(bool calibrationMode) {
 
 // read and remember analog current sensors readings
 void updateCurrentCount(unsigned char counter) {
+  // half cycle counter
+  if (counter >= MAIN_HALF_CYCLE) {
+    counter -= MAIN_HALF_CYCLE;
+  }
   // end of previous cycle
   if (counter == 0) {
     // average
-    batteryV /= MAIN_FULL_CYCLE;
-    currentSum1 /= MAIN_FULL_CYCLE;
-    currentSum2 /= MAIN_FULL_CYCLE;
-    currentSum3 /= MAIN_FULL_CYCLE;
+    batteryV /= MAIN_HALF_CYCLE;
+    currentSum1 /= MAIN_HALF_CYCLE;
+    if (extraCurrentEnabled) {
+      currentSum2 /= MAIN_HALF_CYCLE;
+      currentSum3 /= MAIN_HALF_CYCLE;
+    }
     // to ma
     // current 1
     if (batteryV > currentSum1) {
@@ -76,17 +82,19 @@ void updateCurrentCount(unsigned char counter) {
     } else {
       analogValueCurrent.current1 = 0;
     }
-    // current 2
-    if ((batteryV > currentSum2) && extraCurrentEnabled) {
-      analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
-    } else {
-      analogValueCurrent.current2 = 0;
-    }
-    // current 3
-    if ((batteryV > currentSum3) && extraCurrentEnabled) {
-      analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
-    } else {
-      analogValueCurrent.current3 = 0;
+    if (extraCurrentEnabled) {
+      // current 2
+      if (batteryV > currentSum2) {
+        analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
+      } else {
+        analogValueCurrent.current2 = 0;
+      }
+      // current 3
+      if (batteryV > currentSum3) {
+        analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
+      } else {
+        analogValueCurrent.current3 = 0;
+      }
     }
     analogValueCurrent.battery = (batteryV * 25) / 3;
     // check voltage measuring is functional
