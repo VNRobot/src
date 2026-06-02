@@ -62,18 +62,14 @@ void initCurrent(bool calibrationMode) {
 
 // read and remember analog current sensors readings
 void updateCurrentCount(unsigned char counter) {
-  // half cycle counter
-  if (counter >= MAIN_HALF_CYCLE) {
-    counter -= MAIN_HALF_CYCLE;
-  }
   // end of previous cycle
   if (counter == 0) {
     // average
-    batteryV /= MAIN_HALF_CYCLE;
-    currentSum1 /= MAIN_HALF_CYCLE;
+    batteryV /= MAIN_FULL_CYCLE;
+    currentSum1 /= MAIN_FULL_CYCLE;
     if (extraCurrentEnabled) {
-      currentSum2 /= MAIN_HALF_CYCLE;
-      currentSum3 /= MAIN_HALF_CYCLE;
+      currentSum2 /= MAIN_FULL_CYCLE;
+      currentSum3 /= MAIN_FULL_CYCLE;
     }
     // to ma
     // current 1

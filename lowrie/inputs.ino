@@ -32,16 +32,16 @@ enum senState {
 
 // robot state structure
 typedef struct roboInputState {
-  bool sensorsEnabled;
   bool obstacleEnabled;
 } roboInputState;
 
 // robot state
 roboInputState riState = {
-  true,             // bool sensorsEnabled;
   true             // bool obstacleEnabled;
 };
 
+// sensors enabled
+bool sensorsEnabled = true;
 // edge enabled
 bool edgeEnabled = false;
 // extra inputs enabled
@@ -65,7 +65,7 @@ unsigned char sensorStateLeft = SEN_NORMAL;
 unsigned char sensorStateRight = SEN_NORMAL;
 // inputs state
 unsigned char inputStateNow = IN_NORMAL;
-
+unsigned char extraStateNow = EX_NORMAL;
 /*
 uses
 m_getButtonPressed()
@@ -218,7 +218,7 @@ void updateInputsCount(unsigned char counter) {
     leftSensorValueSum = 0;
     rightSensorValueSum = 0;
     // process analog sensors
-    if (riState.sensorsEnabled) {
+    if (sensorsEnabled) {
       if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
         // data received
         wallAngle = - rightSensorValue + leftSensorValue;
@@ -230,6 +230,14 @@ void updateInputsCount(unsigned char counter) {
         //
         sensorStateRight = _getStateFromRaw(rightSensorValue); // right
         sensorStateLeft = _getStateFromRaw(leftSensorValue); // left
+        //if (extraInputsEnabled) {
+        //  if (getExtraInputLeft() > 40) {
+        //    sensorStateRight = SEN_BLOCK;
+        //  }
+        //  if (getExtraInputRight() > 40) {
+        //    sensorStateLeft = SEN_BLOCK;
+        //  }
+        //}
         // get input state
         inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
       } else {
@@ -243,6 +251,20 @@ void updateInputsCount(unsigned char counter) {
       }
     } else {
       inputStateNow = IN_NORMAL;
+    }
+    // process extras
+    if (extraInputsEnabled) {
+      if ((getExtraInputLeft() < -20) || (getExtraInputRight() < -20)) {
+        extraStateNow = EX_STEP_UP_BIG;
+      } else if ((getExtraInputLeft() < -10) || (getExtraInputRight() < -10)) {
+        extraStateNow = EX_STEP_UP_SMALL;
+      } else if ((getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
+        extraStateNow = EX_STEP_DOWN_BIG;
+      } else if ((getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
+        extraStateNow = EX_STEP_DOWN_SMALL;
+      } else {
+        extraStateNow = EX_NORMAL;
+      }
     }
     //_printSensorState(sensorStateLeft);
     //_printSensorState(sensorStateRight);
@@ -270,24 +292,26 @@ unsigned char getInputState(void) {
   return inputStateNow;
 }
 
+// get extra inputs state
+unsigned char getExtraInputState(void) {
+  return extraStateNow;
+}
+
 // set robot state
 void setStateInputs(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
-      riState.sensorsEnabled = true;
       riState.obstacleEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
-      riState.sensorsEnabled = true;
       riState.obstacleEnabled = false;
     }
     break;
     case ROBOT_CRAWL:
     {
-      riState.sensorsEnabled = false;
       riState.obstacleEnabled = false;
     }
     break;

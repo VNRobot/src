@@ -46,6 +46,14 @@ enum inState {
   IN_FAR_OBSTACLE_RIGHT,
   IN_NORMAL             
 };
+// input extra state
+enum exState {
+  EX_STEP_UP_SMALL,
+  EX_STEP_UP_BIG,
+  EX_STEP_DOWN_SMALL,
+  EX_STEP_DOWN_BIG,
+  EX_NORMAL
+};
 // current state
 enum cState {
   C_LOW_BATTERY,
@@ -215,9 +223,12 @@ void _doQuickAndOther(unsigned char patternNow) {
 
 // set motors and read sensors
 void _doCycle(void) {
-  // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
-  updateLegsServoCount();
+  // only on even counter
+  if (mCounter == ((mCounter / 2) * 2)) {
+    // update servo motors values, move motors
+    setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+    updateLegsServoCount();
+  }
   delay(timeDelay);
   // runs only after delay
   // update motor pattern point
@@ -249,12 +260,12 @@ void _setState(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      timeDelay = TIME_DELAY + 3;
+      timeDelay = TIME_DELAY + 4;
     }
     break;
     case ROBOT_CRAWL:
     {
-      timeDelay = TIME_DELAY + 6;
+      timeDelay = TIME_DELAY + 8;
     }
     break;
     default:
@@ -337,7 +348,7 @@ void setup() {
 
 // the loop function runs over and over again forever
 void loop() {
-  if ((mCounter == 0) || (mCounter == MAIN_HALF_CYCLE)) {
+  if (mCounter == 0) {
     // once in a pattern
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());
@@ -350,9 +361,9 @@ void loop() {
       // update path
       updatePath(getDirectionGyro());
       // check for robot state
-      if (!getSurfaceFlatGyro() || (getExtraInputLeft() < -20) || (getExtraInputRight() < -20) || (getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
+      if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
         stateCounter = 4;
-      } else if (getSurfaceBumpyGyro() || (getExtraInputLeft() < -10) || (getExtraInputRight() < -10) || (getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
+      } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
         if (stateCounter < 2) {
           stateCounter = 2;
         }
