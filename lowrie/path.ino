@@ -26,7 +26,7 @@ roboPathState rpState = {
 };
 
 // enable step turning
-bool stepTurningEnabled = true;
+bool stepTurningEnabled = false;
 // enable steps distance count
 bool stepsDistanceCountEnabled = false;
 // speed relative value from 0 to 2
@@ -314,4 +314,14 @@ void setStatePath(unsigned char newState) {
     default:
     break;
   }
+}
+
+// enable step turning
+void enableTurningPath(bool turning) {
+  stepTurningEnabled = turning;
+}
+
+// enable distance counting
+void enableCountingPath(bool turning) {
+  stepsDistanceCountEnabled = turning;
 }

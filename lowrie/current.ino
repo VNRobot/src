@@ -133,6 +133,10 @@ unsigned char getCurrentState(void) {
   return currentStateNow;
 }
 
+// enable extra current
+void enableExtraCurrent(bool extra) {
+  extraCurrentEnabled = extra;
+}
 
 // print raw data
 void _printLineCurrent(void) {

@@ -24,7 +24,7 @@ roboBallanceState rlState = {
 };
 
 // ballance enabled flag
-bool ballanceEnabled = true;
+bool ballanceEnabled = false;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;
@@ -121,4 +121,9 @@ void setStateBallance(unsigned char newState) {
     default:
     break;
   }
+}
+
+// enable ballance
+void enableBallance(bool ballance) {
+  ballanceEnabled = ballance;
 }

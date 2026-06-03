@@ -344,6 +344,14 @@ void setup() {
   setDistancePath(100);
   // set state
   _setState(ROBOT_NORM);
+  // set features
+  enableBallance(false);
+  enableExtraCurrent(false);
+  enableSensorInputs(false);
+  enableExtraInputs(false);
+  enableEdgeInputs(false);
+  enableTurningPath(false);
+  enableCountingPath(false);
 }
 
 // the loop function runs over and over again forever

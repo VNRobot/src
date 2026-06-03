@@ -41,11 +41,11 @@ roboInputState riState = {
 };
 
 // sensors enabled
-bool sensorsEnabled = true;
+bool sensorsEnabled = false;
 // edge enabled
 bool edgeEnabled = false;
 // extra inputs enabled
-bool extraInputsEnabled = true;
+bool extraInputsEnabled = false;
 // sensors values sum
 int leftSensorValueSum = 0;
 int rightSensorValueSum = 0;
@@ -318,6 +318,21 @@ void setStateInputs(unsigned char newState) {
     default:
     break;
   }
+}
+
+// enable sensors
+void enableSensorInputs(bool inputs) {
+  sensorsEnabled = inputs;
+}
+
+// enable extra sensors
+void enableExtraInputs(bool inputs) {
+  extraInputsEnabled = inputs;
+}
+
+// enable edges
+void enableEdgeInputs(bool inputs) {
+  edgeEnabled = inputs;
 }
 
 // print input state
