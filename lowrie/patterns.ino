@@ -10,7 +10,7 @@ typedef struct robotState {
   unsigned char robotStateNow;
   short legHightNow;
   short legLiftNow;
-  char speedMuliplierNow;
+  char countMuliplierNow;
   unsigned char pairShiftNow;
 } robotState;
 
@@ -37,8 +37,8 @@ phase sequenceCounter = {0, 0, 0, 0, 0};
 robotState rbState = {
   ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
-  LEG_LIFT,                // short legLiftNow;
-  2,                       // char speedMuliplierNow; 1 or 2
+  20,                      // short legLiftNow;
+  2,                       // char countMuliplierNow; 1 or 2
   0                        // unsigned char pairShiftNow
 };
 
@@ -72,7 +72,7 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   if (speedFlexMode) {
     speedBuffer = speedValue;
   }
-  unsigned char liftPoint = (2 + speedBuffer) * rbState.speedMuliplierNow;
+  unsigned char liftPoint = (2 + speedBuffer) * rbState.countMuliplierNow;
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //
@@ -108,7 +108,7 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
 unsigned char updatePatternsCount(bool forwardNow) {
   // update main counter
   sequenceCounter.m ++;
-  walkForwardCounter += rbState.speedMuliplierNow;
+  walkForwardCounter += rbState.countMuliplierNow;
   if (sequenceCounter.m >= MAIN_FULL_CYCLE) {
     sequenceCounter.m = 0;
     if (walkForwardCounter >= SERVO_FULL_CYCLE) {
@@ -180,27 +180,30 @@ void setStatePattern(unsigned char newState) {
     {
       rbState.robotStateNow = ROBOT_NORM;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT;
-      rbState.speedMuliplierNow = 2;
+      rbState.legLiftNow = 30;
+      rbState.countMuliplierNow = 2;
       rbState.pairShiftNow = 0;
+      speedFlexMode = true;
     }
     break;
     case ROBOT_INO:
     {
       rbState.robotStateNow = ROBOT_INO;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT * 2;
-      rbState.speedMuliplierNow = 1;
+      rbState.legLiftNow = 60;
+      rbState.countMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
+      speedFlexMode = false;
     }
     break;
     case ROBOT_CRAWL:
     {
       rbState.robotStateNow = ROBOT_CRAWL;
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = LEG_LIFT * 2;
-      rbState.speedMuliplierNow = 1;
+      rbState.legLiftNow = 100;
+      rbState.countMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
+      speedFlexMode = false;
     }
     break;
     default:

@@ -13,11 +13,14 @@ Process analog inputs
     60     100
 */
 
-#define SENSOR_DISTANCE_BLOCK   600    // blocked
-#define SENSOR_DISTANCE_MIN     260    // 20 cm
-#define SENSOR_DISTANCE_NORM    170    // 40 cm
-#define SENSOR_DISTANCE_MAX     120    // 60 cm
+#define SENSOR_DISTANCE_BLOCK   600    // if > blocked
+#define SENSOR_DISTANCE_MIN     300    // if > wall
+#define SENSOR_DISTANCE_NORM    220    // if > obstacle
+// norm 120
+#define SENSOR_DISTANCE_MAX     100    // if < edge
 #define SENSOR_NO_DATA          80     // no data
+// extra sensors hight in mm 35
+#define EXTRA_DISTANCE_NORM     35
 
 // sensor state
 enum senState {
@@ -29,22 +32,32 @@ enum senState {
 
 // robot state structure
 typedef struct roboInputState {
-  bool sensorsEnabled;
-  bool edgeEnabled;
+  bool obstacleEnabled;
 } roboInputState;
 
 // robot state
 roboInputState riState = {
-  true,             // unsigned char sensorsEnabled;
-  false             // unsigned char edgeEnabled;
+  true             // bool obstacleEnabled;
 };
 
+// sensors enabled
+bool sensorsEnabled = false;
+// edge enabled
+bool edgeEnabled = false;
+// extra inputs enabled
+bool extraInputsEnabled = false;
 // sensors values sum
 int leftSensorValueSum = 0;
 int rightSensorValueSum = 0;
+int leftExtraSensorValueSum = 0;
+int rightExtraSensorValueSum = 0;
 // sensors values
 unsigned short leftSensorValue = SENSOR_DISTANCE_NORM;
 unsigned short rightSensorValue = SENSOR_DISTANCE_NORM;
+short leftExtraSensorValue = 0;
+short rightExtraSensorValue = 0;
+short leftExtraSensorAverage = 0;
+short rightExtraSensorAverage = 0;
 // assume wall angle
 short wallAngle = 0;
 // sensors state
@@ -52,33 +65,11 @@ unsigned char sensorStateLeft = SEN_NORMAL;
 unsigned char sensorStateRight = SEN_NORMAL;
 // inputs state
 unsigned char inputStateNow = IN_NORMAL;
-
+unsigned char extraStateNow = EX_NORMAL;
 /*
 uses
 m_getButtonPressed()
 */
-
-// init inputs
-void initInputs(bool calibrationMode) {
-  Serial.println(F("initInputs"));
-  unsigned char counter = 0;
-  while (calibrationMode) {
-    counter ++;
-    if (counter >= MAIN_FULL_CYCLE) {
-      counter = 0;
-    }
-    delay(10);
-    if (m_getButtonPressed()) {
-      calibrationMode = false;
-    }
-    updateInputsCount(counter);
-    if (counter == 0) {
-      _printSensorState(sensorStateLeft);
-      _printSensorState(sensorStateRight);
-      _printInputState();
-    }
-  }
-}
 
 // process data distance
 unsigned char _getStateFromRaw(unsigned short inputValue) {
@@ -89,10 +80,12 @@ unsigned char _getStateFromRaw(unsigned short inputValue) {
     return SEN_WALL;
   }
   if (inputValue > SENSOR_DISTANCE_NORM) {
-    return SEN_OBSTACLE;
+    if (riState.obstacleEnabled) {
+      return SEN_OBSTACLE;
+    }
   }
   if (inputValue < SENSOR_DISTANCE_MAX) {
-    if (riState.edgeEnabled) {
+    if (edgeEnabled) {
       return SEN_OBSTACLE;
     }
   }
@@ -145,19 +138,87 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
   return IN_NORMAL;
 }
 
+// init inputs
+void initInputs(bool calibrationMode) {
+  Serial.println(F("initInputs"));
+  unsigned char counter = 0;
+  while (calibrationMode) {
+    counter ++;
+    if (counter >= MAIN_FULL_CYCLE) {
+      counter = 0;
+    }
+    delay(10);
+    if (m_getButtonPressed()) {
+      calibrationMode = false;
+    }
+    updateInputsCount(counter);
+    if (counter == 0) {
+      _printSensorState(sensorStateLeft);
+      _printSensorState(sensorStateRight);
+      _printInputState();
+      if (extraInputsEnabled) {
+        Serial.print(F(" Extra left "));
+        Serial.print((int)getExtraInputLeft());
+        Serial.print(F(" Extra Right "));
+        Serial.println((int)getExtraInputRight());
+      }
+    }
+  }
+}
+
 // update sensor readings
 void updateInputsCount(unsigned char counter) {
-  if ((counter > MAIN_HALF_CYCLE) || (counter == 0)) {
+  //
+  unsigned char counterFL = counter;
+  unsigned char counterFR = counter + MAIN_HALF_CYCLE;
+  if (counterFR >= MAIN_FULL_CYCLE) {
+    counterFR -= MAIN_FULL_CYCLE;
+  }
+  //
+  if (extraInputsEnabled) {
+    // extra left average
+    if ((counterFL > MAIN_HALF_CYCLE + MAIN_QUARTER_CYCLE) || (counterFL == 0)) {
+      leftExtraSensorValueSum += analogRead(A3);
+    }
+    if (counterFL == 0) {
+      if (leftExtraSensorAverage < leftExtraSensorValue) {
+        leftExtraSensorAverage ++;
+      } else if (leftExtraSensorAverage > leftExtraSensorValue) {
+        leftExtraSensorAverage --;
+      }
+      leftExtraSensorValue = (950 - leftExtraSensorValueSum / MAIN_QUARTER_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+      leftExtraSensorValueSum = 0;
+    }
+    // extra right average
+    if ((counterFR > MAIN_HALF_CYCLE + MAIN_QUARTER_CYCLE) || (counterFR == 0)) {
+      rightExtraSensorValueSum += analogRead(A2);
+    }
+    if (counterFR == 0) {
+      if (rightExtraSensorAverage < rightExtraSensorValue) {
+        rightExtraSensorAverage ++;
+      } else if (rightExtraSensorAverage > rightExtraSensorValue) {
+        rightExtraSensorAverage --;
+      }
+      rightExtraSensorValue = (950 - rightExtraSensorValueSum / MAIN_QUARTER_CYCLE) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+      rightExtraSensorValueSum = 0;
+    }
+  }
+  // half cycle counter
+  if (counter >= MAIN_HALF_CYCLE) {
+    counter -= MAIN_HALF_CYCLE;
+  }
+  // input sensors average
+  if ((counter > MAIN_QUARTER_CYCLE) || (counter == 0)) {
     leftSensorValueSum += analogRead(A0);
     rightSensorValueSum += analogRead(A1);
   }
   if (counter == 0) {
-    leftSensorValue = leftSensorValueSum / MAIN_HALF_CYCLE;
-    rightSensorValue = rightSensorValueSum / MAIN_HALF_CYCLE;
+    leftSensorValue = leftSensorValueSum / MAIN_QUARTER_CYCLE;
+    rightSensorValue = rightSensorValueSum / MAIN_QUARTER_CYCLE;
     leftSensorValueSum = 0;
     rightSensorValueSum = 0;
     // process analog sensors
-    if (riState.sensorsEnabled) {
+    if (sensorsEnabled) {
       if ((rightSensorValue > SENSOR_NO_DATA) || (leftSensorValue > SENSOR_NO_DATA)) {
         // data received
         wallAngle = - rightSensorValue + leftSensorValue;
@@ -169,12 +230,20 @@ void updateInputsCount(unsigned char counter) {
         //
         sensorStateRight = _getStateFromRaw(rightSensorValue); // right
         sensorStateLeft = _getStateFromRaw(leftSensorValue); // left
+        //if (extraInputsEnabled) {
+        //  if (getExtraInputLeft() > 40) {
+        //    sensorStateRight = SEN_BLOCK;
+        //  }
+        //  if (getExtraInputRight() > 40) {
+        //    sensorStateLeft = SEN_BLOCK;
+        //  }
+        //}
         // get input state
         inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
       } else {
         // no data
         wallAngle = 0;
-        if (riState.edgeEnabled) {
+        if (edgeEnabled) {
           inputStateNow = IN_OBSTACLE_FRONT;
         } else {
           inputStateNow = IN_NORMAL;
@@ -183,10 +252,34 @@ void updateInputsCount(unsigned char counter) {
     } else {
       inputStateNow = IN_NORMAL;
     }
+    // process extras
+    if (extraInputsEnabled) {
+      if ((getExtraInputLeft() < -20) || (getExtraInputRight() < -20)) {
+        extraStateNow = EX_STEP_UP_BIG;
+      } else if ((getExtraInputLeft() < -10) || (getExtraInputRight() < -10)) {
+        extraStateNow = EX_STEP_UP_SMALL;
+      } else if ((getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
+        extraStateNow = EX_STEP_DOWN_BIG;
+      } else if ((getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
+        extraStateNow = EX_STEP_DOWN_SMALL;
+      } else {
+        extraStateNow = EX_NORMAL;
+      }
+    }
     //_printSensorState(sensorStateLeft);
     //_printSensorState(sensorStateRight);
     //_printInputState();
   }
+}
+
+// get extra input left. negative - bump in mm
+short getExtraInputLeft(void) {
+  return (short)(leftExtraSensorValue - leftExtraSensorAverage); //
+}
+
+// get extra input right. negative - bump in mm
+short getExtraInputRight(void) {
+  return (short)(rightExtraSensorValue - rightExtraSensorAverage); //
 }
 
 // get wall angle
@@ -199,30 +292,47 @@ unsigned char getInputState(void) {
   return inputStateNow;
 }
 
+// get extra inputs state
+unsigned char getExtraInputState(void) {
+  return extraStateNow;
+}
+
 // set robot state
 void setStateInputs(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
-      riState.sensorsEnabled = true;
-      riState.edgeEnabled = false;
+      riState.obstacleEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
-      riState.sensorsEnabled = true;
-      riState.edgeEnabled = false;
+      riState.obstacleEnabled = false;
     }
     break;
     case ROBOT_CRAWL:
     {
-      riState.sensorsEnabled = false;
-      riState.edgeEnabled = false;
+      riState.obstacleEnabled = false;
     }
     break;
     default:
     break;
   }
+}
+
+// enable sensors
+void enableSensorInputs(bool inputs) {
+  sensorsEnabled = inputs;
+}
+
+// enable extra sensors
+void enableExtraInputs(bool inputs) {
+  extraInputsEnabled = inputs;
+}
+
+// enable edges
+void enableEdgeInputs(bool inputs) {
+  edgeEnabled = inputs;
 }
 
 // print input state

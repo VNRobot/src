@@ -23,7 +23,8 @@ struct aCurrent {
   unsigned short current2;  // A3 current2
   unsigned short current3;  // A2 current3
 };
-
+// extra current enabled
+bool extraCurrentEnabled = false;
 // analog input values array
 aCurrent analogValueCurrent = {LOW_BATTERY, 0, 0, 0}; // processed values
 unsigned long batteryV = 0;
@@ -66,8 +67,10 @@ void updateCurrentCount(unsigned char counter) {
     // average
     batteryV /= MAIN_FULL_CYCLE;
     currentSum1 /= MAIN_FULL_CYCLE;
-    currentSum2 /= MAIN_FULL_CYCLE;
-    currentSum3 /= MAIN_FULL_CYCLE;
+    if (extraCurrentEnabled) {
+      currentSum2 /= MAIN_FULL_CYCLE;
+      currentSum3 /= MAIN_FULL_CYCLE;
+    }
     // to ma
     // current 1
     if (batteryV > currentSum1) {
@@ -75,17 +78,19 @@ void updateCurrentCount(unsigned char counter) {
     } else {
       analogValueCurrent.current1 = 0;
     }
-    // current 2
-    if (batteryV > currentSum2) {
-      analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
-    } else {
-      analogValueCurrent.current2 = 0;
-    }
-    // current 3
-    if (batteryV > currentSum3) {
-      analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
-    } else {
-      analogValueCurrent.current3 = 0;
+    if (extraCurrentEnabled) {
+      // current 2
+      if (batteryV > currentSum2) {
+        analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
+      } else {
+        analogValueCurrent.current2 = 0;
+      }
+      // current 3
+      if (batteryV > currentSum3) {
+        analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
+      } else {
+        analogValueCurrent.current3 = 0;
+      }
     }
     analogValueCurrent.battery = (batteryV * 25) / 3;
     // check voltage measuring is functional
@@ -108,14 +113,18 @@ void updateCurrentCount(unsigned char counter) {
     // new value
     batteryV = (unsigned short)analogRead(A6);
     currentSum1 = (unsigned short)analogRead(A7);
-    currentSum2 = (unsigned short)analogRead(A3);
-    currentSum3 = (unsigned short)analogRead(A2);
+    if (extraCurrentEnabled) {
+      currentSum2 = (unsigned short)analogRead(A3);
+      currentSum3 = (unsigned short)analogRead(A2);
+    }
   } else {
     // add to value
     batteryV += (unsigned short)analogRead(A6);
     currentSum1 += (unsigned short)analogRead(A7);
-    currentSum2 += (unsigned short)analogRead(A3);
-    currentSum3 += (unsigned short)analogRead(A2);
+    if (extraCurrentEnabled) {
+      currentSum2 += (unsigned short)analogRead(A3);
+      currentSum3 += (unsigned short)analogRead(A2);
+    }
   }
 }
 
@@ -124,6 +133,10 @@ unsigned char getCurrentState(void) {
   return currentStateNow;
 }
 
+// enable extra current
+void enableExtraCurrent(bool extra) {
+  extraCurrentEnabled = extra;
+}
 
 // print raw data
 void _printLineCurrent(void) {
