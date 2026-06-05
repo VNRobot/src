@@ -13,21 +13,17 @@ Main file
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              10
+#define TIME_DELAY              24
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
 // normal hight
 #define HIGHT_DEFAULT           130
 // maximal hight
 #define HIGHT_MAX               160
-// main counters
-#define MAIN_FULL_CYCLE         36
-#define MAIN_HALF_CYCLE         18
-#define MAIN_QUARTER_CYCLE      9
 // servo counters
-#define SERVO_FULL_CYCLE        72
-#define SERVO_HALF_CYCLE        36
-#define SERVO_PAIR_SHIFT        18  // used for ino
+#define SERVO_FULL_CYCLE        36
+#define SERVO_HALF_CYCLE        18
+#define SERVO_PAIR_SHIFT        9   // used for ino
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -223,12 +219,9 @@ void _doQuickAndOther(unsigned char patternNow) {
 
 // set motors and read sensors
 void _doCycle(void) {
-  // only on even counter
-  if (mCounter == ((mCounter / 2) * 2)) {
-    // update servo motors values, move motors
-    setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
-    updateLegsServoCount();
-  }
+  // update servo motors values, move motors
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+  updateLegsServoCount();
   delay(timeDelay);
   // runs only after delay
   // update motor pattern point
@@ -260,12 +253,12 @@ void _setState(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      timeDelay = TIME_DELAY + 4;
+      timeDelay = TIME_DELAY;
     }
     break;
     case ROBOT_CRAWL:
     {
-      timeDelay = TIME_DELAY + 8;
+      timeDelay = TIME_DELAY;
     }
     break;
     default:
@@ -279,6 +272,14 @@ void setup() {
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
+  // set features
+  enableBallance(false);
+  enableExtraCurrent(false);
+  enableSensorInputs(true);
+  enableExtraInputs(false);
+  enableEdgeInputs(false);
+  enableTurningPath(true);
+  enableCountingPath(false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -344,14 +345,6 @@ void setup() {
   setDistancePath(100);
   // set state
   _setState(ROBOT_NORM);
-  // set features
-  enableBallance(false);
-  enableExtraCurrent(false);
-  enableSensorInputs(false);
-  enableExtraInputs(false);
-  enableEdgeInputs(false);
-  enableTurningPath(false);
-  enableCountingPath(false);
 }
 
 // the loop function runs over and over again forever
@@ -370,10 +363,10 @@ void loop() {
       updatePath(getDirectionGyro());
       // check for robot state
       if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = 4;
+        stateCounter = 8;
       } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
-        if (stateCounter < 2) {
-          stateCounter = 2;
+        if (stateCounter < 4) {
+          stateCounter = 4;
         }
       }
       // set state
@@ -381,7 +374,7 @@ void loop() {
         _setState(ROBOT_NORM);
         //setDirectionCenter(getDirectionGyro());
       } else {
-        if (stateCounter <= 2) {
+        if (stateCounter <= 4) {
           _setState(ROBOT_INO);
         } else {
           _setState(ROBOT_CRAWL);

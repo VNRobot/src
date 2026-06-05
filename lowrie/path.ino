@@ -46,7 +46,7 @@ char _turnStep(short direction, char speed) {
   if (walkFrward) {
     // forward
     if (direction >= DI_FORWARD) {
-      if (speed < 2) {
+      if (speed < 4) {
         speed ++;
       }
     }
@@ -58,7 +58,7 @@ char _turnStep(short direction, char speed) {
   } else {
     // backward
     if (direction <= - DI_FORWARD) {
-      if (speed < 2) {
+      if (speed < 4) {
         speed ++;
       }
     }
@@ -78,15 +78,15 @@ void updatePath(short direction) {
     // plan to go
     if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward
-      if (speedAbsolute < 1) {
-        speedAbsolute = 1;
-      } else {
-        speedAbsolute = 2;
+      if (speedAbsolute < 4) {
+        speedAbsolute ++;
       }
       walkFrward = true;
     } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
       // stand and turn
-      speedAbsolute = 0;
+      if (speedAbsolute > 0) {
+        speedAbsolute --;
+      }
       walkFrward = true;
     } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
       // stand and turn
@@ -94,16 +94,16 @@ void updatePath(short direction) {
       walkFrward = false;
     } else {
       // go back
-      if (speedAbsolute < 1) {
-        speedAbsolute = 1;
-      } else {
-        speedAbsolute = 2;
+      if (speedAbsolute < 4) {
+        speedAbsolute ++;
       }
       walkFrward = false;
     }
   } else {
     // arrived to the destnation
-    speedAbsolute = 0;
+    if (speedAbsolute > 0) {
+      speedAbsolute --;
+    }
     walkFrward = true;
   }
   // step turning
@@ -118,7 +118,7 @@ void updatePath(short direction) {
   }
   if (stepsDistanceCountEnabled) {
     // step size
-    short stepSize = ((SERVO_HALF_CYCLE - (2 + speedAbsolute))* speedAbsolute * rpState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
+    short stepSize = ((SERVO_HALF_CYCLE - (speedAbsolute))* speedAbsolute * rpState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
     // update distance to target
     if (distanceToTarget > stepSize) {
       distanceToTarget -= stepSize;

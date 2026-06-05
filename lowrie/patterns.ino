@@ -23,13 +23,10 @@ struct phase {
   unsigned char rr;
 };
 
-// walk counters
+// walk counter
 unsigned char walkCounter = 0;
-unsigned char walkForwardCounter = 0;
 // leg pair shift
 unsigned char pairShift = 0;
-// speed dependent pattern
-bool speedFlexMode = true;
 // sequence counters
 phase sequenceCounter = {0, 0, 0, 0, 0};
 
@@ -68,11 +65,10 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   // leg step values
   leg legStep = {0, 0, false};
   // lift timing point
-  char speedBuffer = 2;
-  if (speedFlexMode) {
-    speedBuffer = speedValue;
+  unsigned char liftPoint = 2 * rbState.countMuliplierNow;
+  if (speedValue == 0) {
+    liftPoint /= 2;
   }
-  unsigned char liftPoint = (2 + speedBuffer) * rbState.countMuliplierNow;
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
   //
@@ -107,19 +103,15 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
 // update servo motors values
 unsigned char updatePatternsCount(bool forwardNow) {
   // update main counter
-  sequenceCounter.m ++;
-  walkForwardCounter += rbState.countMuliplierNow;
-  if (sequenceCounter.m >= MAIN_FULL_CYCLE) {
+  sequenceCounter.m += rbState.countMuliplierNow;
+  if (sequenceCounter.m >= SERVO_FULL_CYCLE) {
     sequenceCounter.m = 0;
-    if (walkForwardCounter >= SERVO_FULL_CYCLE) {
-      walkForwardCounter = 0;
-    }
   }
   // set servo counter
   if (forwardNow) {
-      walkCounter = walkForwardCounter;
+      walkCounter = sequenceCounter.m;
   } else {
-    walkCounter = SERVO_FULL_CYCLE - walkForwardCounter - 1;
+    walkCounter = SERVO_FULL_CYCLE - sequenceCounter.m - 1;
   }
   // update pair shift
   if (pairShift < rbState.pairShiftNow) {
@@ -183,7 +175,6 @@ void setStatePattern(unsigned char newState) {
       rbState.legLiftNow = 30;
       rbState.countMuliplierNow = 2;
       rbState.pairShiftNow = 0;
-      speedFlexMode = true;
     }
     break;
     case ROBOT_INO:
@@ -193,7 +184,6 @@ void setStatePattern(unsigned char newState) {
       rbState.legLiftNow = 60;
       rbState.countMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
-      speedFlexMode = false;
     }
     break;
     case ROBOT_CRAWL:
@@ -203,7 +193,6 @@ void setStatePattern(unsigned char newState) {
       rbState.legLiftNow = 100;
       rbState.countMuliplierNow = 1;
       rbState.pairShiftNow = SERVO_PAIR_SHIFT;
-      speedFlexMode = false;
     }
     break;
     default:

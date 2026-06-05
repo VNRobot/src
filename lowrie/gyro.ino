@@ -54,6 +54,8 @@ short pitchAverageOld = 0;
 short walkingDirectionAbs = 0;
 // flipped state
 bool gyroFlipped = false;
+// gyro counter
+unsigned char gyroCounter = 0;
 
 /*
 uses
@@ -243,6 +245,7 @@ void updateGyroCount(unsigned char counter) {
   // add average
   rollAverage += rollNow;
   pitchAverage += pitchNow;
+  gyroCounter ++;
   // get lift value
   m_gyroState.aLiftFL = deltaRoll + deltaPitch;
   m_gyroState.aLiftFR = -deltaRoll + deltaPitch;
@@ -251,11 +254,12 @@ void updateGyroCount(unsigned char counter) {
   // cycle statrt
   if (counter == 0) {
     // remember roll and pitch
-    m_gyroState.aRollAverage = rollAverage / MAIN_FULL_CYCLE;
-    m_gyroState.aPitchAverage = pitchAverage / MAIN_FULL_CYCLE;
+    m_gyroState.aRollAverage = rollAverage / gyroCounter;
+    m_gyroState.aPitchAverage = pitchAverage / gyroCounter;
     // reset average
     rollAverage = 0;
     pitchAverage = 0;
+    gyroCounter = 0;
     // shake data processing
     if (m_gyroState.aRollAverage > rollAverageOld) {
       shakeNow += m_gyroState.aRollAverage - rollAverageOld;
@@ -300,6 +304,9 @@ void resetGyro(void) {
   pitchOld = 0;
   rollAverageOld = 0;
   pitchAverageOld = 0;
+  rollAverage = 0;
+  pitchAverage = 0;
+  gyroCounter = 0;
 }
 
 // get walking direction
