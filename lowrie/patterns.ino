@@ -7,11 +7,8 @@ Robot legs motion patterns
 
 // robot state structure
 typedef struct robotState {
-  unsigned char robotStateNow;
   short legHightNow;
   short legLiftNow;
-  char countMuliplierNow;
-  unsigned char pairShiftNow;
 } robotState;
 
 // leg timing phase. main m
@@ -25,18 +22,13 @@ struct phase {
 
 // walk counter
 unsigned char walkCounter = 0;
-// leg pair shift
-unsigned char pairShift = 0;
 // sequence counters
 phase sequenceCounter = {0, 0, 0, 0, 0};
 
 // robot state
 robotState rbState = {
-  ROBOT_NORM,              // unsigned char robotStateNow;
   HIGHT_DEFAULT,           // short legHightNow;
-  20,                      // short legLiftNow;
-  2,                       // char countMuliplierNow; 1 or 2
-  0                        // unsigned char pairShiftNow
+  20                       // short legLiftNow;
 };
 
 /*
@@ -65,9 +57,9 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   // leg step values
   leg legStep = {0, 0, false};
   // lift timing point
-  unsigned char liftPoint = 2 * rbState.countMuliplierNow;
+  unsigned char liftPoint = 2;
   if (speedValue == 0) {
-    liftPoint /= 2;
+    liftPoint = 1;
   }
   // quick shift multiplier
   unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
@@ -101,42 +93,30 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
 }
 
 // update servo motors values
-unsigned char updatePatternsCount(bool forwardNow) {
+unsigned char updatePatternsCount(void) {
   // update main counter
-  sequenceCounter.m += rbState.countMuliplierNow;
+  sequenceCounter.m ++;
   if (sequenceCounter.m >= SERVO_FULL_CYCLE) {
     sequenceCounter.m = 0;
   }
-  // set servo counter
-  if (forwardNow) {
-      walkCounter = sequenceCounter.m;
-  } else {
-    walkCounter = SERVO_FULL_CYCLE - sequenceCounter.m - 1;
-  }
-  // update pair shift
-  if (pairShift < rbState.pairShiftNow) {
-    pairShift ++;
-  } else if (pairShift > rbState.pairShiftNow) {
-    pairShift --;
-  }
   // set counters
-  sequenceCounter.fl = walkCounter + pairShift;
-  sequenceCounter.fr = walkCounter + SERVO_HALF_CYCLE + pairShift;
-  sequenceCounter.rl = walkCounter + SERVO_HALF_CYCLE;
-  sequenceCounter.rr = walkCounter;
+  sequenceCounter.fl = sequenceCounter.m;
+  sequenceCounter.fr = sequenceCounter.m + SERVO_HALF_CYCLE;
+  sequenceCounter.rl = sequenceCounter.m + SERVO_HALF_CYCLE;
+  sequenceCounter.rr = sequenceCounter.m;
   //
-  if (sequenceCounter.fl >= SERVO_FULL_CYCLE) {
-    sequenceCounter.fl -= SERVO_FULL_CYCLE;
-  }
+  //if (sequenceCounter.fl >= SERVO_FULL_CYCLE) {
+  //  sequenceCounter.fl -= SERVO_FULL_CYCLE;
+  //}
   if (sequenceCounter.fr >= SERVO_FULL_CYCLE) {
     sequenceCounter.fr -= SERVO_FULL_CYCLE;
   }
   if (sequenceCounter.rl >= SERVO_FULL_CYCLE) {
     sequenceCounter.rl -= SERVO_FULL_CYCLE;
   }
-  if (sequenceCounter.rr >= SERVO_FULL_CYCLE) {
-    sequenceCounter.rr -= SERVO_FULL_CYCLE;
-  }
+  //if (sequenceCounter.rr >= SERVO_FULL_CYCLE) {
+  //  sequenceCounter.rr -= SERVO_FULL_CYCLE;
+  //}
   return sequenceCounter.m;
 }
 
@@ -170,33 +150,23 @@ void setStatePattern(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
-      rbState.robotStateNow = ROBOT_NORM;
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 30;
-      rbState.countMuliplierNow = 2;
-      rbState.pairShiftNow = 0;
     }
     break;
     case ROBOT_INO:
     {
-      rbState.robotStateNow = ROBOT_INO;
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 60;
-      rbState.countMuliplierNow = 1;
-      rbState.pairShiftNow = SERVO_PAIR_SHIFT;
     }
     break;
     case ROBOT_CRAWL:
     {
-      rbState.robotStateNow = ROBOT_CRAWL;
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 100;
-      rbState.countMuliplierNow = 1;
-      rbState.pairShiftNow = SERVO_PAIR_SHIFT;
     }
     break;
     default:
     break;
   }
 }
-

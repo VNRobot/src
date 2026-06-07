@@ -46,11 +46,11 @@ void initCurrent(bool calibrationMode) {
   Serial.println(F("initCurrent"));
   unsigned char counter = 0;
   while (calibrationMode) {
-    counter += 2;
+    counter ++;
     if (counter >= SERVO_FULL_CYCLE) {
       counter = 0;
     }
-    delay(10);
+    delay(20);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }

@@ -15,7 +15,7 @@ Process analog inputs
 
 #define SENSOR_DISTANCE_BLOCK   600    // if > blocked
 #define SENSOR_DISTANCE_MIN     300    // if > wall
-#define SENSOR_DISTANCE_NORM    220    // if > obstacle
+#define SENSOR_DISTANCE_NORM    180    // if > obstacle
 // norm 120
 #define SENSOR_DISTANCE_MAX     100    // if < edge
 #define SENSOR_NO_DATA          80     // no data
@@ -32,12 +32,14 @@ enum senState {
 
 // robot state structure
 typedef struct roboInputState {
+  short legHightNow;
   bool obstacleEnabled;
 } roboInputState;
 
 // robot state
 roboInputState riState = {
-  true             // bool obstacleEnabled;
+  HIGHT_DEFAULT,           // short legHightNow;
+  true                     // bool obstacleEnabled;
 };
 
 // sensors enabled
@@ -75,8 +77,8 @@ short leftExtraSensorBuffer1 = 0;
 short rightExtraSensorBuffer1 = 0;
 short leftExtraSensorBuffer2 = 0;
 short rightExtraSensorBuffer2 = 0;
-short leftExtraSensorAverage = 0;
-short rightExtraSensorAverage = 0;
+short leftExtraSensorAverage = 10;
+short rightExtraSensorAverage = 10;
 short leftExtraSensorBallanced = 0;
 short rightExtraSensorBallanced = 0;
 
@@ -161,11 +163,11 @@ void initInputs(bool calibrationMode) {
   }
   unsigned char counter = 0;
   while (calibrationMode) {
-    counter += 2;
+    counter ++;
     if (counter >= SERVO_FULL_CYCLE) {
       counter = 0;
     }
-    delay(10);
+    delay(20);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
@@ -193,19 +195,19 @@ void updateInputsCount(unsigned char counter) {
   //
   if (extraInputsEnabled) {
     //
-    leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+    leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - riState.legHightNow / ROBOT_SIZE_DEVIDER;
     leftExtraSensorBallanced = (leftExtraSensorValue + leftExtraSensorBuffer0 + leftExtraSensorBuffer1 + leftExtraSensorBuffer2) / 4;
     leftExtraSensorBuffer2 = leftExtraSensorBuffer1;
     leftExtraSensorBuffer1 = leftExtraSensorBuffer0;
     leftExtraSensorBuffer0 = leftExtraSensorValue;
     //
-    rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - HIGHT_DEFAULT / ROBOT_SIZE_DEVIDER;
+    rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - riState.legHightNow / ROBOT_SIZE_DEVIDER;
     rightExtraSensorBallanced = (rightExtraSensorValue + rightExtraSensorBuffer0 + rightExtraSensorBuffer1 + rightExtraSensorBuffer2) / 4;
     rightExtraSensorBuffer2 = rightExtraSensorBuffer1;
     rightExtraSensorBuffer1 = rightExtraSensorBuffer0;
     rightExtraSensorBuffer0 = rightExtraSensorValue;
     //
-    if (counter == 0) {
+    if (counter == 1) {
       // extra left
       if (leftExtraSensorAverage < leftExtraSensorValue) {
         leftExtraSensorAverage ++;
@@ -319,16 +321,19 @@ void setStateInputs(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
+      riState.legHightNow = HIGHT_DEFAULT;
       riState.obstacleEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
+      riState.legHightNow = HIGHT_DEFAULT;
       riState.obstacleEnabled = false;
     }
     break;
     case ROBOT_CRAWL:
     {
+      riState.legHightNow = HIGHT_DEFAULT;
       riState.obstacleEnabled = false;
     }
     break;

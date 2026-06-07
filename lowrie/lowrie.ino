@@ -21,9 +21,8 @@ Main file
 // maximal hight
 #define HIGHT_MAX               160
 // servo counters
-#define SERVO_FULL_CYCLE        36
-#define SERVO_HALF_CYCLE        18
-#define SERVO_PAIR_SHIFT        9   // used for ino
+#define SERVO_FULL_CYCLE        18
+#define SERVO_HALF_CYCLE        9
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -225,7 +224,7 @@ void _doCycle(void) {
   delay(timeDelay);
   // runs only after delay
   // update motor pattern point
-  mCounter = updatePatternsCount(getforwardPath());
+  mCounter = updatePatternsCount();
   // update current readings
   updateCurrentCount(mCounter);
   // update gyro readings
@@ -253,12 +252,12 @@ void _setState(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      timeDelay = TIME_DELAY;
+      timeDelay = TIME_DELAY + 4;
     }
     break;
     case ROBOT_CRAWL:
     {
-      timeDelay = TIME_DELAY;
+      timeDelay = TIME_DELAY + 8;
     }
     break;
     default:
@@ -273,10 +272,10 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallance(false);
+  enableBallance(true);
   enableExtraCurrent(false);
   enableSensorInputs(true);
-  enableExtraInputs(false);
+  enableExtraInputs(true);
   enableEdgeInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
@@ -340,7 +339,7 @@ void setup() {
   initTasks();
   // load task and pattern. direction is 0
   updatePath(0);
-  mCounter = updatePatternsCount(true);
+  mCounter = updatePatternsCount();
   // set distance to target cm
   setDistancePath(100);
   // set state

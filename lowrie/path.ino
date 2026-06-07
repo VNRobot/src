@@ -40,6 +40,8 @@ char  speedLNow = 0;
 char  speedRNow = 0;
 // on the path flag
 bool onThePath = false;
+// state 
+unsigned char pathState = ROBOT_NORM;
 
 // step rotation
 char _turnStep(short direction, char speed) {
@@ -49,8 +51,14 @@ char _turnStep(short direction, char speed) {
       if (speed < 4) {
         speed ++;
       }
+      if (speed < 4) {
+        speed ++;
+      }
     }
     if (direction <= - DI_FORWARD) {
+      if (speed > 0) {
+        speed --;
+      }
       if (speed > 0) {
         speed --;
       }
@@ -61,8 +69,14 @@ char _turnStep(short direction, char speed) {
       if (speed < 4) {
         speed ++;
       }
+      if (speed < 4) {
+        speed ++;
+      }
     }
     if (direction >= DI_FORWARD) {
+      if (speed > 0) {
+        speed --;
+      }
       if (speed > 0) {
         speed --;
       }
@@ -128,14 +142,20 @@ void updatePath(short direction) {
   }
 }
 
-// get left speed
+// get left speed 0 t0 8
 char getspeedLPath(void) {
-  return speedLNow;
+  if (walkFrward) {
+    return speedLNow * 2;
+  }
+  return -speedLNow * 2;
 }
 
-// get right speed
+// get right speed 0 to 8
 char getspeedRPath(void) {
-  return speedRNow;
+  if (walkFrward) {
+    return speedRNow * 2;
+  }
+  return -speedRNow * 2;
 }
 
 // get direction flag
@@ -299,16 +319,29 @@ void setStatePath(unsigned char newState) {
     case ROBOT_NORM:
     {
       rpState.speedMuliplierNow = 2;
+      pathState = ROBOT_NORM;
     }
     break;
     case ROBOT_INO:
     {
-      rpState.speedMuliplierNow = 1;
+      rpState.speedMuliplierNow = 2;
+      if (pathState == ROBOT_NORM) {
+        speedAbsolute = 2;
+        speedLNow = 0;
+        speedRNow = 0;
+      }
+      pathState = ROBOT_INO;
     }
     break;
     case ROBOT_CRAWL:
     {
-      rpState.speedMuliplierNow = 1;
+      rpState.speedMuliplierNow = 2;
+      if (pathState == ROBOT_NORM) {
+        speedAbsolute = 2;
+        speedLNow = 0;
+        speedRNow = 0;
+      }
+      pathState = ROBOT_CRAWL;
     }
     break;
     default:
