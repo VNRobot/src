@@ -15,7 +15,7 @@ Process analog inputs
 
 #define SENSOR_DISTANCE_BLOCK   600    // if > blocked
 #define SENSOR_DISTANCE_MIN     300    // if > wall
-#define SENSOR_DISTANCE_NORM    180    // if > obstacle
+#define SENSOR_DISTANCE_NORM    200    // if > obstacle
 // norm 120
 #define SENSOR_DISTANCE_MAX     100    // if < edge
 #define SENSOR_NO_DATA          80     // no data
@@ -101,7 +101,7 @@ unsigned char _getStateFromRaw(unsigned short inputValue) {
     }
   }
   if (inputValue < SENSOR_DISTANCE_MAX) {
-    if (edgeEnabled) {
+    if (edgeEnabled && riState.obstacleEnabled) {
       return SEN_OBSTACLE;
     }
   }

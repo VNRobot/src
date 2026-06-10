@@ -106,16 +106,16 @@ void setStateBallance(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      rlState.multiplierNow = 4;
-      rlState.speedNow = 4;
-      rlState.dynamicEnabled = true;
+      rlState.multiplierNow = 2;
+      rlState.speedNow = 0;
+      rlState.dynamicEnabled = false;
     }
     break;
     case ROBOT_CRAWL:
     {
-      rlState.multiplierNow = 4;
-      rlState.speedNow = 4;
-      rlState.dynamicEnabled = true;
+      rlState.multiplierNow = 2;
+      rlState.speedNow = 0;
+      rlState.dynamicEnabled = false;
     }
     break;
     default:

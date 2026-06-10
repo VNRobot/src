@@ -27,7 +27,9 @@ Main file
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
-#define ROBOT_SIZE_DEVIDER       2
+#define ROBOT_SIZE_DEVIDER      2
+// state counter
+#define STATE_COUNTER           4
 
 // input state
 enum inState {
@@ -126,8 +128,6 @@ allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, fals
 unsigned char mCounter = 0;
 // state counter
 unsigned char stateCounter = 0;
-// time delay
-unsigned char timeDelay = TIME_DELAY;
 // variable for temporary use
 unsigned char i;
 
@@ -221,7 +221,7 @@ void _doCycle(void) {
   // update servo motors values, move motors
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
-  delay(timeDelay);
+  delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
   mCounter = updatePatternsCount();
@@ -244,20 +244,21 @@ void _setState(unsigned char newState) {
   setStatePath(newState);
   setStateBallance(newState);
   setStateInputs(newState);
+  Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
     {
-      timeDelay = TIME_DELAY;
+      //Serial.println("ROBOT_NORM");
     }
     break;
     case ROBOT_INO:
     {
-      timeDelay = TIME_DELAY + 4;
+      //Serial.println("ROBOT_INO");
     }
     break;
     case ROBOT_CRAWL:
     {
-      timeDelay = TIME_DELAY + 8;
+      //Serial.println("ROBOT_CRAWL");
     }
     break;
     default:
@@ -272,10 +273,10 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallance(true);
-  enableExtraCurrent(false);
+  enableBallance(false);
+  enableExtraCurrent(true);
   enableSensorInputs(true);
-  enableExtraInputs(true);
+  enableExtraInputs(false);
   enableEdgeInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
@@ -362,10 +363,10 @@ void loop() {
       updatePath(getDirectionGyro());
       // check for robot state
       if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = 8;
+        stateCounter = STATE_COUNTER * 2;
       } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
-        if (stateCounter < 4) {
-          stateCounter = 4;
+        if (stateCounter < STATE_COUNTER) {
+          stateCounter = STATE_COUNTER;
         }
       }
       // set state
@@ -373,7 +374,7 @@ void loop() {
         _setState(ROBOT_NORM);
         //setDirectionCenter(getDirectionGyro());
       } else {
-        if (stateCounter <= 4) {
+        if (stateCounter <= STATE_COUNTER) {
           _setState(ROBOT_INO);
         } else {
           _setState(ROBOT_CRAWL);

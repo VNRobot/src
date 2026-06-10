@@ -6,7 +6,7 @@ Operates servo motors
 */
 
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  -10
+#define FORWARD_BALLANCE_SHIFT  0
 // shift to increase distance between front and rear legs
 #define TRAPEZ_SHIFT            0
 
@@ -50,7 +50,7 @@ allMotors servoCalibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor value
 short servoMotorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor center point
-short servoMotorCenterPoint[8] = {120, 60, 60, 120, 120, 60, 60, 120};
+short servoMotorCenterPoint[8] = {60, 120, 120, 60, 60, 120, 120, 60};
 // motors attached flag
 bool attached = false;
 // motors init values
@@ -80,14 +80,6 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   //  // roll
   //  Hval += (Sval * Sval) / m_robotState.surfaceAngleDevider;
   //}
-  //
-  // test
-  //if (motorNum == 1) {
-  //  Hval += 10;
-  //} else {
-  //  Hval -= 10;
-  //}
-  // end of test
   float Lval = (float)Hval;
   float AngleB = 0;
   float AngleC = 0;
@@ -103,8 +95,9 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
     AngleC = -AngleC;
   }
   //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;    5100
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 106 * 106) / (2 * Lval * 70)) * 180) / 3.14;    6336
   //AngleB = (acos((Lval * Lval + 70 * 70 - 112 * 112) / (2 * Lval * 70)) * 180) / 3.14;    7644
-  AngleB = (acos((Lval * Lval - 7644) / (Lval * 140)) * 180) / 3.14;
+  AngleB = (acos((Lval * Lval - 6336) / (Lval * 140)) * 180) / 3.14;
   return (char)(90 - AngleB - AngleC);
 }
 

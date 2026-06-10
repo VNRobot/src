@@ -58,11 +58,11 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
   leg legStep = {0, 0, false};
   // lift timing point
   unsigned char liftPoint = 2;
-  if (speedValue == 0) {
+  if ((speedValue < 4) && (speedValue > -4)) {
     liftPoint = 1;
   }
   // quick shift multiplier
-  unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - (liftPoint - 1)) / (liftPoint - 1);
+  unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - liftPoint) / liftPoint;
   //
   if (counter < liftPoint) {
     legStep.shift = -counter * quickShiftMultiplier;
@@ -76,12 +76,12 @@ leg _getWalkStep(unsigned char counter, char speedValue) {
     legStep.lifted = false;
     legStep.shift = counter - SERVO_HALF_CYCLE;
     if ((counter > SERVO_HALF_CYCLE - liftPoint) && (counter < SERVO_HALF_CYCLE + liftPoint)) {
-      legStep.hight = 0; // one leg touch
+      legStep.hight = 2; // one leg touch
     } else {
       if (counter == liftPoint) {
         legStep.hight = -6; // touch the ground
       } else {
-        legStep.hight = -2; // compensate legs flexibility
+        legStep.hight = 0; // compensate legs flexibility
       }
     }
   }
@@ -157,13 +157,13 @@ void setStatePattern(unsigned char newState) {
     case ROBOT_INO:
     {
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = 60;
+      rbState.legLiftNow = 50;
     }
     break;
     case ROBOT_CRAWL:
     {
       rbState.legHightNow = HIGHT_DEFAULT;
-      rbState.legLiftNow = 100;
+      rbState.legLiftNow = 70;
     }
     break;
     default:
