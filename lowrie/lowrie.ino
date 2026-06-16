@@ -219,6 +219,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
+  readSwitchesCount(mCounter);
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
   delay(TIME_DELAY);
@@ -244,7 +245,7 @@ void _setState(unsigned char newState) {
   setStatePath(newState);
   setStateBallance(newState);
   setStateInputs(newState);
-  Serial.print(F(" State "));
+  //Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
     {
@@ -273,7 +274,7 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallance(false);
+  enableBallance(true);
   enableExtraCurrent(true);
   enableSensorInputs(true);
   enableExtraInputs(false);
@@ -286,7 +287,9 @@ void setup() {
   if (version != ROBOT_VERSION) {
     calibrationMode = true;
   }
-  // init digital sensors
+  // init switches for ballance
+  initSwitches(calibrationMode);
+  // init sensors
   initInputs(calibrationMode);
   // attach center servo
   //attachCenter();

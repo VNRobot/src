@@ -11,19 +11,13 @@ typedef struct robotState {
   short legLiftNow;
 } robotState;
 
-// leg timing phase. main m
-struct phase {
-  unsigned char m;
-  unsigned char fl;
-  unsigned char fr;
-  unsigned char rl;
-  unsigned char rr;
-};
-
 // walk counter
 unsigned char walkCounter = 0;
 // sequence counters
-phase sequenceCounter = {0, 0, 0, 0, 0};
+unsigned char sequenceCounter = 0;
+unsigned char sequenceCounterShifted = SERVO_HALF_CYCLE;
+// lift point
+unsigned char liftPoint = 2;
 
 // robot state
 robotState rbState = {
@@ -52,94 +46,96 @@ void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shift
   m_legsValue.rr.lifted = false;
 }
 
-// set walk step value
-leg _getWalkStep(unsigned char counter, char speedValue) {
-  // leg step values
-  leg legStep = {0, 0, false};
-  // lift timing point
-  unsigned char liftPoint = 2;
-  if ((speedValue < 4) && (speedValue > -4)) {
-    liftPoint = 1;
-  }
-  // quick shift multiplier
-  unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - liftPoint) / liftPoint;
-  //
-  if (counter < liftPoint) {
-    legStep.shift = -counter * quickShiftMultiplier;
-    legStep.hight = -rbState.legLiftNow; // lifted
-    legStep.lifted = true;
-  } else if (counter > SERVO_FULL_CYCLE - liftPoint) {
-    legStep.shift = (SERVO_FULL_CYCLE - counter) * quickShiftMultiplier;
-    legStep.hight = -rbState.legLiftNow; // lifted
-    legStep.lifted = true;
-  } else {
-    legStep.lifted = false;
-    legStep.shift = counter - SERVO_HALF_CYCLE;
-    if ((counter > SERVO_HALF_CYCLE - liftPoint) && (counter < SERVO_HALF_CYCLE + liftPoint)) {
-      legStep.hight = 2; // one leg touch
-    } else {
-      if (counter == liftPoint) {
-        legStep.hight = -6; // touch the ground
-      } else {
-        legStep.hight = 0; // compensate legs flexibility
-      }
-    }
-  }
-  // hight
-  legStep.hight += rbState.legHightNow;
-  // forward shift
-  legStep.shift = legStep.shift * speedValue;
-  return legStep;
-}
-
 // update servo motors values
 unsigned char updatePatternsCount(void) {
   // update main counter
-  sequenceCounter.m ++;
-  if (sequenceCounter.m >= SERVO_FULL_CYCLE) {
-    sequenceCounter.m = 0;
+  sequenceCounter ++;
+  if (sequenceCounter >= SERVO_FULL_CYCLE) {
+    sequenceCounter = 0;
   }
-  // set counters
-  sequenceCounter.fl = sequenceCounter.m;
-  sequenceCounter.fr = sequenceCounter.m + SERVO_HALF_CYCLE;
-  sequenceCounter.rl = sequenceCounter.m + SERVO_HALF_CYCLE;
-  sequenceCounter.rr = sequenceCounter.m;
-  //
-  //if (sequenceCounter.fl >= SERVO_FULL_CYCLE) {
-  //  sequenceCounter.fl -= SERVO_FULL_CYCLE;
-  //}
-  if (sequenceCounter.fr >= SERVO_FULL_CYCLE) {
-    sequenceCounter.fr -= SERVO_FULL_CYCLE;
+  sequenceCounterShifted = sequenceCounter + SERVO_HALF_CYCLE;
+  if (sequenceCounterShifted >= SERVO_FULL_CYCLE) {
+    sequenceCounterShifted -= SERVO_FULL_CYCLE;
   }
-  if (sequenceCounter.rl >= SERVO_FULL_CYCLE) {
-    sequenceCounter.rl -= SERVO_FULL_CYCLE;
-  }
-  //if (sequenceCounter.rr >= SERVO_FULL_CYCLE) {
-  //  sequenceCounter.rr -= SERVO_FULL_CYCLE;
-  //}
-  return sequenceCounter.m;
+  return sequenceCounter;
 }
 
 // get servo motor steps
 void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
   leg legSet;
   if (walkingModeNow) {
-    legSet = _getWalkStep(sequenceCounter.fl, speedLNow);
-    m_legsValue.fl.hight = legSet.hight;
-    m_legsValue.fl.shift = legSet.shift;
-    m_legsValue.fl.lifted = legSet.lifted;
-    legSet = _getWalkStep(sequenceCounter.fr, speedRNow);
-    m_legsValue.fr.hight = legSet.hight;
-    m_legsValue.fr.shift = legSet.shift;
-    m_legsValue.fr.lifted = legSet.lifted;
-    legSet = _getWalkStep(sequenceCounter.rl, speedLNow);
-    m_legsValue.rl.hight = legSet.hight;
-    m_legsValue.rl.shift = legSet.shift;
-    m_legsValue.rl.lifted = legSet.lifted;
-    legSet = _getWalkStep(sequenceCounter.rr, speedRNow);
-    m_legsValue.rr.hight = legSet.hight;
-    m_legsValue.rr.shift = legSet.shift;
-    m_legsValue.rr.lifted = legSet.lifted;
+    if ((speedLNow < 4) && (speedLNow > -4) && (speedRNow < 4) && (speedRNow > -4)) {
+      liftPoint = 1;
+    } else {
+      liftPoint = 2;
+    }
+    // quick shift multiplier
+    unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - liftPoint) / liftPoint;
+    // hight
+    m_legsValue.fl.hight = rbState.legHightNow;
+    m_legsValue.fr.hight = rbState.legHightNow;
+    m_legsValue.rl.hight = rbState.legHightNow;
+    m_legsValue.rr.hight = rbState.legHightNow;
+    // fl and rr
+    if (sequenceCounter < liftPoint) {
+      // start of cycle
+      m_legsValue.fl.shift = -sequenceCounter * quickShiftMultiplier;
+      m_legsValue.fl.lifted = true;
+      m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
+      m_legsValue.fr.hight += 2; // one leg touch
+    } else if (sequenceCounter > SERVO_FULL_CYCLE - liftPoint) {
+      // end of cycle
+      m_legsValue.fl.shift = (SERVO_FULL_CYCLE - sequenceCounter) * quickShiftMultiplier;
+      m_legsValue.fl.lifted = true;
+      m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
+      m_legsValue.fr.hight += 2; // one leg touch
+    } else {
+      // linear
+      m_legsValue.fl.shift = sequenceCounter - SERVO_HALF_CYCLE;
+      m_legsValue.fl.lifted = false;
+      // extras
+      if (sequenceCounter == liftPoint) {
+        m_legsValue.fl.hight -= 6; // almost touch
+      } else if (sequenceCounter == SERVO_FULL_CYCLE - liftPoint) {
+        m_legsValue.fl.hight -= 20; // start lifting
+      }
+    }
+    // fr and rl
+    if (sequenceCounterShifted < liftPoint) {
+      // start of cycle
+      m_legsValue.fr.shift = -sequenceCounterShifted * quickShiftMultiplier;
+      m_legsValue.fr.lifted = true;
+      m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
+      m_legsValue.fl.hight += 2; // one leg touch
+    } else if (sequenceCounterShifted > SERVO_FULL_CYCLE - liftPoint) {
+      // end of cycle
+      m_legsValue.fr.shift = (SERVO_FULL_CYCLE - sequenceCounterShifted) * quickShiftMultiplier;
+      m_legsValue.fr.lifted = true;
+      m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
+      m_legsValue.fl.hight += 2; // one leg touch
+    } else {
+      // linear
+      m_legsValue.fr.shift = sequenceCounterShifted - SERVO_HALF_CYCLE;
+      m_legsValue.fr.lifted = false;
+      // extras
+      if (sequenceCounterShifted == liftPoint) {
+        m_legsValue.fr.hight -= 6; // almost touch
+      } else if (sequenceCounterShifted == SERVO_FULL_CYCLE - liftPoint) {
+        m_legsValue.fr.hight -= 20; // start lifting
+      }
+    }
+    // set rear legs values
+    m_legsValue.rl.shift = m_legsValue.fr.shift;
+    m_legsValue.rl.lifted = m_legsValue.fr.lifted;
+    m_legsValue.rl.hight = m_legsValue.fr.hight;
+    m_legsValue.rr.shift = m_legsValue.fl.shift;
+    m_legsValue.rr.lifted = m_legsValue.fl.lifted;
+    m_legsValue.rr.hight = m_legsValue.fl.hight;
+    // set speed
+    m_legsValue.fl.shift *= speedLNow;
+    m_legsValue.fr.shift *= speedRNow;
+    m_legsValue.rl.shift *= speedLNow;
+    m_legsValue.rr.shift *= speedRNow;
   } else {
     _setLegsValuesBySide(rbState.legHightNow, 0, rbState.legHightNow, 0);
   }
