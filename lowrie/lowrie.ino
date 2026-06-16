@@ -130,6 +130,8 @@ unsigned char mCounter = 0;
 unsigned char stateCounter = 0;
 // variable for temporary use
 unsigned char i;
+// time delay
+unsigned char timeDelay = TIME_DELAY;
 
 // check button pressed
 bool m_getButtonPressed(void) {
@@ -222,7 +224,7 @@ void _doCycle(void) {
   readSwitchesCount(mCounter);
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
-  delay(TIME_DELAY);
+  delay(timeDelay);
   // runs only after delay
   // update motor pattern point
   mCounter = updatePatternsCount();
@@ -233,7 +235,7 @@ void _doCycle(void) {
   // update sensor readings
   updateInputsCount(mCounter);
   // update ballance
-  updateBallanceServoCount(updateBallanceCount(mCounter));
+  updateBallanceServoCount(updateBallanceCount(mCounter, getspeedLPath(), getspeedRPath()));
   //updateBallanceCenter();
   // update center motors
   //updateCenterCount(getspeedLPath(), getspeedRPath());
@@ -250,16 +252,19 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
+      timeDelay = TIME_DELAY;
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
+      timeDelay = TIME_DELAY;
     }
     break;
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
+      timeDelay = TIME_DELAY;
     }
     break;
     default:

@@ -8,6 +8,7 @@ Robot static and dynamic ballance
 // ballance correction max value
 #define STATIC_BALLANCE_MAX     60
 #define DYNAMIC_BALLANCE_MAX    20
+#define SWITCH_BALLANCE_MAX     60
 
 // pin numbers for switch
 enum swPins {
@@ -28,15 +29,15 @@ struct switches {
 // robot state structure
 typedef struct roboBallanceState {
   unsigned char multiplierNow;
-  unsigned char speedNow;
   bool dynamicEnabled;
+  bool switchEnabled;
 } roboBallanceState;
 
 // robot state
 roboBallanceState rlState = {
   4,              // unsigned char multiplierNow;
-  2,              // unsigned char speedNow
-  true            // bool dynamicEnabled
+  false,          // bool dynamicEnabled
+  true            // bool switchEnabled
 };
 
 // ballance enabled flag
@@ -50,6 +51,8 @@ char dynamicForward = 0;
 switches swState = {1, 1, 1, 1};
 switches swSum = {0, 0, 0, 0};
 switches swCount = {0, 0, 0, 0};
+// switch forward ballance value
+char switchForward = 0;
 
 // static ballance
 void _updateStaticBallance(void) {
@@ -86,13 +89,29 @@ void _updateDynamicBallance(void) {
       dynamicForward ++;
     }
   }
-  if (dynamicForward > 20) {
-    dynamicForward = 20;
+  if (dynamicForward > DYNAMIC_BALLANCE_MAX) {
+    dynamicForward = DYNAMIC_BALLANCE_MAX;
   }
-  if (dynamicForward < -20) {
-    dynamicForward = -20;
+  if (dynamicForward < -DYNAMIC_BALLANCE_MAX) {
+    dynamicForward = -DYNAMIC_BALLANCE_MAX;
   }
-  dynamicForward = 0;
+}
+
+// process switches for ballnce
+void _updateSwitchBallance(void) {
+  if ((swCount.fl + swCount.fr) > (swCount.rl + swCount.rr)) {
+    // rear too heavy
+    switchForward ++;
+  } else if ((swCount.fl + swCount.fr) < (swCount.rl + swCount.rr)) {
+    // front too heavy
+    switchForward --;
+  }
+  if (switchForward > SWITCH_BALLANCE_MAX) {
+    switchForward = SWITCH_BALLANCE_MAX;
+  }
+  if (switchForward < -SWITCH_BALLANCE_MAX) {
+    switchForward = -SWITCH_BALLANCE_MAX;
+  }
 }
 
 // init switches
@@ -118,6 +137,16 @@ void initSwitches(bool calibrationMode) {
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
+    if (counter == 0) {
+      Serial.print(F(" Count fl "));
+      Serial.print((int)swCount.fl);
+      Serial.print(F(" fr "));
+      Serial.print((int)swCount.fr);
+      Serial.print(F(" rl "));
+      Serial.print((int)swCount.rl);
+      Serial.print(F(" rr "));
+      Serial.println((int)swCount.rr);
+    }
   }
 }
 
@@ -137,21 +166,10 @@ void readSwitchesCount(unsigned char counter) {
     swSum.rl = 0;
     swCount.rr = swSum.rr;
     swSum.rr = 0;
-    //
-    Serial.println(" ");
-    //
-    Serial.print(F(" Count fl "));
-    Serial.print((int)swCount.fl);
-    Serial.print(F(" fr "));
-    Serial.print((int)swCount.fr);
-    Serial.print(F(" rl "));
-    Serial.print((int)swCount.rl);
-    Serial.print(F(" rr "));
-    Serial.println((int)swCount.rr);
+    //Serial.println(" ");
   }
-  Serial.print(F(" "));
-  Serial.print((int)swState.fl);
-  //
+  //Serial.print(F(" "));
+  //Serial.print((int)swState.fl);
   swSum.fl += swState.fl;
   swSum.fr += swState.fr;
   swSum.rl += swState.rl;
@@ -159,7 +177,7 @@ void readSwitchesCount(unsigned char counter) {
   //
 }
 
-char updateBallanceCount(unsigned char counter) {
+char updateBallanceCount(unsigned char counter, char speedLNow, char speedRNow) {
   // forward ballance
   // bigger the number more weight on front
   // pitch up - positive. require more weight on front
@@ -168,12 +186,16 @@ char updateBallanceCount(unsigned char counter) {
     _updateStaticBallance();
     // once
     if (counter == 0) {
+      // switch ballance
+      if (rlState.switchEnabled) {
+        _updateSwitchBallance();
+      }
       // dynamic ballance
       if (rlState.dynamicEnabled) {
         _updateDynamicBallance();
       }
     }
-    return staticForward + dynamicForward + rlState.speedNow;
+    return staticForward + dynamicForward + switchForward;
   }
   return 0;
 }
@@ -184,22 +206,22 @@ void setStateBallance(unsigned char newState) {
     case ROBOT_NORM:
     {
       rlState.multiplierNow = 4;
-      rlState.speedNow = 4;
       rlState.dynamicEnabled = false;
+      rlState.switchEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
       rlState.multiplierNow = 4;
-      rlState.speedNow = 4;
       rlState.dynamicEnabled = false;
+      rlState.switchEnabled = true;
     }
     break;
     case ROBOT_CRAWL:
     {
       rlState.multiplierNow = 4;
-      rlState.speedNow = 4;
       rlState.dynamicEnabled = false;
+      rlState.switchEnabled = true;
     }
     break;
     default:

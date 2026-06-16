@@ -9,20 +9,20 @@ Robot legs motion patterns
 typedef struct robotState {
   short legHightNow;
   short legLiftNow;
+  unsigned char liftPointNow;
 } robotState;
 
-// walk counter
-unsigned char walkCounter = 0;
 // sequence counters
 unsigned char sequenceCounter = 0;
 unsigned char sequenceCounterShifted = SERVO_HALF_CYCLE;
-// lift point
-unsigned char liftPoint = 2;
+// quick shift multiplier
+unsigned char quickShiftMultiplier = 3; //(SERVO_HALF_CYCLE - rbState.liftPointNow) / rbState.liftPointNow;
 
 // robot state
 robotState rbState = {
   HIGHT_DEFAULT,           // short legHightNow;
-  20                       // short legLiftNow;
+  20,                      // short legLiftNow;
+  2                        // unsigned char liftPointNow
 };
 
 /*
@@ -64,26 +64,19 @@ unsigned char updatePatternsCount(void) {
 void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
   leg legSet;
   if (walkingModeNow) {
-    if ((speedLNow < 4) && (speedLNow > -4) && (speedRNow < 4) && (speedRNow > -4)) {
-      liftPoint = 1;
-    } else {
-      liftPoint = 2;
-    }
-    // quick shift multiplier
-    unsigned char quickShiftMultiplier = (SERVO_HALF_CYCLE - liftPoint) / liftPoint;
     // hight
     m_legsValue.fl.hight = rbState.legHightNow;
     m_legsValue.fr.hight = rbState.legHightNow;
     m_legsValue.rl.hight = rbState.legHightNow;
     m_legsValue.rr.hight = rbState.legHightNow;
     // fl and rr
-    if (sequenceCounter < liftPoint) {
+    if (sequenceCounter < rbState.liftPointNow) {
       // start of cycle
       m_legsValue.fl.shift = -sequenceCounter * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
       m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
       m_legsValue.fr.hight += 2; // one leg touch
-    } else if (sequenceCounter > SERVO_FULL_CYCLE - liftPoint) {
+    } else if (sequenceCounter > SERVO_FULL_CYCLE - rbState.liftPointNow) {
       // end of cycle
       m_legsValue.fl.shift = (SERVO_FULL_CYCLE - sequenceCounter) * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
@@ -94,20 +87,20 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
       m_legsValue.fl.shift = sequenceCounter - SERVO_HALF_CYCLE;
       m_legsValue.fl.lifted = false;
       // extras
-      if (sequenceCounter == liftPoint) {
+      if (sequenceCounter == rbState.liftPointNow) {
         m_legsValue.fl.hight -= 6; // almost touch
-      } else if (sequenceCounter == SERVO_FULL_CYCLE - liftPoint) {
-        m_legsValue.fl.hight -= 20; // start lifting
+      } else if (sequenceCounter == SERVO_FULL_CYCLE - rbState.liftPointNow) {
+        m_legsValue.fl.hight -= rbState.legLiftNow; // start lifting
       }
     }
     // fr and rl
-    if (sequenceCounterShifted < liftPoint) {
+    if (sequenceCounterShifted < rbState.liftPointNow) {
       // start of cycle
       m_legsValue.fr.shift = -sequenceCounterShifted * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
       m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
       m_legsValue.fl.hight += 2; // one leg touch
-    } else if (sequenceCounterShifted > SERVO_FULL_CYCLE - liftPoint) {
+    } else if (sequenceCounterShifted > SERVO_FULL_CYCLE - rbState.liftPointNow) {
       // end of cycle
       m_legsValue.fr.shift = (SERVO_FULL_CYCLE - sequenceCounterShifted) * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
@@ -118,10 +111,10 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
       m_legsValue.fr.shift = sequenceCounterShifted - SERVO_HALF_CYCLE;
       m_legsValue.fr.lifted = false;
       // extras
-      if (sequenceCounterShifted == liftPoint) {
+      if (sequenceCounterShifted == rbState.liftPointNow) {
         m_legsValue.fr.hight -= 6; // almost touch
-      } else if (sequenceCounterShifted == SERVO_FULL_CYCLE - liftPoint) {
-        m_legsValue.fr.hight -= 20; // start lifting
+      } else if (sequenceCounterShifted == SERVO_FULL_CYCLE - rbState.liftPointNow) {
+        m_legsValue.fr.hight -= rbState.legLiftNow; // start lifting
       }
     }
     // set rear legs values
@@ -148,21 +141,25 @@ void setStatePattern(unsigned char newState) {
     {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 30;
+      rbState.liftPointNow = 2;
     }
     break;
     case ROBOT_INO:
     {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 50;
+      rbState.liftPointNow = 2;
     }
     break;
     case ROBOT_CRAWL:
     {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 70;
+      rbState.liftPointNow = 2;
     }
     break;
     default:
     break;
   }
+  quickShiftMultiplier = (SERVO_HALF_CYCLE - rbState.liftPointNow) / rbState.liftPointNow;
 }
