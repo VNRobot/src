@@ -327,8 +327,8 @@ void setStatePath(unsigned char newState) {
     break;
     case ROBOT_INO:
     {
-      rpState.speedMuliplierNow = 1;
-      rpState.maximalSpeed = 4;
+      rpState.speedMuliplierNow = 2;
+      rpState.maximalSpeed = 8;
       if (rpState.pathState == ROBOT_NORM) {
         //speedAbsolute = 2;
         //speedLNow = 0;
@@ -339,8 +339,8 @@ void setStatePath(unsigned char newState) {
     break;
     case ROBOT_CRAWL:
     {
-      rpState.speedMuliplierNow = 1;
-      rpState.maximalSpeed = 4;
+      rpState.speedMuliplierNow = 2;
+      rpState.maximalSpeed = 8;
       if (rpState.pathState == ROBOT_NORM) {
         //speedAbsolute = 2;
         //speedLNow = 0;

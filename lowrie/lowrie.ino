@@ -258,13 +258,13 @@ void _setState(unsigned char newState) {
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      timeDelay = TIME_DELAY;
+      timeDelay = TIME_DELAY * 2;
     }
     break;
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
-      timeDelay = TIME_DELAY;
+      timeDelay = TIME_DELAY * 2;
     }
     break;
     default:
@@ -279,7 +279,7 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallance(true);
+  enableBallance(false);
   enableExtraCurrent(true);
   enableSensorInputs(true);
   enableExtraInputs(false);

@@ -71,7 +71,7 @@ m_getButtonPressed()
 */
 
 // calculate motor 1 and motor 2 angles
-char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
+short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   // used for run, bend or roll
   //if (m_robotState.surfaceAngleDevider > 0) {
   //  // run or bend
@@ -98,7 +98,7 @@ char _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   //AngleB = (acos((Lval * Lval + 70 * 70 - 106 * 106) / (2 * Lval * 70)) * 180) / 3.14;    6336
   //AngleB = (acos((Lval * Lval + 70 * 70 - 112 * 112) / (2 * Lval * 70)) * 180) / 3.14;    7644
   AngleB = (acos((Lval * Lval - 6336) / (Lval * 140)) * 180) / 3.14;
-  return (char)(90 - AngleB - AngleC);
+  return (short)(90 - AngleB - AngleC);
 }
 
 // linear motor move
@@ -137,8 +137,8 @@ void _moveLinearServo(short hi1, short hi2, short timeDelay) {
 
 // fast motor move
 void _moveServo(void) {
-  char mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 1);
-  char mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 2);
+  short mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 1);
+  short mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 2);
   servoMotorAngleValue[0] = flippedL * mValue1;
   servoMotorAngleValue[1] = - flippedL * mValue2;
   mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT), 1);
