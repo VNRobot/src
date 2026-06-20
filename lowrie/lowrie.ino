@@ -89,8 +89,7 @@ enum gState {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_INO,
-  ROBOT_CRAWL
+  ROBOT_INO
 };
 // structure for one leg data
 struct leg {
@@ -117,12 +116,22 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
+// leg switch 
+struct switches {
+  unsigned char fl;
+  unsigned char fr;
+  unsigned char rl;
+  unsigned char rr;
+};
 
 //---------------global variables---------------------------
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
+// switches data
+switches m_swState = {1, 1, 1, 1};
+switches m_swCount = {0, 0, 0, 0};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -222,7 +231,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 void _doCycle(void) {
   // update servo motors values, move motors
   readSwitchesCount(mCounter);
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+  timeDelay = setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
   delay(timeDelay);
   // runs only after delay
@@ -234,9 +243,6 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
-  // update ballance
-  updateBallanceServoCount(updateBallanceCount(mCounter, getspeedLPath(), getspeedRPath()));
-  //updateBallanceCenter();
   // update center motors
   //updateCenterCount(getspeedLPath(), getspeedRPath());
 }
@@ -245,26 +251,17 @@ void _doCycle(void) {
 void _setState(unsigned char newState) {
   setStatePattern(newState);
   setStatePath(newState);
-  setStateBallance(newState);
   setStateInputs(newState);
   //Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      timeDelay = TIME_DELAY;
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      timeDelay = TIME_DELAY * 2;
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      //Serial.println("ROBOT_CRAWL");
-      timeDelay = TIME_DELAY * 2;
     }
     break;
     default:
@@ -279,7 +276,7 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallance(false);
+  enableBallancePatterns(false);
   enableExtraCurrent(true);
   enableSensorInputs(true);
   enableExtraInputs(false);
@@ -292,7 +289,7 @@ void setup() {
   if (version != ROBOT_VERSION) {
     calibrationMode = true;
   }
-  // init switches for ballance
+  // init switches
   initSwitches(calibrationMode);
   // init sensors
   initInputs(calibrationMode);
@@ -371,10 +368,10 @@ void loop() {
       updatePath(getDirectionGyro());
       // check for robot state
       if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = STATE_COUNTER * 2;
+        stateCounter = 0; //STATE_COUNTER * 2;
       } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
         if (stateCounter < STATE_COUNTER) {
-          stateCounter = STATE_COUNTER;
+          stateCounter = 0; //STATE_COUNTER;
         }
       }
       // set state
@@ -382,11 +379,7 @@ void loop() {
         _setState(ROBOT_NORM);
         //setDirectionCenter(getDirectionGyro());
       } else {
-        if (stateCounter <= STATE_COUNTER) {
-          _setState(ROBOT_INO);
-        } else {
-          _setState(ROBOT_CRAWL);
-        }
+        _setState(ROBOT_INO);
         stateCounter --;
       }
       _doCycle();

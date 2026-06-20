@@ -17,16 +17,12 @@ enum diState {
 
 // robot state structure
 typedef struct roboPathState {
-  char speedMuliplierNow;
   char maximalSpeed;
-  unsigned char pathState;
 } roboPathState;
 
 // robot state
 roboPathState rpState = {
-  2,                      // char speedMuliplierNow; 1 or 2
-  4,                      // char maximalSpeed;
-  ROBOT_NORM              // unsigned char pathState
+  4                      // char maximalSpeed;
 };
 
 // enable step turning
@@ -45,8 +41,51 @@ char  speedRNow = 0;
 // on the path flag
 bool onThePath = false;
 
-// step rotation
-char _turnStep(short direction, char speed) {
+// calculate absolute speed
+void _setAbsoluteSpeed(short direction) {
+  if (speedAbsolute < -rpState.maximalSpeed) {
+    speedAbsolute ++;
+  }
+  if (speedAbsolute > rpState.maximalSpeed) {
+    speedAbsolute --;
+  }
+  // walking mode
+  if (distanceToTarget > 0) {
+    // plan to go
+    if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
+      // go forward
+      if (speedAbsolute < rpState.maximalSpeed) {
+        speedAbsolute ++;
+      }
+      walkFrward = true;
+    } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
+      // stand and turn
+      if (speedAbsolute > 0) {
+        speedAbsolute --;
+      }
+      walkFrward = true;
+    } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
+      // stand and turn
+      speedAbsolute = 0;
+      walkFrward = false;
+    } else {
+      // go back
+      if (speedAbsolute < rpState.maximalSpeed) {
+        speedAbsolute ++;
+      }
+      walkFrward = false;
+    }
+  } else {
+    // arrived to the destnation
+    if (speedAbsolute > 0) {
+      speedAbsolute --;
+    }
+    walkFrward = true;
+  }
+}
+
+// calculate side speed
+char _sideSpeed(short direction, char speed) {
   if (walkFrward) {
     // forward
     if (direction >= DI_FORWARD) {
@@ -89,42 +128,11 @@ char _turnStep(short direction, char speed) {
 
 // get speed
 void updatePath(short direction) {
-  // walking mode
-  if (distanceToTarget > 0) {
-    // plan to go
-    if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
-      // go forward
-      if (speedAbsolute < rpState.maximalSpeed) {
-        speedAbsolute ++;
-      }
-      walkFrward = true;
-    } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
-      // stand and turn
-      if (speedAbsolute > 0) {
-        speedAbsolute --;
-      }
-      walkFrward = true;
-    } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
-      // stand and turn
-      speedAbsolute = 0;
-      walkFrward = false;
-    } else {
-      // go back
-      if (speedAbsolute < rpState.maximalSpeed) {
-        speedAbsolute ++;
-      }
-      walkFrward = false;
-    }
-  } else {
-    // arrived to the destnation
-    if (speedAbsolute > 0) {
-      speedAbsolute --;
-    }
-    walkFrward = true;
-  }
+  // calculate speed
+  _setAbsoluteSpeed(direction);
   // step turning
-  speedLNow = _turnStep(-direction, speedAbsolute);
-  speedRNow = _turnStep(direction, speedAbsolute);
+  speedLNow = _sideSpeed(-direction, speedAbsolute);
+  speedRNow = _sideSpeed(direction, speedAbsolute);
   if (!stepTurningEnabled) {
     if (speedLNow < speedRNow) {
       speedLNow = speedRNow;
@@ -134,7 +142,7 @@ void updatePath(short direction) {
   }
   if (stepsDistanceCountEnabled) {
     // step size
-    short stepSize = ((SERVO_HALF_CYCLE - (speedAbsolute))* speedAbsolute * rpState.speedMuliplierNow) / ROBOT_SIZE_DEVIDER;
+    short stepSize = ((SERVO_HALF_CYCLE - (speedAbsolute))* speedAbsolute * 2) / ROBOT_SIZE_DEVIDER;
     // update distance to target
     if (distanceToTarget > stepSize) {
       distanceToTarget -= stepSize;
@@ -144,30 +152,30 @@ void updatePath(short direction) {
   }
 }
 
-// get left speed -8 to 8
-char getspeedLPath(void) {
-  if (walkFrward) {
-    return speedLNow * rpState.speedMuliplierNow;
-  }
-  return -speedLNow * rpState.speedMuliplierNow;
-}
-
-// get right speed -8 to 8
-char getspeedRPath(void) {
-  if (walkFrward) {
-    return speedRNow * rpState.speedMuliplierNow;
-  }
-  return -speedRNow * rpState.speedMuliplierNow;
-}
-
-// get direction flag
-bool getforwardPath(void) {
-  return walkFrward;
-}
-
 // set distance to target in cm
 void setDistancePath(short distance) {
   distanceToTarget = distance * 10;
+}
+
+// get left speed
+char getspeedLPath(void) {
+  if (walkFrward) {
+    return speedLNow;
+  }
+  return -speedLNow;
+}
+
+// get right speed
+char getspeedRPath(void) {
+  if (walkFrward) {
+    return speedRNow;
+  }
+  return -speedRNow;
+}
+/*
+// get direction flag
+bool getforwardPath(void) {
+  return walkFrward;
 }
 
 // update distance to target in cm
@@ -179,7 +187,7 @@ void updateDistancePath(short distance) {
 short getDistancePath(void) {
   return distanceToTarget / 10;
 }
-
+*/
 // calculate new direction
 short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short direction) {
   if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
@@ -320,33 +328,12 @@ void setStatePath(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
-      rpState.speedMuliplierNow = 2;
-      rpState.maximalSpeed = 4;
-      rpState.pathState = ROBOT_NORM;
+      rpState.maximalSpeed = 6;
     }
     break;
     case ROBOT_INO:
     {
-      rpState.speedMuliplierNow = 2;
-      rpState.maximalSpeed = 8;
-      if (rpState.pathState == ROBOT_NORM) {
-        //speedAbsolute = 2;
-        //speedLNow = 0;
-        //speedRNow = 0;
-      }
-      rpState.pathState = ROBOT_INO;
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      rpState.speedMuliplierNow = 2;
-      rpState.maximalSpeed = 8;
-      if (rpState.pathState == ROBOT_NORM) {
-        //speedAbsolute = 2;
-        //speedLNow = 0;
-        //speedRNow = 0;
-      }
-      rpState.pathState = ROBOT_CRAWL;
+      rpState.maximalSpeed = 6;
     }
     break;
     default:

@@ -331,12 +331,6 @@ void setStateInputs(unsigned char newState) {
       riState.obstacleEnabled = false;
     }
     break;
-    case ROBOT_CRAWL:
-    {
-      riState.legHightNow = HIGHT_DEFAULT;
-      riState.obstacleEnabled = false;
-    }
-    break;
     default:
     break;
   }
