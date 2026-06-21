@@ -21,8 +21,9 @@ Main file
 // maximal hight
 #define HIGHT_MAX               160
 // servo counters
-#define SERVO_FULL_CYCLE        18
-#define SERVO_HALF_CYCLE        9
+#define SERVO_FULL_CYCLE        36
+#define SERVO_HALF_CYCLE        18
+#define SERVO_QUARTER_CYCLE     9
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -139,8 +140,6 @@ unsigned char mCounter = 0;
 unsigned char stateCounter = 0;
 // variable for temporary use
 unsigned char i;
-// time delay
-unsigned char timeDelay = TIME_DELAY;
 
 // check button pressed
 bool m_getButtonPressed(void) {
@@ -231,9 +230,9 @@ void _doQuickAndOther(unsigned char patternNow) {
 void _doCycle(void) {
   // update servo motors values, move motors
   readSwitchesCount(mCounter);
-  timeDelay = setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
-  delay(timeDelay);
+  delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
   mCounter = updatePatternsCount();
@@ -249,9 +248,9 @@ void _doCycle(void) {
 
 // set robot state
 void _setState(unsigned char newState) {
-  setStatePattern(newState);
-  setStatePath(newState);
-  setStateInputs(newState);
+  //setStatePattern(newState);
+  //setStatePath(newState);
+  //setStateInputs(newState);
   //Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
@@ -276,11 +275,12 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallancePatterns(false);
+  enableBallancePatterns(true);
   enableExtraCurrent(true);
   enableSensorInputs(true);
   enableExtraInputs(false);
   enableEdgeInputs(false);
+  enableObstacleInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
   // check button press

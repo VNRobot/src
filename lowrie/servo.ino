@@ -28,7 +28,7 @@ struct motors {
   char motor2;
 };
 // legs motors structure
-struct allMotors {
+struct allCalMotors {
   motors fl;
   motors fr;
   motors rl;
@@ -46,7 +46,7 @@ Servo servo_rr_1;
 Servo servo_rr_2;
 
 // motors calibration values for all motors
-allMotors servoCalibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
+allCalMotors servoCalibrationData = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor value
 short servoMotorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor center point

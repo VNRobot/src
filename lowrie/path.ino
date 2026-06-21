@@ -22,7 +22,7 @@ typedef struct roboPathState {
 
 // robot state
 roboPathState rpState = {
-  4                      // char maximalSpeed;
+  6                      // char maximalSpeed;
 };
 
 // enable step turning

@@ -6,13 +6,12 @@ Robot legs motion patterns
 */
 
 // ballance correction max value
-#define STATIC_BALLANCE_MAX     20
+#define STATIC_BALLANCE_MAX     60
 
 // robot state structure
 typedef struct robotState {
   short legHightNow;
   short legLiftNow;
-  unsigned char liftPointNow;
   unsigned char legPairShiftNow;
   unsigned char ballanceMultiplierNow;
 } robotState;
@@ -35,9 +34,8 @@ char staticForwardTemp = 0;
 // robot state
 robotState rbState = {
   HIGHT_DEFAULT,           // short legHightNow;
-  20,                      // short legLiftNow;
-  2,                       // unsigned char liftPointNow
-  0,                       // unsigned char legPairShiftNow;
+  50,                      // short legLiftNow;
+  SERVO_QUARTER_CYCLE,     // unsigned char legPairShiftNow;
   4                        // unsigned char ballanceMultiplierNow;
 };
 
@@ -96,26 +94,26 @@ unsigned char updatePatternsCount(void) {
 }
 
 // get servo motor steps for speed 6 to - 6
-unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
+void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
   // compensation parameters
-  short nearByLeg = 2;
-  short oppositeLeg = 4;
-  // time delay
-   unsigned char timeDelay = TIME_DELAY * 2;
-  // leg lift time point
-  unsigned char liftLegPoint = 1;
+  short pairLeg     = 4;    // + 2
+  short nearByLeg   = 4;    // + 2
+  short oppositeLeg = 6;    // - 4
+  short touchLeg    = 6;    // - 6
+  short liftLeg    = 20;    // - 50
+  short rockForwardValue = 4;
+  short rockForward = 0;
   // quick shift forward speed multiplier
   unsigned char quickShiftMultiplier = 3;
-  char absoluteSpeed = (speedLNow + speedRNow) / 2;
+  char absoluteSpeed = (speedLNow + speedRNow) / 2; // 0 - 6
   if (absoluteSpeed < 0) {
     goForward = false;
     absoluteSpeed = -absoluteSpeed;
   } else {
     goForward = true;
   }
-  if (absoluteSpeed > 3) {
-    liftLegPoint = 2;
-  }
+  // leg lift time point
+  unsigned char liftLegPoint = absoluteSpeed / 4 + 1;
   quickShiftMultiplier = (SERVO_HALF_CYCLE - liftLegPoint) / liftLegPoint;
   if (walkingModeNow) {
     // hight
@@ -127,27 +125,33 @@ unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char spe
       m_legsValue.fl.shift = -sequenceCounter * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
       m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fr.hight += nearByLeg; // one leg touch
+      m_legsValue.fr.hight += pairLeg; // one leg touch
+      m_legsValue.rl.hight += nearByLeg; // one leg touch
       m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+      rockForward = -rockForwardValue;
     } else if (sequenceCounter > SERVO_FULL_CYCLE - liftLegPoint) {
       // end of cycle
       m_legsValue.fl.shift = (SERVO_FULL_CYCLE - sequenceCounter) * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
       m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fr.hight += nearByLeg; // one leg touch
+      m_legsValue.fr.hight += pairLeg; // one leg touch
+      m_legsValue.rl.hight += nearByLeg; // one leg touch
       m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+      rockForward = -rockForwardValue;
     } else {
       // linear
       m_legsValue.fl.shift = sequenceCounter - SERVO_HALF_CYCLE;
       m_legsValue.fl.lifted = false;
       // extras
       if (sequenceCounter == liftLegPoint) {
-        m_legsValue.fl.hight -= 6; // almost touch
+        m_legsValue.fl.hight -= touchLeg; // almost touch
         m_legsValue.fl.lifted = true;
       } else if (sequenceCounter == SERVO_FULL_CYCLE - liftLegPoint) {
-        m_legsValue.fl.hight -= rbState.legLiftNow; // start lifting
-        m_legsValue.fr.hight += nearByLeg; // one leg touch
+        m_legsValue.fl.hight -= liftLeg; // start lifting
+        m_legsValue.fr.hight += pairLeg; // one leg touch
+        m_legsValue.rl.hight += nearByLeg; // one leg touch
         m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = -rockForwardValue;
       }
     }
     // fr
@@ -156,27 +160,33 @@ unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char spe
       m_legsValue.fr.shift = -sequenceCounterShifted * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
       m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fl.hight += nearByLeg; // one leg touch
+      m_legsValue.fl.hight += pairLeg; // one leg touch
+      m_legsValue.rr.hight += nearByLeg; // one leg touch
       m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+      rockForward = -rockForwardValue;
     } else if (sequenceCounterShifted > SERVO_FULL_CYCLE - liftLegPoint) {
       // end of cycle
       m_legsValue.fr.shift = (SERVO_FULL_CYCLE - sequenceCounterShifted) * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
       m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fl.hight += nearByLeg; // one leg touch
+      m_legsValue.fl.hight += pairLeg; // one leg touch
+      m_legsValue.rr.hight += nearByLeg; // one leg touch
       m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+      rockForward = -rockForwardValue;
     } else {
       // linear
       m_legsValue.fr.shift = sequenceCounterShifted - SERVO_HALF_CYCLE;
       m_legsValue.fr.lifted = false;
       // extras
       if (sequenceCounterShifted == liftLegPoint) {
-        m_legsValue.fr.hight -= 6; // almost touch
+        m_legsValue.fr.hight -= touchLeg; // almost touch
         m_legsValue.fr.lifted = true;
       } else if (sequenceCounterShifted == SERVO_FULL_CYCLE - liftLegPoint) {
-        m_legsValue.fr.hight -= rbState.legLiftNow; // start lifting
-        m_legsValue.fl.hight += nearByLeg; // one leg touch
+        m_legsValue.fr.hight -= liftLeg; // start lifting
+        m_legsValue.fl.hight += pairLeg; // one leg touch
+        m_legsValue.rr.hight += nearByLeg; // one leg touch
         m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = -rockForwardValue;
       }
     }
     if (rbState.legPairShiftNow == 0) {
@@ -197,27 +207,33 @@ unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char spe
         m_legsValue.rr.shift = -sequenceRearCounter * quickShiftMultiplier;
         m_legsValue.rr.lifted = true;
         m_legsValue.rr.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rl.hight += nearByLeg; // one leg touch
+        m_legsValue.rl.hight += pairLeg; // one leg touch
+        m_legsValue.fr.hight += nearByLeg; // one leg touch
         m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = rockForwardValue;
       } else if (sequenceRearCounter > SERVO_FULL_CYCLE - liftLegPoint) {
         // end of cycle
         m_legsValue.rr.shift = (SERVO_FULL_CYCLE - sequenceRearCounter) * quickShiftMultiplier;
         m_legsValue.rr.lifted = true;
         m_legsValue.rr.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rl.hight += nearByLeg; // one leg touch
+        m_legsValue.rl.hight += pairLeg; // one leg touch
+        m_legsValue.fr.hight += nearByLeg; // one leg touch
         m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = rockForwardValue;
       } else {
         // linear
         m_legsValue.rr.shift = sequenceRearCounter - SERVO_HALF_CYCLE;
         m_legsValue.rr.lifted = false;
         // extras
         if (sequenceRearCounter == liftLegPoint) {
-          m_legsValue.rr.hight -= 6; // almost touch
+          m_legsValue.rr.hight -= touchLeg; // almost touch
           m_legsValue.rr.lifted = true;
         } else if (sequenceRearCounter == SERVO_FULL_CYCLE - liftLegPoint) {
-          m_legsValue.rr.hight -= rbState.legLiftNow; // start lifting
-          m_legsValue.rl.hight += nearByLeg; // one leg touch
+          m_legsValue.rr.hight -= liftLeg; // start lifting
+          m_legsValue.rl.hight += pairLeg; // one leg touch
+          m_legsValue.fr.hight += nearByLeg; // one leg touch
           m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+          rockForward = rockForwardValue;
         }
       }
       // rl
@@ -226,37 +242,43 @@ unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char spe
         m_legsValue.rl.shift = -sequenceRearCounterShifted * quickShiftMultiplier;
         m_legsValue.rl.lifted = true;
         m_legsValue.rl.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rr.hight += nearByLeg; // one leg touch
+        m_legsValue.rr.hight += pairLeg; // one leg touch
+        m_legsValue.fl.hight += nearByLeg; // one leg touch
         m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = rockForwardValue;
       } else if (sequenceRearCounterShifted > SERVO_FULL_CYCLE - liftLegPoint) {
         // end of cycle
         m_legsValue.rl.shift = (SERVO_FULL_CYCLE - sequenceRearCounterShifted) * quickShiftMultiplier;
         m_legsValue.rl.lifted = true;
         m_legsValue.rl.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rr.hight += nearByLeg; // one leg touch
+        m_legsValue.rr.hight += pairLeg; // one leg touch
+        m_legsValue.fl.hight += nearByLeg; // one leg touch
         m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+        rockForward = rockForwardValue;
       } else {
         // linear
         m_legsValue.rl.shift = sequenceRearCounterShifted - SERVO_HALF_CYCLE;
         m_legsValue.rl.lifted = false;
         // extras
         if (sequenceRearCounterShifted == liftLegPoint) {
-          m_legsValue.rl.hight -= 6; // almost touch
+          m_legsValue.rl.hight -= touchLeg; // almost touch
           m_legsValue.rl.lifted = true;
         } else if (sequenceRearCounterShifted == SERVO_FULL_CYCLE - liftLegPoint) {
-          m_legsValue.rl.hight -= rbState.legLiftNow; // start lifting
-          m_legsValue.rr.hight += nearByLeg; // one leg touch
+          m_legsValue.rl.hight -= liftLeg; // start lifting
+          m_legsValue.rr.hight += pairLeg; // one leg touch
+          m_legsValue.fl.hight += nearByLeg; // one leg touch
           m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+          rockForward = rockForwardValue;
         }
       }
     }
     // set speed
     //speedLNow = 0; // ***
     //speedRNow = 0; // ***
-    m_legsValue.fl.shift *= speedLNow * 2;
-    m_legsValue.fr.shift *= speedRNow * 2;
-    m_legsValue.rl.shift *= speedLNow * 2;
-    m_legsValue.rr.shift *= speedRNow * 2;
+    m_legsValue.fl.shift *= speedLNow;
+    m_legsValue.fr.shift *= speedRNow;
+    m_legsValue.rl.shift *= speedLNow;
+    m_legsValue.rr.shift *= speedRNow;
     // ballance part
     if (ballanceEnabled) {
       // add forward shift
@@ -267,15 +289,24 @@ unsigned char setWalkPatternsCount(bool walkingModeNow, char speedLNow, char spe
       } else if ((staticForward < staticForwardTemp) && (staticForward < STATIC_BALLANCE_MAX)) {
         staticForward ++;
       }
+      staticForward += rockForward;
       m_legsValue.fl.shift += staticForward;
       m_legsValue.fr.shift += staticForward;
       m_legsValue.rl.shift += staticForward;
       m_legsValue.rr.shift += staticForward;
+      // compensate hight
+      if (staticForward < 0) {
+        staticForward = -staticForward;
+      }
+      staticForward /= 8;
+      m_legsValue.fl.hight -= staticForward;
+      m_legsValue.fr.hight -= staticForward;
+      m_legsValue.rl.hight -= staticForward;
+      m_legsValue.rr.hight -= staticForward;
     }
   } else {
     _setLegsValuesBySide(rbState.legHightNow, 0, rbState.legHightNow, 0);
   }
-  return timeDelay;
 }
 
 // set robot state
@@ -285,7 +316,7 @@ void setStatePattern(unsigned char newState) {
     {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 50;
-      rbState.legPairShiftNow = 4;
+      rbState.legPairShiftNow = SERVO_QUARTER_CYCLE;
       rbState.ballanceMultiplierNow = 4;
     }
     break;
@@ -293,7 +324,7 @@ void setStatePattern(unsigned char newState) {
     {
       rbState.legHightNow = HIGHT_DEFAULT;
       rbState.legLiftNow = 50;
-      rbState.legPairShiftNow = 4;
+      rbState.legPairShiftNow = SERVO_QUARTER_CYCLE;
       rbState.ballanceMultiplierNow = 4;
     }
     break;

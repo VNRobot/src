@@ -33,13 +33,11 @@ enum senState {
 // robot state structure
 typedef struct roboInputState {
   short legHightNow;
-  bool obstacleEnabled;
 } roboInputState;
 
 // robot state
 roboInputState riState = {
-  HIGHT_DEFAULT,           // short legHightNow;
-  true                     // bool obstacleEnabled;
+  HIGHT_DEFAULT           // short legHightNow;
 };
 
 // sensors enabled
@@ -48,6 +46,8 @@ bool sensorsEnabled = false;
 bool edgeEnabled = false;
 // extra inputs enabled
 bool extraInputsEnabled = false;
+// obstacle enabled
+bool obstacleEnabled = false;
 // assume wall angle
 short wallAngle = 0;
 // sensors state
@@ -96,12 +96,12 @@ unsigned char _getStateFromRaw(unsigned short inputValue) {
     return SEN_WALL;
   }
   if (inputValue > SENSOR_DISTANCE_NORM) {
-    if (riState.obstacleEnabled) {
+    if (obstacleEnabled) {
       return SEN_OBSTACLE;
     }
   }
   if (inputValue < SENSOR_DISTANCE_MAX) {
-    if (edgeEnabled && riState.obstacleEnabled) {
+    if (edgeEnabled && obstacleEnabled) {
       return SEN_OBSTACLE;
     }
   }
@@ -322,13 +322,11 @@ void setStateInputs(unsigned char newState) {
     case ROBOT_NORM:
     {
       riState.legHightNow = HIGHT_DEFAULT;
-      riState.obstacleEnabled = true;
     }
     break;
     case ROBOT_INO:
     {
       riState.legHightNow = HIGHT_DEFAULT;
-      riState.obstacleEnabled = false;
     }
     break;
     default:
@@ -349,6 +347,11 @@ void enableExtraInputs(bool inputs) {
 // enable edges
 void enableEdgeInputs(bool inputs) {
   edgeEnabled = inputs;
+}
+
+// enable obstacles
+void enableObstacleInputs(bool inputs) {
+  obstacleEnabled = inputs;
 }
 
 // print input state
