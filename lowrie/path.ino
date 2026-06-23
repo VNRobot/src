@@ -22,7 +22,7 @@ typedef struct roboPathState {
 
 // robot state
 roboPathState rpState = {
-  6                      // char maximalSpeed;
+  3                      // char maximalSpeed;
 };
 
 // enable step turning
@@ -328,12 +328,12 @@ void setStatePath(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
-      rpState.maximalSpeed = 6;
+      rpState.maximalSpeed = 3;
     }
     break;
     case ROBOT_INO:
     {
-      rpState.maximalSpeed = 6;
+      rpState.maximalSpeed = 3;
     }
     break;
     default:

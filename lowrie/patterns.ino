@@ -30,6 +30,13 @@ bool ballanceEnabled = false;
 // static forward ballance value
 char staticForward = 0;
 char staticForwardTemp = 0;
+// compensation parameters
+short pairLeg     = 4;    // + 2
+short nearByLeg   = 4;    // + 2
+short oppositeLeg = 6;    // - 4
+short touchLeg    = 6;    // - 6
+short liftLeg    = 20;    // - 50
+short rockForwardValue = 6;
 
 // robot state
 robotState rbState = {
@@ -61,6 +68,14 @@ void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shift
   m_legsValue.rr.hight = hightR;
   m_legsValue.rr.shift = shiftR;
   m_legsValue.rr.lifted = false;
+}
+
+// set legs hight fl fr rl rr
+void _setLegsHight(short fl, short fr, short rl, short rr) {
+  m_legsValue.fl.hight += fl;
+  m_legsValue.fr.hight += fr;
+  m_legsValue.rl.hight += rl;
+  m_legsValue.rr.hight += rr;
 }
 
 // update servo motors values
@@ -95,13 +110,7 @@ unsigned char updatePatternsCount(void) {
 
 // get servo motor steps for speed 6 to - 6
 void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
-  // compensation parameters
-  short pairLeg     = 4;    // + 2
-  short nearByLeg   = 4;    // + 2
-  short oppositeLeg = 6;    // - 4
-  short touchLeg    = 6;    // - 6
-  short liftLeg    = 20;    // - 50
-  short rockForwardValue = 4;
+  // center mass movement
   short rockForward = 0;
   // quick shift forward speed multiplier
   unsigned char quickShiftMultiplier = 3;
@@ -113,7 +122,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
     goForward = true;
   }
   // leg lift time point
-  unsigned char liftLegPoint = absoluteSpeed / 4 + 1;
+  unsigned char liftLegPoint = absoluteSpeed + 1;
   quickShiftMultiplier = (SERVO_HALF_CYCLE - liftLegPoint) / liftLegPoint;
   if (walkingModeNow) {
     // hight
@@ -124,19 +133,13 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
       // start of cycle
       m_legsValue.fl.shift = -sequenceCounter * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
-      m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fr.hight += pairLeg; // one leg touch
-      m_legsValue.rl.hight += nearByLeg; // one leg touch
-      m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+      _setLegsHight( -rbState.legLiftNow, pairLeg, nearByLeg, -oppositeLeg);
       rockForward = -rockForwardValue;
     } else if (sequenceCounter > SERVO_FULL_CYCLE - liftLegPoint) {
       // end of cycle
       m_legsValue.fl.shift = (SERVO_FULL_CYCLE - sequenceCounter) * quickShiftMultiplier;
       m_legsValue.fl.lifted = true;
-      m_legsValue.fl.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fr.hight += pairLeg; // one leg touch
-      m_legsValue.rl.hight += nearByLeg; // one leg touch
-      m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+      _setLegsHight( -rbState.legLiftNow, pairLeg, nearByLeg, -oppositeLeg);
       rockForward = -rockForwardValue;
     } else {
       // linear
@@ -147,10 +150,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
         m_legsValue.fl.hight -= touchLeg; // almost touch
         m_legsValue.fl.lifted = true;
       } else if (sequenceCounter == SERVO_FULL_CYCLE - liftLegPoint) {
-        m_legsValue.fl.hight -= liftLeg; // start lifting
-        m_legsValue.fr.hight += pairLeg; // one leg touch
-        m_legsValue.rl.hight += nearByLeg; // one leg touch
-        m_legsValue.rr.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight( -liftLeg, pairLeg, nearByLeg, -oppositeLeg);
         rockForward = -rockForwardValue;
       }
     }
@@ -159,19 +159,13 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
       // start of cycle
       m_legsValue.fr.shift = -sequenceCounterShifted * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
-      m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fl.hight += pairLeg; // one leg touch
-      m_legsValue.rr.hight += nearByLeg; // one leg touch
-      m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+      _setLegsHight(pairLeg, -rbState.legLiftNow, -oppositeLeg, nearByLeg);
       rockForward = -rockForwardValue;
     } else if (sequenceCounterShifted > SERVO_FULL_CYCLE - liftLegPoint) {
       // end of cycle
       m_legsValue.fr.shift = (SERVO_FULL_CYCLE - sequenceCounterShifted) * quickShiftMultiplier;
       m_legsValue.fr.lifted = true;
-      m_legsValue.fr.hight -= rbState.legLiftNow; // lifted
-      m_legsValue.fl.hight += pairLeg; // one leg touch
-      m_legsValue.rr.hight += nearByLeg; // one leg touch
-      m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+      _setLegsHight(pairLeg, -rbState.legLiftNow, -oppositeLeg, nearByLeg);
       rockForward = -rockForwardValue;
     } else {
       // linear
@@ -182,10 +176,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
         m_legsValue.fr.hight -= touchLeg; // almost touch
         m_legsValue.fr.lifted = true;
       } else if (sequenceCounterShifted == SERVO_FULL_CYCLE - liftLegPoint) {
-        m_legsValue.fr.hight -= liftLeg; // start lifting
-        m_legsValue.fl.hight += pairLeg; // one leg touch
-        m_legsValue.rr.hight += nearByLeg; // one leg touch
-        m_legsValue.rl.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight(pairLeg, -liftLeg, -oppositeLeg, nearByLeg);
         rockForward = -rockForwardValue;
       }
     }
@@ -198,7 +189,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
       m_legsValue.rr.lifted = m_legsValue.fl.lifted;
       m_legsValue.rr.hight = m_legsValue.fl.hight;
     } else {
-      // ino or crawl
+      // ino
       m_legsValue.rl.hight = rbState.legHightNow;
       m_legsValue.rr.hight = rbState.legHightNow;
       // rr
@@ -206,19 +197,13 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
         // start of cycle
         m_legsValue.rr.shift = -sequenceRearCounter * quickShiftMultiplier;
         m_legsValue.rr.lifted = true;
-        m_legsValue.rr.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rl.hight += pairLeg; // one leg touch
-        m_legsValue.fr.hight += nearByLeg; // one leg touch
-        m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight( -oppositeLeg, nearByLeg, pairLeg, -rbState.legLiftNow);
         rockForward = rockForwardValue;
       } else if (sequenceRearCounter > SERVO_FULL_CYCLE - liftLegPoint) {
         // end of cycle
         m_legsValue.rr.shift = (SERVO_FULL_CYCLE - sequenceRearCounter) * quickShiftMultiplier;
         m_legsValue.rr.lifted = true;
-        m_legsValue.rr.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rl.hight += pairLeg; // one leg touch
-        m_legsValue.fr.hight += nearByLeg; // one leg touch
-        m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight( -oppositeLeg, nearByLeg, pairLeg, -rbState.legLiftNow);
         rockForward = rockForwardValue;
       } else {
         // linear
@@ -229,10 +214,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
           m_legsValue.rr.hight -= touchLeg; // almost touch
           m_legsValue.rr.lifted = true;
         } else if (sequenceRearCounter == SERVO_FULL_CYCLE - liftLegPoint) {
-          m_legsValue.rr.hight -= liftLeg; // start lifting
-          m_legsValue.rl.hight += pairLeg; // one leg touch
-          m_legsValue.fr.hight += nearByLeg; // one leg touch
-          m_legsValue.fl.hight -= oppositeLeg; // opposite leg in ino mode
+          _setLegsHight( -oppositeLeg, nearByLeg, pairLeg, -liftLeg);
           rockForward = rockForwardValue;
         }
       }
@@ -241,19 +223,13 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
         // start of cycle
         m_legsValue.rl.shift = -sequenceRearCounterShifted * quickShiftMultiplier;
         m_legsValue.rl.lifted = true;
-        m_legsValue.rl.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rr.hight += pairLeg; // one leg touch
-        m_legsValue.fl.hight += nearByLeg; // one leg touch
-        m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight(nearByLeg, -oppositeLeg, -rbState.legLiftNow, pairLeg);
         rockForward = rockForwardValue;
       } else if (sequenceRearCounterShifted > SERVO_FULL_CYCLE - liftLegPoint) {
         // end of cycle
         m_legsValue.rl.shift = (SERVO_FULL_CYCLE - sequenceRearCounterShifted) * quickShiftMultiplier;
         m_legsValue.rl.lifted = true;
-        m_legsValue.rl.hight -= rbState.legLiftNow; // lifted
-        m_legsValue.rr.hight += pairLeg; // one leg touch
-        m_legsValue.fl.hight += nearByLeg; // one leg touch
-        m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+        _setLegsHight(nearByLeg, -oppositeLeg, -rbState.legLiftNow, pairLeg);
         rockForward = rockForwardValue;
       } else {
         // linear
@@ -264,10 +240,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow) {
           m_legsValue.rl.hight -= touchLeg; // almost touch
           m_legsValue.rl.lifted = true;
         } else if (sequenceRearCounterShifted == SERVO_FULL_CYCLE - liftLegPoint) {
-          m_legsValue.rl.hight -= liftLeg; // start lifting
-          m_legsValue.rr.hight += pairLeg; // one leg touch
-          m_legsValue.fl.hight += nearByLeg; // one leg touch
-          m_legsValue.fr.hight -= oppositeLeg; // opposite leg in ino mode
+          _setLegsHight(nearByLeg, -oppositeLeg, -liftLeg, pairLeg);
           rockForward = rockForwardValue;
         }
       }

@@ -5,6 +5,8 @@ Arduino nano
 Robot legs switches
 */
 
+#define SW_MARGINE_CYCLE     1
+
 // pin numbers for switch
 enum swPins {
   FL_SWITCH = 2,
@@ -12,15 +14,29 @@ enum swPins {
   RL_SWITCH = 4,
   RR_SWITCH = 5
 };
+// switches state
+enum swState {
+  SW_NORM,
+  SW_FL_BUMP,
+  SW_FR_BUMP,
+  SW_FRONT_HEAVY,
+  SW_REAR_HEAVY
+};
+// leg switch 
+struct switches {
+  short fl;
+  short fr;
+  short rl;
+  short rr;
+};
 
 // switches data
+switches swStateNow = {1, 1, 1, 1};
+// switches data
 switches swSum = {0, 0, 0, 0};
-
-/*
-uses
-m_swState
-m_swCount
-*/
+switches switchCount = {0, 0, 0, 0};
+// switch state
+unsigned char swsState = SW_NORM;
 
 // init Switches
 void initSwitches(bool calibrationMode) {
@@ -41,41 +57,91 @@ void initSwitches(bool calibrationMode) {
       calibrationMode = false;
     }
     if (counter == 0) {
-      Serial.print(F(" Count fl "));
-      Serial.print((int)m_swCount.fl);
-      Serial.print(F(" fr "));
-      Serial.print((int)m_swCount.fr);
-      Serial.print(F(" rl "));
-      Serial.print((int)m_swCount.rl);
-      Serial.print(F(" rr "));
-      Serial.println((int)m_swCount.rr);
+      _printSwitchesState(getSwitchesState());
     }
   }
 }
 
 // read switches
 void readSwitchesCount(unsigned char counter) {
-  m_swState.fl = digitalRead(FL_SWITCH);
-  m_swState.fr = digitalRead(FR_SWITCH);
-  m_swState.rl = digitalRead(RL_SWITCH);
-  m_swState.rr = digitalRead(RR_SWITCH);
+  swStateNow.fl = digitalRead(FL_SWITCH);
+  swStateNow.fr = digitalRead(FR_SWITCH);
+  swStateNow.rl = digitalRead(RL_SWITCH);
+  swStateNow.rr = digitalRead(RR_SWITCH);
   //
   if (counter == 0) {
-    m_swCount.fl = swSum.fl;
+    switchCount.fl = swSum.fl;
     swSum.fl = 0;
-    m_swCount.fr = swSum.fr;
+    switchCount.fr = swSum.fr;
     swSum.fr = 0;
-    m_swCount.rl = swSum.rl;
+    switchCount.rl = swSum.rl;
     swSum.rl = 0;
-    m_swCount.rr = swSum.rr;
+    switchCount.rr = swSum.rr;
     swSum.rr = 0;
-    //Serial.println(" ");
   }
-  //Serial.print(F(" "));
-  //Serial.print((int)m_swState.fl);
-  swSum.fl += m_swState.fl;
-  swSum.fr += m_swState.fr;
-  swSum.rl += m_swState.rl;
-  swSum.rr += m_swState.rr;
-  //
+  if (m_legsValue.fl.lifted) {
+    swSum.fl += swStateNow.fl;
+  }
+  if (m_legsValue.fr.lifted) {
+    swSum.fr += swStateNow.fr;
+  }
+  if (m_legsValue.rl.lifted) {
+    swSum.rl += swStateNow.rl;
+  }
+  if (m_legsValue.rr.lifted) {
+    swSum.rr += swStateNow.rr;
+  }
+}
+
+// get switches state
+unsigned char getSwitchesState(void) {
+  // set state
+  if ((switchCount.fl + SW_MARGINE_CYCLE) < ((switchCount.fr + switchCount.rl + switchCount.rr) / 3)) {
+    // fl bump
+    swsState = SW_FL_BUMP;
+  } else if ((switchCount.fr + SW_MARGINE_CYCLE) < ((switchCount.fl + switchCount.rl + switchCount.rr) / 3)) {
+    // fr bump
+    swsState = SW_FR_BUMP;
+  } else if ((switchCount.fl + switchCount.fr) > (switchCount.rl + switchCount.rr + SW_MARGINE_CYCLE)) {
+    // rear too heavy
+    swsState = SW_REAR_HEAVY;
+  } else if ((switchCount.fl + switchCount.fr + SW_MARGINE_CYCLE) < (switchCount.rl + switchCount.rr)) {
+    // front too heavy
+    swsState = SW_FRONT_HEAVY;
+  } else {
+    swsState = SW_NORM;
+  }
+  _printSwitchesState(swsState);
+  return swsState;
+}
+
+// print switches state
+void _printSwitchesState(unsigned char swState) {
+  switch (swState) {
+    case SW_FL_BUMP:
+      Serial.print(F(" SW_FL_BUMP "));
+    break;
+    case SW_FR_BUMP:
+      Serial.print(F(" SW_FR_BUMP "));
+    break;
+    case SW_FRONT_HEAVY:
+      Serial.print(F(" SW_FRONT_HEAVY "));
+    break;
+    case SW_REAR_HEAVY:
+      Serial.print(F(" SW_REAR_HEAVY "));
+    break;
+    case SW_NORM:
+      Serial.print(F(" SW_NORM "));
+    break;
+    default:
+      Serial.print(F(" Wrong switch state "));
+  }
+    Serial.print(F(" Count "));
+    Serial.print((int)switchCount.fl);
+    Serial.print(F(" "));
+    Serial.print((int)switchCount.fr);
+    Serial.print(F(" "));
+    Serial.print((int)switchCount.rl);
+    Serial.print(F(" "));
+    Serial.println((int)switchCount.rr);
 }

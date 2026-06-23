@@ -21,9 +21,9 @@ Main file
 // maximal hight
 #define HIGHT_MAX               160
 // servo counters
-#define SERVO_FULL_CYCLE        36
-#define SERVO_HALF_CYCLE        18
-#define SERVO_QUARTER_CYCLE     9
+#define SERVO_FULL_CYCLE        64
+#define SERVO_HALF_CYCLE        32
+#define SERVO_QUARTER_CYCLE     16
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -117,22 +117,12 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
-// leg switch 
-struct switches {
-  unsigned char fl;
-  unsigned char fr;
-  unsigned char rl;
-  unsigned char rr;
-};
 
 //---------------global variables---------------------------
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// switches data
-switches m_swState = {1, 1, 1, 1};
-switches m_swCount = {0, 0, 0, 0};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -229,7 +219,6 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  readSwitchesCount(mCounter);
   setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
   updateLegsServoCount();
   delay(TIME_DELAY);
@@ -242,6 +231,7 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
+  //readSwitchesCount(mCounter);
   // update center motors
   //updateCenterCount(getspeedLPath(), getspeedRPath());
 }
@@ -290,7 +280,7 @@ void setup() {
     calibrationMode = true;
   }
   // init switches
-  initSwitches(calibrationMode);
+  //initSwitches(calibrationMode);
   // init sensors
   initInputs(calibrationMode);
   // attach center servo
@@ -356,6 +346,7 @@ void setup() {
 void loop() {
   if (mCounter == 0) {
     // once in a pattern
+    //getSwitchesState();
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());
     // get pattern
