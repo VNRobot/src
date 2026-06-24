@@ -33,6 +33,8 @@ unsigned long currentSum2 = 0;
 unsigned long currentSum3 = 0;
 // state of current and voltage
 unsigned char currentStateNow = C_NORMAL;
+// current counter
+unsigned char currentCounter = 1;
 
 /*
 uses
@@ -45,10 +47,10 @@ void initCurrent(bool calibrationMode) {
   unsigned char counter = 0;
   while (calibrationMode) {
     counter ++;
-    if (counter >= MAIN_FULL_CYCLE) {
+    if (counter >= SERVO_FULL_CYCLE) {
       counter = 0;
     }
-    delay(10);
+    delay(20);
     if (m_getButtonPressed()) {
       calibrationMode = false;
     }
@@ -65,11 +67,11 @@ void updateCurrentCount(unsigned char counter) {
   // end of previous cycle
   if (counter == 0) {
     // average
-    batteryV /= MAIN_FULL_CYCLE;
-    currentSum1 /= MAIN_FULL_CYCLE;
+    batteryV /= currentCounter;
+    currentSum1 /= currentCounter;
     if (extraCurrentEnabled) {
-      currentSum2 /= MAIN_FULL_CYCLE;
-      currentSum3 /= MAIN_FULL_CYCLE;
+      currentSum2 /= currentCounter;
+      currentSum3 /= currentCounter;
     }
     // to ma
     // current 1
@@ -117,6 +119,7 @@ void updateCurrentCount(unsigned char counter) {
       currentSum2 = (unsigned short)analogRead(A3);
       currentSum3 = (unsigned short)analogRead(A2);
     }
+    currentCounter = 1;
   } else {
     // add to value
     batteryV += (unsigned short)analogRead(A6);
@@ -125,6 +128,7 @@ void updateCurrentCount(unsigned char counter) {
       currentSum2 += (unsigned short)analogRead(A3);
       currentSum3 += (unsigned short)analogRead(A2);
     }
+    currentCounter ++;
   }
 }
 
