@@ -15,20 +15,25 @@ enum diState {
   DI_BACKWARD_TURN = 50
 };
 
-// robot state structure
-typedef struct roboPathState {
+// path parameters structure
+typedef struct pathParameters {
   char maximalSpeed;
-} roboPathState;
+  bool stepTurningEnabled;
+  bool stepsDistanceCountEnabled;
+} pathParameters;
 
 // robot state
-roboPathState rpState = {
-  3                      // char maximalSpeed;
+pathParameters pathParams = {
+  3,                      // char maximalSpeed;
+  false,                  // bool stepTurningEnabled;
+  false                   // bool stepsDistanceCountEnabled
 };
 
-// enable step turning
-bool stepTurningEnabled = false;
-// enable steps distance count
-bool stepsDistanceCountEnabled = false;
+/*
+uses
+m_mainTiming
+*/
+
 // speed relative value from 0 to 2
 char speedAbsolute = 0;
 // walking direction
@@ -43,10 +48,10 @@ bool onThePath = false;
 
 // calculate absolute speed
 void _setAbsoluteSpeed(short direction) {
-  if (speedAbsolute < -rpState.maximalSpeed) {
+  if (speedAbsolute < -pathParams.maximalSpeed) {
     speedAbsolute ++;
   }
-  if (speedAbsolute > rpState.maximalSpeed) {
+  if (speedAbsolute > pathParams.maximalSpeed) {
     speedAbsolute --;
   }
   // walking mode
@@ -54,7 +59,7 @@ void _setAbsoluteSpeed(short direction) {
     // plan to go
     if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward
-      if (speedAbsolute < rpState.maximalSpeed) {
+      if (speedAbsolute < pathParams.maximalSpeed) {
         speedAbsolute ++;
       }
       walkFrward = true;
@@ -70,7 +75,7 @@ void _setAbsoluteSpeed(short direction) {
       walkFrward = false;
     } else {
       // go back
-      if (speedAbsolute < rpState.maximalSpeed) {
+      if (speedAbsolute < pathParams.maximalSpeed) {
         speedAbsolute ++;
       }
       walkFrward = false;
@@ -89,10 +94,10 @@ char _sideSpeed(short direction, char speed) {
   if (walkFrward) {
     // forward
     if (direction >= DI_FORWARD) {
-      if (speed < rpState.maximalSpeed) {
+      if (speed < pathParams.maximalSpeed) {
         speed ++;
       }
-      if (speed < rpState.maximalSpeed) {
+      if (speed < pathParams.maximalSpeed) {
         speed ++;
       }
     }
@@ -107,10 +112,10 @@ char _sideSpeed(short direction, char speed) {
   } else {
     // backward
     if (direction <= - DI_FORWARD) {
-      if (speed < rpState.maximalSpeed) {
+      if (speed < pathParams.maximalSpeed) {
         speed ++;
       }
-      if (speed < rpState.maximalSpeed) {
+      if (speed < pathParams.maximalSpeed) {
         speed ++;
       }
     }
@@ -133,16 +138,16 @@ void updatePath(short direction) {
   // step turning
   speedLNow = _sideSpeed(-direction, speedAbsolute);
   speedRNow = _sideSpeed(direction, speedAbsolute);
-  if (!stepTurningEnabled) {
+  if (!pathParams.stepTurningEnabled) {
     if (speedLNow < speedRNow) {
       speedLNow = speedRNow;
     } else if (speedRNow < speedLNow) {
       speedRNow = speedLNow;
     }
   }
-  if (stepsDistanceCountEnabled) {
+  if (pathParams.stepsDistanceCountEnabled) {
     // step size
-    short stepSize = ((SERVO_HALF_CYCLE - (speedAbsolute))* speedAbsolute * 2) / ROBOT_SIZE_DEVIDER;
+    short stepSize = ((m_mainTiming.halfCycle - speedAbsolute)* speedAbsolute * 2) / ROBOT_SIZE_DEVIDER;
     // update distance to target
     if (distanceToTarget > stepSize) {
       distanceToTarget -= stepSize;
@@ -323,30 +328,17 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
   return direction;
 }
 
-// set robot state
-void setStatePath(unsigned char newState) {
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      rpState.maximalSpeed = 3;
-    }
-    break;
-    case ROBOT_INO:
-    {
-      rpState.maximalSpeed = 3;
-    }
-    break;
-    default:
-    break;
-  }
+// set maximal speed
+void setMaxPathSpeed(char speed) {
+  pathParams.maximalSpeed = speed;
 }
 
 // enable step turning
 void enableTurningPath(bool turning) {
-  stepTurningEnabled = turning;
+  pathParams.stepTurningEnabled = turning;
 }
 
 // enable distance counting
-void enableCountingPath(bool turning) {
-  stepsDistanceCountEnabled = turning;
+void enableCountingPath(bool counting) {
+  pathParams.stepsDistanceCountEnabled = counting;
 }

@@ -30,24 +30,24 @@ enum senState {
   SEN_BLOCK    = 3
 };
 
-// robot state structure
-typedef struct roboInputState {
+// input parameters structure
+typedef struct inputParameters {
   short legHightNow;
-} roboInputState;
+  bool sensorsEnabled;
+  bool edgeEnabled;
+  bool extraInputsEnabled;
+  bool obstacleEnabled;
+} inputParameters;
 
-// robot state
-roboInputState riState = {
-  HIGHT_DEFAULT           // short legHightNow;
+// input parameters
+inputParameters inputParams = {
+  HIGHT_DEFAULT,           // short legHightNow;
+  false,                   // bool sensorsEnabled;
+  false,                   // bool edgeEnabled;
+  false,                   // bool extraInputsEnabled;
+  false                    // bool obstacleEnabled;
 };
 
-// sensors enabled
-bool sensorsEnabled = false;
-// edge enabled
-bool edgeEnabled = false;
-// extra inputs enabled
-bool extraInputsEnabled = false;
-// obstacle enabled
-bool obstacleEnabled = false;
 // assume wall angle
 short wallAngle = 0;
 // sensors state
@@ -96,12 +96,12 @@ unsigned char _getStateFromRaw(unsigned short inputValue) {
     return SEN_WALL;
   }
   if (inputValue > SENSOR_DISTANCE_NORM) {
-    if (obstacleEnabled) {
+    if (inputParams.obstacleEnabled) {
       return SEN_OBSTACLE;
     }
   }
   if (inputValue < SENSOR_DISTANCE_MAX) {
-    if (edgeEnabled && obstacleEnabled) {
+    if (inputParams.edgeEnabled && inputParams.obstacleEnabled) {
       return SEN_OBSTACLE;
     }
   }
@@ -164,7 +164,7 @@ void initInputs(bool calibrationMode) {
   unsigned char counter = 0;
   while (calibrationMode) {
     counter ++;
-    if (counter >= SERVO_FULL_CYCLE) {
+    if (counter >= 32) {
       counter = 0;
     }
     delay(20);
@@ -176,7 +176,7 @@ void initInputs(bool calibrationMode) {
       _printSensorState(sensorStateLeft);
       _printSensorState(sensorStateRight);
       _printInputState();
-      if (extraInputsEnabled) {
+      if (inputParams.extraInputsEnabled) {
         Serial.print(F(" Average left "));
         Serial.print((int)leftExtraSensorAverage);
         Serial.print(F(" Average Right "));
@@ -193,15 +193,15 @@ void initInputs(bool calibrationMode) {
 // update sensor readings
 void updateInputsCount(unsigned char counter) {
   //
-  if (extraInputsEnabled) {
+  if (inputParams.extraInputsEnabled) {
     //
-    leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - riState.legHightNow / ROBOT_SIZE_DEVIDER;
+    leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
     leftExtraSensorBallanced = (leftExtraSensorValue + leftExtraSensorBuffer0 + leftExtraSensorBuffer1 + leftExtraSensorBuffer2) / 4;
     leftExtraSensorBuffer2 = leftExtraSensorBuffer1;
     leftExtraSensorBuffer1 = leftExtraSensorBuffer0;
     leftExtraSensorBuffer0 = leftExtraSensorValue;
     //
-    rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - riState.legHightNow / ROBOT_SIZE_DEVIDER;
+    rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
     rightExtraSensorBallanced = (rightExtraSensorValue + rightExtraSensorBuffer0 + rightExtraSensorBuffer1 + rightExtraSensorBuffer2) / 4;
     rightExtraSensorBuffer2 = rightExtraSensorBuffer1;
     rightExtraSensorBuffer1 = rightExtraSensorBuffer0;
@@ -235,7 +235,7 @@ void updateInputsCount(unsigned char counter) {
   //
   if (counter == 0) {
     // process analog sensors
-    if (sensorsEnabled) {
+    if (inputParams.sensorsEnabled) {
       leftSensorAverage = (leftSensorValue + leftSensorBuffer0 + leftSensorBuffer1 + leftSensorBuffer2) / 4;
       rightSensorAverage = (rightSensorValue + rightSensorBuffer0 + rightSensorBuffer1 + rightSensorBuffer2) / 4;
       if ((rightSensorAverage > SENSOR_NO_DATA) || (leftSensorAverage > SENSOR_NO_DATA)) {
@@ -249,7 +249,7 @@ void updateInputsCount(unsigned char counter) {
         //
         sensorStateRight = _getStateFromRaw(rightSensorAverage); // right
         sensorStateLeft = _getStateFromRaw(leftSensorAverage); // left
-        //if (extraInputsEnabled) {
+        //if (inputParams.extraInputsEnabled) {
         //  if (getExtraInputLeft() > 40) {
         //    sensorStateRight = SEN_BLOCK;
         //  }
@@ -262,7 +262,7 @@ void updateInputsCount(unsigned char counter) {
       } else {
         // no data
         wallAngle = 0;
-        if (edgeEnabled) {
+        if (inputParams.edgeEnabled) {
           inputStateNow = IN_OBSTACLE_FRONT;
         } else {
           inputStateNow = IN_NORMAL;
@@ -272,7 +272,7 @@ void updateInputsCount(unsigned char counter) {
       inputStateNow = IN_NORMAL;
     }
     // process extras
-    if (extraInputsEnabled) {
+    if (inputParams.extraInputsEnabled) {
       if ((getExtraInputLeft() < -20) || (getExtraInputRight() < -20)) {
         extraStateNow = EX_STEP_UP_BIG;
       } else if ((getExtraInputLeft() < -10) || (getExtraInputRight() < -10)) {
@@ -316,42 +316,29 @@ unsigned char getExtraInputState(void) {
   return extraStateNow;
 }
 
-// set robot state
-void setStateInputs(unsigned char newState) {
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      riState.legHightNow = HIGHT_DEFAULT;
-    }
-    break;
-    case ROBOT_INO:
-    {
-      riState.legHightNow = HIGHT_DEFAULT;
-    }
-    break;
-    default:
-    break;
-  }
+// set sensor hight
+void setInputsHight(short hight) {
+  inputParams.legHightNow = hight;
 }
 
 // enable sensors
 void enableSensorInputs(bool inputs) {
-  sensorsEnabled = inputs;
+  inputParams.sensorsEnabled = inputs;
 }
 
 // enable extra sensors
-void enableExtraInputs(bool inputs) {
-  extraInputsEnabled = inputs;
+void enableExtraInputs(bool extra) {
+  inputParams.extraInputsEnabled = extra;
 }
 
 // enable edges
-void enableEdgeInputs(bool inputs) {
-  edgeEnabled = inputs;
+void enableEdgeInputs(bool edge) {
+  inputParams.edgeEnabled = edge;
 }
 
 // enable obstacles
-void enableObstacleInputs(bool inputs) {
-  obstacleEnabled = inputs;
+void enableObstacleInputs(bool obstacle) {
+  inputParams.obstacleEnabled = obstacle;
 }
 
 // print input state

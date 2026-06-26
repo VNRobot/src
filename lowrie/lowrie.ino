@@ -20,17 +20,13 @@ Main file
 #define HIGHT_DEFAULT           130
 // maximal hight
 #define HIGHT_MAX               160
-// servo counters
-#define SERVO_FULL_CYCLE        64
-#define SERVO_HALF_CYCLE        32
-#define SERVO_QUARTER_CYCLE     16
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
 #define ROBOT_SIZE_DEVIDER      2
-// state counter
-#define STATE_COUNTER           4
+// counter to keep state the same
+#define STATE_COUNTER           2
 
 // input state
 enum inState {
@@ -117,12 +113,20 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
+// structure for timing
+struct timing {
+  short fullCycle;
+  short halfCycle;
+  short quarterCycle;
+};
 
 //---------------global variables---------------------------
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
+// main timing
+timing m_mainTiming = {64, 32, 16};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -164,22 +168,22 @@ void _doQuickAndOther(unsigned char patternNow) {
     break;
     case Q_DORECOVER:
     {
-      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
         setFlippedServo(1, -1);
-        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
         setFlippedServo(-1, 1);
-        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       } else {
         setFlippedServo(-1, 1);
-        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
         setFlippedServo(1, -1);
-        setServo(HIGHT_MAX, HIGHT_MAX, 0);
+        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       }
-      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       setFlippedGyro(false);
       setFlippedServo(1, 1);
-      setServo(HIGHT_LOW, HIGHT_LOW, 0);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
     }
     break;
     case Q_DOFLIP:
@@ -219,7 +223,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath());
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -238,19 +242,38 @@ void _doCycle(void) {
 
 // set robot state
 void _setState(unsigned char newState) {
-  //setStatePattern(newState);
-  //setStatePath(newState);
-  //setStateInputs(newState);
   //Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
+      m_mainTiming.fullCycle = 64;
+      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
+      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
+      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setMaxPathSpeed(3);
+      setInputsHight(HIGHT_DEFAULT);
+      enableSensorInputs(true);
+      enableObstacleInputs(false);
+      enableEdgeInputs(false);
+      enableStaticBallance(false);
+      enableDynamicBallance(false);
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
+      m_mainTiming.fullCycle = 64;
+      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
+      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
+      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setMaxPathSpeed(3);
+      setInputsHight(HIGHT_DEFAULT);
+      enableSensorInputs(true);
+      enableObstacleInputs(false);
+      enableEdgeInputs(false);
+      enableStaticBallance(false);
+      enableDynamicBallance(false);
     }
     break;
     default:
@@ -265,12 +288,8 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  enableBallancePatterns(true);
   enableExtraCurrent(true);
-  enableSensorInputs(true);
   enableExtraInputs(false);
-  enableEdgeInputs(false);
-  enableObstacleInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
   // check button press
@@ -359,10 +378,10 @@ void loop() {
       updatePath(getDirectionGyro());
       // check for robot state
       if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = 0; //STATE_COUNTER * 2;
+        stateCounter = STATE_COUNTER * 2;
       } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
         if (stateCounter < STATE_COUNTER) {
-          stateCounter = 0; //STATE_COUNTER;
+          stateCounter = STATE_COUNTER;
         }
       }
       // set state

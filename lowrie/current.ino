@@ -47,7 +47,7 @@ void initCurrent(bool calibrationMode) {
   unsigned char counter = 0;
   while (calibrationMode) {
     counter ++;
-    if (counter >= SERVO_FULL_CYCLE) {
+    if (counter >= 32) {
       counter = 0;
     }
     delay(20);
