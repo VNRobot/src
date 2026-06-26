@@ -5,11 +5,6 @@ Arduino nano
 Operates servo motors
 */
 
-// center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT  0
-// shift to increase distance between front and rear legs
-#define TRAPEZ_SHIFT            0
-
 // pin numbers for servo motors
 enum dPinsServo {
   FL1_MOTOR = 6,
@@ -99,61 +94,6 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   return (short)(90 - AngleB - AngleC);
 }
 
-// linear motor move
-void _moveLinearServo(short hi1, short hi2, short timeDelay) {
-  bool doLoop = true;
-  while (doLoop) {
-    //
-    if (hightSetValueL > hi1) {
-      hightSetValueL --;
-    } else if (hightSetValueL < hi1) {
-      hightSetValueL ++;
-    }
-    if (hightSetValueR > hi2) {
-      hightSetValueR --;
-    } else if (hightSetValueR < hi2) {
-      hightSetValueR ++;
-    }
-    //
-    if (forwardSetValueL > 0) {
-      forwardSetValueL --;
-    } else if (forwardSetValueL < 0) {
-      forwardSetValueL ++;
-    }
-    if (forwardSetValueR > 0) {
-      forwardSetValueR --;
-    } else if (forwardSetValueR < 0) {
-      forwardSetValueR ++;
-    }
-    if ((forwardSetValueL == 0) && (hightSetValueL == hi1) && (forwardSetValueR == 0) && (hightSetValueR == hi2)) {
-      doLoop = false;
-    }
-    _moveServo();
-    delay(timeDelay);
-  }
-}
-
-// fast motor move
-void _moveServo(void) {
-  short mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 1);
-  short mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 2);
-  servoMotorAngleValue[0] = flippedL * mValue1;
-  servoMotorAngleValue[1] = - flippedL * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT), 1);
-  mValue2 = _calculateMotorAngle((int)hightSetValueL, (int)(forwardSetValueL + FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT), 2);
-  servoMotorAngleValue[4] = flippedL * mValue1;
-  servoMotorAngleValue[5] = - flippedL * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightSetValueR, (int)(forwardSetValueR + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 1);
-  mValue2 = _calculateMotorAngle((int)hightSetValueR, (int)(forwardSetValueR + FORWARD_BALLANCE_SHIFT - TRAPEZ_SHIFT), 2);
-  servoMotorAngleValue[2] = - flippedR * mValue1;
-  servoMotorAngleValue[3] = flippedR * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightSetValueR, (int)(forwardSetValueR + FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT), 1);
-  mValue2 = _calculateMotorAngle((int)hightSetValueR, (int)(forwardSetValueR + FORWARD_BALLANCE_SHIFT + TRAPEZ_SHIFT), 2);
-  servoMotorAngleValue[6] = - flippedR * mValue1;
-  servoMotorAngleValue[7] = flippedR * mValue2;
-  _doPWMServo();
-}
-
 // limit angle value
 short _limitMotorValue(short mAngle) {
   if (mAngle > 180) {
@@ -162,6 +102,39 @@ short _limitMotorValue(short mAngle) {
     mAngle = 0;
   }
   return mAngle;
+}
+
+// do servo pwm cycle 500, 2500
+void _doPWMServo(void) {
+  servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
+  servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
+  servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
+  servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
+  servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
+  servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
+  servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
+  servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
+}
+
+// fast motor move
+void _moveServosQuick(short hightL, short shiftL, short hightR, short shiftR) {
+  short mValue1 = _calculateMotorAngle((int)hightL, (int)(shiftL), 1);
+  short mValue2 = _calculateMotorAngle((int)hightL, (int)(shiftL), 2);
+  servoMotorAngleValue[0] = flippedL * mValue1;
+  servoMotorAngleValue[1] = - flippedL * mValue2;
+  mValue1 = _calculateMotorAngle((int)hightL, (int)(shiftL), 1);
+  mValue2 = _calculateMotorAngle((int)hightL, (int)(shiftL), 2);
+  servoMotorAngleValue[4] = flippedL * mValue1;
+  servoMotorAngleValue[5] = - flippedL * mValue2;
+  mValue1 = _calculateMotorAngle((int)hightR, (int)(shiftR), 1);
+  mValue2 = _calculateMotorAngle((int)hightR, (int)(shiftR), 2);
+  servoMotorAngleValue[2] = - flippedR * mValue1;
+  servoMotorAngleValue[3] = flippedR * mValue2;
+  mValue1 = _calculateMotorAngle((int)hightR, (int)(shiftR), 1);
+  mValue2 = _calculateMotorAngle((int)hightR, (int)(shiftR), 2);
+  servoMotorAngleValue[6] = - flippedR * mValue1;
+  servoMotorAngleValue[7] = flippedR * mValue2;
+  _doPWMServo();
 }
 
 // set flipped state
@@ -351,21 +324,50 @@ void detachServo(void) {
   delay(1000);
 }
 
-// set servo motors
-void setServo(short hightL, short hightR, short timeDelay) {
-  if (attached) {
-    if (timeDelay == 0) {
-      // set motors values fast
-      forwardSetValueL = 0;
-      hightSetValueL = hightL;
-      forwardSetValueR = 0;
-      hightSetValueR = hightR;
-      _moveServo();
-      delay(500);
-    } else {
-      // set motors values slow
-      _moveLinearServo(hightL, hightR, timeDelay);
+// linear motor move
+void setServo(short hi1, short hi2, short timeDelay) {
+  bool doLoop = true;
+  while (doLoop) {
+    //
+    if (hightSetValueL > hi1) {
+      hightSetValueL --;
+    } else if (hightSetValueL < hi1) {
+      hightSetValueL ++;
     }
+    if (hightSetValueR > hi2) {
+      hightSetValueR --;
+    } else if (hightSetValueR < hi2) {
+      hightSetValueR ++;
+    }
+    //
+    if (forwardSetValueL > 0) {
+      forwardSetValueL --;
+    } else if (forwardSetValueL < 0) {
+      forwardSetValueL ++;
+    }
+    if (forwardSetValueR > 0) {
+      forwardSetValueR --;
+    } else if (forwardSetValueR < 0) {
+      forwardSetValueR ++;
+    }
+    if ((forwardSetValueL == 0) && (hightSetValueL == hi1) && (forwardSetValueR == 0) && (hightSetValueR == hi2)) {
+      doLoop = false;
+    }
+    _moveServosQuick(hightSetValueL, forwardSetValueL, hightSetValueR, forwardSetValueR);
+    delay(timeDelay);
+  }
+}
+
+// set servo motors
+void setServoQuick(short hightL, short hightR, short timeDelay) {
+  if (attached) {
+    // set motors values fast
+    forwardSetValueL = 0;
+    hightSetValueL = hightL;
+    forwardSetValueR = 0;
+    hightSetValueR = hightR;
+    _moveServosQuick(hightSetValueL, forwardSetValueL, hightSetValueR, forwardSetValueR);
+    delay(timeDelay);
   }
 }
 
@@ -380,16 +382,4 @@ void updateLegsServoCount(void) {
   servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
   servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
   _doPWMServo();
-}
-
-// do servo pwm cycle 500, 2500
-void _doPWMServo(void) {
-  servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
-  servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
-  servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
-  servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
-  servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
-  servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
-  servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
-  servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
 }
