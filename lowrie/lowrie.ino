@@ -86,7 +86,8 @@ enum gState {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_INO
+  ROBOT_INO,
+  ROBOT_CRAWL
 };
 // structure for one leg data
 struct leg {
@@ -125,7 +126,7 @@ struct timing {
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
 allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// main timing
+// main timing 64 32 16
 timing m_mainTiming = {64, 32, 16};
 //----------------------------------------------------------
 // main counter
@@ -223,7 +224,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount());
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter));
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -247,33 +248,31 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      m_mainTiming.fullCycle = 64;
-      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
-      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
       setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
-      setMaxPathSpeed(3);
       setInputsHight(HIGHT_DEFAULT);
-      enableSensorInputs(true);
+      setMaxPathSpeed(3);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
-      enableStaticBallance(false);
-      enableDynamicBallance(false);
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      m_mainTiming.fullCycle = 64;
-      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
-      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
       setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
-      setMaxPathSpeed(3);
       setInputsHight(HIGHT_DEFAULT);
-      enableSensorInputs(true);
+      setMaxPathSpeed(2);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
-      enableStaticBallance(false);
-      enableDynamicBallance(false);
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      //Serial.println("ROBOT_CRAWL");
+      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setInputsHight(HIGHT_DEFAULT);
+      setMaxPathSpeed(2);
+      enableObstacleInputs(false);
+      enableEdgeInputs(false);
     }
     break;
     default:
@@ -288,10 +287,16 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
+  m_mainTiming.fullCycle = 64;
+  m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
+  m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
   enableExtraCurrent(true);
   enableExtraInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
+  enableStaticBallance(true);
+  enableDynamicBallance(false);
+  enableSensorInputs(false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -389,7 +394,11 @@ void loop() {
         _setState(ROBOT_NORM);
         //setDirectionCenter(getDirectionGyro());
       } else {
-        _setState(ROBOT_INO);
+        if (stateCounter > STATE_COUNTER) {
+          _setState(ROBOT_CRAWL);
+        } else {
+          _setState(ROBOT_INO);
+        }
         stateCounter --;
       }
       _doCycle();

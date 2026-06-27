@@ -111,10 +111,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
     goForward = true;
   }
   // leg lift time point
-  unsigned char liftLegPoint = absoluteSpeed + 1;
-  if (patParam.legPairShiftNow == 0) {
-    liftLegPoint = (absoluteSpeed / 3) + 1;
-  }
+  unsigned char liftLegPoint = ((absoluteSpeed + 1) / 3) * 2 + 2; // 4
   quickShiftMultiplier = (m_mainTiming.halfCycle - liftLegPoint) / liftLegPoint;
   if (walkingModeNow) {
     // hight
@@ -139,8 +136,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
       m_legsValue.fl.lifted = false;
       // extras
       if (sequenceCounter == liftLegPoint) {
-        //m_legsValue.fl.hight -= TOUCHING_LEG_COMPENSATION; // almost touch
-        m_legsValue.fl.lifted = true;
+        //m_legsValue.fl.lifted = false;
         _setLegsHight( -TOUCHING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
         rockForward = -ROCK_FORWARD_COMPENSATION;
       } else if (sequenceCounter == m_mainTiming.fullCycle - liftLegPoint) {
@@ -173,8 +169,7 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
       m_legsValue.fr.lifted = false;
       // extras
       if (sequenceCounterShifted == liftLegPoint) {
-        //m_legsValue.fr.hight -= TOUCHING_LEG_COMPENSATION; // almost touch
-        m_legsValue.fr.lifted = true;
+        //m_legsValue.fr.lifted = false;
         _setLegsHight(PAIR_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
         rockForward = -ROCK_FORWARD_COMPENSATION;
       } else if (sequenceCounterShifted == m_mainTiming.fullCycle - liftLegPoint) {
@@ -188,85 +183,73 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
         rockForward = -ROCK_FORWARD_COMPENSATION / 2;
       }
     }
-    if (patParam.legPairShiftNow == 0) {
-      // set rear legs values by mirroring front legs
-      m_legsValue.rl.shift = m_legsValue.fr.shift;
-      m_legsValue.rl.lifted = m_legsValue.fr.lifted;
-      m_legsValue.rl.hight = m_legsValue.fr.hight;
-      m_legsValue.rr.shift = m_legsValue.fl.shift;
-      m_legsValue.rr.lifted = m_legsValue.fl.lifted;
-      m_legsValue.rr.hight = m_legsValue.fl.hight;
+    // ino
+    m_legsValue.rl.hight = patParam.legHightNow;
+    m_legsValue.rr.hight = patParam.legHightNow;
+    // rr
+    if (sequenceRearCounter < liftLegPoint) {
+      // start of cycle
+      m_legsValue.rr.shift = -sequenceRearCounter * quickShiftMultiplier;
+      m_legsValue.rr.lifted = true;
+      _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
+      rockForward = ROCK_FORWARD_COMPENSATION;
+    } else if (sequenceRearCounter > m_mainTiming.fullCycle - liftLegPoint) {
+      // end of cycle
+      m_legsValue.rr.shift = (m_mainTiming.fullCycle - sequenceRearCounter) * quickShiftMultiplier;
+      m_legsValue.rr.lifted = true;
+      _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
+      rockForward = ROCK_FORWARD_COMPENSATION;
     } else {
-      // ino
-      m_legsValue.rl.hight = patParam.legHightNow;
-      m_legsValue.rr.hight = patParam.legHightNow;
-      // rr
-      if (sequenceRearCounter < liftLegPoint) {
-        // start of cycle
-        m_legsValue.rr.shift = -sequenceRearCounter * quickShiftMultiplier;
-        m_legsValue.rr.lifted = true;
-        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
+      // linear  walking shift
+      m_legsValue.rr.shift = sequenceRearCounter - m_mainTiming.halfCycle;
+      m_legsValue.rr.lifted = false;
+      // extras
+      if (sequenceRearCounter == liftLegPoint) {
+        //m_legsValue.rr.lifted = false;
+        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION);
         rockForward = ROCK_FORWARD_COMPENSATION;
-      } else if (sequenceRearCounter > m_mainTiming.fullCycle - liftLegPoint) {
-        // end of cycle
-        m_legsValue.rr.shift = (m_mainTiming.fullCycle - sequenceRearCounter) * quickShiftMultiplier;
-        m_legsValue.rr.lifted = true;
-        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
+      } else if (sequenceRearCounter == m_mainTiming.fullCycle - liftLegPoint) {
+        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION);
         rockForward = ROCK_FORWARD_COMPENSATION;
-      } else {
-        // linear  walking shift
-        m_legsValue.rr.shift = sequenceRearCounter - m_mainTiming.halfCycle;
-        m_legsValue.rr.lifted = false;
-        // extras
-        if (sequenceRearCounter == liftLegPoint) {
-          //m_legsValue.rr.hight -= TOUCHING_LEG_COMPENSATION; // almost touch
-          m_legsValue.rr.lifted = true;
-          _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION);
-          rockForward = ROCK_FORWARD_COMPENSATION;
-        } else if (sequenceRearCounter == m_mainTiming.fullCycle - liftLegPoint) {
-          _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION);
-          rockForward = ROCK_FORWARD_COMPENSATION;
-        } else if (sequenceRearCounter == liftLegPoint + 1) {
-          // after leg is down
-          rockForward = ROCK_FORWARD_COMPENSATION / 2;
-        } else if (sequenceRearCounter == m_mainTiming.fullCycle - liftLegPoint - 1) {
-          // before leg is lifted
-          rockForward = ROCK_FORWARD_COMPENSATION / 2;
-        }
+      } else if (sequenceRearCounter == liftLegPoint + 1) {
+        // after leg is down
+        rockForward = ROCK_FORWARD_COMPENSATION / 2;
+      } else if (sequenceRearCounter == m_mainTiming.fullCycle - liftLegPoint - 1) {
+        // before leg is lifted
+        rockForward = ROCK_FORWARD_COMPENSATION / 2;
       }
-      // rl
-      if (sequenceRearCounterShifted < liftLegPoint) {
-        // start of cycle
-        m_legsValue.rl.shift = -sequenceRearCounterShifted * quickShiftMultiplier;
-        m_legsValue.rl.lifted = true;
-        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
+    }
+    // rl
+    if (sequenceRearCounterShifted < liftLegPoint) {
+      // start of cycle
+      m_legsValue.rl.shift = -sequenceRearCounterShifted * quickShiftMultiplier;
+      m_legsValue.rl.lifted = true;
+      _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
+      rockForward = ROCK_FORWARD_COMPENSATION;
+    } else if (sequenceRearCounterShifted > m_mainTiming.fullCycle - liftLegPoint) {
+      // end of cycle
+      m_legsValue.rl.shift = (m_mainTiming.fullCycle - sequenceRearCounterShifted) * quickShiftMultiplier;
+      m_legsValue.rl.lifted = true;
+      _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
+      rockForward = ROCK_FORWARD_COMPENSATION;
+    } else {
+      // linear  walking shift
+      m_legsValue.rl.shift = sequenceRearCounterShifted - m_mainTiming.halfCycle;
+      m_legsValue.rl.lifted = false;
+      // extras
+      if (sequenceRearCounterShifted == liftLegPoint) {
+        //m_legsValue.rl.lifted = false;
+        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
         rockForward = ROCK_FORWARD_COMPENSATION;
-      } else if (sequenceRearCounterShifted > m_mainTiming.fullCycle - liftLegPoint) {
-        // end of cycle
-        m_legsValue.rl.shift = (m_mainTiming.fullCycle - sequenceRearCounterShifted) * quickShiftMultiplier;
-        m_legsValue.rl.lifted = true;
-        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
+      } else if (sequenceRearCounterShifted == m_mainTiming.fullCycle - liftLegPoint) {
+        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
         rockForward = ROCK_FORWARD_COMPENSATION;
-      } else {
-        // linear  walking shift
-        m_legsValue.rl.shift = sequenceRearCounterShifted - m_mainTiming.halfCycle;
-        m_legsValue.rl.lifted = false;
-        // extras
-        if (sequenceRearCounterShifted == liftLegPoint) {
-          //m_legsValue.rl.hight -= TOUCHING_LEG_COMPENSATION; // almost touch
-          m_legsValue.rl.lifted = true;
-          _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
-          rockForward = ROCK_FORWARD_COMPENSATION;
-        } else if (sequenceRearCounterShifted == m_mainTiming.fullCycle - liftLegPoint) {
-          _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
-          rockForward = ROCK_FORWARD_COMPENSATION;
-        } else if (sequenceRearCounterShifted == liftLegPoint + 1) {
-          // after leg is down
-          rockForward = ROCK_FORWARD_COMPENSATION / 2;
-        } else if (sequenceRearCounterShifted == m_mainTiming.fullCycle - liftLegPoint - 1) {
-          // before leg is lifted
-          rockForward = ROCK_FORWARD_COMPENSATION / 2;
-        }
+      } else if (sequenceRearCounterShifted == liftLegPoint + 1) {
+        // after leg is down
+        rockForward = ROCK_FORWARD_COMPENSATION / 2;
+      } else if (sequenceRearCounterShifted == m_mainTiming.fullCycle - liftLegPoint - 1) {
+        // before leg is lifted
+        rockForward = ROCK_FORWARD_COMPENSATION / 2;
       }
     }
     // set speed
@@ -276,19 +259,17 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
     m_legsValue.fr.shift *= speedRNow;
     m_legsValue.rl.shift *= speedLNow;
     m_legsValue.rr.shift *= speedRNow;
+    // ballance part
     m_legsValue.fl.shift += ballanceShiftForward;
     m_legsValue.fr.shift += ballanceShiftForward;
     m_legsValue.rl.shift += ballanceShiftForward;
     m_legsValue.rr.shift += ballanceShiftForward;
-    // ballance part
-    if (patParam.legPairShiftNow != 0) {
-      m_legsValue.fl.shift += rockForward;
-      m_legsValue.fr.shift += rockForward;
-      m_legsValue.rl.shift += rockForward;
-      m_legsValue.rr.shift += rockForward;
-    }
+    m_legsValue.fl.shift += rockForward;
+    m_legsValue.fr.shift += rockForward;
+    m_legsValue.rl.shift += rockForward;
+    m_legsValue.rr.shift += rockForward;
     // compensate hight
-    char hightCompensation = ballanceShiftForward / 8;
+    char hightCompensation = ballanceShiftForward / 4;
     if (hightCompensation < 0) {
       hightCompensation = -hightCompensation;
     }

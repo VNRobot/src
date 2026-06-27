@@ -8,8 +8,8 @@ Robot static and dynamic ballance
 // center position in the leg forward shift. bigger the number more weight on front
 #define FORWARD_BALLANCE_SHIFT    -10
 // ballance correction max value
-#define DYNAMIC_BALLANCE_MAX       10
-#define STATIC_BALLANCE_MAX        10
+#define DYNAMIC_BALLANCE_MAX       20
+#define STATIC_BALLANCE_MAX        20
 #define STATIC_BALLANCE_MULIPLIER  4
 
 // robot state structure
@@ -28,6 +28,10 @@ roboBallanceState robalParam = {
 char dynamicForward = 0;
 // static forward ballance value
 char staticForward = 0;
+// sum of accelerometer values
+short sumF = 0;
+short sumR = 0;
+
 
 /*
 uses
@@ -36,35 +40,43 @@ m_legsValue
 */
 
 // dynamic ballance
-short getBallanceCount(void) {
+short getBallanceCount(unsigned char counter) {
   if (robalParam.dynamicEnabled) {
     // get diving value
     if (m_legsValue.fl.lifted) {
-      if (m_gyroState.aLiftFL < m_gyroState.aLiftRR) {
-        // fl leg too heavy
-        dynamicForward --;
-      }
+      sumF += m_gyroState.aLiftFL;
     } else if (m_legsValue.fr.lifted) {
-      if (m_gyroState.aLiftFR < m_gyroState.aLiftRL) {
-        // fr leg too heavy
-        dynamicForward --;
-      }
+      sumF += m_gyroState.aLiftFR;
     } else if (m_legsValue.rl.lifted) {
-      if (m_gyroState.aLiftRL < m_gyroState.aLiftFR) {
-        // rl leg too heavy
-        dynamicForward ++;
-      }
+      sumR += m_gyroState.aLiftRL;
     } else if (m_legsValue.rr.lifted) {
-      if (m_gyroState.aLiftRR < m_gyroState.aLiftFL) {
-        // rr leg too heavy
+      sumR += m_gyroState.aLiftRR;
+    }
+    if (counter == 0) {
+      sumF /= 10;
+      sumR /= 10;
+      // too heavy - negative
+      //Serial.print(" F ");
+      //Serial.print((int)sumF);
+      //Serial.print(" R ");
+      //Serial.println((int)sumR);
+      if (sumF < sumR) {
+        // front too heavy
+        //Serial.println(" Front heavy ");
+        dynamicForward --;
+      } else if (sumF > sumR) {
+        // rear too heavy
+        //Serial.println(" Rear heavy ");
         dynamicForward ++;
       }
-    }
-    if (dynamicForward > DYNAMIC_BALLANCE_MAX) {
-      dynamicForward = DYNAMIC_BALLANCE_MAX;
-    }
-    if (dynamicForward < -DYNAMIC_BALLANCE_MAX) {
-      dynamicForward = -DYNAMIC_BALLANCE_MAX;
+      sumF = 0;
+      sumR = 0;
+      if (dynamicForward > DYNAMIC_BALLANCE_MAX) {
+        dynamicForward = DYNAMIC_BALLANCE_MAX;
+      }
+      if (dynamicForward < -DYNAMIC_BALLANCE_MAX) {
+        dynamicForward = -DYNAMIC_BALLANCE_MAX;
+      }
     }
   }
   if (robalParam.staticEnabled) {
