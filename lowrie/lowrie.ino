@@ -27,6 +27,10 @@ Main file
 #define ROBOT_SIZE_DEVIDER      2
 // counter to keep state the same
 #define STATE_COUNTER           2
+// leg lift point
+#define LIFT_POINT              4
+// step size in mm
+#define STEP_SIZE               120
 
 // input state
 enum inState {
@@ -89,11 +93,18 @@ enum rState {
   ROBOT_INO,
   ROBOT_CRAWL
 };
+// leg state
+enum lState {
+  LEG_LINEAR,
+  LEG_LIFTING,
+  LEG_LIFTED,
+  LEG_LOWERING
+};
 // structure for one leg data
 struct leg {
   short hight;
   short shift;
-  bool lifted;
+  unsigned char state;
 };
 // legs motors structure
 struct allLegs {
@@ -114,20 +125,12 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
-// structure for timing
-struct timing {
-  short fullCycle;
-  short halfCycle;
-  short quarterCycle;
-};
 
 //---------------global variables---------------------------
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// main timing 64 32 16
-timing m_mainTiming = {64, 32, 16};
+allLegs m_legsValue = {125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -248,9 +251,9 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
-      setMaxPathSpeed(3);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -258,9 +261,9 @@ void _setState(unsigned char newState) {
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
-      setMaxPathSpeed(2);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -268,9 +271,9 @@ void _setState(unsigned char newState) {
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
-      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
-      setMaxPathSpeed(2);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -287,9 +290,7 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  m_mainTiming.fullCycle = 64;
-  m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
-  m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
+  setMainCyclePatterns(64);
   enableExtraCurrent(true);
   enableExtraInputs(false);
   enableTurningPath(true);

@@ -43,13 +43,13 @@ m_legsValue
 short getBallanceCount(unsigned char counter) {
   if (robalParam.dynamicEnabled) {
     // get diving value
-    if (m_legsValue.fl.lifted) {
+    if (m_legsValue.fl.state == LEG_LIFTED) {
       sumF += m_gyroState.aLiftFL;
-    } else if (m_legsValue.fr.lifted) {
+    } else if (m_legsValue.fr.state == LEG_LIFTED) {
       sumF += m_gyroState.aLiftFR;
-    } else if (m_legsValue.rl.lifted) {
+    } else if (m_legsValue.rl.state == LEG_LIFTED) {
       sumR += m_gyroState.aLiftRL;
-    } else if (m_legsValue.rr.lifted) {
+    } else if (m_legsValue.rr.state == LEG_LIFTED) {
       sumR += m_gyroState.aLiftRR;
     }
     if (counter == 0) {
