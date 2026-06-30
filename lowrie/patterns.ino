@@ -45,7 +45,7 @@ char counterRL = mainTiming.halfCycle - patParam.legPairShiftNow;
 // pair shift
 char legsPairShift = 0;
 // forward flag
-bool goForward  = true;
+bool goForward = true;
 
 /*
 uses
@@ -147,7 +147,7 @@ unsigned char updatePatternsCount(void) {
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, short ballanceShiftForward) {
+void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, short ballanceShiftForward, short sideBallance) {
   if ((speedLNow + speedRNow) < 0) {
     goForward = false;
   } else {
@@ -161,6 +161,14 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
     m_legsValue.fr.hight = patParam.legHightNow;
     m_legsValue.rl.hight = patParam.legHightNow;
     m_legsValue.rr.hight = patParam.legHightNow;
+    // side ballance
+    if (sideBallance > 0) {
+      m_legsValue.fl.hight -= sideBallance;
+      m_legsValue.rl.hight -= sideBallance;
+    } else if (sideBallance < 0) {
+      m_legsValue.fr.hight += sideBallance;
+      m_legsValue.rr.hight += sideBallance;
+    }
     // fl
     if (counterFL < patParam.legLiftPoint) {
       // start of cycle

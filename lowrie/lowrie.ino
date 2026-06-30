@@ -227,7 +227,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter));
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -297,6 +297,7 @@ void setup() {
   enableCountingPath(false);
   enableStaticBallance(true);
   enableDynamicBallance(false);
+  enableSideBallance(true);
   enableSensorInputs(false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
