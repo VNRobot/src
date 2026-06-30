@@ -68,11 +68,11 @@ void readSwitchesCount(unsigned char counter) {
     swSum.fr = 0;
     swSumMax.fr = 0;
   }
-  if (m_legsValue.fl.lifted) {
+  if (m_legsValue.fl.state == LEG_LIFTED) {
     swSum.fl += swStateNow.fl;
     swSumMax.fl ++;
   }
-  if (m_legsValue.fr.lifted) {
+  if (m_legsValue.fr.state == LEG_LIFTED) {
     swSum.fr += swStateNow.fr;
     swSumMax.fr ++;
   }

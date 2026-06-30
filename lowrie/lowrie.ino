@@ -27,6 +27,10 @@ Main file
 #define ROBOT_SIZE_DEVIDER      2
 // counter to keep state the same
 #define STATE_COUNTER           2
+// leg lift point
+#define LIFT_POINT              4
+// step size in mm
+#define STEP_SIZE               120
 
 // input state
 enum inState {
@@ -86,13 +90,21 @@ enum gState {
 // robot state
 enum rState {
   ROBOT_NORM,
-  ROBOT_INO
+  ROBOT_INO,
+  ROBOT_CRAWL
+};
+// leg state
+enum lState {
+  LEG_LINEAR,
+  LEG_LIFTING,
+  LEG_LIFTED,
+  LEG_LOWERING
 };
 // structure for one leg data
 struct leg {
   short hight;
   short shift;
-  bool lifted;
+  unsigned char state;
 };
 // legs motors structure
 struct allLegs {
@@ -113,20 +125,12 @@ typedef struct accRoll {
   short aLiftRL;               // dynamic ballance when leg is lifted
   short aLiftRR;               // dynamic ballance when leg is lifted
 } accRoll;
-// structure for timing
-struct timing {
-  short fullCycle;
-  short halfCycle;
-  short quarterCycle;
-};
 
 //---------------global variables---------------------------
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, false, 125, 0, false, 125, 0, false, 125, 0, false};
-// main timing
-timing m_mainTiming = {64, 32, 16};
+allLegs m_legsValue = {125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -223,7 +227,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount());
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -247,33 +251,31 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      m_mainTiming.fullCycle = 32;
-      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
-      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
-      setPatternParameters(HIGHT_DEFAULT, 20, 0);
-      setMaxPathSpeed(4);
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
-      enableSensorInputs(true);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
-      enableStaticBallance(false);
-      enableDynamicBallance(false);
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      m_mainTiming.fullCycle = 64;
-      m_mainTiming.halfCycle = m_mainTiming.fullCycle / 2;
-      m_mainTiming.quarterCycle = m_mainTiming.halfCycle / 2;
-      setPatternParameters(HIGHT_DEFAULT, 50, m_mainTiming.quarterCycle);
-      setMaxPathSpeed(3);
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
-      enableSensorInputs(true);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
-      enableStaticBallance(true);
-      enableDynamicBallance(true);
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      //Serial.println("ROBOT_CRAWL");
+      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
+      setInputsHight(HIGHT_DEFAULT);
+      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
+      enableObstacleInputs(false);
+      enableEdgeInputs(false);
     }
     break;
     default:
@@ -288,10 +290,15 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
+  setMainCyclePatterns(64);
   enableExtraCurrent(true);
   enableExtraInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
+  enableStaticBallance(true);
+  enableDynamicBallance(false);
+  enableSideBallance(true);
+  enableSensorInputs(false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -389,7 +396,11 @@ void loop() {
         _setState(ROBOT_NORM);
         //setDirectionCenter(getDirectionGyro());
       } else {
-        _setState(ROBOT_INO);
+        if (stateCounter > STATE_COUNTER) {
+          _setState(ROBOT_CRAWL);
+        } else {
+          _setState(ROBOT_INO);
+        }
         stateCounter --;
       }
       _doCycle();
