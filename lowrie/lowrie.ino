@@ -31,6 +31,9 @@ Main file
 #define LIFT_POINT              4
 // step size in mm
 #define STEP_SIZE               120
+// legs geometry in mm
+#define LEG_EXTRA_SIDE          18
+#define LEG_EXTRA_HIGHT         20
 
 // input state
 enum inState {
@@ -227,7 +230,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount());
+  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount(), getCenterCompensationFront(), getCenterCompensationRear());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -241,7 +244,7 @@ void _doCycle(void) {
   updateInputsCount(mCounter);
   //readSwitchesCount(mCounter);
   // update center motors
-  //updateCenterCount(getspeedLPath(), getspeedRPath());
+  updateCenterCount();
 }
 
 // set robot state
@@ -293,11 +296,11 @@ void setup() {
   setMainCyclePatterns(64);
   enableExtraCurrent(true);
   enableExtraInputs(false);
-  enableTurningPath(true);
+  enableTurningPath(false);
   enableCountingPath(false);
-  enableStaticBallance(true);
+  enableStaticBallance(false);
   enableDynamicBallance(false);
-  enableSideBallance(true);
+  enableSideBallance(false);
   enableSensorInputs(false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
@@ -310,13 +313,13 @@ void setup() {
   // init sensors
   initInputs(calibrationMode);
   // attach center servo
-  //attachCenter();
+  attachCenter();
   // attach servo
   attachServo();
   // init current readings
   initCurrent(calibrationMode);
   // init center servo motors
-  //initCenter(calibrationMode);
+  initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -324,7 +327,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    //setCenter(20);
+    setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
@@ -345,12 +348,12 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    //detachCenter();
+    detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
-  //setCenter(0);
+  setCenter(10);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -394,7 +397,6 @@ void loop() {
       // set state
       if (stateCounter == 0) {
         _setState(ROBOT_NORM);
-        //setDirectionCenter(getDirectionGyro());
       } else {
         if (stateCounter > STATE_COUNTER) {
           _setState(ROBOT_CRAWL);
@@ -403,6 +405,7 @@ void loop() {
         }
         stateCounter --;
       }
+      setDirectionCenter(getDirectionGyro());
       _doCycle();
     } else {
       // quick and non walking patterns

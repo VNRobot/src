@@ -147,7 +147,7 @@ unsigned char updatePatternsCount(void) {
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, short ballanceShiftForward, short sideBallance) {
+void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, short ballanceShiftForward, short sideBallance, short levelFront, short levelRear) {
   if ((speedLNow + speedRNow) < 0) {
     goForward = false;
   } else {
@@ -157,10 +157,10 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
   unsigned char quickShiftMultiplier = (mainTiming.halfCycle - patParam.legLiftPoint) / patParam.legLiftPoint;
   if (walkingModeNow) {
     // hight
-    m_legsValue.fl.hight = patParam.legHightNow;
-    m_legsValue.fr.hight = patParam.legHightNow;
-    m_legsValue.rl.hight = patParam.legHightNow;
-    m_legsValue.rr.hight = patParam.legHightNow;
+    m_legsValue.fl.hight = patParam.legHightNow + levelFront;
+    m_legsValue.fr.hight = patParam.legHightNow + levelFront;
+    m_legsValue.rl.hight = patParam.legHightNow + levelRear;
+    m_legsValue.rr.hight = patParam.legHightNow + levelRear;
     // side ballance
     if (sideBallance > 0) {
       m_legsValue.fl.hight -= sideBallance;

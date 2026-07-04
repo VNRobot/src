@@ -5,6 +5,12 @@ Arduino nano
 Robot center motors motion patterns
 */
 
+// center motor limit
+#define CENTER_ANGLE_MAX     10
+// direction sensitivity
+#define TURNING_SENSITIVITY 2
+// turning mutiplier
+#define TURNING_MULIPLIER    4
 // pin numbers for servo motors
 enum cPinsServo {
   CT1_MOTOR = 4,
@@ -23,23 +29,26 @@ Servo servo_ct_2;
 
 // motors attached flag
 bool centerAttached = false;
-// motors values
-char centerSetValueF = 0;
-char centerSetValueR = 0;
+// motors set value values
+short centerSetValueF = 0;
+short centerSetValueR = 0;
 // calibration data
 center centerCalibrationData = {0, 0};
 // servo motor value
 short centerMotorAngleValue[2] = {0, 0};
 // dynamic ballance
-center dynamicCenterBallance = {0, 0};
+//center dynamicCenterBallance = {0, 0};
 // center motor value for turning/shifting positive - outside
 center centerValue = {0, 0};
 // ballance correction
-center centerCorrect = {0, 0};
-// direction
-short directionValue = 0;
-// side shift value
-short sideShiftValue = 0;
+//center centerCorrect = {0, 0};
+// direction to turn front
+short directionFront = 0;
+// direction to turn rear
+short directionRear = 0;
+// real leg side angle
+short realAngleF = 0;
+short realAngleR = 0;
 
 /*
 uses
@@ -49,97 +58,12 @@ m_getButtonPressed()
 
 // limit angle value
 short _limitCenterMotorValue(short mAngle) {
-  if (mAngle > 130) {
-    mAngle = 130;
-  } else if (mAngle < 50) {
-    mAngle = 50;
+  if (mAngle > 150) {
+    mAngle = 150;
+  } else if (mAngle < 30) {
+    mAngle = 30;
   }
   return mAngle;
-}
-
-// reduce shift value
-void _reduceSideShiftvalue(void) {
-  if (sideShiftValue > 0) {
-    sideShiftValue --;
-  } else if (sideShiftValue < 0) {
-    sideShiftValue ++;
-  }
-}
-
-// process direction
-void _processDiretion(void) {
-  short directionMax = directionValue;
-  if (directionMax > 20) {
-    directionMax = 20;
-  } else if (directionMax < -20) {
-    directionMax = -20;
-  }
-  if (directionMax > 0) {
-    // turn left
-    if (m_legsValue.fl.lifted) {
-      centerSetValueF = directionMax;
-    } else if (m_legsValue.fr.lifted) {
-      centerSetValueF = -directionMax;
-    }
-    if (m_legsValue.rr.lifted) {
-      centerSetValueR = directionMax;
-    } else if (m_legsValue.rl.lifted) {
-      centerSetValueR = -directionMax;
-    }
-  } else if (directionMax < 0) {
-    // turn right
-    if (m_legsValue.fr.lifted) {
-      centerSetValueF = -directionMax;
-    } else if (m_legsValue.fl.lifted) {
-      centerSetValueF = directionMax;
-    }
-    if (m_legsValue.rr.lifted) {
-      centerSetValueR = directionMax;
-    } else if (m_legsValue.rl.lifted) {
-      centerSetValueR = -directionMax;
-    }
-  } else {
-    centerSetValueF = 0;
-    centerSetValueR = 0;
-  }
-}
-
-// process side shift
-void _processSideShift(void) {
-  short sideShiftMax = sideShiftValue;
-  if (sideShiftMax > 20) {
-    sideShiftMax = 20;
-  } else if (sideShiftMax < -20) {
-    sideShiftMax = -20;
-  }
-  if (sideShiftMax > 0) {
-    // shift right
-    if (m_legsValue.fl.lifted) {
-      centerSetValueF = -sideShiftMax;
-    } else if (m_legsValue.fr.lifted) {
-      centerSetValueF = sideShiftMax;
-    }
-    if (m_legsValue.rr.lifted) {
-      centerSetValueR = sideShiftMax;
-    } else if (m_legsValue.rl.lifted) {
-      centerSetValueR = -sideShiftMax;
-    }
-  } else if (sideShiftMax < 0) {
-    // shift left
-    if (m_legsValue.fr.lifted) {
-      centerSetValueF = sideShiftMax;
-    } else if (m_legsValue.fl.lifted) {
-      centerSetValueF = -sideShiftMax;
-    }
-    if (m_legsValue.rr.lifted) {
-      centerSetValueR = sideShiftMax;
-    } else if (m_legsValue.rl.lifted) {
-      centerSetValueR = -sideShiftMax;
-    }
-  } else {
-    centerSetValueF = 0;
-    centerSetValueR = 0;
-  }
 }
 
 // do servo pwm cycle 500, 2500
@@ -240,64 +164,153 @@ void detachCenter(void) {
 
 // set servo motors
 void setCenter(char angle) {
-  centerSetValueF = 0;
-  centerSetValueR = 0;
+  centerSetValueF = angle;
+  centerSetValueR = angle;
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - angle);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - angle);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - ((centerSetValueF * 10) / 24));
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - ((centerSetValueR * 10) / 24));
   // move motors
   _doPWMCenter();
 }
 
 // set direction. 10 deg max
 void setDirectionCenter(short direction) {
-  directionValue = direction;
+  if (direction > CENTER_ANGLE_MAX) {
+    direction = CENTER_ANGLE_MAX;
+  }
+  if (direction < -CENTER_ANGLE_MAX) {
+    direction = -CENTER_ANGLE_MAX;
+  }
+  directionFront = -direction;
+  directionRear = direction;
 }
 
 // set side shift // 0.42 servo reduction // ((HIGHT_DEFAULT / 2) + 18) * 2 * 3.14    l=502
 // approx 1 mm shift for 1 deg
 // set side shift. in mm
-void setSideShiftCenter(short distance) {
-  sideShiftValue = distance;
+void setSideShiftCenter(short direction) {
+  if (direction > CENTER_ANGLE_MAX) {
+    direction = CENTER_ANGLE_MAX;
+  }
+  if (direction < -CENTER_ANGLE_MAX) {
+    direction = -CENTER_ANGLE_MAX;
+  }
+  directionFront = -direction;
+  directionRear = -direction;
 }
       
 // move center motors.
-void updateCenterCount(char speedLNow, char speedRNow) {
-  if (sideShiftValue == 0) {
-    // process direction
-    _processDiretion();
+void updateCenterCount(void) {
+  if (directionFront > TURNING_SENSITIVITY) {
+    // turn front right
+    if (m_legsValue.fr.state == LEG_LIFTED) {
+      // move leg to the side
+      if (centerValue.front < directionFront) {
+        centerValue.front ++;
+      }
+    } else if (m_legsValue.fl.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.front > 0) {
+        centerValue.front --;
+      }
+    }
+  } else if (directionFront < -TURNING_SENSITIVITY) {
+    // turn front left
+    if (m_legsValue.fl.state == LEG_LIFTED) {
+      // move leg to the side
+      if (centerValue.front < -directionFront) {
+        centerValue.front ++;
+      }
+    } else if (m_legsValue.fr.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.front > 0) {
+        centerValue.front --;
+      }
+    }
+  } else if (directionFront > 0) {
+    if (m_legsValue.fl.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.front > 0) {
+        centerValue.front --;
+      }
+    }
   } else {
-    // process side shift
-    _processSideShift();
-  }
-  // apply shift correction
-  if ((m_legsValue.fl.lifted) || (m_legsValue.fr.lifted)) {
-    if (centerSetValueF > centerValue.front) {
-      centerValue.front ++;
-      // reduce shift value
-      _reduceSideShiftvalue();
-    } else if (centerSetValueF < centerValue.front) {
-      centerValue.front --;
-      // reduce shift value
-      _reduceSideShiftvalue();
+    if (m_legsValue.fr.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.front > 0) {
+        centerValue.front --;
+      }
     }
   }
-  if ((m_legsValue.rl.lifted) || (m_legsValue.rr.lifted)) {
-    if (centerSetValueR > centerValue.rear) {
-      centerValue.rear ++;
-    } else if (centerSetValueR < centerValue.rear) {
-      centerValue.rear --;
+  if (directionRear > TURNING_SENSITIVITY) {
+    // turn rear right
+    if (m_legsValue.rr.state == LEG_LIFTED) {
+      // move leg to the side
+      if (centerValue.rear < directionRear) {
+        centerValue.rear ++;
+      }
+    } else if (m_legsValue.rl.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.rear > 0) {
+        centerValue.rear --;
+      }
+    }
+  } else if (directionRear < -TURNING_SENSITIVITY) {
+    // turn rear left
+    if (m_legsValue.rl.state == LEG_LIFTED) {
+      // move leg to the side
+      if (centerValue.rear < -directionRear) {
+        centerValue.rear ++;
+      }
+    } else if (m_legsValue.rr.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.rear > 0) {
+        centerValue.rear --;
+      }
+    }
+  } else if (directionRear > 0) {
+    if (m_legsValue.rl.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.rear > 0) {
+        centerValue.rear --;
+      }
+    }
+  } else {
+    if (m_legsValue.rr.state == LEG_LIFTED) {
+      // move leg back to normal
+      if (centerValue.rear > 0) {
+        centerValue.rear --;
+      }
     }
   }
+  // real angle
+  realAngleF = ((centerSetValueF + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
+  realAngleR = ((centerSetValueR + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - centerValue.front * (6 - speedLNow - speedRNow) - dynamicCenterBallance.front);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - centerValue.rear * (6 - speedLNow - speedRNow) - dynamicCenterBallance.rear);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - realAngleF);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - realAngleR);
   // move motors
   _doPWMCenter();
 }
 
+// get leg angle compensation in mm
+short getCenterCompensationFront(void) {
+  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
+  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
+  return (short)(HIGHT_DEFAULT - (cos(((realAngleF + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+}
+
+// get leg angle compensation in mm
+short getCenterCompensationRear(void) {
+  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
+  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
+  return (short)(HIGHT_DEFAULT - (cos(((realAngleR + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+}
+
+/*
 // update robot ballance
 void updateBallanceCenter(void) {
-  dynamicCenterBallance.front = centerCorrect.front;
-  dynamicCenterBallance.rear = centerCorrect.rear;
+  centerSetValueF += ;
+  centerSetValueR -= ;
 }
+*/

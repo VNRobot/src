@@ -6,7 +6,7 @@ Robot static and dynamic ballance
 */
 
 // center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT    -10
+#define FORWARD_BALLANCE_SHIFT    0
 // ballance correction max value
 #define DYNAMIC_BALLANCE_MAX       20
 #define STATIC_BALLANCE_MAX        20
