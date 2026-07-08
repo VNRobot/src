@@ -30,8 +30,7 @@ Servo servo_ct_2;
 // motors attached flag
 bool centerAttached = false;
 // motors set value values
-short centerSetValueF = 0;
-short centerSetValueR = 0;
+centers centerSetValue = {0, 0};
 // calibration data
 center centerCalibrationData = {0, 0};
 // servo motor value
@@ -47,8 +46,7 @@ short directionFront = 0;
 // direction to turn rear
 short directionRear = 0;
 // real leg side angle
-short realAngleF = 0;
-short realAngleR = 0;
+centers realAngle = {0, 0};
 
 /*
 uses
@@ -164,11 +162,11 @@ void detachCenter(void) {
 
 // set servo motors
 void setCenter(char angle) {
-  centerSetValueF = angle;
-  centerSetValueR = angle;
+  centerSetValue.front = angle;
+  centerSetValue.rear = angle;
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - ((centerSetValueF * 10) / 24));
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - ((centerSetValueR * 10) / 24));
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - ((centerSetValue.front * 10) / 24));
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - ((centerSetValue.rear * 10) / 24));
   // move motors
   _doPWMCenter();
 }
@@ -284,11 +282,11 @@ void updateCenterCount(void) {
     }
   }
   // real angle
-  realAngleF = ((centerSetValueF + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
-  realAngleR = ((centerSetValueR + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
+  realAngle.front = ((centerSetValue.front + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
+  realAngle.rear = ((centerSetValue.rear + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
   // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - realAngleF);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - realAngleR);
+  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - realAngle.front);
+  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - realAngle.rear);
   // move motors
   _doPWMCenter();
 }
@@ -297,20 +295,30 @@ void updateCenterCount(void) {
 short getCenterCompensationFront(void) {
   float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
   float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
-  return (short)(HIGHT_DEFAULT - (cos(((realAngleF + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+  return (short)(HIGHT_DEFAULT - (cos(((realAngle.front + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
 }
 
 // get leg angle compensation in mm
 short getCenterCompensationRear(void) {
   float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
   float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
-  return (short)(HIGHT_DEFAULT - (cos(((realAngleR + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+  return (short)(HIGHT_DEFAULT - (cos(((realAngle.rear + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+}
+
+// get leg angle compensation in mm
+centers getCenterCompensation(void) {
+  centers compensation = {0, 0};
+  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
+  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
+  compensation.front = (short)(HIGHT_DEFAULT - (cos(((realAngle.front + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+  compensation.rear = (short)(HIGHT_DEFAULT - (cos(((realAngle.rear + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
+  return compensation;
 }
 
 /*
 // update robot ballance
 void updateBallanceCenter(void) {
-  centerSetValueF += ;
-  centerSetValueR -= ;
+  centerSetValue.front += ;
+  centerSetValue.rear -= ;
 }
 */

@@ -104,18 +104,28 @@ enum lState {
   LEG_LOWERING
 };
 // structure for one leg data
-struct leg {
+typedef struct leg {
   short hight;
   short shift;
   unsigned char state;
-};
+} leg;
 // legs motors structure
-struct allLegs {
+typedef struct allLegs {
   leg fl;
   leg fr;
   leg rl;
   leg rr;
-};
+} allLegs;
+// structure for leg pair
+typedef struct pair {
+  short left;
+  short right;
+} pair;
+// structure for center motor
+typedef struct centers {
+  short front;
+  short rear;
+} centers;
 // acc and gyro data structure
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
@@ -230,7 +240,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount(), getCenterCompensationFront(), getCenterCompensationRear());
+  setWalkPatternsCount(getWalkingModeInTask(), getSpeedPath(), getBallanceCount(mCounter), getSideBallanceCount(), getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -242,7 +252,7 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
-  //readSwitchesCount(mCounter);
+  readSwitchesCount(mCounter);
   // update center motors
   updateCenterCount();
 }
@@ -298,10 +308,12 @@ void setup() {
   enableExtraInputs(false);
   enableTurningPath(false);
   enableCountingPath(false);
-  enableStaticBallance(false);
-  enableDynamicBallance(false);
-  enableSideBallance(false);
   enableSensorInputs(false);
+  enableStaticBallance(true);
+  enableDynamicBallance(false);
+  enableSideBallance(true);
+  enableRockPatterns(true);
+  setForwardBallance(-14);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -309,7 +321,7 @@ void setup() {
     calibrationMode = true;
   }
   // init switches
-  //initSwitches(calibrationMode);
+  initSwitches(calibrationMode);
   // init sensors
   initInputs(calibrationMode);
   // attach center servo
@@ -375,7 +387,7 @@ void setup() {
 void loop() {
   if (mCounter == 0) {
     // once in a pattern
-    //getSwitchesState();
+    getSwitchesState();
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());
     // get pattern
