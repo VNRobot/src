@@ -8,11 +8,11 @@ Robot walking path
 // direction state
 enum diState {
   DI_FORWARD = 5,
-  DI_FORWARD_FAR_TURN = 10,
-  DI_FORWARD_TURN = 20,
-  DI_FORWARD_STAND = 30,
-  DI_BACKWARD_STAND = 40,
-  DI_BACKWARD_TURN = 50
+  DI_FORWARD_FAR_TURN = 20,
+  DI_FORWARD_TURN = 40,
+  DI_FORWARD_STAND = 90,
+  DI_BACKWARD_STAND = 100,
+  DI_BACKWARD_TURN = 120
 };
 
 // path parameters structure

@@ -1,16 +1,16 @@
 /*
 Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
-Arduino nano
+Arduino nanos
 Robot center motors motion patterns
 */
 
 // center motor limit
-#define CENTER_ANGLE_MAX     10
+#define CENTER_ANGLE_MAX     20
 // direction sensitivity
 #define TURNING_SENSITIVITY 2
 // turning mutiplier
-#define TURNING_MULIPLIER    4
+#define TURNING_MULIPLIER    6
 // pin numbers for servo motors
 enum cPinsServo {
   CT1_MOTOR = 4,

@@ -28,7 +28,7 @@ Main file
 // counter to keep state the same
 #define STATE_COUNTER           2
 // leg lift point
-#define LIFT_POINT              4
+#define LIFT_POINT              5
 // step size in mm
 #define STEP_SIZE               120
 // legs geometry in mm
