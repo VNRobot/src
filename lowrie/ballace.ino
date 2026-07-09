@@ -5,8 +5,6 @@ Arduino nano
 Robot static and dynamic ballance
 */
 
-// center position in the leg forward shift. bigger the number more weight on front
-#define FORWARD_BALLANCE_SHIFT    -10
 // ballance correction max value
 #define DYNAMIC_BALLANCE_MAX       20
 #define STATIC_BALLANCE_MAX        20
@@ -15,6 +13,7 @@ Robot static and dynamic ballance
 
 // robot state structure
 typedef struct roboBallanceState {
+  char forwardBallance;
   bool staticEnabled;
   bool dynamicEnabled;
   bool sideEnabled;
@@ -22,6 +21,7 @@ typedef struct roboBallanceState {
 
 // robot state
 roboBallanceState robalParam = {
+  0,               // char forwardBallance;
   false,           // bool staticEnabled;
   false,           // bool dynamicEnabled;
   false            // bool sideEnabled;
@@ -105,7 +105,7 @@ short getBallanceCount(unsigned char counter) {
       }
     }
   }
-  return FORWARD_BALLANCE_SHIFT + dynamicForward + staticForward;
+  return robalParam.forwardBallance + dynamicForward + staticForward;
 }
 
 // side ballance
@@ -143,4 +143,10 @@ void enableStaticBallance(bool ballance) {
 // enable side ballance
 void enableSideBallance(bool ballance) {
   robalParam.sideEnabled = ballance;
+}
+
+// set forward ballance
+// center position in the leg forward shift. bigger the number more weight on front
+void setForwardBallance(char ballance) {
+  robalParam.forwardBallance = ballance;
 }

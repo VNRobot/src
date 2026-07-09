@@ -8,11 +8,11 @@ Robot walking path
 // direction state
 enum diState {
   DI_FORWARD = 5,
-  DI_FORWARD_FAR_TURN = 10,
-  DI_FORWARD_TURN = 20,
-  DI_FORWARD_STAND = 30,
-  DI_BACKWARD_STAND = 40,
-  DI_BACKWARD_TURN = 50
+  DI_FORWARD_FAR_TURN = 20,
+  DI_FORWARD_TURN = 40,
+  DI_FORWARD_STAND = 90,
+  DI_BACKWARD_STAND = 100,
+  DI_BACKWARD_TURN = 120
 };
 
 // path parameters structure
@@ -36,8 +36,9 @@ bool walkFrward = true;
 // distance to the target mm
 short distanceToTarget = 0;
 // absolute speed
-char  speedLNow = 0;
-char  speedRNow = 0;
+pair speedNow = {0, 0};
+
+
 // on the path flag
 bool onThePath = false;
 // speed multiplier
@@ -133,13 +134,13 @@ void updatePath(short direction) {
   // calculate speed
   _setAbsoluteSpeed(direction);
   // step turning
-  speedLNow = _sideSpeed(-direction, speedAbsolute);
-  speedRNow = _sideSpeed(direction, speedAbsolute);
+  speedNow.left = _sideSpeed(-direction, speedAbsolute);
+  speedNow.right = _sideSpeed(direction, speedAbsolute);
   if (!pathParams.stepTurningEnabled) {
-    if (speedLNow < speedRNow) {
-      speedLNow = speedRNow;
-    } else if (speedRNow < speedLNow) {
-      speedRNow = speedLNow;
+    if (speedNow.left < speedNow.right) {
+      speedNow.left = speedNow.right;
+    } else if (speedNow.right < speedNow.left) {
+      speedNow.right = speedNow.left;
     }
   }
   if (pathParams.stepsDistanceCountEnabled) {
@@ -154,21 +155,19 @@ void updatePath(short direction) {
   }
 }
 
-// get left speed
-char getspeedLPath(void) {
+// get speed
+pair getSpeedPath(void) {
+  pair walk;
   if (walkFrward) {
-    return speedLNow;
+    walk.right = speedNow.right;
+    walk.left = speedNow.left;
+  } else {
+    walk.right = -speedNow.right;
+    walk.left = -speedNow.left;
   }
-  return -speedLNow;
+  return walk;
 }
 
-// get right speed
-char getspeedRPath(void) {
-  if (walkFrward) {
-    return speedRNow;
-  }
-  return -speedRNow;
-}
 /*
 // get direction flag
 bool getforwardPath(void) {

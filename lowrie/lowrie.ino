@@ -28,9 +28,12 @@ Main file
 // counter to keep state the same
 #define STATE_COUNTER           2
 // leg lift point
-#define LIFT_POINT              4
+#define LIFT_POINT              5
 // step size in mm
 #define STEP_SIZE               120
+// legs geometry in mm
+#define LEG_EXTRA_SIDE          18
+#define LEG_EXTRA_HIGHT         20
 
 // input state
 enum inState {
@@ -101,18 +104,28 @@ enum lState {
   LEG_LOWERING
 };
 // structure for one leg data
-struct leg {
+typedef struct leg {
   short hight;
   short shift;
   unsigned char state;
-};
+} leg;
 // legs motors structure
-struct allLegs {
+typedef struct allLegs {
   leg fl;
   leg fr;
   leg rl;
   leg rr;
-};
+} allLegs;
+// structure for leg pair
+typedef struct pair {
+  short left;
+  short right;
+} pair;
+// structure for center motor
+typedef struct centers {
+  short front;
+  short rear;
+} centers;
 // acc and gyro data structure
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
@@ -227,7 +240,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getspeedLPath(), getspeedRPath(), getBallanceCount(mCounter), getSideBallanceCount());
+  setWalkPatternsCount(getWalkingModeInTask(), getSpeedPath(), getBallanceCount(mCounter), getSideBallanceCount(), getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -239,9 +252,9 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
-  //readSwitchesCount(mCounter);
+  readSwitchesCount(mCounter);
   // update center motors
-  //updateCenterCount(getspeedLPath(), getspeedRPath());
+  updateCenterCount();
 }
 
 // set robot state
@@ -293,12 +306,14 @@ void setup() {
   setMainCyclePatterns(64);
   enableExtraCurrent(true);
   enableExtraInputs(false);
-  enableTurningPath(true);
+  enableTurningPath(false);
   enableCountingPath(false);
+  enableSensorInputs(false);
   enableStaticBallance(true);
   enableDynamicBallance(false);
   enableSideBallance(true);
-  enableSensorInputs(false);
+  enableRockPatterns(true);
+  setForwardBallance(-14);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -306,17 +321,17 @@ void setup() {
     calibrationMode = true;
   }
   // init switches
-  //initSwitches(calibrationMode);
+  initSwitches(calibrationMode);
   // init sensors
   initInputs(calibrationMode);
   // attach center servo
-  //attachCenter();
+  attachCenter();
   // attach servo
   attachServo();
   // init current readings
   initCurrent(calibrationMode);
   // init center servo motors
-  //initCenter(calibrationMode);
+  initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -324,7 +339,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    //setCenter(20);
+    setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
@@ -345,12 +360,12 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    //detachCenter();
+    detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
-  //setCenter(0);
+  setCenter(10);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -372,7 +387,7 @@ void setup() {
 void loop() {
   if (mCounter == 0) {
     // once in a pattern
-    //getSwitchesState();
+    getSwitchesState();
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());
     // get pattern
@@ -394,7 +409,6 @@ void loop() {
       // set state
       if (stateCounter == 0) {
         _setState(ROBOT_NORM);
-        //setDirectionCenter(getDirectionGyro());
       } else {
         if (stateCounter > STATE_COUNTER) {
           _setState(ROBOT_CRAWL);
@@ -403,6 +417,7 @@ void loop() {
         }
         stateCounter --;
       }
+      setDirectionCenter(getDirectionGyro());
       _doCycle();
     } else {
       // quick and non walking patterns

@@ -11,7 +11,8 @@ Robot legs motion patterns
 #define OPPOSITE_LEG_COMPENSATION 6
 #define TOUCHING_LEG_COMPENSATION 6
 #define LIFTING_LEG_COMPENSATION  10
-#define ROCK_FORWARD_COMPENSATION  4
+#define ROCK_FORWARD_COMPENSATION  8
+#define SPEED_COMPENSATION         8
 
 // pattern state structure
 typedef struct patternParam {
@@ -19,6 +20,7 @@ typedef struct patternParam {
   short legLiftNow;
   unsigned char legPairShiftNow;
   unsigned char legLiftPoint;
+  short rockValue;
 } patternParam;
 // structure for timing
 typedef struct timing {
@@ -29,10 +31,11 @@ typedef struct timing {
 
 // robot parameters
 patternParam patParam = {
-  HIGHT_DEFAULT,           // short legHightNow;
-  50,                      // short legLiftNow;
-  16,                      // unsigned char legPairShiftNow;
-  4                        // unsigned char legLiftPoint;
+  HIGHT_DEFAULT,            // short legHightNow;
+  50,                       // short legLiftNow;
+  16,                       // unsigned char legPairShiftNow;
+  4,                        // unsigned char legLiftPoint;
+  ROCK_FORWARD_COMPENSATION // short rockValue;
 };
 
 // main timing 64 32 16
@@ -81,22 +84,22 @@ short getRockForward(char counter) {
   short rockForward = 0;
   if (counter < patParam.legLiftPoint) {
     // start of cycle
-    rockForward = ROCK_FORWARD_COMPENSATION;
+    rockForward = patParam.rockValue;
   } else if (counter > (mainTiming.fullCycle - patParam.legLiftPoint)) {
     // end of cycle
-    rockForward = ROCK_FORWARD_COMPENSATION;
+    rockForward = patParam.rockValue;
   } else {
     // linear walking shift
     if (counter == patParam.legLiftPoint) {
-      rockForward = ROCK_FORWARD_COMPENSATION;
+      rockForward = patParam.rockValue;
     } else if (counter == mainTiming.fullCycle - patParam.legLiftPoint) {
-      rockForward = ROCK_FORWARD_COMPENSATION;
+      rockForward = patParam.rockValue;
     } else if (counter == patParam.legLiftPoint + 1) {
       // after leg is down
-      rockForward = ROCK_FORWARD_COMPENSATION / 2;
+      rockForward = patParam.rockValue / 2;
     } else if (counter == mainTiming.fullCycle - patParam.legLiftPoint - 1) {
       // before leg is lifted
-      rockForward = ROCK_FORWARD_COMPENSATION / 2;
+      rockForward = patParam.rockValue / 2;
     }
   }
   return rockForward;
@@ -147,20 +150,23 @@ unsigned char updatePatternsCount(void) {
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, short ballanceShiftForward, short sideBallance) {
-  if ((speedLNow + speedRNow) < 0) {
+void setWalkPatternsCount(bool walkingModeNow, pair speedNow, short ballanceShiftForward, short sideBallance, centers level) {
+  short speedShift = 0;
+  if ((speedNow.left + speedNow.right) < 0) {
     goForward = false;
+    speedShift = -SPEED_COMPENSATION;
   } else {
     goForward = true;
+    speedShift = SPEED_COMPENSATION;
   }
   // quick shift forward speed multiplier
   unsigned char quickShiftMultiplier = (mainTiming.halfCycle - patParam.legLiftPoint) / patParam.legLiftPoint;
   if (walkingModeNow) {
     // hight
-    m_legsValue.fl.hight = patParam.legHightNow;
-    m_legsValue.fr.hight = patParam.legHightNow;
-    m_legsValue.rl.hight = patParam.legHightNow;
-    m_legsValue.rr.hight = patParam.legHightNow;
+    m_legsValue.fl.hight = patParam.legHightNow + level.front;
+    m_legsValue.fr.hight = patParam.legHightNow + level.front;
+    m_legsValue.rl.hight = patParam.legHightNow + level.rear;
+    m_legsValue.rr.hight = patParam.legHightNow + level.rear;
     // side ballance
     if (sideBallance > 0) {
       m_legsValue.fl.hight -= sideBallance;
@@ -254,18 +260,23 @@ void setWalkPatternsCount(bool walkingModeNow, char speedLNow, char speedRNow, s
       }
     }
     // set speed
-    //speedLNow = 0; // ***
-    //speedRNow = 0; // ***
+    //speedNow.left = 0; // ***
+    //speedNow.right = 0; // ***
     // set forward shift
     m_legsValue.fl.shift = getLegShiftForward(counterFL, quickShiftMultiplier);
     m_legsValue.fr.shift = getLegShiftForward(counterFR, quickShiftMultiplier);
     m_legsValue.rl.shift = getLegShiftForward(counterRL, quickShiftMultiplier);
     m_legsValue.rr.shift = getLegShiftForward(counterRR, quickShiftMultiplier);
     // set speed and direction
-    m_legsValue.fl.shift *= speedLNow;
-    m_legsValue.fr.shift *= speedRNow;
-    m_legsValue.rl.shift *= speedLNow;
-    m_legsValue.rr.shift *= speedRNow;
+    m_legsValue.fl.shift *= speedNow.left;
+    m_legsValue.fr.shift *= speedNow.right;
+    m_legsValue.rl.shift *= speedNow.left;
+    m_legsValue.rr.shift *= speedNow.right;
+    // compensate speed
+    m_legsValue.fl.shift += speedShift;
+    m_legsValue.fr.shift += speedShift;
+    m_legsValue.rl.shift += speedShift;
+    m_legsValue.rr.shift += speedShift;
     // ballance part
     m_legsValue.fl.shift += ballanceShiftForward;
     m_legsValue.fr.shift += ballanceShiftForward;
@@ -310,4 +321,13 @@ void setMainCyclePatterns(short mainCycle) {
 // get main cycle value
 short getMainCyclePatterns(void) {
   return mainTiming.fullCycle;
+}
+
+// enable rock forward
+void enableRockPatterns( bool rock) {
+  if (rock) {
+    patParam.rockValue = ROCK_FORWARD_COMPENSATION;
+  } else {
+    patParam.rockValue = 0;
+  }
 }
