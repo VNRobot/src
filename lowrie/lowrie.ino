@@ -240,7 +240,7 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getSpeedPath(), getBallanceCount(mCounter), getSideBallanceCount(), getCenterCompensation());
+  setWalkPatternsCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter), getSideBallanceCount()); //, getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -254,7 +254,7 @@ void _doCycle(void) {
   updateInputsCount(mCounter);
   readSwitchesCount(mCounter);
   // update center motors
-  updateCenterCount();
+  // updateCenterCount();
 }
 
 // set robot state
@@ -264,7 +264,7 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
+      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
       setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
@@ -274,7 +274,7 @@ void _setState(unsigned char newState) {
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
+      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
       setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
@@ -284,7 +284,7 @@ void _setState(unsigned char newState) {
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
-      setPatternParameters(HIGHT_DEFAULT, 50, LIFT_POINT);
+      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
       setInputsHight(HIGHT_DEFAULT);
       setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
@@ -306,14 +306,15 @@ void setup() {
   setMainCyclePatterns(64);
   enableExtraCurrent(true);
   enableExtraInputs(false);
-  enableTurningPath(false);
+  enableTurningPath(true);
   enableCountingPath(false);
-  enableSensorInputs(false);
+  enableSensorInputs(true);
+  // ballance settings
   enableStaticBallance(true);
   enableDynamicBallance(false);
   enableSideBallance(true);
   enableRockPatterns(true);
-  setForwardBallance(-14);
+  setForwardBallance(-6);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -325,13 +326,13 @@ void setup() {
   // init sensors
   initInputs(calibrationMode);
   // attach center servo
-  attachCenter();
+  // attachCenter();
   // attach servo
   attachServo();
   // init current readings
   initCurrent(calibrationMode);
   // init center servo motors
-  initCenter(calibrationMode);
+  // initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -339,7 +340,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    setCenter(20);
+    //setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // init gyro
@@ -360,12 +361,12 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    detachCenter();
+    //detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
-  setCenter(10);
+  //setCenter(10);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -417,7 +418,7 @@ void loop() {
         }
         stateCounter --;
       }
-      setDirectionCenter(getDirectionGyro());
+      //setDirectionCenter(getDirectionGyro());
       _doCycle();
     } else {
       // quick and non walking patterns
