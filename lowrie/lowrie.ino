@@ -240,12 +240,12 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // update servo motors values, move motors
-  setWalkPatternsCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter), getSideBallanceCount()); //, getCenterCompensation());
+  bool keepCounting = setWalkPatternsCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter), getSideBallanceCount()); //, getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
-  mCounter = updatePatternsCount();
+  mCounter = updatePatternsCount(keepCounting);
   // update current readings
   updateCurrentCount(mCounter);
   // update gyro readings
@@ -377,7 +377,7 @@ void setup() {
   initTasks();
   // load task and pattern. direction is 0
   updatePath(0);
-  mCounter = updatePatternsCount();
+  mCounter = updatePatternsCount(true);
   // set distance to target cm
   setDistancePath(100);
   // set state
