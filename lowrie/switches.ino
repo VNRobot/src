@@ -83,7 +83,7 @@ unsigned char getSwitchesState(void) {
 }
 
 // get switch
-pair getSwitch(void) {
+pair getSwitches(void) {
   return swStateNow;
 }
 

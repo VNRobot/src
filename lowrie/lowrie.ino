@@ -239,8 +239,12 @@ void _doQuickAndOther(unsigned char patternNow) {
 
 // set motors and read sensors
 void _doCycle(void) {
-  // update servo motors values, move motors
-  bool keepCounting = setWalkPatternsCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter), getSideBallanceCount()); //, getCenterCompensation());
+  // set legs state
+  setWalkPatternsStateCount(getWalkingModeInTask());
+  // set legs shift
+  setWalkPatternsShiftCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter));
+  // set legs lift
+  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), getBallanceCount(mCounter), getSideBallanceCount(), getSwitches()); //, getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -310,9 +314,9 @@ void setup() {
   enableCountingPath(false);
   enableSensorInputs(true);
   // ballance settings
-  enableStaticBallance(true);
+  enableStaticBallance(false);
   enableDynamicBallance(false);
-  enableSideBallance(true);
+  enableSideBallance(false);
   enableRockPatterns(true);
   setForwardBallance(-6);
   // check button press
