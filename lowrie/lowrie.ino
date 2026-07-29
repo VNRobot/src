@@ -121,6 +121,13 @@ typedef struct pair {
   short left;
   short right;
 } pair;
+// structure for four legs
+typedef struct quad {
+  short fl;
+  short fr;
+  short rl;
+  short rr;
+} quad;
 // structure for center motor
 typedef struct centers {
   short front;
@@ -312,13 +319,18 @@ void setup() {
   enableExtraInputs(false);
   enableTurningPath(true);
   enableCountingPath(false);
-  enableSensorInputs(true);
+  enableSensorInputs(false);
   // ballance settings
-  enableStaticBallance(false);
+  setForwardBallance(-12);
+  enableStaticBallance(true);
   enableDynamicBallance(false);
-  enableSideBallance(false);
-  enableRockPatterns(true);
-  setForwardBallance(-6);
+  enableSideBallance(true);
+  // patterns settings
+  enableWalkPatterns(false);
+  enableRockPatterns(false);
+  enableSwtchPatterns(false);
+  enableCompensationPatterns(false);
+  //
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
