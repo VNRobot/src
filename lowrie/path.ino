@@ -168,12 +168,12 @@ pair getSpeedPathCount(void) {
   return walk;
 }
 
-/*
 // get direction flag
-bool getforwardPath(void) {
+bool getForwardPath(void) {
   return walkFrward;
 }
 
+/*
 // update distance to target in cm
 void updateDistancePath(short distance) {
   distanceToTarget += distance * 10;
@@ -326,9 +326,9 @@ void setDistancePath(short distance) {
 }
 
 // set maximal speed in mm per step
-void setMaxPathStep(short stepSize, short fullCycle, short liftPoint) {
+void setMaxPathStep(short stepSize, short speed) {
   pathParams.maximalStep = stepSize;
-  speedMultiplierParam = stepSize / (fullCycle - ((liftPoint * 2) - 1)); // 120 / (64 - ((5 * 2) - 1)) = 2
+  speedMultiplierParam = speed;
 }
 
 // enable step turning

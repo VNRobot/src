@@ -17,9 +17,11 @@ Main file
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
 // normal hight
-#define HIGHT_DEFAULT           130
+#define HIGHT_DEFAULT           120
 // maximal hight
 #define HIGHT_MAX               160
+// lift value
+#define LIFT_DEFAULT            50
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -29,8 +31,6 @@ Main file
 #define STATE_COUNTER           2
 // leg lift point
 #define LIFT_POINT              5
-// step size in mm
-#define STEP_SIZE               120
 // legs geometry in mm
 #define LEG_EXTRA_SIDE          18
 #define LEG_EXTRA_HIGHT         20
@@ -99,9 +99,12 @@ enum rState {
 // leg state
 enum lState {
   LEG_LINEAR,
+  LEG_BEFORE_LIFTING,
   LEG_LIFTING,
-  LEG_LIFTED,
-  LEG_LOWERING
+  LEG_LIFTED_BEFORE,
+  LEG_LIFTED_AFTER,
+  LEG_LOWERING,
+  LEG_AFTER_LOWERING
 };
 // structure for one leg data
 typedef struct leg {
@@ -247,16 +250,16 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // set legs state
-  setWalkPatternsStateCount(getWalkingModeInTask());
+  setLegsStateCounter(getWalkingModeInTask(), LIFT_POINT);
   // set legs shift
-  setWalkPatternsShiftCount(getWalkingModeInTask(), getSpeedPathCount(), getBallanceCount(mCounter));
+  setWalkPatternsShiftCount(getWalkingModeInTask(), getSpeedPathCount(), getForwardPath());
   // set legs lift
-  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), getBallanceCount(mCounter), getSideBallanceCount(), getSwitches()); //, getCenterCompensation());
+  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), getSwitches());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
-  mCounter = updatePatternsCount(keepCounting);
+  mCounter = updateCounter(keepCounting, getForwardPath());
   // update current readings
   updateCurrentCount(mCounter);
   // update gyro readings
@@ -275,9 +278,6 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
-      setInputsHight(HIGHT_DEFAULT);
-      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -285,9 +285,6 @@ void _setState(unsigned char newState) {
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
-      setInputsHight(HIGHT_DEFAULT);
-      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -295,9 +292,6 @@ void _setState(unsigned char newState) {
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
-      setPatternParameters(HIGHT_DEFAULT, 16, LIFT_POINT);
-      setInputsHight(HIGHT_DEFAULT);
-      setMaxPathStep(STEP_SIZE, getMainCyclePatterns(), LIFT_POINT);
       enableObstacleInputs(false);
       enableEdgeInputs(false);
     }
@@ -314,22 +308,30 @@ void setup() {
   Serial.println(F("Device started"));
   delay(200);
   // set features
-  setMainCyclePatterns(64);
+  setMainCounter(64);
   enableExtraCurrent(true);
+  // input settings
   enableExtraInputs(false);
+  enableSensorInputs(false);
+  setInputsHight(HIGHT_DEFAULT);
+  // path settings
+  setMaxPathStep(120, 2);
   enableTurningPath(true);
   enableCountingPath(false);
-  enableSensorInputs(false);
-  // ballance settings
-  setForwardBallance(-12);
-  enableStaticBallance(true);
-  enableDynamicBallance(false);
-  enableSideBallance(true);
+  setDistancePath(100); // cm
+  // shift settings
+  setLiftPointShift(LIFT_POINT);
+  setForwardShift(-12);
+  enableRockShift(false);
+  enableWalkShift(false);
+  enableBallanceShift(false);
   // patterns settings
-  enableWalkPatterns(false);
-  enableRockPatterns(false);
+  setPatternParameters(HIGHT_DEFAULT, LIFT_DEFAULT, LIFT_POINT);
   enableSwtchPatterns(false);
   enableCompensationPatterns(false);
+  enableSideBallancePatterns(false);
+  // servo settings
+  setStepScaleServo(100);
   //
   // check button press
   bool calibrationMode = m_getButtonPressed();
@@ -393,9 +395,7 @@ void setup() {
   initTasks();
   // load task and pattern. direction is 0
   updatePath(0);
-  mCounter = updatePatternsCount(true);
-  // set distance to target cm
-  setDistancePath(100);
+  mCounter = updateCounter(true, true);
   // set state
   _setState(ROBOT_NORM);
 }

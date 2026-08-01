@@ -56,7 +56,8 @@ char forwardSetValueR = 0;
 // side flipped flags
 char flippedL = 1;
 char flippedR = 1;
-
+// step scale in percent
+short stepScale = 100;
 /*
 uses
 m_legsValue
@@ -82,7 +83,8 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   }
   // calculate Lvalue and angles
   Sval -= 12; // nalf distance between motors in mm
-  Lval = sqrt(Hval * Hval + Sval * Sval);
+  // scale step
+  Lval = sqrt((Hval * Hval) + ((Sval * Sval * stepScale * stepScale) / 10000)); // ((Hval * Hval) + (Sval * Sval))
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
     AngleC = -AngleC;
@@ -382,4 +384,9 @@ void updateLegsServoCount(void) {
   servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
   servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
   _doPWMServo();
+}
+
+// set step size in percent
+void setStepScaleServo(short scale) {
+  stepScale = scale;
 }
