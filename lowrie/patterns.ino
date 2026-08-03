@@ -11,6 +11,7 @@ Robot legs hight motion patterns
 #define OPPOSITE_LEG_COMPENSATION   4
 #define LIFTING_LEG_COMPENSATION    10
 #define LEG_LOWERING_SPEED          5
+#define LEG_LIFTING_SPEED           10
 #define STEP_DOWN_HIGHT             20
 #define SIDE_BALLANCE_MAX           20
 
@@ -18,7 +19,6 @@ Robot legs hight motion patterns
 typedef struct patternParam {
   short legHightNow;
   short legLiftNow;
-  unsigned char legLiftPoint;
   bool switchEnabled;
   bool compensationEnabled;
   bool sideBallanceEnabled;
@@ -28,7 +28,6 @@ typedef struct patternParam {
 patternParam patParam = {
   HIGHT_DEFAULT,            // short legHightNow;
   50,                       // short legLiftNow;
-  5,                        // unsigned char legLiftPoint;
   false,                    // bool switchEnabled;
   false,                    // bool compensationEnabled;
   false                     // bool sideBallanceEnabled;
@@ -46,6 +45,13 @@ short phaseBufferRL = 0;
 short phaseBufferRR = 0;
 // side ballance
 short sideBallance = 0;
+// flag to delay counting
+bool keepCounting = true;
+// leg lifting
+short legLiftingFL = 0;
+short legLiftingFR = 0;
+short legLiftingRL = 0;
+short legLiftingRR = 0;
 
 /*
 uses
@@ -139,16 +145,16 @@ void _setLegsPhaseBuffers(void) {
 }
 
 // lowering the leg
-short _lowerLeg(short leH, short targetHight) {
+short _lowerLeg(short leH, short targetHight, short step) {
   if (leH < targetHight) {
-    if (leH < (targetHight - LEG_LOWERING_SPEED)) {
-      leH += LEG_LOWERING_SPEED;
+    if (leH < (targetHight - step)) {
+      leH += step;
     } else {
       leH = targetHight;
     }
   } else {
-    if (leH > (targetHight + LEG_LOWERING_SPEED)) {
-      leH -= LEG_LOWERING_SPEED;
+    if (leH > (targetHight + step)) {
+      leH -= step;
     } else {
       leH = targetHight;
     }
@@ -156,229 +162,73 @@ short _lowerLeg(short leH, short targetHight) {
   return leH;
 }
 
-// get servo motor steps for speed 3 to - 3
-bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow) {
-  // flag to delay counting
-  bool keepCounting = true;
-  if (patParam.sideBallanceEnabled) {
-    if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
-      if (m_gyroState.aRollNow > 1) {
-        if (sideBallance < SIDE_BALLANCE_MAX) {
-          sideBallance ++;
-        }
-      } else if (m_gyroState.aRollNow < -1) {
-        if (sideBallance > -SIDE_BALLANCE_MAX) {
-          sideBallance --;
+// leg lifting
+short _setlegLifting(short legLift, unsigned char legState, bool swEnabled, short swValue) {
+  switch (legState) {
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    case LEG_LIFTING:
+    {
+      //legLift = -patParam.legLiftNow;
+      legLift = _lowerLeg(legLift, -patParam.legLiftNow, LEG_LIFTING_SPEED);
+    }
+    break;
+    case LEG_LOWERING:
+    {
+      if ((swValue == 1) || (!swEnabled)) {
+        legLift = _lowerLeg(legLift, 0, LEG_LOWERING_SPEED);
+        if (legLift != 0) {
+          keepCounting = false;
         }
       }
     }
+    break;
+    default:
+    break;
+  }
+  return legLift;
+}
+
+// get servo motor steps for speed 3 to - 3
+bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow) {
+  keepCounting = true;
+  if (patParam.sideBallanceEnabled) {
+    //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+    if (m_gyroState.aRollNow > 1) {
+      if (sideBallance < SIDE_BALLANCE_MAX) {
+        sideBallance ++;
+      }
+    } else if (m_gyroState.aRollNow < -1) {
+      if (sideBallance > -SIDE_BALLANCE_MAX) {
+        sideBallance --;
+      }
+    }
+    //}
   }
   if (walkingModeNow) {
     // side ballance compensation
-    short sideHightFL = 0;
-    short sideHightFR = 0;
-    short sideHightRL = 0;
-    short sideHightRR = 0;
+    short sideHightL = 0;
+    short sideHightR = 0;
     // side ballance
     if (sideBallance > 0) {
-      sideHightFL -= sideBallance;
-      sideHightFR -= sideBallance;
+      sideHightL -= sideBallance;
     } else if (sideBallance < 0) {
-      sideHightRL += sideBallance;
-      sideHightRR += sideBallance;
+      sideHightR += sideBallance;
     }
     // set leg hight phase compensation buffers
     if (patParam.compensationEnabled) {
       _setLegsPhaseBuffers();
     }
-    // fl
-    switch (m_legsValue.fl.state) {
-      case LEG_LINEAR:
-      break;
-      case LEG_LIFTING:
-      {
-        surfaceBufferFL = -patParam.legLiftNow;
-      }
-      break;
-      case LEG_LIFTED_BEFORE:
-      case LEG_LIFTED_AFTER:
-      {
-        surfaceBufferFR = _lowerLeg(surfaceBufferFR, 0);
-        //surfaceBufferRL = _lowerLeg(surfaceBufferRL, 0);
-        //surfaceBufferRR = _lowerLeg(surfaceBufferRR, 0);
-      }
-      break;
-      case LEG_LOWERING:
-      {
-        if (patParam.switchEnabled) {
-          if (touchingNow.fl == 1) {
-            surfaceBufferFL = _lowerLeg(surfaceBufferFL, 0);
-            if (surfaceBufferFL != 0) {
-              keepCounting = false;
-            }
-            /*
-            } else {
-              // lower pair leg
-              surfaceBufferFR = _lowerLeg(surfaceBufferFR, -STEP_DOWN_HIGHT);
-              if (surfaceBufferFR != -STEP_DOWN_HIGHT) {
-                keepCounting = false;
-              }
-            }
-              */
-          } else {
-            surfaceBufferFL -= LIFTING_LEG_COMPENSATION;
-          }
-        } else {
-          surfaceBufferFL = 0;
-        }
-      }
-      break;
-      default:
-        //Serial.print(F(" Wrong pattern state "));
-      break;
-    }
-    // fr
-    switch (m_legsValue.fr.state) {
-      case LEG_LINEAR:
-      break;
-      case LEG_LIFTING:
-      {
-        surfaceBufferFR = -patParam.legLiftNow;
-      }
-      break;
-      case LEG_LIFTED_BEFORE:
-      case LEG_LIFTED_AFTER:
-      {
-        surfaceBufferFL = _lowerLeg(surfaceBufferFL, 0);
-        //surfaceBufferRL = _lowerLeg(surfaceBufferRL, 0);
-        //surfaceBufferRR = _lowerLeg(surfaceBufferRR, 0);
-      }
-      break;
-      case LEG_LOWERING:
-      {
-        if (patParam.switchEnabled) {
-          if (touchingNow.fr == 1) {
-            surfaceBufferFR = _lowerLeg(surfaceBufferFR, 0);
-            if (surfaceBufferFR != 0) {
-              keepCounting = false;
-            }
-            /*
-            } else {
-              // lower pair leg
-              surfaceBufferFL = _lowerLeg(surfaceBufferFL, -STEP_DOWN_HIGHT);
-              if (surfaceBufferFL != -STEP_DOWN_HIGHT) {
-                keepCounting = false;
-              }
-            }
-              */
-          } else {
-            surfaceBufferFR -= LIFTING_LEG_COMPENSATION;
-          }
-        } else {
-          surfaceBufferFR = 0;
-        }
-      }
-      break;
-      default:
-        //Serial.print(F(" Wrong pattern state "));
-      break;
-    }
-    // rr
-    switch (m_legsValue.rr.state) {
-      case LEG_LINEAR:
-      break;
-      case LEG_LIFTING:
-      {
-        surfaceBufferRR = -patParam.legLiftNow;
-      }
-      break;
-      case LEG_LIFTED_BEFORE:
-      case LEG_LIFTED_AFTER:
-      {
-        surfaceBufferRL = _lowerLeg(surfaceBufferRL, 0);
-        //surfaceBufferFL = _lowerLeg(surfaceBufferFL, 0);
-        //surfaceBufferFR = _lowerLeg(surfaceBufferFR, 0);
-      }
-      break;
-      case LEG_LOWERING:
-      {
-        if (patParam.switchEnabled) {
-          if (touchingNow.rr == 1) {
-            surfaceBufferRR = _lowerLeg(surfaceBufferRR, 0);
-            if (surfaceBufferRR != 0) {
-              keepCounting = false;
-            }
-            /*
-            } else {
-              // lower pair leg
-              surfaceBufferRL = _lowerLeg(surfaceBufferRL, -STEP_DOWN_HIGHT);
-              if (surfaceBufferRL != -STEP_DOWN_HIGHT) {
-                keepCounting = false;
-              }
-            }
-              */
-          } else {
-            surfaceBufferRR -= LIFTING_LEG_COMPENSATION;
-          }
-        } else {
-          surfaceBufferRR = 0;
-        }
-      }
-      break;
-      default:
-        //Serial.print(F(" Wrong pattern state "));
-      break;
-    }
-    // rl
-    switch (m_legsValue.rl.state) {
-      case LEG_LINEAR:
-      break;
-      case LEG_LIFTING:
-      {
-        surfaceBufferRL = -patParam.legLiftNow;
-      }
-      break;
-      case LEG_LIFTED_BEFORE:
-      case LEG_LIFTED_AFTER:
-      {
-        surfaceBufferRR = _lowerLeg(surfaceBufferRR, 0);
-        //surfaceBufferFL = _lowerLeg(surfaceBufferFL, 0);
-        //surfaceBufferFR = _lowerLeg(surfaceBufferFR, 0);
-      }
-      break;
-      case LEG_LOWERING:
-      {
-        if (patParam.switchEnabled) {
-          if (touchingNow.rl == 1) {
-            surfaceBufferRL = _lowerLeg(surfaceBufferRL, 0);
-            if (surfaceBufferRL != 0) {
-              keepCounting = false;
-            }
-            /*
-            } else {
-              // lower pair leg
-              surfaceBufferRR = _lowerLeg(surfaceBufferRR, -STEP_DOWN_HIGHT);
-              if (surfaceBufferRR != -STEP_DOWN_HIGHT) {
-                keepCounting = false;
-              }
-            }
-              */
-          } else {
-            surfaceBufferRL -= LIFTING_LEG_COMPENSATION;
-          }
-        } else {
-          surfaceBufferRL = 0;
-        }
-      }
-      break;
-      default:
-        //Serial.print(F(" Wrong pattern state "));
-      break;
-    }
-    m_legsValue.fl.hight = patParam.legHightNow + sideHightFL + phaseBufferFL + surfaceBufferFL;
-    m_legsValue.fr.hight = patParam.legHightNow + sideHightFR + phaseBufferFR + surfaceBufferFR;
-    m_legsValue.rl.hight = patParam.legHightNow + sideHightRL + phaseBufferRL + surfaceBufferRL;
-    m_legsValue.rr.hight = patParam.legHightNow + sideHightRR + phaseBufferRR + surfaceBufferRR;
+    // leg lifting
+    legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state, patParam.switchEnabled, touchingNow.fl);
+    legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state, patParam.switchEnabled, touchingNow.fr);
+    legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state, patParam.switchEnabled, touchingNow.rl);
+    legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state, patParam.switchEnabled, touchingNow.rr);
+    // final
+    m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL + phaseBufferFL; // + surfaceBufferFL;
+    m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR + phaseBufferFR; // + surfaceBufferFR;
+    m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + phaseBufferRL; // + surfaceBufferRL;
+    m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + phaseBufferRR; // + surfaceBufferRR;
   } else {
     m_legsValue.fl.hight = patParam.legHightNow;
     m_legsValue.fr.hight = patParam.legHightNow;
@@ -389,10 +239,9 @@ bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow) {
 }
 
 // set pattern parameters
-void setPatternParameters(short legHight, short legLift, unsigned char liftPoint) {
+void setPatternParameters(short legHight, short legLift) {
   patParam.legHightNow = legHight;
   patParam.legLiftNow = legLift;
-  patParam.legLiftPoint = liftPoint;
 }
 
 // enable switch

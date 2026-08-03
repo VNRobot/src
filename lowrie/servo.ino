@@ -84,7 +84,8 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   // calculate Lvalue and angles
   Sval -= 12; // nalf distance between motors in mm
   // scale step
-  Lval = sqrt((Hval * Hval) + ((Sval * Sval * stepScale * stepScale) / 10000)); // ((Hval * Hval) + (Sval * Sval))
+  //Lval = sqrt((Hval * Hval) + ((Sval * Sval * stepScale * stepScale) / 10000)); // ((Hval * Hval) + (Sval * Sval))
+  Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
     AngleC = -AngleC;

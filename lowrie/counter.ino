@@ -15,12 +15,8 @@ typedef struct timing {
 // main timing 64 32 16
 timing mainTiming = {64, 32, 16};
 // pair shift
-char legsPairShift = 5;
+char legsPairShift = 16;
 // sequence counters
-char counterFL = 0;
-char counterFR = mainTiming.halfCycle;
-char counterRR = mainTiming.fullCycle - legsPairShift;
-char counterRL = mainTiming.halfCycle - legsPairShift;
 
 /*
 uses
@@ -49,50 +45,52 @@ unsigned char _getLegState(char counter, unsigned char liftPoint) {
 }
 
 // update servo motors values
-unsigned char updateCounter(bool keepCounting, bool walkForward) {
+unsigned char updateCounter(bool walkingModeNow, bool keepCounting) {
+  // set direction
+  bool walkForward = true;
+  if ((m_legsValue.fl.speed < 0) || (m_legsValue.fr.speed < 0)) {
+    walkForward = false;
+  }
   // update main counter
-  if (keepCounting || (counterFL == 0)) {
-    counterFL ++;
+  if (keepCounting || (m_legsValue.fl.count == 0)) {
+    m_legsValue.fl.count ++;
   }
-  if (counterFL >= mainTiming.fullCycle) {
-    counterFL = 0;
+  if (m_legsValue.fl.count >= mainTiming.fullCycle) {
+    m_legsValue.fl.count = 0;
   }
-  counterFR = counterFL + mainTiming.halfCycle;
-  if (counterFR >= mainTiming.fullCycle) {
-    counterFR -= mainTiming.fullCycle;
+  m_legsValue.fr.count = m_legsValue.fl.count + mainTiming.halfCycle;
+  if (m_legsValue.fr.count >= mainTiming.fullCycle) {
+    m_legsValue.fr.count -= mainTiming.fullCycle;
   }
   // rear pair shift depends on firection of movement
   if (walkForward) {
-    counterRR = counterFL - legsPairShift;
+    m_legsValue.rr.count = m_legsValue.fl.count - legsPairShift;
   } else {
-    counterRR = counterFL + legsPairShift;
+    m_legsValue.rr.count = m_legsValue.fl.count + legsPairShift;
   }
-  if (counterRR >= mainTiming.fullCycle) {
-    counterRR -= mainTiming.fullCycle;
-  } else if (counterRR < 0) {
-    counterRR += mainTiming.fullCycle;
+  if (m_legsValue.rr.count >= mainTiming.fullCycle) {
+    m_legsValue.rr.count -= mainTiming.fullCycle;
+  } else if (m_legsValue.rr.count < 0) {
+    m_legsValue.rr.count += mainTiming.fullCycle;
   }
-  counterRL = counterRR + mainTiming.halfCycle;
-  if (counterRL >= mainTiming.fullCycle) {
-    counterRL -= mainTiming.fullCycle;
+  m_legsValue.rl.count = m_legsValue.rr.count + mainTiming.halfCycle;
+  if (m_legsValue.rl.count >= mainTiming.fullCycle) {
+    m_legsValue.rl.count -= mainTiming.fullCycle;
   }
-  return (unsigned char)counterFL;
-}
-
-// set legs state
-void setLegsStateCounter(bool walkingModeNow, unsigned char liftPoint) {
   if (walkingModeNow) {
     // set legs state
-    m_legsValue.fl.state = _getLegState(counterFL, liftPoint);
-    m_legsValue.fr.state = _getLegState(counterFR, liftPoint);
-    m_legsValue.rl.state = _getLegState(counterRL, liftPoint);
-    m_legsValue.rr.state = _getLegState(counterRR, liftPoint);
+    m_legsValue.fl.state = _getLegState(m_legsValue.fl.count, m_legsValue.fl.liftPoint);
+    m_legsValue.fr.state = _getLegState(m_legsValue.fr.count, m_legsValue.fr.liftPoint);
+    m_legsValue.rl.state = _getLegState(m_legsValue.rl.count, m_legsValue.rl.liftPoint);
+    m_legsValue.rr.state = _getLegState(m_legsValue.rr.count, m_legsValue.rr.liftPoint);
   } else {
+    // not walking always linear
     m_legsValue.fl.state = LEG_LINEAR;
     m_legsValue.fr.state = LEG_LINEAR;
     m_legsValue.rl.state = LEG_LINEAR;
     m_legsValue.rr.state = LEG_LINEAR;
   }
+  return (unsigned char)m_legsValue.fl.count;
 }
 
 // set main cycle value
@@ -102,9 +100,4 @@ void setMainCounter(short mainCycle) {
   mainTiming.quarterCycle = mainTiming.halfCycle / 2;
   // the same for now
   legsPairShift = mainTiming.quarterCycle;
-}
-
-// get main cycle value
-short getSizeCounter(void) {
-  return mainTiming.fullCycle;
 }

@@ -35,10 +35,6 @@ char speedMultiplierAbsolute = 0;
 bool walkFrward = true;
 // distance to the target mm
 short distanceToTarget = 0;
-// absolute speed
-pair speedMultiplierNow = {0, 0};
-
-
 // on the path flag
 bool onThePath = false;
 // speed multiplier
@@ -134,15 +130,30 @@ void updatePath(short direction) {
   // calculate speed
   _setAbsoluteSpeed(direction);
   // step turning
-  speedMultiplierNow.left = _sideSpeed(-direction, speedMultiplierAbsolute);
-  speedMultiplierNow.right = _sideSpeed(direction, speedMultiplierAbsolute);
+  m_legsValue.fl.speed = _sideSpeed(-direction, speedMultiplierAbsolute);
+  m_legsValue.fr.speed = _sideSpeed(direction, speedMultiplierAbsolute);
+  // disable step turning
   if (!pathParams.stepTurningEnabled) {
-    if (speedMultiplierNow.left < speedMultiplierNow.right) {
-      speedMultiplierNow.left = speedMultiplierNow.right;
-    } else if (speedMultiplierNow.right < speedMultiplierNow.left) {
-      speedMultiplierNow.right = speedMultiplierNow.left;
+    if (m_legsValue.fl.speed < m_legsValue.fr.speed) {
+      m_legsValue.fl.speed = m_legsValue.fr.speed;
+    } else if (m_legsValue.fr.speed < m_legsValue.fl.speed) {
+      m_legsValue.fr.speed = m_legsValue.fl.speed;
     }
   }
+  // set lift point
+  m_legsValue.fl.liftPoint = m_legsValue.fl.speed + LIFT_POINT_MIN;
+  m_legsValue.fr.liftPoint = m_legsValue.fr.speed + LIFT_POINT_MIN;
+  // apply direction
+  if (!walkFrward) {
+    m_legsValue.fl.speed = -m_legsValue.fl.speed;
+    m_legsValue.fr.speed = -m_legsValue.fr.speed;
+  }
+  // set rear legs speed and lift point
+  m_legsValue.rl.speed = m_legsValue.fl.speed;
+  m_legsValue.rr.speed = m_legsValue.fr.speed;
+  m_legsValue.rl.liftPoint = m_legsValue.fl.liftPoint;
+  m_legsValue.rr.liftPoint = m_legsValue.fr.liftPoint;
+  // calculated distance to target
   if (pathParams.stepsDistanceCountEnabled) {
     // step size
     short stepSize = pathParams.maximalStep / ROBOT_SIZE_DEVIDER;
@@ -153,24 +164,6 @@ void updatePath(short direction) {
       distanceToTarget = 0;
     }
   }
-}
-
-// get speed
-pair getSpeedPathCount(void) {
-  pair walk;
-  if (walkFrward) {
-    walk.right = speedMultiplierNow.right;
-    walk.left = speedMultiplierNow.left;
-  } else {
-    walk.right = -speedMultiplierNow.right;
-    walk.left = -speedMultiplierNow.left;
-  }
-  return walk;
-}
-
-// get direction flag
-bool getForwardPath(void) {
-  return walkFrward;
 }
 
 /*

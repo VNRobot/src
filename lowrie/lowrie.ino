@@ -30,7 +30,7 @@ Main file
 // counter to keep state the same
 #define STATE_COUNTER           2
 // leg lift point
-#define LIFT_POINT              5
+#define LIFT_POINT_MIN          3
 // legs geometry in mm
 #define LEG_EXTRA_SIDE          18
 #define LEG_EXTRA_HIGHT         20
@@ -111,6 +111,9 @@ typedef struct leg {
   short hight;
   short shift;
   unsigned char state;
+  char count;
+  unsigned char liftPoint;
+  char speed;
 } leg;
 // legs motors structure
 typedef struct allLegs {
@@ -119,11 +122,6 @@ typedef struct allLegs {
   leg rl;
   leg rr;
 } allLegs;
-// structure for leg pair
-typedef struct pair {
-  short left;
-  short right;
-} pair;
 // structure for four legs
 typedef struct quad {
   short fl;
@@ -153,7 +151,10 @@ typedef struct accRoll {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR, 125, 0, LEG_LINEAR};
+allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, 5, 0,
+                       125, 0, LEG_LINEAR, 0, 5, 0,
+                       125, 0, LEG_LINEAR, 0, 5, 0,
+                       125, 0, LEG_LINEAR, 0, 5, 0};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -249,17 +250,15 @@ void _doQuickAndOther(unsigned char patternNow) {
 
 // set motors and read sensors
 void _doCycle(void) {
-  // set legs state
-  setLegsStateCounter(getWalkingModeInTask(), LIFT_POINT);
   // set legs shift
-  setWalkPatternsShiftCount(getWalkingModeInTask(), getSpeedPathCount(), getForwardPath());
+  setWalkPatternsShiftCount(getWalkingModeInTask());
   // set legs lift
   bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), getSwitches());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
-  mCounter = updateCounter(keepCounting, getForwardPath());
+  mCounter = updateCounter(getWalkingModeInTask(), keepCounting);
   // update current readings
   updateCurrentCount(mCounter);
   // update gyro readings
@@ -320,18 +319,17 @@ void setup() {
   enableCountingPath(false);
   setDistancePath(100); // cm
   // shift settings
-  setLiftPointShift(LIFT_POINT);
-  setForwardShift(-12);
-  enableRockShift(false);
-  enableWalkShift(false);
-  enableBallanceShift(false);
+  setForwardShift(-14);
+  enableRockShift(true);
+  enableWalkShift(true);
+  enableBallanceShift(true);
   // patterns settings
-  setPatternParameters(HIGHT_DEFAULT, LIFT_DEFAULT, LIFT_POINT);
+  setPatternParameters(HIGHT_DEFAULT, LIFT_DEFAULT);
   enableSwtchPatterns(false);
-  enableCompensationPatterns(false);
-  enableSideBallancePatterns(false);
+  enableCompensationPatterns(true);
+  enableSideBallancePatterns(true);
   // servo settings
-  setStepScaleServo(100);
+  setStepScaleServo(50);
   //
   // check button press
   bool calibrationMode = m_getButtonPressed();
