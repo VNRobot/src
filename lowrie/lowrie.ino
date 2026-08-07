@@ -325,7 +325,7 @@ void setup() {
   enableBallanceShift(true);
   // patterns settings
   setPatternParameters(HIGHT_DEFAULT, LIFT_DEFAULT);
-  enableSwtchPatterns(false);
+  enableSwtchPatterns(true);
   enableCompensationPatterns(true);
   enableSideBallancePatterns(true);
   // servo settings
