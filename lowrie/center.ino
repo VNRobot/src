@@ -201,12 +201,12 @@ void setSideShiftCenter(short direction) {
 void updateCenterCount(void) {
   if (directionFront > TURNING_SENSITIVITY) {
     // turn front right
-    if (m_legsValue.fr.state == LEG_LIFTED) {
+    if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
       // move leg to the side
       if (centerValue.front < directionFront) {
         centerValue.front ++;
       }
-    } else if (m_legsValue.fl.state == LEG_LIFTED) {
+    } else if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.front > 0) {
         centerValue.front --;
@@ -214,26 +214,26 @@ void updateCenterCount(void) {
     }
   } else if (directionFront < -TURNING_SENSITIVITY) {
     // turn front left
-    if (m_legsValue.fl.state == LEG_LIFTED) {
+    if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
       // move leg to the side
       if (centerValue.front < -directionFront) {
         centerValue.front ++;
       }
-    } else if (m_legsValue.fr.state == LEG_LIFTED) {
+    } else if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.front > 0) {
         centerValue.front --;
       }
     }
   } else if (directionFront > 0) {
-    if (m_legsValue.fl.state == LEG_LIFTED) {
+    if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.front > 0) {
         centerValue.front --;
       }
     }
   } else {
-    if (m_legsValue.fr.state == LEG_LIFTED) {
+    if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.front > 0) {
         centerValue.front --;
@@ -242,12 +242,12 @@ void updateCenterCount(void) {
   }
   if (directionRear > TURNING_SENSITIVITY) {
     // turn rear right
-    if (m_legsValue.rr.state == LEG_LIFTED) {
+    if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
       // move leg to the side
       if (centerValue.rear < directionRear) {
         centerValue.rear ++;
       }
-    } else if (m_legsValue.rl.state == LEG_LIFTED) {
+    } else if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.rear > 0) {
         centerValue.rear --;
@@ -255,26 +255,26 @@ void updateCenterCount(void) {
     }
   } else if (directionRear < -TURNING_SENSITIVITY) {
     // turn rear left
-    if (m_legsValue.rl.state == LEG_LIFTED) {
+    if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
       // move leg to the side
       if (centerValue.rear < -directionRear) {
         centerValue.rear ++;
       }
-    } else if (m_legsValue.rr.state == LEG_LIFTED) {
+    } else if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.rear > 0) {
         centerValue.rear --;
       }
     }
   } else if (directionRear > 0) {
-    if (m_legsValue.rl.state == LEG_LIFTED) {
+    if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.rear > 0) {
         centerValue.rear --;
       }
     }
   } else {
-    if (m_legsValue.rr.state == LEG_LIFTED) {
+    if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
       // move leg back to normal
       if (centerValue.rear > 0) {
         centerValue.rear --;
@@ -314,11 +314,3 @@ centers getCenterCompensation(void) {
   compensation.rear = (short)(HIGHT_DEFAULT - (cos(((realAngle.rear + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
   return compensation;
 }
-
-/*
-// update robot ballance
-void updateBallanceCenter(void) {
-  centerSetValue.front += ;
-  centerSetValue.rear -= ;
-}
-*/

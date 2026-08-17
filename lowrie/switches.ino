@@ -8,28 +8,39 @@ Robot sensor switches
 // pin numbers for switch
 enum swPins {
   FL_SWITCH = 2,
-  FR_SWITCH = 3
+  FR_SWITCH = 3,
+  RL_SWITCH = 4,
+  RR_SWITCH = 5
 };
 // switches state
 enum swState {
   SW_NORM,
   SW_FL_BUMP,
   SW_FR_BUMP,
+  SW_RL_BUMP,
+  SW_RR_BUMP,
   SW_F_BUMP
 };
 
 // switches data
-pair swStateNow = {1, 1};
+quad swStateNow = {1, 1, 1, 1};
 // switches value
-pair swStateValue = {1, 1};
+quad swStateValue = {1, 1, 1, 1};
 // switch state
 unsigned char swsState = SW_NORM;
+// switches count
+unsigned char swsCount = 2;
 
 // init Switches
-void initSwitches(bool calibrationMode) {
+void initSwitches(bool calibrationMode, unsigned char swCount) {
+  swsCount = swCount;
   Serial.println(F("initSwitches"));
   pinMode(FL_SWITCH, INPUT_PULLUP);
   pinMode(FR_SWITCH, INPUT_PULLUP);
+  if (swsCount == 4) {
+    pinMode(RL_SWITCH, INPUT_PULLUP);
+    pinMode(RR_SWITCH, INPUT_PULLUP);
+  }
   unsigned char counter = 0;
   while (calibrationMode) {
     counter ++;
@@ -49,33 +60,51 @@ void initSwitches(bool calibrationMode) {
 
 // read switches
 void readSwitchesCount(unsigned char counter) {
-  swStateNow.left = digitalRead(FL_SWITCH);
-  swStateNow.right = digitalRead(FR_SWITCH);
+  swStateNow.fl = digitalRead(FL_SWITCH);
+  swStateNow.fr = digitalRead(FR_SWITCH);
+  if (swsCount == 4) {
+    swStateNow.rl = digitalRead(RL_SWITCH);
+    swStateNow.rr = digitalRead(RR_SWITCH);
+  }
   //
   if (counter == 0) {
-    swStateValue.left = 1;
-    swStateValue.right = 1;
+    swStateValue.fl = 1;
+    swStateValue.fr = 1;
+    swStateValue.rl = 1;
+    swStateValue.rr = 1;
   }
-  if (swStateNow.left == 0) {
-    swStateValue.left = 0;
+  if (swStateNow.fl == 0) {
+    swStateValue.fl = 0;
   }
-  if (swStateNow.right == 0) {
-    swStateValue.right = 0;
+  if (swStateNow.fr == 0) {
+    swStateValue.fr = 0;
+  }
+  if (swStateNow.rl == 0) {
+    swStateValue.rl = 0;
+  }
+  if (swStateNow.rr == 0) {
+    swStateValue.rr = 0;
   }
 }
 
 // get switches state
 unsigned char getSwitchesState(void) {
   // set state
-  if ((swStateValue.left == 0) && (swStateValue.right == 0)) {
+  if ((swStateValue.fl == 0) && (swStateValue.fr == 0)) {
     // fl fr bump
     swsState = SW_F_BUMP;
-  } else if (swStateValue.left == 0) {
+  } else if (swStateValue.fl == 0) {
     // fl bump
     swsState = SW_FL_BUMP;
-  } else if (swStateValue.right == 0) {
+  } else if (swStateValue.fr == 0) {
     // fr bump
     swsState = SW_FR_BUMP;
+  } else if (swStateValue.rl == 0) {
+    // rl bump
+    swsState = SW_RL_BUMP;
+  } else if (swStateValue.rr == 0) {
+    // rr bump
+    swsState = SW_RR_BUMP;
   } else {
     swsState = SW_NORM;
   }
@@ -83,7 +112,7 @@ unsigned char getSwitchesState(void) {
 }
 
 // get switch
-pair getSwitch(void) {
+quad getSwitches(void) {
   return swStateNow;
 }
 
@@ -98,6 +127,12 @@ void _printSwitchesState(unsigned char swState) {
     break;
     case SW_FR_BUMP:
       Serial.println(F(" SW_FR_BUMP "));
+    break;
+    case SW_RL_BUMP:
+      Serial.println(F(" SW_RL_BUMP "));
+    break;
+    case SW_RR_BUMP:
+      Serial.println(F(" SW_RR_BUMP "));
     break;
     case SW_NORM:
       Serial.println(F(" SW_NORM "));

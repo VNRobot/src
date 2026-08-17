@@ -2,332 +2,315 @@
 Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
-Robot legs motion patterns
+Robot legs hight motion patterns
 */
 
 // walking compensation parameters
-#define PAIR_LEG_COMPENSATION     4
-#define NEAR_BY_LEG_COMPENSATION  4
-#define OPPOSITE_LEG_COMPENSATION 6
-#define TOUCHING_LEG_COMPENSATION 6
-#define LIFTING_LEG_COMPENSATION  10
-#define ROCK_FORWARD_COMPENSATION  8
-#define SPEED_COMPENSATION         8
+#define PAIR_LEG_COMPENSATION       2
+#define NEAR_BY_LEG_COMPENSATION    2
+#define OPPOSITE_LEG_COMPENSATION   4
+#define LIFTING_LEG_COMPENSATION    10
+#define LEG_LOWERING_SPEED          5
+#define LEG_LIFTING_SPEED           10
+#define STEP_DOWN_HIGHT             20
+#define SIDE_BALLANCE_MAX           20
 
 // pattern state structure
 typedef struct patternParam {
   short legHightNow;
   short legLiftNow;
-  unsigned char legPairShiftNow;
-  unsigned char legLiftPoint;
-  short rockValue;
+  bool switchEnabled;
+  bool compensationEnabled;
+  bool sideBallanceEnabled;
 } patternParam;
-// structure for timing
-typedef struct timing {
-  short fullCycle;
-  short halfCycle;
-  short quarterCycle;
-} timing;
 
 // robot parameters
 patternParam patParam = {
   HIGHT_DEFAULT,            // short legHightNow;
   50,                       // short legLiftNow;
-  16,                       // unsigned char legPairShiftNow;
-  4,                        // unsigned char legLiftPoint;
-  ROCK_FORWARD_COMPENSATION // short rockValue;
+  false,                    // bool switchEnabled;
+  false,                    // bool compensationEnabled;
+  false                     // bool sideBallanceEnabled;
 };
 
-// main timing 64 32 16
-timing mainTiming = {64, 32, 16};
-// sequence counters
-char counterFL = 0;
-char counterFR = mainTiming.halfCycle;
-char counterRR = mainTiming.fullCycle - patParam.legPairShiftNow;
-char counterRL = mainTiming.halfCycle - patParam.legPairShiftNow;
-// pair shift
-char legsPairShift = 0;
-// forward flag
-bool goForward = true;
+// leg hight surface buffers
+short surfaceBufferFL = 0;
+short surfaceBufferFR = 0;
+short surfaceBufferRL = 0;
+short surfaceBufferRR = 0;
+// leg hight phase buffers
+short phaseBufferFL = 0;
+short phaseBufferFR = 0;
+short phaseBufferRL = 0;
+short phaseBufferRR = 0;
+// side ballance
+short sideBallance = 0;
+// flag to delay counting
+bool keepCounting = true;
+// leg lifting
+short legLiftingFL = 0;
+short legLiftingFR = 0;
+short legLiftingRL = 0;
+short legLiftingRR = 0;
 
 /*
 uses
 m_legsValue
+m_gyroState
 */
 
-// set same values for legs
-void _setLegsValuesBySide (short hightL, short shiftL, short hightR, short shiftR) {
-  m_legsValue.fl.hight = hightL;
-  m_legsValue.fl.shift = shiftL;
-  m_legsValue.fl.state = LEG_LINEAR;
-  m_legsValue.fr.hight = hightR;
-  m_legsValue.fr.shift = shiftR;
-  m_legsValue.fr.state = LEG_LINEAR;
-  m_legsValue.rl.hight = hightL;
-  m_legsValue.rl.shift = shiftL;
-  m_legsValue.rl.state = LEG_LINEAR;
-  m_legsValue.rr.hight = hightR;
-  m_legsValue.rr.shift = shiftR;
-  m_legsValue.rr.state = LEG_LINEAR;
+// update legs phase
+void _updateLegsPhaseHight(short fl, short fr, short rl, short rr) {
+  phaseBufferFL += fl;
+  phaseBufferFR += fr;
+  phaseBufferRL += rl;
+  phaseBufferRR += rr;
 }
 
-// set legs hight fl fr rl rr
-void _setLegsHight(short fl, short fr, short rl, short rr) {
-  m_legsValue.fl.hight += fl;
-  m_legsValue.fr.hight += fr;
-  m_legsValue.rl.hight += rl;
-  m_legsValue.rr.hight += rr;
+// set leg hight compensation
+void _setLegsPhaseBuffers(void) {
+  // reset leg hight phase buffers
+  phaseBufferFL = 0;
+  phaseBufferFR = 0;
+  phaseBufferRL = 0;
+  phaseBufferRR = 0;
+  // fl
+  switch (m_legsValue.fl.state) {
+    case LEG_LIFTING:
+    case LEG_LOWERING:
+    {
+      _updateLegsPhaseHight(LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
+    }
+    break;
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    {
+      _updateLegsPhaseHight(-LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
+    }
+    break;
+    default:
+    break;
+  }
+  // fr
+  switch (m_legsValue.fr.state) {
+    case LEG_LIFTING:
+    case LEG_LOWERING:
+    {
+      _updateLegsPhaseHight(PAIR_LEG_COMPENSATION, LIFTING_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
+    }
+    break;
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    {
+      _updateLegsPhaseHight(PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
+    }
+    break;
+    default:
+    break;
+  }
+  // rr
+  switch (m_legsValue.rr.state) {
+    case LEG_LIFTING:
+    case LEG_LOWERING:
+    {
+      _updateLegsPhaseHight(-OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, LIFTING_LEG_COMPENSATION);
+    }
+    break;
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    {
+      _updateLegsPhaseHight(-OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION);
+    }
+    break;
+    default:
+    break;
+  }
+  // rl
+  switch (m_legsValue.rl.state) {
+    case LEG_LIFTING:
+    case LEG_LOWERING:
+    {
+      _updateLegsPhaseHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
+    }
+    break;
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    {
+      _updateLegsPhaseHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
+    }
+    break;
+    default:
+    break;
+  }
 }
 
-// get rockforward value. front negative, rear positive
-short getRockForward(char counter) {
-  short rockForward = 0;
-  if (counter < patParam.legLiftPoint) {
-    // start of cycle
-    rockForward = patParam.rockValue;
-  } else if (counter > (mainTiming.fullCycle - patParam.legLiftPoint)) {
-    // end of cycle
-    rockForward = patParam.rockValue;
+// lowering the leg
+short _lowerLeg(short leH, short targetHight, short step) {
+  if (leH < targetHight) {
+    if (leH < (targetHight - step)) {
+      leH += step;
+    } else {
+      leH = targetHight;
+    }
   } else {
-    // linear walking shift
-    if (counter == patParam.legLiftPoint) {
-      rockForward = patParam.rockValue;
-    } else if (counter == mainTiming.fullCycle - patParam.legLiftPoint) {
-      rockForward = patParam.rockValue;
-    } else if (counter == patParam.legLiftPoint + 1) {
-      // after leg is down
-      rockForward = patParam.rockValue / 2;
-    } else if (counter == mainTiming.fullCycle - patParam.legLiftPoint - 1) {
-      // before leg is lifted
-      rockForward = patParam.rockValue / 2;
+    if (leH > (targetHight + step)) {
+      leH -= step;
+    } else {
+      leH = targetHight;
     }
   }
-  return rockForward;
+  return leH;
 }
 
-// get leg shift forward
-short getLegShiftForward(char counter, unsigned char quickShiftMultiplier) {
-  // linear  walking shift
-  short shiftForward = counter - mainTiming.halfCycle;
-  if (counter < patParam.legLiftPoint) {
-    // start of cycle
-    shiftForward = -counter * quickShiftMultiplier;
-  } else if (counter > (mainTiming.fullCycle - patParam.legLiftPoint)) {
-    // end of cycle
-    shiftForward = (mainTiming.fullCycle - counter) * quickShiftMultiplier;
+// leg lifting
+short _setlegLifting(short legLift, unsigned char legState, bool swEnabled, short swValue) {
+  switch (legState) {
+    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED_AFTER:
+    case LEG_LIFTING:
+    {
+      //legLift = -patParam.legLiftNow;
+      legLift = _lowerLeg(legLift, -patParam.legLiftNow, LEG_LIFTING_SPEED);
+    }
+    break;
+    case LEG_LOWERING:
+    {
+      if ((swValue == 1) || (!swEnabled)) {
+        legLift = _lowerLeg(legLift, 0, LEG_LOWERING_SPEED);
+        if (legLift != 0) {
+          keepCounting = false;
+        }
+      }
+    }
+    break;
+    default:
+    break;
   }
-  return shiftForward;
-}
-
-// update servo motors values
-unsigned char updatePatternsCount(void) {
-  // update main counter
-  counterFL ++;
-  if (counterFL >= mainTiming.fullCycle) {
-    counterFL = 0;
-  }
-  counterFR = counterFL + mainTiming.halfCycle;
-  if (counterFR >= mainTiming.fullCycle) {
-    counterFR -= mainTiming.fullCycle;
-  }
-  // rear pair shift
-  if (goForward) {
-    legsPairShift = -patParam.legPairShiftNow;
-  } else {
-    legsPairShift = patParam.legPairShiftNow;
-  }
-  counterRR = counterFL + legsPairShift;
-  if (counterRR >= mainTiming.fullCycle) {
-    counterRR -= mainTiming.fullCycle;
-  } else if (counterRR < 0) {
-    counterRR += mainTiming.fullCycle;
-  }
-  counterRL = counterRR + mainTiming.halfCycle;
-  if (counterRL >= mainTiming.fullCycle) {
-    counterRL -= mainTiming.fullCycle;
-  }
-  return (unsigned char)counterFL;
+  return legLift;
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkPatternsCount(bool walkingModeNow, pair speedNow, short ballanceShiftForward, short sideBallance, centers level) {
-  short speedShift = 0;
-  if ((speedNow.left + speedNow.right) < 0) {
-    goForward = false;
-    speedShift = -SPEED_COMPENSATION;
-  } else {
-    goForward = true;
-    speedShift = SPEED_COMPENSATION;
+bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers level) {
+  keepCounting = true;
+  if (patParam.sideBallanceEnabled) {
+    //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+    if (m_gyroState.aRollNow > 1) {
+      if (sideBallance < SIDE_BALLANCE_MAX) {
+        sideBallance ++;
+      }
+    } else if (m_gyroState.aRollNow < -1) {
+      if (sideBallance > -SIDE_BALLANCE_MAX) {
+        sideBallance --;
+      }
+    }
+    //}
   }
-  // quick shift forward speed multiplier
-  unsigned char quickShiftMultiplier = (mainTiming.halfCycle - patParam.legLiftPoint) / patParam.legLiftPoint;
   if (walkingModeNow) {
-    // hight
-    m_legsValue.fl.hight = patParam.legHightNow + level.front;
-    m_legsValue.fr.hight = patParam.legHightNow + level.front;
-    m_legsValue.rl.hight = patParam.legHightNow + level.rear;
-    m_legsValue.rr.hight = patParam.legHightNow + level.rear;
+    // side ballance compensation
+    short sideHightL = 0;
+    short sideHightR = 0;
     // side ballance
     if (sideBallance > 0) {
-      m_legsValue.fl.hight -= sideBallance;
-      m_legsValue.rl.hight -= sideBallance;
+      sideHightL -= sideBallance;
     } else if (sideBallance < 0) {
-      m_legsValue.fr.hight += sideBallance;
-      m_legsValue.rr.hight += sideBallance;
+      sideHightR += sideBallance;
     }
-    // fl
-    if (counterFL < patParam.legLiftPoint) {
-      // start of cycle
-      m_legsValue.fl.state = LEG_LIFTED;
-      _setLegsHight( -patParam.legLiftNow, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
-    } else if (counterFL > mainTiming.fullCycle - patParam.legLiftPoint) {
-      // end of cycle
-      m_legsValue.fl.state = LEG_LIFTED;
-      _setLegsHight( -patParam.legLiftNow, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
-    } else {
-      // linear  walking shift
-      m_legsValue.fl.state = LEG_LINEAR;
-      // extras
-      if (counterFL == patParam.legLiftPoint) {
-        m_legsValue.fl.state = LEG_LOWERING;
-        _setLegsHight( -TOUCHING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
-      } else if (counterFL == mainTiming.fullCycle - patParam.legLiftPoint) {
-        m_legsValue.fl.state = LEG_LIFTING;
-        _setLegsHight( -LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION);
+    // set leg hight phase compensation buffers
+    if (patParam.compensationEnabled) {
+      _setLegsPhaseBuffers();
+    }
+    // leg lifting
+    legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state, patParam.switchEnabled, touchingNow.fl);
+    legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state, patParam.switchEnabled, touchingNow.fr);
+    legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state, patParam.switchEnabled, touchingNow.rl);
+    legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state, patParam.switchEnabled, touchingNow.rr);
+    // recovering front legs
+    if (m_legsValue.fl.state == m_legsValue.fr.state) {
+      // linear phase
+      if (touchingNow.fl == touchingNow.fr) {
+        if ((legLiftingFL < 0) && (legLiftingFR < 0)) {
+          legLiftingFL ++;
+          legLiftingFR ++;
+        }
+      } else if (touchingNow.fl == 1) {
+        if (legLiftingFL < 0) {
+          legLiftingFL ++;
+        } else if (legLiftingFR > -patParam.legLiftNow) {
+          legLiftingFR --;
+        }
+      } else if (touchingNow.fr == 1) {
+        if (legLiftingFR < 0) {
+          legLiftingFR ++;
+        } else if (legLiftingFL > -patParam.legLiftNow) {
+          legLiftingFL --;
+        }
       }
     }
-    // fr
-    if (counterFR < patParam.legLiftPoint) {
-      // start of cycle
-      m_legsValue.fr.state = LEG_LIFTED;
-      _setLegsHight(PAIR_LEG_COMPENSATION, -patParam.legLiftNow, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
-    } else if (counterFR > mainTiming.fullCycle - patParam.legLiftPoint) {
-      // end of cycle
-      m_legsValue.fr.state = LEG_LIFTED;
-      _setLegsHight(PAIR_LEG_COMPENSATION, -patParam.legLiftNow, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
-    } else {
-      // linear  walking shift
-      m_legsValue.fr.state = LEG_LINEAR;
-      // extras
-      if (counterFR == patParam.legLiftPoint) {
-        m_legsValue.fr.state = LEG_LOWERING;
-        _setLegsHight(PAIR_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
-      } else if (counterFR == mainTiming.fullCycle - patParam.legLiftPoint) {
-        m_legsValue.fr.state = LEG_LIFTING;
-        _setLegsHight(PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION);
+    // recovering rear legs
+    if (m_legsValue.rl.state == m_legsValue.rr.state) {
+      // linear phase
+      if (touchingNow.rl == touchingNow.rr) {
+        if ((legLiftingRL < 0) && (legLiftingRR < 0)) {
+          legLiftingRL ++;
+          legLiftingRR ++;
+        }
+      } else if (touchingNow.rl == 1) {
+        if (legLiftingRL < 0) {
+          legLiftingRL ++;
+        } else if (legLiftingRR > -patParam.legLiftNow) {
+          legLiftingRR --;
+        }
+      } else if (touchingNow.rr == 1) {
+        if (legLiftingRR < 0) {
+          legLiftingRR ++;
+        } else if (legLiftingRL > -patParam.legLiftNow) {
+          legLiftingRL --;
+        }
       }
     }
-    // rr
-    if (counterRR < patParam.legLiftPoint) {
-      // start of cycle
-      m_legsValue.rr.state = LEG_LIFTED;
-      _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
-    } else if (counterRR > mainTiming.fullCycle - patParam.legLiftPoint) {
-      // end of cycle
-      m_legsValue.rr.state = LEG_LIFTED;
-      _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -patParam.legLiftNow);
-    } else {
-      // linear  walking shift
-      m_legsValue.rr.state = LEG_LINEAR;
-      // extras
-      if (counterRR == patParam.legLiftPoint) {
-        m_legsValue.rr.state = LEG_LOWERING;
-        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION);
-      } else if (counterRR == mainTiming.fullCycle - patParam.legLiftPoint) {
-        m_legsValue.rr.state = LEG_LIFTING;
-        _setLegsHight( -OPPOSITE_LEG_COMPENSATION, NEAR_BY_LEG_COMPENSATION, PAIR_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION);
+    // recover sides
+    if ((m_legsValue.fl.state == m_legsValue.fr.state) && (m_legsValue.rl.state == m_legsValue.rr.state)) {
+      // left side
+      if ((legLiftingFL < legLiftingFR) && (legLiftingRL < legLiftingRR)) {
+        legLiftingFL ++;
+        legLiftingRL ++;
+      }
+      // right side
+      if ((legLiftingFR < legLiftingFL) && (legLiftingRR < legLiftingRL)) {
+        legLiftingFR ++;
+        legLiftingRR ++;
       }
     }
-    // rl
-    if (counterRL < patParam.legLiftPoint) {
-      // start of cycle
-      m_legsValue.rl.state = LEG_LIFTED;
-      _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
-    } else if (counterRL > mainTiming.fullCycle - patParam.legLiftPoint) {
-      // end of cycle
-      m_legsValue.rl.state = LEG_LIFTED;
-      _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -patParam.legLiftNow, PAIR_LEG_COMPENSATION);
-    } else {
-      // linear  walking shift
-      m_legsValue.rl.state = LEG_LINEAR;
-      // extras
-      if (counterRL == patParam.legLiftPoint) {
-        m_legsValue.rl.state = LEG_LOWERING;
-        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -TOUCHING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
-      } else if (counterRL == mainTiming.fullCycle - patParam.legLiftPoint) {
-        m_legsValue.rl.state = LEG_LIFTING;
-        _setLegsHight(NEAR_BY_LEG_COMPENSATION, -OPPOSITE_LEG_COMPENSATION, -LIFTING_LEG_COMPENSATION, PAIR_LEG_COMPENSATION);
-      }
-    }
-    // set speed
-    //speedNow.left = 0; // ***
-    //speedNow.right = 0; // ***
-    // set forward shift
-    m_legsValue.fl.shift = getLegShiftForward(counterFL, quickShiftMultiplier);
-    m_legsValue.fr.shift = getLegShiftForward(counterFR, quickShiftMultiplier);
-    m_legsValue.rl.shift = getLegShiftForward(counterRL, quickShiftMultiplier);
-    m_legsValue.rr.shift = getLegShiftForward(counterRR, quickShiftMultiplier);
-    // set speed and direction
-    m_legsValue.fl.shift *= speedNow.left;
-    m_legsValue.fr.shift *= speedNow.right;
-    m_legsValue.rl.shift *= speedNow.left;
-    m_legsValue.rr.shift *= speedNow.right;
-    // compensate speed
-    m_legsValue.fl.shift += speedShift;
-    m_legsValue.fr.shift += speedShift;
-    m_legsValue.rl.shift += speedShift;
-    m_legsValue.rr.shift += speedShift;
-    // ballance part
-    m_legsValue.fl.shift += ballanceShiftForward;
-    m_legsValue.fr.shift += ballanceShiftForward;
-    m_legsValue.rl.shift += ballanceShiftForward;
-    m_legsValue.rr.shift += ballanceShiftForward;
-    // center mass movement
-    short rockForward = -getRockForward(counterFL) - getRockForward(counterFR) + getRockForward(counterRL) + getRockForward(counterRR);
-    m_legsValue.fl.shift += rockForward;
-    m_legsValue.fr.shift += rockForward;
-    m_legsValue.rl.shift += rockForward;
-    m_legsValue.rr.shift += rockForward;
-    // compensate hight
-    char hightCompensation = ballanceShiftForward / 4;
-    if (hightCompensation < 0) {
-      hightCompensation = -hightCompensation;
-    }
-    m_legsValue.fl.hight -= hightCompensation;
-    m_legsValue.fr.hight -= hightCompensation;
-    m_legsValue.rl.hight -= hightCompensation;
-    m_legsValue.rr.hight -= hightCompensation;
+    // final
+    m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL + phaseBufferFL + level.front; // + surfaceBufferFL;
+    m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR + phaseBufferFR + level.front; // + surfaceBufferFR;
+    m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + phaseBufferRL + level.rear; // + surfaceBufferRL;
+    m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + phaseBufferRR + level.rear; // + surfaceBufferRR;
   } else {
-    _setLegsValuesBySide(patParam.legHightNow, 0, patParam.legHightNow, 0);
+    m_legsValue.fl.hight = patParam.legHightNow;
+    m_legsValue.fr.hight = patParam.legHightNow;
+    m_legsValue.rl.hight = patParam.legHightNow;
+    m_legsValue.rr.hight = patParam.legHightNow;
   }
+  return keepCounting;
 }
 
 // set pattern parameters
-void setPatternParameters(short legHight, short legLift, unsigned char liftPoint) {
+void setPatternParameters(short legHight, short legLift) {
   patParam.legHightNow = legHight;
   patParam.legLiftNow = legLift;
-  patParam.legLiftPoint = liftPoint;
 }
 
-// set main cycle value
-void setMainCyclePatterns(short mainCycle) {
-  mainTiming.fullCycle = mainCycle;
-  mainTiming.halfCycle = mainTiming.fullCycle / 2;
-  mainTiming.quarterCycle = mainTiming.halfCycle / 2;
-  // the same for now
-  patParam.legPairShiftNow = mainTiming.quarterCycle;
+// enable switch
+void enableSwtchPatterns(bool sw) {
+  patParam.switchEnabled = sw;
 }
 
-// get main cycle value
-short getMainCyclePatterns(void) {
-  return mainTiming.fullCycle;
+// enable compensation
+void enableCompensationPatterns(bool comp) {
+  patParam.compensationEnabled = comp;
 }
 
-// enable rock forward
-void enableRockPatterns( bool rock) {
-  if (rock) {
-    patParam.rockValue = ROCK_FORWARD_COMPENSATION;
-  } else {
-    patParam.rockValue = 0;
-  }
+void enableSideBallancePatterns(bool side) {
+  patParam.sideBallanceEnabled = side;
 }
