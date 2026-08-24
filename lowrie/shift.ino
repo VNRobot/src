@@ -172,22 +172,10 @@ void setWalkPatternsShiftCount(bool walkingModeNow) {
   }
 }
 
-// set forward ballance 
-void setForwardShift(short shiftForward) {
+// init shift 
+void initShift(short shiftForward, bool walk, bool ballance, bool rock) {
   shParam.shiftForward = shiftForward;
-}
-
-// enable rock forward
-void enableRockShift(bool rock) {
-  shParam.rockEnabled = rock;
-}
-
-// enable walk forward
-void enableWalkShift(bool walk) {
   shParam.walkEnabled = walk;
-}
-
-// enable static ballance
-void enableBallanceShift(bool ballance) {
   shParam.ballanceEnabled = ballance;
+  shParam.rockEnabled = rock;
 }

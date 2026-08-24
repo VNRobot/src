@@ -128,6 +128,8 @@ typedef struct quad {
   short fr;
   short rl;
   short rr;
+  bool enabledF;
+  bool enabledR;
 } quad;
 // structure for center motor
 typedef struct centers {
@@ -253,7 +255,7 @@ void _doCycle(void) {
   // set legs shift
   setWalkPatternsShiftCount(getWalkingModeInTask());
   // set legs lift
-  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), getSwitches(), getCenterCompensation());
+  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), readSwitchesCount(), getCenterCompensation());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -265,7 +267,6 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
-  readSwitchesCount(mCounter);
   // update center motors
   updateCenterCount();
 }
@@ -277,22 +278,16 @@ void _setState(unsigned char newState) {
     case ROBOT_NORM:
     {
       //Serial.println("ROBOT_NORM");
-      enableObstacleInputs(false);
-      enableEdgeInputs(false);
     }
     break;
     case ROBOT_INO:
     {
       //Serial.println("ROBOT_INO");
-      enableObstacleInputs(false);
-      enableEdgeInputs(false);
     }
     break;
     case ROBOT_CRAWL:
     {
       //Serial.println("ROBOT_CRAWL");
-      enableObstacleInputs(false);
-      enableEdgeInputs(false);
     }
     break;
     default:
@@ -306,47 +301,33 @@ void setup() {
   Serial.begin(9600);
   Serial.println(F("Device started"));
   delay(200);
-  // set features
-  setMainCounter(64);
-  enableExtraCurrent(true);
-  // input settings
-  enableExtraInputs(false);
-  enableSensorInputs(false);
-  setInputsHight(HIGHT_DEFAULT);
-  // path settings
-  setMaxPathStep(120, 2);
-  enableTurningPath(true);
-  enableCountingPath(false);
-  setDistancePath(100); // cm
-  // shift settings
-  setForwardShift(-14);
-  enableRockShift(true);
-  enableWalkShift(true);
-  enableBallanceShift(true);
-  // patterns settings
-  setPatternParameters(HIGHT_DEFAULT, LIFT_DEFAULT);
-  enableSwtchPatterns(true);
-  enableCompensationPatterns(true);
-  enableSideBallancePatterns(true);
-  // servo settings
-  setStepScaleServo(50);
-  //
+  // -------init shift------- 
+  // short shiftForward, bool walk, bool ballance, bool rock
+  initShift(-14, true, true, true);
+  // -------init patterns------- 
+  // short legHight, short legLift, bool sideBallance, bool compensation
+  initPatterns(HIGHT_DEFAULT, LIFT_DEFAULT, true, true);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
   if (version != ROBOT_VERSION) {
     calibrationMode = true;
   }
-  // init switches
-  initSwitches(calibrationMode, 2);
-  // init sensors
-  initInputs(calibrationMode);
-  // attach center servo
+  // -------init switches------- 
+  // bool calibrationMode, bool swFrontEnable, bool swRearEnable
+  initSwitches(calibrationMode, true, false);
+  // -------init sensors inputs-------
+  // bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled
+  initInputs(calibrationMode, HIGHT_DEFAULT, false, false);
+  enableObstacleInputs(false);
+  enableEdgeInputs(false);
+  // -------attach center servo-------
   attachCenter();
-  // attach servo
+  // -------attach legs servo-------
   attachServo();
-  // init current readings
-  initCurrent(calibrationMode);
+  // -------init current readings-------
+  // bool calibrationMode, bool extraEnabled
+  initCurrent(calibrationMode, true);
   // init center servo motors
   initCenter(calibrationMode);
   // init legs servo motors
@@ -359,7 +340,7 @@ void setup() {
     setCenter(20);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
-  // init gyro
+  // -------init gyro-------
   initGyro(calibrationMode);
   delay(200);
   updateGyroCount(0);
@@ -390,9 +371,18 @@ void setup() {
   updateInputsCount(0);
   // explore mode
   Serial.println(F("Entering explore mode"));
+  // -------init tasks-------
   initTasks();
   // load task and pattern. direction is 0
+  // -------init path-------
+  // short stepSize, short speed, bool turning, bool counting
+  initPath(120, 2, true, false);
+  setDistancePath(100); // cm
   updatePath(0);
+  // -------init counter-------
+  // short mainCycle, char timeShift
+  initCounter(64, 16);
+  // bool walkingModeNow, bool keepCounting
   mCounter = updateCounter(true, true);
   // set state
   _setState(ROBOT_NORM);
@@ -401,8 +391,6 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   if (mCounter == 0) {
-    // once in a pattern
-    getSwitchesState();
     // set new pattern and task
     setPatternAndTask(getCurrentState(), getGyroState());
     // get pattern

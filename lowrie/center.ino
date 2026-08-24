@@ -90,63 +90,65 @@ void attachCenter(void) {
 
 // init servo motors
 void initCenter(bool calibrationMode) {
-  Serial.println(F("initCenter"));
-  // check for calibration mode
-  if (calibrationMode) {
-    // do calibration
-    unsigned char calibrationStage = 0;
-    centerCalibrationData.front = 0;
-    centerCalibrationData.rear = 0;
-    // motors one by one
-    while (calibrationMode) {
-      centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
-      centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
-      _doPWMCenter();
-      delay(200);
-      // check button press
-      if (m_getButtonPressed()) {
-        calibrationStage ++;
-      }
-      switch (calibrationStage) {
-        case 0:
-          // assembly stage. do nothing
-        break;
-        case 1:
-        {
-          centerCalibrationData.front ++;
-          if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
-            centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
-          }
-        }
-        break;
-        case 2:
-        {
-          centerCalibrationData.rear ++;
-          if (centerCalibrationData.rear > CALIBRATION_ANGLE_MAX) {
-            centerCalibrationData.rear = CALIBRATION_ANGLE_MIN;
-          }
-        }
-        break;
-        case 3:
-        {
-          EEPROM.update(9, (unsigned char)(centerCalibrationData.front + 128));
-          EEPROM.update(10, (unsigned char)(centerCalibrationData.rear + 128));
+  if (centerAttached) {
+    Serial.println(F("initCenter"));
+    // check for calibration mode
+    if (calibrationMode) {
+      // do calibration
+      unsigned char calibrationStage = 0;
+      centerCalibrationData.front = 0;
+      centerCalibrationData.rear = 0;
+      // motors one by one
+      while (calibrationMode) {
+        centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
+        centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
+        _doPWMCenter();
+        delay(200);
+        // check button press
+        if (m_getButtonPressed()) {
           calibrationStage ++;
-          calibrationMode = false;
         }
-        break;
-        default:
-        break;
+        switch (calibrationStage) {
+          case 0:
+            // assembly stage. do nothing
+          break;
+          case 1:
+          {
+            centerCalibrationData.front ++;
+            if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
+              centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
+            }
+          }
+          break;
+          case 2:
+          {
+            centerCalibrationData.rear ++;
+            if (centerCalibrationData.rear > CALIBRATION_ANGLE_MAX) {
+              centerCalibrationData.rear = CALIBRATION_ANGLE_MIN;
+            }
+          }
+          break;
+          case 3:
+          {
+            EEPROM.update(9, (unsigned char)(centerCalibrationData.front + 128));
+            EEPROM.update(10, (unsigned char)(centerCalibrationData.rear + 128));
+            calibrationStage ++;
+            calibrationMode = false;
+          }
+          break;
+          default:
+          break;
+        }
       }
     }
+    // read calibration
+    centerCalibrationData.front = (char)(EEPROM.read(9) - 128);
+    centerCalibrationData.rear = (char)(EEPROM.read(10) - 128);
+    centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
+    centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
+    _doPWMCenter();
+    delay(100);
   }
-  // read calibration
-  centerCalibrationData.front = (char)(EEPROM.read(9) - 128);
-  centerCalibrationData.rear = (char)(EEPROM.read(10) - 128);
-  centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
-  centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
-  _doPWMCenter();
-  delay(100);
 }
 
 // detach hardware
@@ -154,141 +156,149 @@ void detachCenter(void) {
   if (centerAttached) {
     servo_ct_1.detach();
     servo_ct_2.detach();
+    centerAttached = false;
+    _doPWMCenter();
+    delay(100);
   }
-  centerAttached = false;
-  _doPWMCenter();
-  delay(100);
 }
 
 // set servo motors
 void setCenter(char angle) {
-  centerSetValue.front = angle;
-  centerSetValue.rear = angle;
-  // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - ((centerSetValue.front * 10) / 24));
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - ((centerSetValue.rear * 10) / 24));
-  // move motors
-  _doPWMCenter();
+  if (centerAttached) {
+    centerSetValue.front = angle;
+    centerSetValue.rear = angle;
+    // set motor angle
+    centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - ((centerSetValue.front * 10) / 24));
+    centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - ((centerSetValue.rear * 10) / 24));
+    // move motors
+    _doPWMCenter();
+  }
 }
 
 // set direction. 10 deg max
 void setDirectionCenter(short direction) {
-  if (direction > CENTER_ANGLE_MAX) {
-    direction = CENTER_ANGLE_MAX;
+  if (centerAttached) {
+    if (direction > CENTER_ANGLE_MAX) {
+      direction = CENTER_ANGLE_MAX;
+    }
+    if (direction < -CENTER_ANGLE_MAX) {
+      direction = -CENTER_ANGLE_MAX;
+    }
+    directionFront = -direction;
+    directionRear = direction;
   }
-  if (direction < -CENTER_ANGLE_MAX) {
-    direction = -CENTER_ANGLE_MAX;
-  }
-  directionFront = -direction;
-  directionRear = direction;
 }
 
 // set side shift // 0.42 servo reduction // ((HIGHT_DEFAULT / 2) + 18) * 2 * 3.14    l=502
 // approx 1 mm shift for 1 deg
 // set side shift. in mm
 void setSideShiftCenter(short direction) {
-  if (direction > CENTER_ANGLE_MAX) {
-    direction = CENTER_ANGLE_MAX;
+  if (centerAttached) {
+    if (direction > CENTER_ANGLE_MAX) {
+      direction = CENTER_ANGLE_MAX;
+    }
+    if (direction < -CENTER_ANGLE_MAX) {
+      direction = -CENTER_ANGLE_MAX;
+    }
+    directionFront = -direction;
+    directionRear = -direction;
   }
-  if (direction < -CENTER_ANGLE_MAX) {
-    direction = -CENTER_ANGLE_MAX;
-  }
-  directionFront = -direction;
-  directionRear = -direction;
 }
       
 // move center motors.
 void updateCenterCount(void) {
-  if (directionFront > TURNING_SENSITIVITY) {
-    // turn front right
-    if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
-      // move leg to the side
-      if (centerValue.front < directionFront) {
-        centerValue.front ++;
+  if (centerAttached) {
+    if (directionFront > TURNING_SENSITIVITY) {
+      // turn front right
+      if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+        // move leg to the side
+        if (centerValue.front < directionFront) {
+          centerValue.front ++;
+        }
+      } else if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.front > 0) {
+          centerValue.front --;
+        }
       }
-    } else if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.front > 0) {
-        centerValue.front --;
+    } else if (directionFront < -TURNING_SENSITIVITY) {
+      // turn front left
+      if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+        // move leg to the side
+        if (centerValue.front < -directionFront) {
+          centerValue.front ++;
+        }
+      } else if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.front > 0) {
+          centerValue.front --;
+        }
+      }
+    } else if (directionFront > 0) {
+      if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.front > 0) {
+          centerValue.front --;
+        }
+      }
+    } else {
+      if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.front > 0) {
+          centerValue.front --;
+        }
       }
     }
-  } else if (directionFront < -TURNING_SENSITIVITY) {
-    // turn front left
-    if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
-      // move leg to the side
-      if (centerValue.front < -directionFront) {
-        centerValue.front ++;
+    if (directionRear > TURNING_SENSITIVITY) {
+      // turn rear right
+      if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+        // move leg to the side
+        if (centerValue.rear < directionRear) {
+          centerValue.rear ++;
+        }
+      } else if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.rear > 0) {
+          centerValue.rear --;
+        }
       }
-    } else if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.front > 0) {
-        centerValue.front --;
+    } else if (directionRear < -TURNING_SENSITIVITY) {
+      // turn rear left
+      if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+        // move leg to the side
+        if (centerValue.rear < -directionRear) {
+          centerValue.rear ++;
+        }
+      } else if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.rear > 0) {
+          centerValue.rear --;
+        }
+      }
+    } else if (directionRear > 0) {
+      if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.rear > 0) {
+          centerValue.rear --;
+        }
+      }
+    } else {
+      if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+        // move leg back to normal
+        if (centerValue.rear > 0) {
+          centerValue.rear --;
+        }
       }
     }
-  } else if (directionFront > 0) {
-    if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.front > 0) {
-        centerValue.front --;
-      }
-    }
-  } else {
-    if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.front > 0) {
-        centerValue.front --;
-      }
-    }
+    // real angle
+    realAngle.front = ((centerSetValue.front + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
+    realAngle.rear = ((centerSetValue.rear + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
+    // set motor angle
+    centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - realAngle.front);
+    centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - realAngle.rear);
+    // move motors
+    _doPWMCenter();
   }
-  if (directionRear > TURNING_SENSITIVITY) {
-    // turn rear right
-    if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
-      // move leg to the side
-      if (centerValue.rear < directionRear) {
-        centerValue.rear ++;
-      }
-    } else if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.rear > 0) {
-        centerValue.rear --;
-      }
-    }
-  } else if (directionRear < -TURNING_SENSITIVITY) {
-    // turn rear left
-    if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
-      // move leg to the side
-      if (centerValue.rear < -directionRear) {
-        centerValue.rear ++;
-      }
-    } else if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.rear > 0) {
-        centerValue.rear --;
-      }
-    }
-  } else if (directionRear > 0) {
-    if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.rear > 0) {
-        centerValue.rear --;
-      }
-    }
-  } else {
-    if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
-      // move leg back to normal
-      if (centerValue.rear > 0) {
-        centerValue.rear --;
-      }
-    }
-  }
-  // real angle
-  realAngle.front = ((centerSetValue.front + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
-  realAngle.rear = ((centerSetValue.rear + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
-  // set motor angle
-  centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - realAngle.front);
-  centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - realAngle.rear);
-  // move motors
-  _doPWMCenter();
 }
 
 // get leg angle compensation in mm

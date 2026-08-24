@@ -19,7 +19,6 @@ Robot legs hight motion patterns
 typedef struct patternParam {
   short legHightNow;
   short legLiftNow;
-  bool switchEnabled;
   bool compensationEnabled;
   bool sideBallanceEnabled;
 } patternParam;
@@ -28,7 +27,6 @@ typedef struct patternParam {
 patternParam patParam = {
   HIGHT_DEFAULT,            // short legHightNow;
   50,                       // short legLiftNow;
-  false,                    // bool switchEnabled;
   false,                    // bool compensationEnabled;
   false                     // bool sideBallanceEnabled;
 };
@@ -220,10 +218,10 @@ bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers lev
       _setLegsPhaseBuffers();
     }
     // leg lifting
-    legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state, patParam.switchEnabled, touchingNow.fl);
-    legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state, patParam.switchEnabled, touchingNow.fr);
-    legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state, patParam.switchEnabled, touchingNow.rl);
-    legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state, patParam.switchEnabled, touchingNow.rr);
+    legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state, touchingNow.enabledF, touchingNow.fl);
+    legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state, touchingNow.enabledF, touchingNow.fr);
+    legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state, touchingNow.enabledR, touchingNow.rl);
+    legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state, touchingNow.enabledR, touchingNow.rr);
     // recovering front legs
     if (m_legsValue.fl.state == m_legsValue.fr.state) {
       // linear phase
@@ -295,22 +293,10 @@ bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers lev
   return keepCounting;
 }
 
-// set pattern parameters
-void setPatternParameters(short legHight, short legLift) {
+// init pattern
+void initPatterns(short legHight, short legLift, bool sideBallance, bool compensation) {
   patParam.legHightNow = legHight;
   patParam.legLiftNow = legLift;
-}
-
-// enable switch
-void enableSwtchPatterns(bool sw) {
-  patParam.switchEnabled = sw;
-}
-
-// enable compensation
-void enableCompensationPatterns(bool comp) {
-  patParam.compensationEnabled = comp;
-}
-
-void enableSideBallancePatterns(bool side) {
-  patParam.sideBallanceEnabled = side;
+  patParam.compensationEnabled = compensation;
+  patParam.sideBallanceEnabled = sideBallance;
 }
