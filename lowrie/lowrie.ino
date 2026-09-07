@@ -9,16 +9,16 @@ Main file
 #include <Servo.h>
 
 // software version hardcoded. should be changed manually
-#define ROBOT_VERSION           23
+#define ROBOT_VERSION           25
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              24
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
-// normal hight
-#define HIGHT_DEFAULT           120
-// maximal hight
+// normal hight mm
+#define HIGHT_DEFAULT           100
+// maximal hight mm
 #define HIGHT_MAX               160
 // lift value
 #define LIFT_DEFAULT            50
@@ -26,14 +26,13 @@ Main file
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
-#define ROBOT_SIZE_DEVIDER      2
-// counter to keep state the same
-#define STATE_COUNTER           2
+#define ROBOT_SIZE_DEVIDER      1
 // leg lift point
-#define LIFT_POINT_MIN          3
-// legs geometry in mm
-#define LEG_EXTRA_SIDE          18
-#define LEG_EXTRA_HIGHT         20
+#define LIFT_POINT              5
+// step size mm
+#define STEP_SIZE               100
+// maximal speed
+#define SPEED_MAX               2
 
 // input state
 enum inState {
@@ -131,11 +130,6 @@ typedef struct quad {
   bool enabledF;
   bool enabledR;
 } quad;
-// structure for center motor
-typedef struct centers {
-  short front;
-  short rear;
-} centers;
 // acc and gyro data structure
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
@@ -153,15 +147,13 @@ typedef struct accRoll {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0};
+allLegs m_legsValue = {HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
-// state counter
-unsigned char stateCounter = 0;
 // variable for temporary use
 unsigned char i;
 
@@ -200,19 +192,10 @@ void _doQuickAndOther(unsigned char patternNow) {
     {
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
-        setFlippedServo(1, -1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(-1, 1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       } else {
-        setFlippedServo(-1, 1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(1, -1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       }
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
-      setFlippedGyro(false);
-      setFlippedServo(1, 1);
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
     }
     break;
@@ -220,13 +203,6 @@ void _doQuickAndOther(unsigned char patternNow) {
       // do nothing for now
     case Q_DORESET:
     {
-      if (m_gyroState.aUpsideAverage < 0) {
-        setFlippedGyro(true);
-        setFlippedServo(-1, -1);
-      } else {
-        setFlippedGyro(false);
-        setFlippedServo(1, 1);
-      }
     }
     break;
     case Q_REPEAT:
@@ -255,7 +231,7 @@ void _doCycle(void) {
   // set legs shift
   setWalkPatternsShiftCount(getWalkingModeInTask());
   // set legs lift
-  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), readSwitchesCount(), getCenterCompensation());
+  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), readSwitchesCount());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -267,32 +243,6 @@ void _doCycle(void) {
   updateGyroCount(mCounter);
   // update sensor readings
   updateInputsCount(mCounter);
-  // update center motors
-  updateCenterCount();
-}
-
-// set robot state
-void _setState(unsigned char newState) {
-  //Serial.print(F(" State "));
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      //Serial.println("ROBOT_NORM");
-    }
-    break;
-    case ROBOT_INO:
-    {
-      //Serial.println("ROBOT_INO");
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      //Serial.println("ROBOT_CRAWL");
-    }
-    break;
-    default:
-    break;
-  }
 }
 
 // runs once on boot or reset
@@ -303,10 +253,10 @@ void setup() {
   delay(200);
   // -------init shift------- 
   // short shiftForward, bool walk, bool ballance, bool rock
-  initShift(-14, true, true, true);
+  initShift(0, true, false, false);
   // -------init patterns------- 
   // short legHight, short legLift, bool sideBallance, bool compensation
-  initPatterns(HIGHT_DEFAULT, LIFT_DEFAULT, true, true);
+  initPatterns(HIGHT_DEFAULT, LIFT_DEFAULT, false, false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -315,30 +265,23 @@ void setup() {
   }
   // -------init switches------- 
   // bool calibrationMode, bool swFrontEnable, bool swRearEnable
-  initSwitches(calibrationMode, true, false);
+  initSwitches(calibrationMode, false, false);
   // -------init sensors inputs-------
   // bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled
   initInputs(calibrationMode, HIGHT_DEFAULT, false, false);
   enableObstacleInputs(false);
   enableEdgeInputs(false);
-  // -------attach center servo-------
-  attachCenter();
   // -------attach legs servo-------
   attachServo();
   // -------init current readings-------
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode, true);
-  // init center servo motors
-  initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
-    setFlippedGyro(true);
-    setFlippedServo(-1, -1);
-    setCenter(20);
-    setServo(HIGHT_MAX, HIGHT_MAX, 20);
+    setServo(HIGHT_LOW, HIGHT_LOW, 20);
   }
   // -------init gyro-------
   initGyro(calibrationMode);
@@ -358,12 +301,10 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    detachCenter();
     Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
-  setCenter(10);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -376,7 +317,7 @@ void setup() {
   // load task and pattern. direction is 0
   // -------init path-------
   // short stepSize, short speed, bool turning, bool counting
-  initPath(120, 2, true, false);
+  initPath(STEP_SIZE, SPEED_MAX, true, false);
   setDistancePath(100); // cm
   updatePath(0);
   // -------init counter-------
@@ -384,8 +325,7 @@ void setup() {
   initCounter(64, 16);
   // bool walkingModeNow, bool keepCounting
   mCounter = updateCounter(true, true);
-  // set state
-  _setState(ROBOT_NORM);
+  delay(2000);
 }
 
 // the loop function runs over and over again forever
@@ -401,26 +341,6 @@ void loop() {
       setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
       // update path
       updatePath(getDirectionGyro());
-      // check for robot state
-      if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = STATE_COUNTER * 2;
-      } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
-        if (stateCounter < STATE_COUNTER) {
-          stateCounter = STATE_COUNTER;
-        }
-      }
-      // set state
-      if (stateCounter == 0) {
-        _setState(ROBOT_NORM);
-      } else {
-        if (stateCounter > STATE_COUNTER) {
-          _setState(ROBOT_CRAWL);
-        } else {
-          _setState(ROBOT_INO);
-        }
-        stateCounter --;
-      }
-      setDirectionCenter(getDirectionGyro());
       _doCycle();
     } else {
       // quick and non walking patterns

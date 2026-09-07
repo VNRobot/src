@@ -148,9 +148,6 @@ void updatePath(short direction) {
       m_legsValue.fr.speed = m_legsValue.fl.speed;
     }
   }
-  // set lift point
-  m_legsValue.fl.liftPoint = m_legsValue.fl.speed + LIFT_POINT_MIN;
-  m_legsValue.fr.liftPoint = m_legsValue.fr.speed + LIFT_POINT_MIN;
   // apply direction
   if (!walkFrward) {
     m_legsValue.fl.speed = -m_legsValue.fl.speed;
@@ -159,8 +156,6 @@ void updatePath(short direction) {
   // set rear legs speed and lift point
   m_legsValue.rl.speed = m_legsValue.fl.speed;
   m_legsValue.rr.speed = m_legsValue.fr.speed;
-  m_legsValue.rl.liftPoint = m_legsValue.fl.liftPoint;
-  m_legsValue.rr.liftPoint = m_legsValue.fr.liftPoint;
   // calculated distance to target
   if (pathParams.stepsDistanceCountEnabled) {
     // step size

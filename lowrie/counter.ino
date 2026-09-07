@@ -58,24 +58,24 @@ unsigned char updateCounter(bool walkingModeNow, bool keepCounting) {
   if (m_legsValue.fl.count >= mainTiming.fullCycle) {
     m_legsValue.fl.count = 0;
   }
-  m_legsValue.fr.count = m_legsValue.fl.count + mainTiming.halfCycle;
-  if (m_legsValue.fr.count >= mainTiming.fullCycle) {
-    m_legsValue.fr.count -= mainTiming.fullCycle;
-  }
-  // rear pair shift depends on firection of movement
-  if (walkForward) {
-    m_legsValue.rr.count = m_legsValue.fl.count - legsPairShift;
-  } else {
-    m_legsValue.rr.count = m_legsValue.fl.count + legsPairShift;
-  }
-  if (m_legsValue.rr.count >= mainTiming.fullCycle) {
-    m_legsValue.rr.count -= mainTiming.fullCycle;
-  } else if (m_legsValue.rr.count < 0) {
-    m_legsValue.rr.count += mainTiming.fullCycle;
-  }
-  m_legsValue.rl.count = m_legsValue.rr.count + mainTiming.halfCycle;
+  m_legsValue.rl.count = m_legsValue.fl.count + mainTiming.halfCycle;
   if (m_legsValue.rl.count >= mainTiming.fullCycle) {
     m_legsValue.rl.count -= mainTiming.fullCycle;
+  }
+  // right pair shift depends on direction of movement
+  if (walkForward) {
+    m_legsValue.fr.count = m_legsValue.fl.count - legsPairShift;
+  } else {
+    m_legsValue.fr.count = m_legsValue.fl.count + legsPairShift;
+  }
+  if (m_legsValue.fr.count >= mainTiming.fullCycle) {
+    m_legsValue.fr.count -= mainTiming.fullCycle;
+  } else if (m_legsValue.fr.count < 0) {
+    m_legsValue.fr.count += mainTiming.fullCycle;
+  }
+  m_legsValue.rr.count = m_legsValue.fr.count + mainTiming.halfCycle;
+  if (m_legsValue.rr.count >= mainTiming.fullCycle) {
+    m_legsValue.rr.count -= mainTiming.fullCycle;
   }
   if (walkingModeNow) {
     // set legs state
