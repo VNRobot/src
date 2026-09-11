@@ -13,91 +13,173 @@ typedef struct timing {
 } timing;
 
 // main timing 64 32 16
-timing mainTiming = {64, 32, 16};
-// pair shift
-char legsPairShift = 16;
-// sequence counters
+timing mainTiming = {32, 16, 8};
+// main counter
+unsigned char mainCounter = 0;
+// count enable flag
+bool keepCounting = false;
 
 /*
 uses
 m_legsValue
 */
 
-// get leg state
-unsigned char _getLegState(char counter, unsigned char liftPoint) {
-  unsigned char state = LEG_LINEAR;
-  if (counter < liftPoint) {
-    // start of cycle
-    state = LEG_LIFTED_AFTER;
-  } else if (counter > mainTiming.fullCycle - liftPoint) {
-    // end of cycle
-    state = LEG_LIFTED_BEFORE;
-  } else if (counter == liftPoint) {
-    state = LEG_LOWERING;
-  } else if (counter == mainTiming.fullCycle - liftPoint) {
-    state = LEG_LIFTING;
-  } else if (counter == liftPoint + 1) {
-    state = LEG_AFTER_LOWERING;
-  } else if (counter == mainTiming.fullCycle - liftPoint - 1) {
-    state = LEG_BEFORE_LIFTING;
+unsigned char _processLegState(unsigned char inState, short shift, short hight, short targeth, short targets) {
+  unsigned char outState = inState;
+  switch (inState) {
+    case LEG_BEFORE_LIFTING:
+    {
+      outState = LEG_LIFTING;
+    }
+    break;
+    case LEG_LIFTING:
+    {
+      outState = LEG_LIFTED;
+    }
+    break;
+    case LEG_LIFTED:
+    {
+      if (shift == targets) {
+        outState = LEG_LOWERING;
+      }
+    }
+    break;
+    case LEG_LOWERING:
+    {
+      if (hight == targeth) {
+        outState = LEG_AFTER_LOWERING;
+      }
+    }
+    break;
+    case LEG_AFTER_LOWERING:
+    {
+      outState = LEG_LINEAR;
+    }
+    break;
+    default:
+    break;
   }
-  return state;
+  return outState;
 }
 
 // update servo motors values
-unsigned char updateCounter(bool walkingModeNow, bool keepCounting) {
-  // set direction
-  bool walkForward = true;
-  if ((m_legsValue.fl.speed < 0) || (m_legsValue.fr.speed < 0)) {
-    walkForward = false;
-  }
+unsigned char updateCounter(void) {
   // update main counter
-  if (keepCounting || (m_legsValue.fl.count == 0)) {
-    m_legsValue.fl.count ++;
+  if (keepCounting) {
+    mainCounter ++;
   }
-  if (m_legsValue.fl.count >= mainTiming.fullCycle) {
-    m_legsValue.fl.count = 0;
+  if (mainCounter >= mainTiming.fullCycle) {
+    mainCounter = 0;
   }
-  m_legsValue.rl.count = m_legsValue.fl.count + mainTiming.halfCycle;
-  if (m_legsValue.rl.count >= mainTiming.fullCycle) {
-    m_legsValue.rl.count -= mainTiming.fullCycle;
-  }
-  // right pair shift depends on direction of movement
-  if (walkForward) {
-    m_legsValue.fr.count = m_legsValue.fl.count - legsPairShift;
+  return mainCounter;
+}
+
+// update servo motors values
+void updateLegsCounter(void) {
+  // check center mass
+  short massFLFR = (m_legsValue.fl.shift + m_legsValue.fr.shift) / 2;
+  short massFLRR = (m_legsValue.fl.shift + m_legsValue.rr.shift) / 2;
+  short massFRRL = (m_legsValue.fr.shift + m_legsValue.rl.shift) / 2;
+  short massRLRR = (m_legsValue.rl.shift + m_legsValue.rr.shift) / 2;
+  // leg shift
+  short shiftFL = m_legsValue.fl.shift;
+  short shiftFR = m_legsValue.fr.shift;
+  short shiftRL = m_legsValue.rl.shift;
+  short shiftRR = m_legsValue.rr.shift;
+  // check and change legs state
+  // all linear
+  if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+    // make decision whitch leg to lift first
+    if ((massFRRL < 0) && (massRLRR < 0)) {
+      // can't lift fl
+      shiftFL = 0;
+    }
+    if ((massRLRR < 0) && (massFLRR < 0)) {
+      // can't lift fr
+      shiftFR = 0;
+    }
+    if ((massFLFR < 0) && (massFLRR < 0)) {
+      // can't lift rl
+      shiftRL = 0;
+    }
+    if ((massFLFR < 0) && (massFRRL < 0)) {
+      // can't lift rr
+      shiftRR = 0;
+    }
+
+    // print values
+    Serial.print(" shiftFL ");
+    Serial.print((int)shiftFL);
+    Serial.print(" shiftFR ");
+    Serial.print((int)shiftFR);
+    Serial.print(" shiftRL ");
+    Serial.print((int)shiftRL);
+    Serial.print(" shiftRR ");
+    Serial.println((int)shiftRR);
+
+    // max value leg gets lifted
+    if ((shiftFL >= shiftFR) && (shiftFL >= shiftRL) && (shiftFL >= shiftRR) && (shiftFL > STEP_SIZE)) {
+      // lift fl
+      m_legsValue.fl.state = LEG_BEFORE_LIFTING;
+    } else if ((shiftFR >= shiftFL) && (shiftFR >= shiftRL) && (shiftFR >= shiftRR) && (shiftFR > STEP_SIZE)) {
+      // lift fr
+      m_legsValue.fr.state = LEG_BEFORE_LIFTING;
+    } else if ((shiftRL >= shiftRR) && (shiftRL >= shiftFL) && (shiftRL >= shiftFR) && (shiftRL > STEP_SIZE)) {
+      // lift rl
+      m_legsValue.rl.state = LEG_BEFORE_LIFTING;
+    } else if ((shiftRR >= shiftFL) && (shiftRR >= shiftFR) && (shiftRR >= shiftRL) && (shiftRR > STEP_SIZE)) {
+      // lift rr
+      m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+    }
   } else {
-    m_legsValue.fr.count = m_legsValue.fl.count + legsPairShift;
+    // not all linear
+    if (m_legsValue.fl.state != LEG_LINEAR) {
+      m_legsValue.fl.state = _processLegState(m_legsValue.fl.state, m_legsValue.fl.shift, m_legsValue.fl.hight, m_legsValue.fl.targeth, m_legsValue.fl.targets);
+    } else if (m_legsValue.fr.state != LEG_LINEAR) {
+      m_legsValue.fr.state = _processLegState(m_legsValue.fr.state, m_legsValue.fr.shift, m_legsValue.fr.hight, m_legsValue.fr.targeth, m_legsValue.fl.targets);
+    } else if (m_legsValue.rl.state != LEG_LINEAR) {
+      m_legsValue.rl.state = _processLegState(m_legsValue.rl.state, m_legsValue.rl.shift, m_legsValue.rl.hight, m_legsValue.rl.targeth, m_legsValue.fl.targets);
+    } else if (m_legsValue.rr.state != LEG_LINEAR) {
+      m_legsValue.rr.state = _processLegState(m_legsValue.rr.state, m_legsValue.rr.shift, m_legsValue.rr.hight, m_legsValue.rr.targeth, m_legsValue.fl.targets);
+    }
   }
-  if (m_legsValue.fr.count >= mainTiming.fullCycle) {
-    m_legsValue.fr.count -= mainTiming.fullCycle;
-  } else if (m_legsValue.fr.count < 0) {
-    m_legsValue.fr.count += mainTiming.fullCycle;
-  }
-  m_legsValue.rr.count = m_legsValue.fr.count + mainTiming.halfCycle;
-  if (m_legsValue.rr.count >= mainTiming.fullCycle) {
-    m_legsValue.rr.count -= mainTiming.fullCycle;
-  }
-  if (walkingModeNow) {
-    // set legs state
-    m_legsValue.fl.state = _getLegState(m_legsValue.fl.count, m_legsValue.fl.liftPoint);
-    m_legsValue.fr.state = _getLegState(m_legsValue.fr.count, m_legsValue.fr.liftPoint);
-    m_legsValue.rl.state = _getLegState(m_legsValue.rl.count, m_legsValue.rl.liftPoint);
-    m_legsValue.rr.state = _getLegState(m_legsValue.rr.count, m_legsValue.rr.liftPoint);
-  } else {
-    // not walking always linear
-    m_legsValue.fl.state = LEG_LINEAR;
-    m_legsValue.fr.state = LEG_LINEAR;
-    m_legsValue.rl.state = LEG_LINEAR;
-    m_legsValue.rr.state = LEG_LINEAR;
-  }
-  return (unsigned char)m_legsValue.fl.count;
+  //Serial.println(" ");
+  //_printCounterState(m_legsValue.fl.state);
+  //_printCounterState(m_legsValue.fr.state);
+  //_printCounterState(m_legsValue.rl.state);
+  //_printCounterState(m_legsValue.rr.state);
 }
 
 // init main time cycle
-void initCounter(short mainCycle, char timeShift) {
+void initCounter(short mainCycle) {
   mainTiming.fullCycle = mainCycle;
   mainTiming.halfCycle = mainTiming.fullCycle / 2;
   mainTiming.quarterCycle = mainTiming.halfCycle / 2;
-  // rear legs time shift
-  legsPairShift = timeShift;
+  keepCounting = true;
+}
+
+// print counter state
+void _printCounterState(unsigned char stateCount) {
+  switch (stateCount) {
+    case LEG_LINEAR:
+      Serial.print(F(" LEG_LINEAR "));
+    break;
+    case LEG_BEFORE_LIFTING:
+      Serial.print(F(" LEG_BEFORE_LIFTING "));
+    break;
+    case LEG_LIFTING:
+      Serial.print(F(" LEG_LIFTING "));
+    break;
+    case LEG_LIFTED:
+      Serial.print(F(" LEG_LIFTED "));
+    break;
+    case LEG_LOWERING:
+      Serial.print(F(" LEG_LOWERING "));
+    break;
+    case LEG_AFTER_LOWERING:
+      Serial.print(F(" LEG_AFTER_LOWERING "));
+    break;
+    default:
+      Serial.println(F(" Wrong gyro state "));
+  }
 }

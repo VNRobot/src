@@ -30,9 +30,11 @@ Main file
 // leg lift point
 #define LIFT_POINT              5
 // step size mm
-#define STEP_SIZE               100
+#define STEP_SIZE               50
 // maximal speed
 #define SPEED_MAX               2
+// lifted leg speed
+#define LIFTED_LEG_SPEED        20
 
 // input state
 enum inState {
@@ -100,8 +102,7 @@ enum lState {
   LEG_LINEAR,
   LEG_BEFORE_LIFTING,
   LEG_LIFTING,
-  LEG_LIFTED_BEFORE,
-  LEG_LIFTED_AFTER,
+  LEG_LIFTED,
   LEG_LOWERING,
   LEG_AFTER_LOWERING
 };
@@ -110,9 +111,9 @@ typedef struct leg {
   short hight;
   short shift;
   unsigned char state;
-  char count;
-  unsigned char liftPoint;
   char speed;
+  short targeth;
+  short targets;
 } leg;
 // legs motors structure
 typedef struct allLegs {
@@ -147,10 +148,10 @@ typedef struct accRoll {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, LIFT_POINT, 0};
+allLegs m_legsValue = {HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
+                       HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -180,23 +181,23 @@ void _doQuickAndOther(unsigned char patternNow) {
     break;
     case Q_DOLOW:
     {
-      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+      setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
     }
     break;
     case Q_DOSTAND:
     {
-      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, -STEP_SIZE, STEP_SIZE, 20);
     }
     break;
     case Q_DORECOVER:
     {
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
       if (m_gyroState.aRollAverage < 0) {
-        setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
       } else {
-        setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
       }
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
     }
     break;
     case Q_DOFLIP:
@@ -215,7 +216,7 @@ void _doQuickAndOther(unsigned char patternNow) {
     case Q_DODOWN:
     {
       // disable motors
-      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+      setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
       detachServo();
       //detachCenter();
     }
@@ -228,15 +229,20 @@ void _doQuickAndOther(unsigned char patternNow) {
 
 // set motors and read sensors
 void _doCycle(void) {
-  // set legs shift
-  setWalkPatternsShiftCount(getWalkingModeInTask());
-  // set legs lift
-  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), readSwitchesCount());
+  // process legs movement
+  if (getWalkingModeInTask()) {
+    // set legs state
+    updateLegsCounter();
+    // set legs shift
+    setWalkPatternsShiftCount();
+    // set legs lift
+    setLegsLiftCount(readSwitchesCount());
+  }
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
-  mCounter = updateCounter(getWalkingModeInTask(), keepCounting);
+  mCounter = updateCounter();
   // update current readings
   updateCurrentCount(mCounter);
   // update gyro readings
@@ -254,9 +260,9 @@ void setup() {
   // -------init shift------- 
   // short shiftForward, bool walk, bool ballance, bool rock
   initShift(0, true, false, false);
-  // -------init patterns------- 
+  // -------init leg lift------- 
   // short legHight, short legLift, bool sideBallance, bool compensation
-  initPatterns(HIGHT_DEFAULT, LIFT_DEFAULT, false, false);
+  initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false, false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -281,7 +287,7 @@ void setup() {
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
-    setServo(HIGHT_LOW, HIGHT_LOW, 20);
+    setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
   }
   // -------init gyro-------
   initGyro(calibrationMode);
@@ -305,7 +311,7 @@ void setup() {
     delay(20000);
   }
   delay(200);
-  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, -STEP_SIZE, STEP_SIZE, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
@@ -317,15 +323,15 @@ void setup() {
   // load task and pattern. direction is 0
   // -------init path-------
   // short stepSize, short speed, bool turning, bool counting
-  initPath(STEP_SIZE, SPEED_MAX, true, false);
+  initPath(STEP_SIZE, SPEED_MAX, false, false);
   setDistancePath(100); // cm
   updatePath(0);
   // -------init counter-------
   // short mainCycle, char timeShift
-  initCounter(64, 16);
-  // bool walkingModeNow, bool keepCounting
-  mCounter = updateCounter(true, true);
-  delay(2000);
+  initCounter(32);
+  // start counter
+  mCounter = updateCounter();
+  delay(200);
 }
 
 // the loop function runs over and over again forever

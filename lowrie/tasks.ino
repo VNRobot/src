@@ -355,6 +355,15 @@ void _printPatternNameDebug(unsigned char patternNow) {
     case Q_END:
       Serial.print(F(" Q_END "));
     break;
+    case Q_DORECOVER:
+      Serial.print(F(" Q_DORECOVER "));
+    break;
+    case Q_DOFLIP:
+      Serial.print(F(" Q_DOFLIP "));
+    break;
+    case Q_PROCESSED:
+      Serial.print(F(" Q_PROCESSED "));
+    break;
     default:
       Serial.print(F(" unknown pattern "));
     break;

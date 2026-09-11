@@ -28,12 +28,12 @@ shiftParam shParam = {
 };
 
 // legs shift buffers
-short shiftBufferFL = 0;
-short shiftBufferFR = 0;
-short shiftBufferRL = 0;
-short shiftBufferRR = 0;
+short shiftValueFL = 0;
+short shiftValueFR = 0;
+short shiftValueRL = 0;
+short shiftValueRR = 0;
 // static ballance
-short staticForward = 0;
+// short staticForward = 0;
 
 /*
 uses
@@ -41,6 +41,7 @@ m_legsValue
 m_gyroState
 */
 
+/*
 // get rockforward value. front negative, rear positive
 short _getRockForward(unsigned char legState) {
   short rockForward = 0;
@@ -52,8 +53,7 @@ short _getRockForward(unsigned char legState) {
     }
     break;
     case LEG_LIFTING:
-    case LEG_LIFTED_BEFORE:
-    case LEG_LIFTED_AFTER:
+    case LEG_LIFTED:
     case LEG_LOWERING:
     {
       rockForward = ROCK_FORWARD_COMPENSATION;
@@ -64,28 +64,38 @@ short _getRockForward(unsigned char legState) {
   }
   return rockForward;
 }
+*/
 
 // get leg shift forward
-short _getLegShiftForward(char counter, unsigned char state, unsigned char quickShiftMultiplier, short sideSpeed, short shiftForward) {
-  // linear  walking shift
-  shiftForward += sideSpeed;
+short _getLegShiftForward(unsigned char state, unsigned char maxSpeed, short sideSpeed, short shiftForward, short targets) {
   switch (state) {
-    case LEG_LIFTED_AFTER:
-    {
-      // quick forwaed
-      shiftForward = -counter * quickShiftMultiplier * sideSpeed;
-    }
-    break;
-    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED:
     {
       // quick forward
-      shiftForward = (mainTiming.fullCycle - counter) * quickShiftMultiplier * sideSpeed;
+      if (sideSpeed < 0) {
+        shiftForward += maxSpeed;
+        if (shiftForward > targets) {
+          shiftForward = targets;
+        }
+      } else {
+        shiftForward -= maxSpeed;
+        if (shiftForward < targets) {
+          shiftForward = targets;
+        }
+      }
     }
     break;
+    case LEG_LINEAR:
+    case LEG_BEFORE_LIFTING:
+    case LEG_LIFTING:
     case LEG_LOWERING:
+    case LEG_AFTER_LOWERING:
     {
-      // start point
-      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed;
+      // linear  walking shift
+      shiftForward += sideSpeed;
+      if (shiftForward > STEP_SIZE * SPEED_MAX) {
+        shiftForward = STEP_SIZE * SPEED_MAX;
+      }
     }
     break;
     default:
@@ -94,15 +104,18 @@ short _getLegShiftForward(char counter, unsigned char state, unsigned char quick
   return shiftForward;
 }
 
-// get servo motor steps for speed 3 to - 3
-void setWalkPatternsShiftCount(bool walkingModeNow) {
-  // shift forward to direction of movement
-  short speedShift = 0;
-  // maximal speed for both sides
-  short speedMax = 0;
-  // quick shift lifted leg forward speed multiplier
-  unsigned char quickShiftMultiplierL = (mainTiming.halfCycle - m_legsValue.fl.liftPoint) / m_legsValue.fl.liftPoint;
-  unsigned char quickShiftMultiplierR = (mainTiming.halfCycle - m_legsValue.fr.liftPoint) / m_legsValue.fr.liftPoint;
+// set step limit
+short _setStepLimit(short step) {
+  if (step > STEP_SIZE * SPEED_MAX) {
+    step = STEP_SIZE * SPEED_MAX;
+  } else if (step < -STEP_SIZE * SPEED_MAX) {
+    step = -STEP_SIZE * SPEED_MAX;
+  }
+  return step;
+}
+
+// get servo motor steps for speed 2 to - 2
+void setWalkPatternsShiftCount(void) {
   // disable walking
   if (! shParam.walkEnabled) {
     m_legsValue.fl.speed = 0;
@@ -110,35 +123,39 @@ void setWalkPatternsShiftCount(bool walkingModeNow) {
     m_legsValue.rl.speed = 0;
     m_legsValue.rr.speed = 0;
   }
+  // maximal speed for lifted leg
+  short speedMax = LIFTED_LEG_SPEED;
   // set direction
   bool goForward = true;
   if ((m_legsValue.fl.speed < 0) || (m_legsValue.fr.speed < 0)) {
     goForward = false;
+    speedMax = -LIFTED_LEG_SPEED;
+  }
+  if (m_legsValue.fl.speed < 0) {
+    m_legsValue.fl.targets = STEP_SIZE * SPEED_MAX;
+    m_legsValue.rl.targets = STEP_SIZE * SPEED_MAX;
+  } else {
+    m_legsValue.fl.targets = -STEP_SIZE * SPEED_MAX;
+    m_legsValue.rl.targets = -STEP_SIZE * SPEED_MAX;
+  }
+  if (m_legsValue.fr.speed < 0) {
+    m_legsValue.fr.targets = STEP_SIZE * SPEED_MAX;
+    m_legsValue.rr.targets = STEP_SIZE * SPEED_MAX;
+  } else {
+    m_legsValue.fr.targets = -STEP_SIZE * SPEED_MAX;
+    m_legsValue.rr.targets = -STEP_SIZE * SPEED_MAX;
   }
   // find maximal and absolute speed
+  /*
+  // shift forward to direction of movement
+  short speedShift = 0;
   if (goForward) {
     speedShift = SPEED_COMPENSATION;
-    if (m_legsValue.fl.speed > m_legsValue.fr.speed) {
-      speedMax = m_legsValue.fl.speed;
-    } else {
-      speedMax = m_legsValue.fr.speed;
-    }
   } else {
     speedShift = -SPEED_COMPENSATION;
-    if (m_legsValue.fl.speed < m_legsValue.fr.speed) {
-      speedMax = m_legsValue.fl.speed;
-    } else {
-      speedMax = m_legsValue.fr.speed;
-    }
   }
-  // equal side speed when all legs touching ground
-  if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
-    // speed
-    m_legsValue.fl.speed = speedMax;
-    m_legsValue.fr.speed = speedMax;
-    m_legsValue.rl.speed = speedMax;
-    m_legsValue.rr.speed = speedMax;
-  }
+    */
+  /*
   // ballance
   if (shParam.ballanceEnabled) {
     short staticForwardTemp = (short)(m_gyroState.aPitchNow * STATIC_BALLANCE_MULIPLIER);
@@ -148,28 +165,25 @@ void setWalkPatternsShiftCount(bool walkingModeNow) {
       staticForward ++;
     }
   }
-  if (walkingModeNow) {
-    // set forward shift
-    shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, quickShiftMultiplierL, m_legsValue.fl.speed, shiftBufferFL);
-    shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, quickShiftMultiplierR, m_legsValue.fr.speed, shiftBufferFR);
-    shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, quickShiftMultiplierL, m_legsValue.rl.speed, shiftBufferRL);
-    shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, quickShiftMultiplierR, m_legsValue.rr.speed, shiftBufferRR);
-    // center mass movement
-    short rockForward = 0;
-    if (shParam.rockEnabled) {
-      rockForward = _getRockForward(m_legsValue.rl.state) + _getRockForward(m_legsValue.rr.state) -_getRockForward(m_legsValue.fl.state) - _getRockForward(m_legsValue.fr.state);
-    }
-    // final shift
-    m_legsValue.fl.shift = staticForward + rockForward + shiftBufferFL + speedShift + shParam.shiftForward;
-    m_legsValue.fr.shift = staticForward + rockForward + shiftBufferFR + speedShift + shParam.shiftForward;
-    m_legsValue.rl.shift = staticForward + rockForward + shiftBufferRL + speedShift + shParam.shiftForward;
-    m_legsValue.rr.shift = staticForward + rockForward + shiftBufferRR + speedShift + shParam.shiftForward;
-  } else {
-    m_legsValue.fl.shift = 0;
-    m_legsValue.fr.shift = 0;
-    m_legsValue.rl.shift = 0;
-    m_legsValue.rr.shift = 0;
+    */
+  // final
+  // set forward shift
+  shiftValueFL = _getLegShiftForward(m_legsValue.fl.state, speedMax, m_legsValue.fl.speed, shiftValueFL, m_legsValue.fl.targets);
+  shiftValueFR = _getLegShiftForward(m_legsValue.fr.state, speedMax, m_legsValue.fr.speed, shiftValueFR, m_legsValue.fr.targets);
+  shiftValueRL = _getLegShiftForward(m_legsValue.rl.state, speedMax, m_legsValue.rl.speed, shiftValueRL, m_legsValue.rl.targets);
+  shiftValueRR = _getLegShiftForward(m_legsValue.rr.state, speedMax, m_legsValue.rr.speed, shiftValueRR, m_legsValue.rr.targets);
+  /*
+  // center mass movement
+  short rockForward = 0;
+  if (shParam.rockEnabled) {
+    rockForward = _getRockForward(m_legsValue.rl.state) + _getRockForward(m_legsValue.rr.state) -_getRockForward(m_legsValue.fl.state) - _getRockForward(m_legsValue.fr.state);
   }
+    */
+  // final shift
+  m_legsValue.fl.shift = _setStepLimit(shiftValueFL); //  + shParam.shiftForward); // staticForward + rockForward + speedShift
+  m_legsValue.fr.shift = _setStepLimit(shiftValueFR); //  + shParam.shiftForward); // staticForward + rockForward + speedShift
+  m_legsValue.rl.shift = _setStepLimit(shiftValueRL); //  + shParam.shiftForward); // staticForward + rockForward + speedShift
+  m_legsValue.rr.shift = _setStepLimit(shiftValueRR); //  + shParam.shiftForward); // staticForward + rockForward + speedShift
 }
 
 // init shift 

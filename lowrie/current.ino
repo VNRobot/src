@@ -11,7 +11,7 @@ Gets analog current inputs
 */
 
 // maximal pair of legs current in ma 2000 to disable
-#define MAX_CURRENT             1000
+#define MAX_CURRENT             3000
 // low battery level in mv
 #define LOW_BATTERY             6200
 #define DEAD_BATTERY            6000

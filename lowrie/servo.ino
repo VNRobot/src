@@ -51,7 +51,7 @@ bool attached = false;
 // motors init values
 short hightSetValueL = HIGHT_LOW;
 short hightSetValueR = HIGHT_LOW;
-char forwardSetValueL = STEP_SIZE;
+char forwardSetValueF = STEP_SIZE;
 char forwardSetValueR = STEP_SIZE;
 
 /*
@@ -70,14 +70,14 @@ short _calculateMotorAngleF(int Hval, int Sval, char motorNum) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 14; // nalf distance between motors in mm
+  Sval -= 13; // nalf distance between motors in mm
   Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 103 * 103) / (2 * Lval * 70)) * 180) / 3.14;    5709
-  AngleB = (acos((Lval * Lval - 5709) / (Lval * 140)) * 180) / 3.14;
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 105 * 105) / (2 * Lval * 70)) * 180) / 3.14;    6125
+  AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
   return (short)(90 - AngleB - AngleC);
 }
 
@@ -93,14 +93,14 @@ short _calculateMotorAngleR(int Hval, int Sval, char motorNum) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 14; // nalf distance between motors in mm
+  Sval -= 13; // nalf distance between motors in mm
   Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 128 * 128) / (2 * Lval * 70)) * 180) / 3.14;    11484
-  AngleB = (acos((Lval * Lval - 11484) / (Lval * 140)) * 180) / 3.14;
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 129 * 129) / (2 * Lval * 70)) * 180) / 3.14;    11741
+  AngleB = (acos((Lval * Lval - 11741) / (Lval * 140)) * 180) / 3.14;
   return (short)(90 - AngleB - AngleC);
 }
 
@@ -333,7 +333,7 @@ void detachServo(void) {
 }
 
 // linear motor move
-void setServo(short hi1, short hi2, short timeDelay) {
+void setServo(short hi1, short hi2, short trapezF, short trapezR, short timeDelay) {
   bool doLoop = true;
   while (doLoop) {
     //
@@ -348,33 +348,33 @@ void setServo(short hi1, short hi2, short timeDelay) {
       hightSetValueR ++;
     }
     //
-    if (forwardSetValueL > STEP_SIZE) {
-      forwardSetValueL --;
-    } else if (forwardSetValueL < STEP_SIZE) {
-      forwardSetValueL ++;
+    if (forwardSetValueF > trapezF) {
+      forwardSetValueF --;
+    } else if (forwardSetValueF < trapezF) {
+      forwardSetValueF ++;
     }
-    if (forwardSetValueR > STEP_SIZE) {
+    if (forwardSetValueR > trapezR) {
       forwardSetValueR --;
-    } else if (forwardSetValueR < STEP_SIZE) {
+    } else if (forwardSetValueR < trapezR) {
       forwardSetValueR ++;
     }
-    if ((forwardSetValueL == STEP_SIZE) && (hightSetValueL == hi1) && (forwardSetValueR == STEP_SIZE) && (hightSetValueR == hi2)) {
+    if ((forwardSetValueF == trapezF) && (hightSetValueL == hi1) && (forwardSetValueR == trapezR) && (hightSetValueR == hi2)) {
       doLoop = false;
     }
-    _moveServosQuick(hightSetValueL, -forwardSetValueL, forwardSetValueL, hightSetValueR, -forwardSetValueR, forwardSetValueR);
+    _moveServosQuick(hightSetValueL, forwardSetValueF, forwardSetValueR, hightSetValueR, forwardSetValueF, forwardSetValueR);
     delay(timeDelay);
   }
 }
 
 // set servo motors
-void setServoQuick(short hightL, short hightR, short timeDelay) {
+void setServoQuick(short hightL, short hightR, short trapezF, short trapezR, short timeDelay) {
   if (attached) {
     // set motors values fast
-    forwardSetValueL = STEP_SIZE;
+    forwardSetValueF = trapezF;
     hightSetValueL = hightL;
-    forwardSetValueR = STEP_SIZE;
+    forwardSetValueR = trapezR;
     hightSetValueR = hightR;
-    _moveServosQuick(hightSetValueL, -forwardSetValueL, forwardSetValueL, hightSetValueR, -forwardSetValueR, forwardSetValueR);
+    _moveServosQuick(hightSetValueL, forwardSetValueF, forwardSetValueR, hightSetValueR, forwardSetValueF, forwardSetValueR);
     delay(timeDelay);
   }
 }
