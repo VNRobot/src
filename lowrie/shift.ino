@@ -124,16 +124,17 @@ void setWalkPatternsShiftCount(void) {
     m_legsValue.rr.speed = 0;
   }
   // maximal speed for lifted leg
-  short speedMax = LIFTED_LEG_SPEED;
+  short speedMaxL = LIFTED_LEG_SPEED;
+  short speedMaxR = LIFTED_LEG_SPEED;
   // set direction
-  bool goForward = true;
-  if ((m_legsValue.fl.speed < 0) || (m_legsValue.fr.speed < 0)) {
-    goForward = false;
-    speedMax = -LIFTED_LEG_SPEED;
-  }
+  //bool goForward = true;
+  //if ((m_legsValue.fl.speed < 0) || (m_legsValue.fr.speed < 0)) {
+  //  goForward = false;
+  //}
   if (m_legsValue.fl.speed < 0) {
     m_legsValue.fl.targets = STEP_SIZE * SPEED_MAX;
     m_legsValue.rl.targets = STEP_SIZE * SPEED_MAX;
+    speedMaxL = -LIFTED_LEG_SPEED;
   } else {
     m_legsValue.fl.targets = -STEP_SIZE * SPEED_MAX;
     m_legsValue.rl.targets = -STEP_SIZE * SPEED_MAX;
@@ -141,6 +142,7 @@ void setWalkPatternsShiftCount(void) {
   if (m_legsValue.fr.speed < 0) {
     m_legsValue.fr.targets = STEP_SIZE * SPEED_MAX;
     m_legsValue.rr.targets = STEP_SIZE * SPEED_MAX;
+    speedMaxR = -LIFTED_LEG_SPEED;
   } else {
     m_legsValue.fr.targets = -STEP_SIZE * SPEED_MAX;
     m_legsValue.rr.targets = -STEP_SIZE * SPEED_MAX;
@@ -168,10 +170,10 @@ void setWalkPatternsShiftCount(void) {
     */
   // final
   // set forward shift
-  shiftValueFL = _getLegShiftForward(m_legsValue.fl.state, speedMax, m_legsValue.fl.speed, shiftValueFL, m_legsValue.fl.targets);
-  shiftValueFR = _getLegShiftForward(m_legsValue.fr.state, speedMax, m_legsValue.fr.speed, shiftValueFR, m_legsValue.fr.targets);
-  shiftValueRL = _getLegShiftForward(m_legsValue.rl.state, speedMax, m_legsValue.rl.speed, shiftValueRL, m_legsValue.rl.targets);
-  shiftValueRR = _getLegShiftForward(m_legsValue.rr.state, speedMax, m_legsValue.rr.speed, shiftValueRR, m_legsValue.rr.targets);
+  shiftValueFL = _getLegShiftForward(m_legsValue.fl.state, speedMaxL, m_legsValue.fl.speed, shiftValueFL, m_legsValue.fl.targets);
+  shiftValueFR = _getLegShiftForward(m_legsValue.fr.state, speedMaxR, m_legsValue.fr.speed, shiftValueFR, m_legsValue.fr.targets);
+  shiftValueRL = _getLegShiftForward(m_legsValue.rl.state, speedMaxL, m_legsValue.rl.speed, shiftValueRL, m_legsValue.rl.targets);
+  shiftValueRR = _getLegShiftForward(m_legsValue.rr.state, speedMaxR, m_legsValue.rr.speed, shiftValueRR, m_legsValue.rr.targets);
   /*
   // center mass movement
   short rockForward = 0;

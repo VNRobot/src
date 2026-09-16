@@ -10,8 +10,8 @@ Robot legs hight motion patterns
 #define NEAR_BY_LEG_COMPENSATION    2
 #define OPPOSITE_LEG_COMPENSATION   4
 #define LIFTING_LEG_COMPENSATION    10
-#define LEG_LOWERING_SPEED          40
-#define LEG_LIFTING_SPEED           20
+#define LEG_LOWERING_SPEED          10
+#define LEG_LIFTING_SPEED           10
 #define STEP_DOWN_HIGHT             20
 #define SIDE_BALLANCE_MAX           20
 
@@ -170,7 +170,6 @@ short _setlegLifting(short legLift, unsigned char legState, bool swEnabled, shor
     case LEG_LIFTING:
     {
       legLift = _lowerLeg(legLift, targeth - liftParam.legLiftNow, LEG_LIFTING_SPEED);
-      //legLift = liftParam.legHightNow - liftParam.legLiftNow;
     }
     break;
     case LEG_LOWERING:
@@ -181,7 +180,13 @@ short _setlegLifting(short legLift, unsigned char legState, bool swEnabled, shor
       //    keepMoving = false;
       //  }
       //}
-      //legLift = targeth;
+    }
+    break;
+    case LEG_AFTER_LOWERING:
+    case LEG_LINEAR:
+    case LEG_BEFORE_LIFTING:
+    {
+      legLift = targeth;
     }
     break;
     default:

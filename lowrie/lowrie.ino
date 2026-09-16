@@ -17,11 +17,11 @@ Main file
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
 // normal hight mm
-#define HIGHT_DEFAULT           100
+#define HIGHT_DEFAULT           110
 // maximal hight mm
 #define HIGHT_MAX               160
 // lift value
-#define LIFT_DEFAULT            50
+#define LIFT_DEFAULT            40
 // calibration angle
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
@@ -31,10 +31,12 @@ Main file
 #define LIFT_POINT              5
 // step size mm
 #define STEP_SIZE               50
+// step margine
+#define STEP_MARGINE            10
 // maximal speed
 #define SPEED_MAX               2
 // lifted leg speed
-#define LIFTED_LEG_SPEED        20
+#define LIFTED_LEG_SPEED        10
 
 // input state
 enum inState {
@@ -106,6 +108,13 @@ enum lState {
   LEG_LOWERING,
   LEG_AFTER_LOWERING
 };
+// leg location
+enum legLoc {
+  FRONT_LEG,
+  REAR_LEG,
+  WRONG_LEG
+};
+
 // structure for one leg data
 typedef struct leg {
   short hight;
@@ -114,6 +123,7 @@ typedef struct leg {
   char speed;
   short targeth;
   short targets;
+  unsigned char location;
 } leg;
 // legs motors structure
 typedef struct allLegs {
@@ -148,10 +158,10 @@ typedef struct accRoll {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
-                       HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
-                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX,
-                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE * SPEED_MAX};
+allLegs m_legsValue = {HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE - STEP_MARGINE, WRONG_LEG,
+                       HIGHT_DEFAULT, -STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, -STEP_SIZE - STEP_MARGINE, WRONG_LEG,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, STEP_SIZE + STEP_MARGINE, WRONG_LEG,
+                       HIGHT_DEFAULT,  STEP_SIZE, LEG_LINEAR, 0, HIGHT_DEFAULT, STEP_SIZE + STEP_MARGINE, WRONG_LEG};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
@@ -181,23 +191,23 @@ void _doQuickAndOther(unsigned char patternNow) {
     break;
     case Q_DOLOW:
     {
-      setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
+      setServo(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 20);
     }
     break;
     case Q_DOSTAND:
     {
-      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, -STEP_SIZE, STEP_SIZE, 20);
+      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 20);
     }
     break;
     case Q_DORECOVER:
     {
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 500);
       if (m_gyroState.aRollAverage < 0) {
-        setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 500);
       } else {
-        setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
+        setServoQuick(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 500);
       }
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 500);
+      setServoQuick(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 500);
     }
     break;
     case Q_DOFLIP:
@@ -216,7 +226,7 @@ void _doQuickAndOther(unsigned char patternNow) {
     case Q_DODOWN:
     {
       // disable motors
-      setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
+      setServo(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 20);
       detachServo();
       //detachCenter();
     }
@@ -287,7 +297,7 @@ void setup() {
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
-    setServo(HIGHT_LOW, HIGHT_LOW, -STEP_SIZE, STEP_SIZE, 20);
+    setServo(HIGHT_LOW, HIGHT_LOW, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 20);
   }
   // -------init gyro-------
   initGyro(calibrationMode);
@@ -311,7 +321,7 @@ void setup() {
     delay(20000);
   }
   delay(200);
-  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, -STEP_SIZE, STEP_SIZE, 20);
+  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, - STEP_SIZE - STEP_MARGINE, STEP_SIZE + STEP_MARGINE, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors

@@ -62,6 +62,38 @@ unsigned char _processLegState(unsigned char inState, short shift, short hight, 
   return outState;
 }
 
+// check leg location
+unsigned char _getLegLocation(short theShift, short otherShift, short stepSize) {
+  unsigned char legLocation = WRONG_LEG;
+  if (theShift > otherShift) {
+    // rear
+    if ((theShift - otherShift) > stepSize) {
+      // all good
+      legLocation = REAR_LEG;
+    }
+  } else {
+    // front
+    if ((otherShift - theShift) > stepSize) {
+      // all good
+      legLocation = FRONT_LEG;
+    }
+  }
+  return legLocation;
+}
+
+// check center mass related lifting flag
+bool _getLiftingCandidate(short oppositeOne, short oppositeTwo, short nearBy, short margine) {
+  short centerOne = (oppositeOne + nearBy) / 2;
+  short centerTwo = (oppositeTwo + nearBy) / 2;
+  if ((centerOne > margine) && (centerTwo < -margine)) {
+    return true;
+  }
+  if ((centerTwo > margine) && (centerOne < -margine)) {
+    return true;
+  }
+  return false;
+}
+
 // update servo motors values
 unsigned char updateCounter(void) {
   // update main counter
@@ -76,60 +108,52 @@ unsigned char updateCounter(void) {
 
 // update servo motors values
 void updateLegsCounter(void) {
-  // check center mass
-  short massFLFR = (m_legsValue.fl.shift + m_legsValue.fr.shift) / 2;
-  short massFLRR = (m_legsValue.fl.shift + m_legsValue.rr.shift) / 2;
-  short massFRRL = (m_legsValue.fr.shift + m_legsValue.rl.shift) / 2;
-  short massRLRR = (m_legsValue.rl.shift + m_legsValue.rr.shift) / 2;
-  // leg shift
-  short shiftFL = m_legsValue.fl.shift;
-  short shiftFR = m_legsValue.fr.shift;
-  short shiftRL = m_legsValue.rl.shift;
-  short shiftRR = m_legsValue.rr.shift;
-  // check and change legs state
-  // all linear
+  // check legs location on the left side
+  if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR)) {
+    m_legsValue.fl.location = _getLegLocation(m_legsValue.fl.shift, m_legsValue.rl.shift, STEP_SIZE);
+    m_legsValue.rl.location = _getLegLocation(m_legsValue.rl.shift, m_legsValue.fl.shift, STEP_SIZE);
+  }
+  // check legs location on the right side
+  if ((m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+    m_legsValue.fr.location = _getLegLocation(m_legsValue.fr.shift, m_legsValue.rr.shift, STEP_SIZE);
+    m_legsValue.rr.location = _getLegLocation(m_legsValue.rr.shift, m_legsValue.fr.shift, STEP_SIZE);
+  }
+  // check legs state
   if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
-    // make decision whitch leg to lift first
-    if ((massFRRL < 0) && (massRLRR < 0)) {
-      // can't lift fl
-      shiftFL = 0;
-    }
-    if ((massRLRR < 0) && (massFLRR < 0)) {
-      // can't lift fr
-      shiftFR = 0;
-    }
-    if ((massFLFR < 0) && (massFLRR < 0)) {
-      // can't lift rl
-      shiftRL = 0;
-    }
-    if ((massFLFR < 0) && (massFRRL < 0)) {
-      // can't lift rr
-      shiftRR = 0;
-    }
+    // all linear
+    // get center mass related lifting flag
+    bool canLiftFL = _getLiftingCandidate(m_legsValue.fr.shift, m_legsValue.rr.shift, m_legsValue.rl.shift, STEP_MARGINE);
+    bool canLiftFR = _getLiftingCandidate(m_legsValue.fl.shift, m_legsValue.rl.shift, m_legsValue.rr.shift, STEP_MARGINE);
+    bool canLiftRL = _getLiftingCandidate(m_legsValue.fr.shift, m_legsValue.rr.shift, m_legsValue.fl.shift, STEP_MARGINE);
+    bool canLiftRR = _getLiftingCandidate(m_legsValue.fl.shift, m_legsValue.rl.shift, m_legsValue.fr.shift, STEP_MARGINE);
 
-    // print values
-    Serial.print(" shiftFL ");
-    Serial.print((int)shiftFL);
-    Serial.print(" shiftFR ");
-    Serial.print((int)shiftFR);
-    Serial.print(" shiftRL ");
-    Serial.print((int)shiftRL);
-    Serial.print(" shiftRR ");
-    Serial.println((int)shiftRR);
-
-    // max value leg gets lifted
-    if ((shiftFL >= shiftFR) && (shiftFL >= shiftRL) && (shiftFL >= shiftRR) && (shiftFL > STEP_SIZE)) {
-      // lift fl
+    if (canLiftFL && ((m_legsValue.fl.speed >= 0) && (m_legsValue.fl.location == REAR_LEG) && (m_legsValue.fl.shift > STEP_SIZE))) {
       m_legsValue.fl.state = LEG_BEFORE_LIFTING;
-    } else if ((shiftFR >= shiftFL) && (shiftFR >= shiftRL) && (shiftFR >= shiftRR) && (shiftFR > STEP_SIZE)) {
-      // lift fr
+    } else if (canLiftFL && ((m_legsValue.fl.speed < 0) && (m_legsValue.fl.location == FRONT_LEG) && (m_legsValue.fl.shift < -STEP_SIZE))) {
+      m_legsValue.fl.state = LEG_BEFORE_LIFTING;
+    } else if (canLiftFR && ((m_legsValue.fr.speed >= 0) && (m_legsValue.fr.location == REAR_LEG) && (m_legsValue.fr.shift > STEP_SIZE))) {
       m_legsValue.fr.state = LEG_BEFORE_LIFTING;
-    } else if ((shiftRL >= shiftRR) && (shiftRL >= shiftFL) && (shiftRL >= shiftFR) && (shiftRL > STEP_SIZE)) {
-      // lift rl
+    } else if (canLiftFR && ((m_legsValue.fr.speed < 0) && (m_legsValue.fr.location == FRONT_LEG) && (m_legsValue.fr.shift < -STEP_SIZE))) {
+      m_legsValue.fr.state = LEG_BEFORE_LIFTING;
+    } else if (canLiftRL && ((m_legsValue.rl.speed >= 0) && (m_legsValue.rl.location == REAR_LEG) && (m_legsValue.rl.shift > STEP_SIZE))) {
       m_legsValue.rl.state = LEG_BEFORE_LIFTING;
-    } else if ((shiftRR >= shiftFL) && (shiftRR >= shiftFR) && (shiftRR >= shiftRL) && (shiftRR > STEP_SIZE)) {
-      // lift rr
+    } else if (canLiftRL && ((m_legsValue.rl.speed < 0) && (m_legsValue.rl.location == FRONT_LEG) && (m_legsValue.rl.shift < -STEP_SIZE))) {
+      m_legsValue.rl.state = LEG_BEFORE_LIFTING;
+    } else if (canLiftRR && ((m_legsValue.rr.speed >= 0) && (m_legsValue.rr.location == REAR_LEG) && (m_legsValue.rr.shift > STEP_SIZE))) {
       m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+    } else if (canLiftRR && ((m_legsValue.rr.speed < 0) && (m_legsValue.rr.location == FRONT_LEG) && (m_legsValue.rr.shift < -STEP_SIZE))) {
+      m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+    } else {
+      // emergency lift
+      if (m_legsValue.fl.location == WRONG_LEG) {
+        m_legsValue.fl.state = LEG_BEFORE_LIFTING;
+      } else if (m_legsValue.fr.location == WRONG_LEG) {
+        m_legsValue.fr.state = LEG_BEFORE_LIFTING;
+      } else if (m_legsValue.rl.location == WRONG_LEG) {
+        m_legsValue.rl.state = LEG_BEFORE_LIFTING;
+      } else if (m_legsValue.rr.location == WRONG_LEG) {
+        m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+      }
     }
   } else {
     // not all linear
@@ -143,6 +167,102 @@ void updateLegsCounter(void) {
       m_legsValue.rr.state = _processLegState(m_legsValue.rr.state, m_legsValue.rr.shift, m_legsValue.rr.hight, m_legsValue.rr.targeth, m_legsValue.fl.targets);
     }
   }
+  /*
+  // check center mass
+  short massFLFR = (m_legsValue.fl.shift + m_legsValue.fr.shift) / 2;
+  short massFLRR = (m_legsValue.fl.shift + m_legsValue.rr.shift) / 2;
+  short massFRRL = (m_legsValue.fr.shift + m_legsValue.rl.shift) / 2;
+  short massRLRR = (m_legsValue.rl.shift + m_legsValue.rr.shift) / 2;
+  // leg shift
+  short shiftFL = m_legsValue.fl.shift;
+  short shiftFR = m_legsValue.fr.shift;
+  short shiftRL = m_legsValue.rl.shift;
+  short shiftRR = m_legsValue.rr.shift;
+  // center mass
+  short centerMass = -40;
+  // check and change legs state
+  // all linear
+  if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+    // make decision whitch leg to lift first
+    if (m_legsValue.fl.speed < 0) {
+      if ((massFRRL > 0) && (massRLRR > 0)) {
+        // can't lift fl
+        shiftFL = 0;
+      }
+    } else {
+      if ((massFRRL < 0) && (massRLRR < 0)) {
+        // can't lift fl
+        shiftFL = 0;
+      }
+    }
+    if (m_legsValue.fr.speed < 0) {
+      if ((massRLRR > 0) && (massFLRR > 0)) {
+        // can't lift fr
+        shiftFR = 0;
+      }
+    } else {
+      if ((massRLRR < 0) && (massFLRR < 0)) {
+        // can't lift fr
+        shiftFR = 0;
+      }
+    }
+    if (m_legsValue.rl.speed < 0) {
+      if ((massFLFR > 0) && (massFLRR > 0)) {
+        // can't lift rl
+        shiftRL = 0;
+      }
+    } else {
+      if ((massFLFR < 0) && (massFLRR < 0)) {
+        // can't lift rl
+        shiftRL = 0;
+      }
+    }
+    if (m_legsValue.rr.speed < 0) {
+      if ((massFLFR > 0) && (massFRRL > 0)) {
+        // can't lift rr
+        shiftRR = 0;
+      }
+    } else {
+      if ((massFLFR < 0) && (massFRRL < 0)) {
+        // can't lift rr
+        shiftRR = 0;
+      }
+    }
+    // max value leg gets lifted
+    if ((m_legsValue.fl.speed >= 0) && (shiftFL >= shiftFR) && (shiftFL >= shiftRL) && (shiftFL >= shiftRR) 
+    && (shiftFL > STEP_SIZE) && ((massFRRL + massRLRR) > centerMass)) {
+      // lift fl
+      m_legsValue.fl.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.fr.speed >= 0) && (shiftFR >= shiftFL) && (shiftFR >= shiftRL) && (shiftFR >= shiftRR) 
+    && (shiftFR > STEP_SIZE) && ((massFLRR + massRLRR) > centerMass)) {
+      // lift fr
+      m_legsValue.fr.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.rl.speed >= 0) && (shiftRL >= shiftRR) && (shiftRL >= shiftFL) && (shiftRL >= shiftFR) 
+    && (shiftRL > STEP_SIZE) && ((massFLFR + massFLRR) > centerMass)) {
+      // lift rl
+      m_legsValue.rl.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.rr.speed >= 0) && (shiftRR >= shiftFL) && (shiftRR >= shiftFR) && (shiftRR >= shiftRL) 
+    && (shiftRR > STEP_SIZE) && ((massFLFR + massFRRL) > centerMass)) {
+      // lift rr
+      m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.fl.speed < 0) && (shiftFL <= shiftFR) && (shiftFL <= shiftRL) && (shiftFL <= shiftRR) 
+    && (shiftFL < -STEP_SIZE) && ((massFRRL + massRLRR) < -centerMass)) {
+      // lift fl
+      m_legsValue.fl.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.fr.speed < 0) && (shiftFR <= shiftFL) && (shiftFR <= shiftRL) && (shiftFR <= shiftRR) 
+    && (shiftFR < -STEP_SIZE) && ((massFLRR + massRLRR) < -centerMass)) {
+      // lift fr
+      m_legsValue.fr.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.rl.speed < 0) && (shiftRL <= shiftRR) && (shiftRL <= shiftFL) && (shiftRL <= shiftFR) 
+    && (shiftRL < -STEP_SIZE) && ((massFLFR + massFLRR) < -centerMass)) {
+      // lift rl
+      m_legsValue.rl.state = LEG_BEFORE_LIFTING;
+    } else if ((m_legsValue.rr.speed < 0) && (shiftRR <= shiftFL) && (shiftRR <= shiftFR) && (shiftRR <= shiftRL) 
+    && (shiftRR < -STEP_SIZE) && ((massFLFR + massFRRL) < -centerMass)) {
+      // lift rr
+      m_legsValue.rr.state = LEG_BEFORE_LIFTING;
+    }
+    */
   //Serial.println(" ");
   //_printCounterState(m_legsValue.fl.state);
   //_printCounterState(m_legsValue.fr.state);
