@@ -37,6 +37,8 @@ Main file
 #define SPEED_MAX               2
 // lifted leg speed
 #define LIFTED_LEG_SPEED        10
+// linear leg speed
+#define LINEAR_LEG_SPEED        3
 
 // input state
 enum inState {

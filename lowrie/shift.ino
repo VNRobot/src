@@ -92,7 +92,7 @@ short _getLegShiftForward(unsigned char state, unsigned char maxSpeed, short sid
     case LEG_AFTER_LOWERING:
     {
       // linear  walking shift
-      shiftForward += sideSpeed;
+      shiftForward += sideSpeed * LINEAR_LEG_SPEED;
       if (shiftForward > STEP_SIZE * SPEED_MAX) {
         shiftForward = STEP_SIZE * SPEED_MAX;
       }
