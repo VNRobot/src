@@ -93,11 +93,11 @@ unsigned char updateCounter(bool walkingModeNow, bool keepCounting) {
   return (unsigned char)m_legsValue.fl.count;
 }
 
-// set main cycle value
-void setMainCounter(short mainCycle) {
+// init main time cycle
+void initCounter(short mainCycle, char timeShift) {
   mainTiming.fullCycle = mainCycle;
   mainTiming.halfCycle = mainTiming.fullCycle / 2;
   mainTiming.quarterCycle = mainTiming.halfCycle / 2;
-  // the same for now
-  legsPairShift = mainTiming.quarterCycle;
+  // rear legs time shift
+  legsPairShift = timeShift;
 }

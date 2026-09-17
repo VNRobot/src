@@ -155,7 +155,10 @@ unsigned char _getInputState(unsigned char left, unsigned char right) {
 }
 
 // init inputs
-void initInputs(bool calibrationMode) {
+void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled) {
+  inputParams.legHightNow = legHight;
+  inputParams.sensorsEnabled = sensorsEnabled;
+  inputParams.extraInputsEnabled = extraInputsEnabled;
   Serial.println(F("initInputs"));
   for (i = 0; i < 16; i ++) {
     updateInputsCount(0);
@@ -314,21 +317,6 @@ unsigned char getInputState(void) {
 // get extra inputs state
 unsigned char getExtraInputState(void) {
   return extraStateNow;
-}
-
-// set sensor hight
-void setInputsHight(short hight) {
-  inputParams.legHightNow = hight;
-}
-
-// enable sensors
-void enableSensorInputs(bool inputs) {
-  inputParams.sensorsEnabled = inputs;
-}
-
-// enable extra sensors
-void enableExtraInputs(bool extra) {
-  inputParams.extraInputsEnabled = extra;
 }
 
 // enable edges

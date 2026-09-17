@@ -42,7 +42,8 @@ m_getButtonPressed()
 */
 
 // init current inputs
-void initCurrent(bool calibrationMode) {
+void initCurrent(bool calibrationMode, bool extraEnabled) {
+  extraCurrentEnabled = extraEnabled;
   Serial.println(F("initCurrent"));
   unsigned char counter = 0;
   while (calibrationMode) {
@@ -135,11 +136,6 @@ void updateCurrentCount(unsigned char counter) {
 // current state
 unsigned char getCurrentState(void) {
   return currentStateNow;
-}
-
-// enable extra current
-void enableExtraCurrent(bool extra) {
-  extraCurrentEnabled = extra;
 }
 
 // print raw data

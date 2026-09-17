@@ -125,6 +125,14 @@ char _sideSpeed(short direction, char speed) {
   return speed;
 }
 
+// init path
+void initPath(short stepSize, short speed, bool turning, bool counting) {
+  pathParams.maximalStep = stepSize;
+  speedMultiplierParam = speed;
+  pathParams.stepTurningEnabled = turning;
+  pathParams.stepsDistanceCountEnabled = counting;
+}
+
 // get speed
 void updatePath(short direction) {
   // calculate speed
@@ -316,20 +324,4 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
 void setDistancePath(short distance) {
   // convert to mm
   distanceToTarget = distance * 10;
-}
-
-// set maximal speed in mm per step
-void setMaxPathStep(short stepSize, short speed) {
-  pathParams.maximalStep = stepSize;
-  speedMultiplierParam = speed;
-}
-
-// enable step turning
-void enableTurningPath(bool turning) {
-  pathParams.stepTurningEnabled = turning;
-}
-
-// enable distance counting
-void enableCountingPath(bool counting) {
-  pathParams.stepsDistanceCountEnabled = counting;
 }
