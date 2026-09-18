@@ -95,7 +95,7 @@ short _getLegShiftForward(char counter, unsigned char state, unsigned char quick
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkPatternsShiftCount(bool walkingModeNow) {
+void setWalkShiftCount(bool walkingModeNow) {
   // shift forward to direction of movement
   short speedShift = 0;
   // maximal speed for both sides

@@ -11,6 +11,10 @@ Robot center motors motion patterns
 #define TURNING_SENSITIVITY 2
 // turning mutiplier
 #define TURNING_MULIPLIER    6
+// legs geometry in mm to compensate hight when turning
+#define LEG_EXTRA_SIDE          18
+#define LEG_EXTRA_HIGHT         20
+
 // pin numbers for servo motors
 enum cPinsServo {
   CT1_MOTOR = 4,

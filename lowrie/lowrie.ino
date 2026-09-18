@@ -27,13 +27,8 @@ Main file
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
 #define ROBOT_SIZE_DEVIDER      2
-// counter to keep state the same
-#define STATE_COUNTER           2
 // leg lift point
-#define LIFT_POINT_MIN          3
-// legs geometry in mm
-#define LEG_EXTRA_SIDE          18
-#define LEG_EXTRA_HIGHT         20
+#define LIFT_POINT              7
 
 // input state
 enum inState {
@@ -89,12 +84,6 @@ enum gState {
   GYRO_FELL_RIGHT,
   GYRO_FELL_FRONT,
   GYRO_FELL_BACK
-};
-// robot state
-enum rState {
-  ROBOT_NORM,
-  ROBOT_INO,
-  ROBOT_CRAWL
 };
 // leg state
 enum lState {
@@ -153,15 +142,13 @@ typedef struct accRoll {
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0,
-                       125, 0, LEG_LINEAR, 0, 5, 0};
+allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
+                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0};
 //----------------------------------------------------------
 // main counter
 unsigned char mCounter = 0;
-// state counter
-unsigned char stateCounter = 0;
 // variable for temporary use
 unsigned char i;
 
@@ -253,9 +240,9 @@ void _doQuickAndOther(unsigned char patternNow) {
 // set motors and read sensors
 void _doCycle(void) {
   // set legs shift
-  setWalkPatternsShiftCount(getWalkingModeInTask());
+  setWalkShiftCount(getWalkingModeInTask());
   // set legs lift
-  bool keepCounting = setWalkPatternsLiftCount(getWalkingModeInTask(), readSwitchesCount(), getCenterCompensation());
+  bool keepCounting = setWalkLiftsCount(getWalkingModeInTask(), readSwitchesCount());
   updateLegsServoCount();
   delay(TIME_DELAY);
   // runs only after delay
@@ -271,30 +258,6 @@ void _doCycle(void) {
   updateCenterCount();
 }
 
-// set robot state
-void _setState(unsigned char newState) {
-  //Serial.print(F(" State "));
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      //Serial.println("ROBOT_NORM");
-    }
-    break;
-    case ROBOT_INO:
-    {
-      //Serial.println("ROBOT_INO");
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      //Serial.println("ROBOT_CRAWL");
-    }
-    break;
-    default:
-    break;
-  }
-}
-
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
@@ -304,9 +267,9 @@ void setup() {
   // -------init shift------- 
   // short shiftForward, bool walk, bool ballance, bool rock
   initShift(-14, true, true, true);
-  // -------init patterns------- 
+  // -------init lifts------- 
   // short legHight, short legLift, bool sideBallance, bool compensation
-  initPatterns(HIGHT_DEFAULT, LIFT_DEFAULT, true, true);
+  initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, true, true);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   unsigned char version = EEPROM.read(0);
@@ -337,7 +300,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    setCenter(20);
+    setCenter(0);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // -------init gyro-------
@@ -363,7 +326,7 @@ void setup() {
     delay(20000);
   }
   delay(200);
-  setCenter(10);
+  setCenter(0);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -376,16 +339,14 @@ void setup() {
   // load task and pattern. direction is 0
   // -------init path-------
   // short stepSize, short speed, bool turning, bool counting
-  initPath(120, 2, true, false);
+  initPath(100, 2, true, false);
   setDistancePath(100); // cm
   updatePath(0);
   // -------init counter-------
   // short mainCycle, char timeShift
-  initCounter(64, 16);
+  initCounter(64, 0);
   // bool walkingModeNow, bool keepCounting
   mCounter = updateCounter(true, true);
-  // set state
-  _setState(ROBOT_NORM);
 }
 
 // the loop function runs over and over again forever
@@ -401,25 +362,6 @@ void loop() {
       setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
       // update path
       updatePath(getDirectionGyro());
-      // check for robot state
-      if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = STATE_COUNTER * 2;
-      } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
-        if (stateCounter < STATE_COUNTER) {
-          stateCounter = STATE_COUNTER;
-        }
-      }
-      // set state
-      if (stateCounter == 0) {
-        _setState(ROBOT_NORM);
-      } else {
-        if (stateCounter > STATE_COUNTER) {
-          _setState(ROBOT_CRAWL);
-        } else {
-          _setState(ROBOT_INO);
-        }
-        stateCounter --;
-      }
       setDirectionCenter(getDirectionGyro());
       _doCycle();
     } else {

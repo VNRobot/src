@@ -188,7 +188,7 @@ short _setlegLifting(short legLift, unsigned char legState, bool swEnabled, shor
 }
 
 // get servo motor steps for speed 3 to - 3
-bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers level) {
+bool setWalkLiftsCount(bool walkingModeNow, quad touchingNow) {
   keepCounting = true;
   if (patParam.sideBallanceEnabled) {
     //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
@@ -280,10 +280,10 @@ bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers lev
       }
     }
     // final
-    m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL + phaseBufferFL + level.front; // + surfaceBufferFL;
-    m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR + phaseBufferFR + level.front; // + surfaceBufferFR;
-    m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + phaseBufferRL + level.rear; // + surfaceBufferRL;
-    m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + phaseBufferRR + level.rear; // + surfaceBufferRR;
+    m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL + phaseBufferFL; // + level.front; // + surfaceBufferFL;
+    m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR + phaseBufferFR; // + level.front; // + surfaceBufferFR;
+    m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + phaseBufferRL; // + level.rear; // + surfaceBufferRL;
+    m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + phaseBufferRR; // + level.rear; // + surfaceBufferRR;
   } else {
     m_legsValue.fl.hight = patParam.legHightNow;
     m_legsValue.fr.hight = patParam.legHightNow;
@@ -294,7 +294,7 @@ bool setWalkPatternsLiftCount(bool walkingModeNow, quad touchingNow, centers lev
 }
 
 // init pattern
-void initPatterns(short legHight, short legLift, bool sideBallance, bool compensation) {
+void initLifts(short legHight, short legLift, bool sideBallance, bool compensation) {
   patParam.legHightNow = legHight;
   patParam.legLiftNow = legLift;
   patParam.compensationEnabled = compensation;
