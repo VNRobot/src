@@ -146,7 +146,6 @@ void setFlippedServo(char flipL, char flipR) {
 
 // init servo motors
 void attachServo(void) {
-  Serial.println(F("attachServo"));
   if (!attached) {
     // init motors one by one
     servo_fl_1.attach(FL1_MOTOR, 500, 2500);
@@ -179,11 +178,10 @@ void attachServo(void) {
 
 // init servo motors
 void initServo(bool calibrationMode) {
-  Serial.println(F("initServo"));
   // check for calibration mode
   if (calibrationMode) {
     // do calibration
-    unsigned char calibrationStage = 0;
+    char calibrationStage = 0;
     servoCalibrationData.fl.motor1 = 0;
     servoCalibrationData.fl.motor2 = 0;
     servoCalibrationData.fr.motor1 = 0;

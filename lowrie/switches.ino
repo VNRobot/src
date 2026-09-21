@@ -29,7 +29,6 @@ quad swStateNow = {1, 1, 1, 1, false, false};
 void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
   swStateNow.enabledF = swFrontEnable;
   swStateNow.enabledR = swRearEnable;
-  Serial.println(F("initSwitches"));
   if (swStateNow.enabledF) {
     pinMode(FL_SWITCH, INPUT_PULLUP);
     pinMode(FR_SWITCH, INPUT_PULLUP);
@@ -45,7 +44,7 @@ void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
       if (m_getButtonPressed()) {
         calibrationMode = false;
       }
-      _printSwitchesState();
+      //_printSwitchesState();
     }
   }
 }
@@ -62,7 +61,7 @@ quad readSwitchesCount(void) {
   }
   return swStateNow;
 }
-
+/*
 // print switches state
 void _printSwitchesState(void) {
   Serial.print(F(" Switches fl "));
@@ -74,3 +73,4 @@ void _printSwitchesState(void) {
   Serial.print(F(" rr "));
   Serial.println((int)swStateNow.rr);
 }
+*/

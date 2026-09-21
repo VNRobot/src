@@ -9,11 +9,11 @@ Main file
 #include <Servo.h>
 
 // software version hardcoded. should be changed manually
-#define ROBOT_VERSION           23
+#define ROBOT_VERSION           25
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
-// main time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              20
+// main half time delay in ms. bigger the number slower the robot
+#define TIME_DELAY              10
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
 // normal hight
@@ -26,7 +26,7 @@ Main file
 #define CALIBRATION_ANGLE_MIN   -15
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
-#define ROBOT_SIZE_DEVIDER      2
+#define ROBOT_SIZE_DEVIDER      1
 // leg lift point
 #define LIFT_POINT              7
 // main counter
@@ -105,9 +105,9 @@ enum lState {
 typedef struct leg {
   short hight;
   short shift;
-  unsigned char state;
+  char state;
   char count;
-  unsigned char liftPoint;
+  char liftPoint;
   char speed;
 } leg;
 // legs motors structure
@@ -146,11 +146,11 @@ typedef struct accRoll {
 // main data structure
 typedef struct masterData {
   bool masterDevice;           // master device flag
-  unsigned char mainCounter;   // main counter
-  unsigned char patternNow;    // current pattern
+  char mainCounter;            // main counter
+  char patternNow;             // current pattern
   char speedLeft;              // left side speed
   char speedRight;             // right side speed
-  unsigned char currentState;  // current received from other device
+  char currentState;           // current received from other device
   char shiftForward;           // shift forward ballance
 } masterData;
 
@@ -163,10 +163,12 @@ allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0};
 // master data
-masterData m_mainData { true, 0, P_STANDGO, 0, 0, C_NORMAL, 0};
+masterData m_mainData { false, 0, P_STANDGO, 0, 0, C_NORMAL, 0};
 //----------------------------------------------------------
 // variable for temporary use
 unsigned char i;
+// robot version
+char robotVersion = ROBOT_VERSION;
 
 // check button pressed
 bool m_getButtonPressed(void) {
@@ -182,7 +184,7 @@ bool m_getButtonPressed(void) {
 }
 
 // quick and other patterns
-void _doQuickAndOther(unsigned char patternNow) {
+void _doQuickAndOther(char patternNow) {
   switch (patternNow) {
     case Q_RESETGIRO:
     {
@@ -248,10 +250,50 @@ void _doQuickAndOther(unsigned char patternNow) {
     }
     break;
     default:
-      Serial.println(F("Wrong pattern"));
     break;
   }
 }
+
+  // send data
+  void _sendData() {
+    if (m_mainData.masterDevice) {
+      // send robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
+      Serial.print(robotVersion);
+      Serial.print(m_mainData.patternNow);
+      Serial.print(m_mainData.speedLeft);
+      Serial.print(m_mainData.speedRight);
+      Serial.print(m_mainData.shiftForward);
+    } else {
+      // send m_mainData.currentState
+      Serial.print(m_mainData.currentState);
+    }
+  }
+
+  // receive data
+  int _receiveData() {
+    int counter = Serial.available();
+    if (m_mainData.masterDevice) {
+      // receive m_mainData.currentState
+      if (counter > 0) {
+          m_mainData.currentState = Serial.read();
+      }
+    } else {
+      // receive robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
+      if (counter > 4) {
+        char version = Serial.read();
+        if (version == robotVersion) {
+          m_mainData.patternNow = Serial.read();
+          m_mainData.speedLeft = Serial.read();
+          m_mainData.speedRight = Serial.read();
+          m_mainData.shiftForward = Serial.read();
+          // set counter
+          setPatternOfTask(m_mainData.patternNow);
+          setHalfCounter(getWalkingModeInTask());
+        }
+      }
+    }
+    return Serial.available();
+  }
 
 // set motors and read sensors
 void _doCycle(void) {
@@ -265,6 +307,14 @@ void _doCycle(void) {
   // === sets m_legsValue.xx.hight
   updateLegsServoCount();
   // === motors set ===
+  // do communication
+  if (m_mainData.mainCounter == 0) {
+    // send once at the beginning of the pattern
+    _sendData();
+  }
+  delay(TIME_DELAY);
+  // try to receive in every count
+  _receiveData();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
@@ -285,9 +335,9 @@ void _doCycle(void) {
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
-  Serial.begin(9600);
-  Serial.println(F("Device started"));
   delay(200);
+  Serial.begin(9600);
+  delay(500);
   // -------init shift------- 
   // short shiftForward, bool walk, bool ballance
   initShift(0, true, false);
@@ -296,8 +346,8 @@ void setup() {
   initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
-  unsigned char version = EEPROM.read(0);
-  if (version != ROBOT_VERSION) {
+  char version = EEPROM.read(0);
+  if (version != robotVersion) {
     calibrationMode = true;
   }
   // -------init sensors inputs-------
@@ -337,15 +387,14 @@ void setup() {
   if (calibrationMode) {
     // write software version
     #ifdef BOARD_ESP32
-      EEPROM.write(0, ROBOT_VERSION);
+      EEPROM.write(0, robotVersion);
       EEPROM.commit();
     #else
-      EEPROM.update(0, ROBOT_VERSION);
+      EEPROM.update(0, robotVersion);
     #endif
     // disable motors
     detachServo();
     //detachCenter();
-    Serial.println(F(" Calibration complete. Please restart now"));
     delay(20000);
   }
   delay(200);
@@ -356,7 +405,6 @@ void setup() {
   // read proximity sensors
   updateInputsCount(0);
   // explore mode
-  Serial.println(F("Entering explore mode"));
   // -------init tasks-------
   initTasks();
   // load task and pattern. direction is 0
@@ -378,20 +426,27 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   if (m_mainData.mainCounter == 0) {
-    // set new pattern and task
-    setPatternAndTask(getCurrentState(), getGyroState());
-    // get pattern
-    m_mainData.patternNow = getPatternOfTask();
+    if (m_mainData.masterDevice) {
+      // set new pattern and task
+      setPatternAndTask(getCurrentState(), getGyroState());
+      // get pattern
+      m_mainData.patternNow = getPatternOfTask();
+    }
     if (m_mainData.patternNow == P_STANDGO) {
-      // normal walking to avoid obstacles
-      // get and set new direction
-      setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
-      // update path
-      updatePath(getDirectionGyro());
-      // === sets m_legsValue.xx.speed
-      m_mainData.speedLeft = m_legsValue.fl.speed;
-      m_mainData.speedRight = m_legsValue.fr.speed;
-      //setDirectionCenter(getDirectionGyro());
+      if (m_mainData.masterDevice) {
+        // normal walking to avoid obstacles
+        // get and set new direction
+        setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
+        // update path
+        updatePath(getDirectionGyro());
+        // === sets m_legsValue.xx.speed
+        m_mainData.speedLeft = m_legsValue.fl.speed;
+        m_mainData.speedRight = m_legsValue.fr.speed;
+        //setDirectionCenter(getDirectionGyro());
+      } else {
+        // set speed
+        setSideSpeed(m_mainData.speedLeft, m_mainData.speedRight);
+      }
       _doCycle();
     } else {
       // quick and non walking patterns
@@ -402,8 +457,3 @@ void loop() {
     _doCycle();
   }
 }
-
-// sync with others using:
-// ROBOT_VERSION, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
-// receive back:
-// m_mainData.currentState

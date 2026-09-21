@@ -134,7 +134,7 @@ void updatePath(short direction) {
 }
 
 // calculate new direction
-short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short direction) {
+short calculateNewDirectionPath(char inputState, short wallAngle, short direction) {
   if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
     // direction is close to the target
     onThePath = true;
@@ -206,7 +206,6 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
         }
       break;
       default:
-        Serial.print(F(" Wrong input path state "));
       break;
     }
   } else {
@@ -261,7 +260,6 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
         }
       break;
       default:
-        Serial.print(F(" Wrong input path state "));
       break;
     }
   }
@@ -279,4 +277,12 @@ void initPath(short stepSize, bool turning, bool counting) {
   pathParams.maximalStep = stepSize;
   pathParams.stepTurningEnabled = turning;
   pathParams.stepsDistanceCountEnabled = counting;
+}
+
+// set side speed
+void setSideSpeed(char speedLeft, char speedRight) {
+  m_legsValue.fl.speed = speedLeft;
+  m_legsValue.fr.speed = speedRight;
+  m_legsValue.rl.speed = speedLeft;
+  m_legsValue.rr.speed = speedRight;
 }

@@ -76,7 +76,6 @@ void _doPWMCenter(void) {
 
 // init servo motors
 void attachCenter(void) {
-  Serial.println(F("attachCenter"));
   if (!centerAttached) {
     // set motors value
     centerMotorAngleValue[0] = _limitCenterMotorValue(90); 
@@ -95,11 +94,10 @@ void attachCenter(void) {
 // init servo motors
 void initCenter(bool calibrationMode) {
   if (centerAttached) {
-    Serial.println(F("initCenter"));
     // check for calibration mode
     if (calibrationMode) {
       // do calibration
-      unsigned char calibrationStage = 0;
+      char calibrationStage = 0;
       centerCalibrationData.front = 0;
       centerCalibrationData.rear = 0;
       // motors one by one

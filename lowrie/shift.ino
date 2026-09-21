@@ -38,7 +38,7 @@ m_gyroState
 */
 
 // get leg shift forward
-short _getLegShiftForward(char counter, unsigned char state, unsigned char quickShiftMultiplier, short sideSpeed, short shiftForward) {
+short _getLegShiftForward(char counter, char state, unsigned char quickShiftMultiplier, short sideSpeed, short shiftForward) {
   // linear  walking shift
   shiftForward += sideSpeed * LINEAR_SPEED;
   switch (state) {

@@ -11,7 +11,7 @@ Gets analog current inputs
 */
 
 // maximal pair of legs current in ma 2000 to disable
-#define MAX_CURRENT             1000
+#define MAX_CURRENT             3000
 // low battery level in mv
 #define LOW_BATTERY             6200
 #define DEAD_BATTERY            6000
@@ -32,9 +32,9 @@ unsigned long currentSum1 = 0;
 unsigned long currentSum2 = 0;
 unsigned long currentSum3 = 0;
 // state of current and voltage
-unsigned char currentStateNow = C_NORMAL;
+char currentStateNow = C_NORMAL;
 // current counter
-unsigned char currentCounter = 1;
+char currentCounter = 1;
 
 /*
 uses
@@ -44,8 +44,7 @@ m_getButtonPressed()
 // init current inputs
 void initCurrent(bool calibrationMode, bool extraEnabled) {
   extraCurrentEnabled = extraEnabled;
-  Serial.println(F("initCurrent"));
-  unsigned char counter = 0;
+  char counter = 0;
   while (calibrationMode) {
     counter ++;
     if (counter >= 32) {
@@ -57,14 +56,14 @@ void initCurrent(bool calibrationMode, bool extraEnabled) {
     }
     updateCurrentCount(counter);
     if (counter == 0) {
-      _printCurrentStateDebug();
-      _printLineCurrent();
+      //_printCurrentStateDebug();
+      //_printLineCurrent();
     }
   }
 }
 
 // read and remember analog current sensors readings
-void updateCurrentCount(unsigned char counter) {
+void updateCurrentCount(char counter) {
   // end of previous cycle
   if (counter == 0) {
     // average
@@ -134,10 +133,10 @@ void updateCurrentCount(unsigned char counter) {
 }
 
 // current state
-unsigned char getCurrentState(void) {
+char getCurrentState(void) {
   return currentStateNow;
 }
-
+/*
 // print raw data
 void _printLineCurrent(void) {
   Serial.print(F(" Battery "));
@@ -170,3 +169,4 @@ void _printCurrentStateDebug(void) {
       Serial.println(F(" Wrong inputs state "));
   }
 }
+*/

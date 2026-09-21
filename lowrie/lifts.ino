@@ -61,7 +61,7 @@ short _lowerLeg(short leH, short targetHight, short step) {
 }
 
 // leg lifting
-short _setlegLifting(short legLift, unsigned char legState) {
+short _setlegLifting(short legLift, char legState) {
   switch (legState) {
     case LEG_LIFTED_BEFORE:
     case LEG_LIFTED_AFTER:

@@ -20,8 +20,8 @@ m_legsValue
 */
 
 // get leg state
-unsigned char _getLegState(char counter, unsigned char liftPoint) {
-  unsigned char state = LEG_LINEAR;
+char _getLegState(char counter, char liftPoint) {
+  char state = LEG_LINEAR;
   if (counter < liftPoint) {
     // start of cycle
     state = LEG_LIFTED_AFTER;
@@ -58,7 +58,7 @@ void _setlegsState(bool walkingModeNow) {
 }
 
 // update servo motors values
-unsigned char updateCounter(bool walkingModeNow, bool masterCounter) {
+char updateCounter(bool walkingModeNow, bool masterCounter) {
   // update main counter
   m_legsValue.fl.count ++;
   if (m_legsValue.fl.count >= mainTiming.fullCycle) {
@@ -73,9 +73,9 @@ unsigned char updateCounter(bool walkingModeNow, bool masterCounter) {
   // set legs state
   _setlegsState(walkingModeNow);
   if (masterCounter) {
-    return (unsigned char)m_legsValue.fl.count;
+    return (char)m_legsValue.fl.count;
   } else {
-    return (unsigned char)m_legsValue.fr.count;
+    return (char)m_legsValue.fr.count;
   }
 }
 

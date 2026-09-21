@@ -34,8 +34,8 @@ float timeInterval;
 unsigned long currentTime = 0;
 unsigned long oldTime;
 // gyro state
-unsigned char stateGyroOld = GYRO_NORM;
-unsigned char stateGyro = GYRO_NORM;
+char stateGyroOld = GYRO_NORM;
+char stateGyro = GYRO_NORM;
 // roll data
 // shake parameters
 short shakeNow = 0;
@@ -55,7 +55,7 @@ short walkingDirectionAbs = 0;
 // flipped state
 bool gyroFlipped = false;
 // gyro counter
-unsigned char gyroCounter = 0;
+char gyroCounter = 0;
 
 /*
 uses
@@ -116,7 +116,7 @@ float _fixAngle(float angle, float limit){
 }
 
 // status of gyro
-unsigned char _statusGyro(void) {
+char _statusGyro(void) {
   // if shaken wait
   if (shakeNow < (shakeOld * 2)) {
     // not shaken 
@@ -156,10 +156,8 @@ unsigned char _statusGyro(void) {
 // init gyroscope and accelerometer MPU6050 using I2C
 void initGyro(bool calibrationMode) {
   int i;
-  Serial.println(F("initGyro"));
   // check for calibration mode
   if (calibrationMode) {
-    Serial.println(F(" Put robot on flat horizontal surface and press the button"));
     while (!m_getButtonPressed()) {
       delay(100);
     }
@@ -192,27 +190,13 @@ void initGyro(bool calibrationMode) {
   // write gyro calibration when button pressed
   if (calibrationMode) {
     EEPROM.put(16, gyroErrors);
-    Serial.println(" Writing gyro data ");
   } else {
     EEPROM.get(16, gyroErrors);
-    Serial.println(" Reading gyro data ");
   }
-  // print error values
-  Serial.print(F(" AccErrorX "));
-  Serial.print((int)(gyroErrors.AccErrorX * 10));
-  Serial.print(F(" AccErrorY "));
-  Serial.print((int)(gyroErrors.AccErrorY * 10));
-  Serial.print(F(" GyroErrorX "));
-  Serial.print((int)(gyroErrors.GyroErrorX * 10));
-  Serial.print(F(" GyroErrorY "));
-  Serial.print((int)(gyroErrors.GyroErrorY * 10));
-  Serial.print(F(" GyroErrorZ "));
-  Serial.println((int)(gyroErrors.GyroErrorZ * 10));
-  //AccErrorX 0 AccErrorY -2 GyroErrorX -2 GyroErrorY -5 GyroErrorZ -1
 }
 
 // read gyroscope and accelerometer data
-void updateGyroCount(unsigned char counter) {
+void updateGyroCount(char counter) {
   // accelerometer
   _readWire(floatBuffer, 0x3B);
   floatBuffer[0] /= 16384.0;
@@ -317,14 +301,12 @@ short getDirectionGyro(void) {
 // remember horizontal direction
 void setDirectionGyro(short newDirection) {
   if (newDirection != 0) {
-    //Serial.print(" New direction ");
-    //Serial.println((int)newDirection);
     floatDirection = (float)(- newDirection / 2);
   }
 }
 
 // gyro state
-unsigned char getGyroState(void) {
+char getGyroState(void) {
   return stateGyro;
 }
 
@@ -358,7 +340,7 @@ bool getSurfaceBumpyGyro(void) {
 void setFlippedGyro(bool flipped) {
   gyroFlipped = flipped;
 }
-
+/*
 // print gyro values
 void _printGyro(void) {
   // print gyro status
@@ -414,3 +396,4 @@ void _printRollGyroDebug(void) {
   Serial.print(" aLiftRR ");
   Serial.println((int)m_gyroState.aLiftRR);
 }
+*/
