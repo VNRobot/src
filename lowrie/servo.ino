@@ -64,15 +64,7 @@ m_getButtonPressed()
 */
 
 // calculate motor 1 and motor 2 angles
-short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
-  // used for run, bend or roll
-  //if (m_robotState.surfaceAngleDevider > 0) {
-  //  // run or bend
-  //  Hval += Sval / m_robotState.surfaceAngleDevider;
-  //} else if (m_robotState.surfaceAngleDevider < 0) {
-  //  // roll
-  //  Hval += (Sval * Sval) / m_robotState.surfaceAngleDevider;
-  //}
+short _calculateMotorAngleF(int Hval, int Sval, char motorNum) {
   float Lval = (float)Hval;
   float AngleB = 0;
   float AngleC = 0;
@@ -81,17 +73,37 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 12; // nalf distance between motors in mm
-  // scale step
+  Sval -= 13; // nalf distance between motors in mm
   Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 100 * 100) / (2 * Lval * 70)) * 180) / 3.14;    5100
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 106 * 106) / (2 * Lval * 70)) * 180) / 3.14;    6336
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 112 * 112) / (2 * Lval * 70)) * 180) / 3.14;    7644
-  AngleB = (acos((Lval * Lval - 6336) / (Lval * 140)) * 180) / 3.14;
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 105 * 105) / (2 * Lval * 70)) * 180) / 3.14;    6125
+  AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
+  return (short)(90 - AngleB - AngleC);
+}
+
+// calculate motor 1 and motor 2 angles
+short _calculateMotorAngleR(int Hval, int Sval, char motorNum) {
+  // extra hight for rear motors
+  Hval += 24;
+  float Lval = (float)Hval;
+  float AngleB = 0;
+  float AngleC = 0;
+  // for first motor mirror shift
+  if (motorNum == 1) {
+    Sval = -Sval;
+  }
+  // calculate Lvalue and angles
+  Sval -= 13; // nalf distance between motors in mm
+  Lval = sqrt(Hval * Hval + Sval * Sval);
+  AngleC = (acos(Hval / Lval) * 180) / 3.14;
+  if (Sval < 0) {
+    AngleC = -AngleC;
+  }
+  //AngleB = (acos((Lval * Lval + 70 * 70 - 129 * 129) / (2 * Lval * 70)) * 180) / 3.14;    11741
+  AngleB = (acos((Lval * Lval - 11741) / (Lval * 140)) * 180) / 3.14;
   return (short)(90 - AngleB - AngleC);
 }
 
@@ -119,20 +131,20 @@ void _doPWMServo(void) {
 
 // fast motor move
 void _moveServosQuick(short hightL, short shiftL, short hightR, short shiftR) {
-  short mValue1 = _calculateMotorAngle((int)hightL, (int)(shiftL), 1);
-  short mValue2 = _calculateMotorAngle((int)hightL, (int)(shiftL), 2);
+  short mValue1 = _calculateMotorAngleF((int)hightL, (int)(shiftL), 1);
+  short mValue2 = _calculateMotorAngleF((int)hightL, (int)(shiftL), 2);
   servoMotorAngleValue[0] = flippedL * mValue1;
   servoMotorAngleValue[1] = - flippedL * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightL, (int)(shiftL), 1);
-  mValue2 = _calculateMotorAngle((int)hightL, (int)(shiftL), 2);
+  mValue1 = _calculateMotorAngleF((int)hightL, (int)(shiftL), 1);
+  mValue2 = _calculateMotorAngleF((int)hightL, (int)(shiftL), 2);
   servoMotorAngleValue[4] = flippedL * mValue1;
   servoMotorAngleValue[5] = - flippedL * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightR, (int)(shiftR), 1);
-  mValue2 = _calculateMotorAngle((int)hightR, (int)(shiftR), 2);
+  mValue1 = _calculateMotorAngleR((int)hightR, (int)(shiftR), 1);
+  mValue2 = _calculateMotorAngleR((int)hightR, (int)(shiftR), 2);
   servoMotorAngleValue[2] = - flippedR * mValue1;
   servoMotorAngleValue[3] = flippedR * mValue2;
-  mValue1 = _calculateMotorAngle((int)hightR, (int)(shiftR), 1);
-  mValue2 = _calculateMotorAngle((int)hightR, (int)(shiftR), 2);
+  mValue1 = _calculateMotorAngleR((int)hightR, (int)(shiftR), 1);
+  mValue2 = _calculateMotorAngleR((int)hightR, (int)(shiftR), 2);
   servoMotorAngleValue[6] = - flippedR * mValue1;
   servoMotorAngleValue[7] = flippedR * mValue2;
   _doPWMServo();
@@ -372,13 +384,13 @@ void setServoQuick(short hightL, short hightR, short timeDelay) {
 
 // move leg motors.
 void updateLegsServoCount(void) {
-  servoMotorAngleValue[0] = flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
-  servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
-  servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
-  servoMotorAngleValue[3] = flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
-  servoMotorAngleValue[4] = flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
-  servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
-  servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
-  servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
+  servoMotorAngleValue[0] = flippedL * (_calculateMotorAngleF(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
+  servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngleF(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
+  servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngleF(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
+  servoMotorAngleValue[3] = flippedR * (_calculateMotorAngleF(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
+  servoMotorAngleValue[4] = flippedL * (_calculateMotorAngleR(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
+  servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngleR(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
+  servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngleR(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
+  servoMotorAngleValue[7] = flippedR * (_calculateMotorAngleR(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
   _doPWMServo();
 }

@@ -86,8 +86,8 @@ void initCounter(short mainCycle) {
 }
 
 void setHalfCounter (bool walkingModeNow) {
-  m_legsValue.fl.count = mainTiming.halfCycle;
-  m_legsValue.fr.count = 0;
+  m_legsValue.fl.count = mainTiming.halfCycle - 1;
+  m_legsValue.fr.count = mainTiming.fullCycle - 1;
   m_legsValue.rr.count = m_legsValue.fl.count;
   m_legsValue.rl.count = m_legsValue.fr.count;
   // set legs state

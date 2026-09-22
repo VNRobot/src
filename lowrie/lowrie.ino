@@ -13,7 +13,7 @@ Main file
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main half time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              10
+#define TIME_DELAY              12
 // low hight in mm. upper arm is horizontal
 #define HIGHT_LOW               80
 // normal hight
@@ -163,7 +163,7 @@ allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0};
 // master data
-masterData m_mainData { false, 0, P_STANDGO, 0, 0, C_NORMAL, 0};
+masterData m_mainData { true, 0, P_STANDGO, 0, 0, C_NORMAL, 0};
 //----------------------------------------------------------
 // variable for temporary use
 unsigned char i;
