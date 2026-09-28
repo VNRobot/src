@@ -152,9 +152,12 @@ typedef struct masterData {
   char speedRight;             // right side speed
   char currentState;           // current received from other device
   char shiftForward;           // shift forward ballance
+  char directionCenter;        // direction correction
 } masterData;
 
 //---------------global variables---------------------------
+// center motor angle
+centers m_centerAngle = {0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
@@ -163,7 +166,7 @@ allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
                        125, 0, LEG_LINEAR, 0, LIFT_POINT, 0};
 // master data
-masterData m_mainData { true, 0, P_STANDGO, 0, 0, C_NORMAL, 0};
+masterData m_mainData { true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
 //----------------------------------------------------------
 // variable for temporary use
 unsigned char i;
@@ -246,7 +249,7 @@ void _doQuickAndOther(char patternNow) {
       // disable motors
       setServo(HIGHT_LOW, HIGHT_LOW, 20);
       detachServo();
-      //detachCenter();
+      detachCenter();
     }
     break;
     default:
@@ -263,6 +266,7 @@ void _doQuickAndOther(char patternNow) {
       Serial.print(m_mainData.speedLeft);
       Serial.print(m_mainData.speedRight);
       Serial.print(m_mainData.shiftForward);
+      Serial.print(m_mainData.directionCenter);
     } else {
       // send m_mainData.currentState
       Serial.print(m_mainData.currentState);
@@ -279,13 +283,14 @@ void _doQuickAndOther(char patternNow) {
       }
     } else {
       // receive robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
-      if (counter > 4) {
+      if (counter > 5) {
         char version = Serial.read();
         if (version == robotVersion) {
           m_mainData.patternNow = Serial.read();
           m_mainData.speedLeft = Serial.read();
           m_mainData.speedRight = Serial.read();
           m_mainData.shiftForward = Serial.read();
+          m_mainData.directionCenter = Serial.read();
           // set counter
           setPatternOfTask(m_mainData.patternNow);
           setHalfCounter(getWalkingModeInTask());
@@ -303,7 +308,7 @@ void _doCycle(void) {
   setWalkShiftCount(getWalkingModeInTask());
   // === sets m_legsValue.xx.shift
   // set legs lift
-  setWalkLiftsCount(getWalkingModeInTask());
+  setWalkLiftsCount(getWalkingModeInTask(), m_centerAngle.front);
   // === sets m_legsValue.xx.hight
   updateLegsServoCount();
   // === motors set ===
@@ -329,7 +334,7 @@ void _doCycle(void) {
   // update sensor readings
   updateInputsCount(m_mainData.mainCounter);
   // update center motors
-  //updateCenterCount();
+  updateCenterCount();
 }
 
 // runs once on boot or reset
@@ -356,14 +361,14 @@ void setup() {
   enableObstacleInputs(false);
   enableEdgeInputs(false);
   // -------attach center servo-------
-  //attachCenter();
+  attachCenter(false);
   // -------attach legs servo-------
   attachServo();
   // -------init current readings-------
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode, true);
   // init center servo motors
-  //initCenter(calibrationMode);
+  initCenter(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -371,7 +376,7 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     setFlippedServo(-1, -1);
-    //setCenter(0);
+    setCenter(0);
     setServo(HIGHT_MAX, HIGHT_MAX, 20);
   }
   // -------init gyro-------
@@ -394,11 +399,11 @@ void setup() {
     #endif
     // disable motors
     detachServo();
-    //detachCenter();
+    detachCenter();
     delay(20000);
   }
   delay(200);
-  //setCenter(0);
+  setCenter(0);
   setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
   // update current readings
   updateCurrentCount(0);
@@ -410,7 +415,7 @@ void setup() {
   // load task and pattern. direction is 0
   // -------init path-------
   // short stepSize, short speed, bool turning, bool counting
-  initPath(STEP_SIZE, true, false);
+  initPath(STEP_SIZE, false, false);
   setDistancePath(100); // cm
   updatePath(0);
   // === sets m_legsValue.xx.speed
@@ -437,15 +442,17 @@ void loop() {
         // normal walking to avoid obstacles
         // get and set new direction
         setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
+        m_mainData.directionCenter = getDirectionCharGyro();
         // update path
         updatePath(getDirectionGyro());
         // === sets m_legsValue.xx.speed
         m_mainData.speedLeft = m_legsValue.fl.speed;
         m_mainData.speedRight = m_legsValue.fr.speed;
-        //setDirectionCenter(getDirectionGyro());
+        setDirectionCenter(-m_mainData.directionCenter);
       } else {
         // set speed
         setSideSpeed(m_mainData.speedLeft, m_mainData.speedRight);
+        setDirectionCenter(m_mainData.directionCenter);
       }
       _doCycle();
     } else {

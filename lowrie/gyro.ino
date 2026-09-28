@@ -298,6 +298,17 @@ short getDirectionGyro(void) {
   return walkingDirectionAbs;
 }
 
+// get walking direction
+char getDirectionCharGyro(void) {
+  if (walkingDirectionAbs > 120) {
+    return 120;
+  }
+  if (walkingDirectionAbs < -120) {
+    return -120;
+  }
+  return (char)walkingDirectionAbs;
+}
+
 // remember horizontal direction
 void setDirectionGyro(short newDirection) {
   if (newDirection != 0) {
