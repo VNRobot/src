@@ -111,15 +111,12 @@ void updatePath(short direction) {
   _setAbsoluteSpeed(direction);
   if (pathParams.stepTurningEnabled) {
     // step turning
-    m_legsValue.fl.speed = _sideSpeed(-direction, speedNow);
-    m_legsValue.fr.speed = _sideSpeed(direction, speedNow);
+    m_mainData.speedLeft = _sideSpeed(-direction, speedNow);
+    m_mainData.speedRight = _sideSpeed(direction, speedNow);
   } else {
-    m_legsValue.fl.speed = speedNow;
-    m_legsValue.fr.speed = speedNow;
+    m_mainData.speedLeft = speedNow;
+    m_mainData.speedRight = speedNow;
   }
-  // set rear legs speed and lift point
-  m_legsValue.rl.speed = m_legsValue.fl.speed;
-  m_legsValue.rr.speed = m_legsValue.fr.speed;
   // calculated distance to target
   if (pathParams.stepsDistanceCountEnabled) {
     // step size
@@ -281,8 +278,6 @@ void initPath(short stepSize, bool turning, bool counting) {
 
 // set side speed
 void setSideSpeed(char speedLeft, char speedRight) {
-  m_legsValue.fl.speed = speedLeft;
-  m_legsValue.fr.speed = speedRight;
-  m_legsValue.rl.speed = speedLeft;
-  m_legsValue.rr.speed = speedRight;
+  m_mainData.speedLeft = speedLeft;
+  m_mainData.speedRight = speedRight;
 }

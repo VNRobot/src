@@ -6,7 +6,7 @@ Robot center motors motion patterns
 */
 
 // center motor limit
-#define CENTER_ANGLE_MAX     20
+#define CENTER_ANGLE_MAX     10
 // direction sensitivity
 #define TURNING_SENSITIVITY 2
 // turning mutiplier

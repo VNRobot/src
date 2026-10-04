@@ -87,21 +87,18 @@ char setBallanceShiftCount(bool master, char staticBallance) {
 // get servo motor steps for speed 2 to - 2
 void setWalkShiftCount(bool walkingModeNow) {
   // quick shift lifted leg forward speed multiplier
-  unsigned char quickShiftMultiplierL = (mainTiming.halfCycle - m_legsValue.fl.liftPoint) / m_legsValue.fl.liftPoint;
-  unsigned char quickShiftMultiplierR = (mainTiming.halfCycle - m_legsValue.fr.liftPoint) / m_legsValue.fr.liftPoint;
+  unsigned char quickShiftMultiplier = (mainTiming.halfCycle - LIFT_POINT) / LIFT_POINT;
   // disable walking
   if (! shParam.walkEnabled) {
-    m_legsValue.fl.speed = 0;
-    m_legsValue.fr.speed = 0;
-    m_legsValue.rl.speed = 0;
-    m_legsValue.rr.speed = 0;
+    m_mainData.speedLeft = 0;
+    m_mainData.speedRight = 0;
   }
   if (walkingModeNow) {
     // set forward shift
-    shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, quickShiftMultiplierL, m_legsValue.fl.speed, shiftBufferFL);
-    shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, quickShiftMultiplierR, m_legsValue.fr.speed, shiftBufferFR);
-    shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, quickShiftMultiplierL, m_legsValue.rl.speed, shiftBufferRL);
-    shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, quickShiftMultiplierR, m_legsValue.rr.speed, shiftBufferRR);
+    shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, quickShiftMultiplier, m_mainData.speedLeft, shiftBufferFL);
+    shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, quickShiftMultiplier, m_mainData.speedRight, shiftBufferFR);
+    shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, quickShiftMultiplier, m_mainData.speedLeft, shiftBufferRL);
+    shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, quickShiftMultiplier, m_mainData.speedRight, shiftBufferRR);
     // final shift
     m_legsValue.fl.shift = staticForward + shiftBufferFL + shParam.shiftForward;
     m_legsValue.fr.shift = staticForward + shiftBufferFR + shParam.shiftForward;

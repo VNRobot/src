@@ -44,10 +44,10 @@ char _getLegState(char counter, char liftPoint) {
 void _setlegsState(bool walkingModeNow) {
   if (walkingModeNow) {
     // set legs in walking state
-    m_legsValue.fl.state = _getLegState(m_legsValue.fl.count, m_legsValue.fl.liftPoint);
-    m_legsValue.fr.state = _getLegState(m_legsValue.fr.count, m_legsValue.fr.liftPoint);
-    m_legsValue.rl.state = _getLegState(m_legsValue.rl.count, m_legsValue.rl.liftPoint);
-    m_legsValue.rr.state = _getLegState(m_legsValue.rr.count, m_legsValue.rr.liftPoint);
+    m_legsValue.fl.state = _getLegState(m_legsValue.fl.count, LIFT_POINT);
+    m_legsValue.fr.state = _getLegState(m_legsValue.fr.count, LIFT_POINT);
+    m_legsValue.rl.state = _getLegState(m_legsValue.rl.count, LIFT_POINT);
+    m_legsValue.rr.state = _getLegState(m_legsValue.rr.count, LIFT_POINT);
   } else {
     // not walking always linear
     m_legsValue.fl.state = LEG_LINEAR;

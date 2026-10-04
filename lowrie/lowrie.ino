@@ -8,8 +8,6 @@ Main file
 #include <EEPROM.h>
 #include <Servo.h>
 
-// software version hardcoded. should be changed manually
-#define ROBOT_VERSION           25
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
 // main half time delay in ms. bigger the number slower the robot
@@ -107,8 +105,6 @@ typedef struct leg {
   short shift;
   char state;
   char count;
-  char liftPoint;
-  char speed;
 } leg;
 // legs motors structure
 typedef struct allLegs {
@@ -145,6 +141,8 @@ typedef struct accRoll {
 } accRoll;
 // main data structure
 typedef struct masterData {
+  char robotVersion;           // software version
+  bool multiBoard;             // multi/single board flag
   bool masterDevice;           // master device flag
   char mainCounter;            // main counter
   char patternNow;             // current pattern
@@ -161,17 +159,15 @@ centers m_centerAngle = {0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0,
-                       125, 0, LEG_LINEAR, 0, LIFT_POINT, 0};
+allLegs m_legsValue = {125, 0, LEG_LINEAR, 0,
+                       125, 0, LEG_LINEAR, 0,
+                       125, 0, LEG_LINEAR, 0,
+                       125, 0, LEG_LINEAR, 0};
 // master data
-masterData m_mainData { true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
+masterData m_mainData {25, true, true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
 //----------------------------------------------------------
 // variable for temporary use
 unsigned char i;
-// robot version
-char robotVersion = ROBOT_VERSION;
 
 // check button pressed
 bool m_getButtonPressed(void) {
@@ -260,8 +256,8 @@ void _doQuickAndOther(char patternNow) {
   // send data
   void _sendData() {
     if (m_mainData.masterDevice) {
-      // send robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
-      Serial.print(robotVersion);
+      // send m_mainData.robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
+      Serial.print(m_mainData.robotVersion);
       Serial.print(m_mainData.patternNow);
       Serial.print(m_mainData.speedLeft);
       Serial.print(m_mainData.speedRight);
@@ -282,10 +278,10 @@ void _doQuickAndOther(char patternNow) {
           m_mainData.currentState = Serial.read();
       }
     } else {
-      // receive robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
+      // receive m_mainData.robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
       if (counter > 5) {
         char version = Serial.read();
-        if (version == robotVersion) {
+        if (version == m_mainData.robotVersion) {
           m_mainData.patternNow = Serial.read();
           m_mainData.speedLeft = Serial.read();
           m_mainData.speedRight = Serial.read();
@@ -315,11 +311,15 @@ void _doCycle(void) {
   // do communication
   if (m_mainData.mainCounter == 0) {
     // send once at the beginning of the pattern
-    _sendData();
+    if (m_mainData.multiBoard) {
+      _sendData();
+    }
   }
   delay(TIME_DELAY);
   // try to receive in every count
-  _receiveData();
+  if (m_mainData.multiBoard) {
+    _receiveData();
+  }
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
@@ -352,7 +352,7 @@ void setup() {
   // check button press
   bool calibrationMode = m_getButtonPressed();
   char version = EEPROM.read(0);
-  if (version != robotVersion) {
+  if (version != m_mainData.robotVersion) {
     calibrationMode = true;
   }
   // -------init sensors inputs-------
@@ -402,10 +402,10 @@ void setup() {
   if (calibrationMode) {
     // write software version
     #ifdef BOARD_ESP32
-      EEPROM.write(0, robotVersion);
+      EEPROM.write(0, m_mainData.robotVersion);
       EEPROM.commit();
     #else
-      EEPROM.update(0, robotVersion);
+      EEPROM.update(0, m_mainData.robotVersion);
     #endif
     // disable motors
     detachServo();
@@ -455,9 +455,6 @@ void loop() {
         m_mainData.directionCenter = getDirectionCharGyro();
         // update path
         updatePath(getDirectionGyro());
-        // === sets m_legsValue.xx.speed
-        m_mainData.speedLeft = m_legsValue.fl.speed;
-        m_mainData.speedRight = m_legsValue.fr.speed;
         setDirectionCenter(-m_mainData.directionCenter);
       } else {
         // set speed
