@@ -357,13 +357,23 @@ void setup() {
   }
   // -------init sensors inputs-------
   // bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled
-  initInputs(calibrationMode, HIGHT_DEFAULT, false, false);
-  enableObstacleInputs(false);
-  enableEdgeInputs(false);
+  if (m_mainData.masterDevice) {
+    initInputs(calibrationMode, HIGHT_DEFAULT, true, false);
+    enableObstacleInputs(true);
+    enableEdgeInputs(false);
+  } else {
+    initInputs(calibrationMode, HIGHT_DEFAULT, false, false);
+    enableObstacleInputs(false);
+    enableEdgeInputs(false);
+  }
   // -------attach center servo-------
-  attachCenter(false);
+  // bool frontE, bool rearE
+  if (!m_mainData.masterDevice) {
+    attachCenter(true, true);
+  }
   // -------attach legs servo-------
-  attachServo();
+  // bool frontE, bool rearE
+  attachServo(true, true);
   // -------init current readings-------
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode, true);
@@ -414,8 +424,8 @@ void setup() {
   initTasks();
   // load task and pattern. direction is 0
   // -------init path-------
-  // short stepSize, short speed, bool turning, bool counting
-  initPath(STEP_SIZE, false, false);
+  // short stepSize, bool turning, bool counting
+  initPath(STEP_SIZE, true, false);
   setDistancePath(100); // cm
   updatePath(0);
   // === sets m_legsValue.xx.speed

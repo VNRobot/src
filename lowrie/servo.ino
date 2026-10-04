@@ -56,6 +56,9 @@ char forwardSetValueR = 0;
 // side flipped flags
 char flippedL = 1;
 char flippedR = 1;
+// enable motors
+bool frontLegsEnable = false;
+bool rearLegsEnable = false;
 
 /*
 uses
@@ -119,14 +122,18 @@ short _limitMotorValue(short mAngle) {
 
 // do servo pwm cycle 500, 2500
 void _doPWMServo(void) {
-  servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
-  servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
-  servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
-  servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
-  servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
-  servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
-  servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
-  servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
+  if (frontLegsEnable) {
+    servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
+    servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
+    servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
+    servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
+  }
+  if (rearLegsEnable) {
+    servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
+    servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
+    servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
+    servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
+  }
 }
 
 // fast motor move
@@ -157,33 +164,39 @@ void setFlippedServo(char flipL, char flipR) {
 }
 
 // init servo motors
-void attachServo(void) {
+void attachServo(bool frontE, bool rearE) {
+  frontLegsEnable = frontE;
+  rearLegsEnable = rearE;
   if (!attached) {
     // init motors one by one
-    servo_fl_1.attach(FL1_MOTOR, 500, 2500);
-    servo_fl_1.write(servoMotorCenterPoint[0]);
-    delay(100);
-    servo_fr_1.attach(FR1_MOTOR, 500, 2500);
-    servo_fr_1.write(servoMotorCenterPoint[2]);
-    delay(100);
-    servo_rl_1.attach(RL1_MOTOR, 500, 2500);
-    servo_rl_1.write(servoMotorCenterPoint[4]);
-    delay(100);
-    servo_rr_1.attach(RR1_MOTOR, 500, 2500);
-    servo_rr_1.write(servoMotorCenterPoint[6]);
-    delay(100);
-    servo_fl_2.attach(FL2_MOTOR, 500, 2500);
-    servo_fl_2.write(servoMotorCenterPoint[1]);
-    delay(100);
-    servo_fr_2.attach(FR2_MOTOR, 500, 2500);
-    servo_fr_2.write(servoMotorCenterPoint[3]);
-    delay(100);
-    servo_rl_2.attach(RL2_MOTOR, 500, 2500);
-    servo_rl_2.write(servoMotorCenterPoint[5]);
-    delay(100);
-    servo_rr_2.attach(RR2_MOTOR, 500, 2500);
-    servo_rr_2.write(servoMotorCenterPoint[7]);
-    delay(100);
+    if (frontLegsEnable) {
+      servo_fl_1.attach(FL1_MOTOR, 500, 2500);
+      servo_fl_1.write(servoMotorCenterPoint[0]);
+      delay(100);
+      servo_fr_1.attach(FR1_MOTOR, 500, 2500);
+      servo_fr_1.write(servoMotorCenterPoint[2]);
+      delay(100);
+      servo_fl_2.attach(FL2_MOTOR, 500, 2500);
+      servo_fl_2.write(servoMotorCenterPoint[1]);
+      delay(100);
+      servo_fr_2.attach(FR2_MOTOR, 500, 2500);
+      servo_fr_2.write(servoMotorCenterPoint[3]);
+      delay(100);
+    }
+    if (rearLegsEnable) {
+      servo_rl_1.attach(RL1_MOTOR, 500, 2500);
+      servo_rl_1.write(servoMotorCenterPoint[4]);
+      delay(100);
+      servo_rr_1.attach(RR1_MOTOR, 500, 2500);
+      servo_rr_1.write(servoMotorCenterPoint[6]);
+      delay(100);
+      servo_rl_2.attach(RL2_MOTOR, 500, 2500);
+      servo_rl_2.write(servoMotorCenterPoint[5]);
+      delay(100);
+      servo_rr_2.attach(RR2_MOTOR, 500, 2500);
+      servo_rr_2.write(servoMotorCenterPoint[7]);
+      delay(100);
+    }
     attached = true;
   }
 }
@@ -224,65 +237,97 @@ void initServo(bool calibrationMode) {
         break;
         case 1:
         {
-          servoCalibrationData.fl.motor1 ++;
-          if (servoCalibrationData.fl.motor1 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.fl.motor1 = CALIBRATION_ANGLE_MIN;
+          if (frontLegsEnable) {
+            servoCalibrationData.fl.motor1 ++;
+            if (servoCalibrationData.fl.motor1 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.fl.motor1 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 2:
         {
-          servoCalibrationData.fl.motor2 ++;
-          if (servoCalibrationData.fl.motor2 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.fl.motor2 = CALIBRATION_ANGLE_MIN;
+          if (frontLegsEnable) {
+            servoCalibrationData.fl.motor2 ++;
+            if (servoCalibrationData.fl.motor2 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.fl.motor2 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 5:
         {
-          servoCalibrationData.fr.motor1 ++;
-          if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.fr.motor1 = CALIBRATION_ANGLE_MIN;
+          if (frontLegsEnable) {
+            servoCalibrationData.fr.motor1 ++;
+            if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.fr.motor1 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 6:
         {
-          servoCalibrationData.fr.motor2 ++;
-          if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.fr.motor2 = CALIBRATION_ANGLE_MIN;
+          if (frontLegsEnable) {
+            servoCalibrationData.fr.motor2 ++;
+            if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.fr.motor2 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 3:
         {
-          servoCalibrationData.rl.motor1 ++;
-          if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.rl.motor1 = CALIBRATION_ANGLE_MIN;
+          if (rearLegsEnable) {
+            servoCalibrationData.rl.motor1 ++;
+            if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.rl.motor1 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 4:
         {
-          servoCalibrationData.rl.motor2 ++;
-          if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.rl.motor2 = CALIBRATION_ANGLE_MIN;
+          if (rearLegsEnable) {
+            servoCalibrationData.rl.motor2 ++;
+            if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.rl.motor2 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 7:
         {
-          servoCalibrationData.rr.motor1 ++;
-          if (servoCalibrationData.rr.motor1 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.rr.motor1 = CALIBRATION_ANGLE_MIN;
+          if (rearLegsEnable) {
+            servoCalibrationData.rr.motor1 ++;
+            if (servoCalibrationData.rr.motor1 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.rr.motor1 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
         case 8:
         {
-          servoCalibrationData.rr.motor2 ++;
-          if (servoCalibrationData.rr.motor2 > CALIBRATION_ANGLE_MAX) {
-            servoCalibrationData.rr.motor2 = CALIBRATION_ANGLE_MIN;
+          if (rearLegsEnable) {
+            servoCalibrationData.rr.motor2 ++;
+            if (servoCalibrationData.rr.motor2 > CALIBRATION_ANGLE_MAX) {
+              servoCalibrationData.rr.motor2 = CALIBRATION_ANGLE_MIN;
+            }
+          } else {
+            calibrationStage ++;
           }
         }
         break;
@@ -321,14 +366,18 @@ void initServo(bool calibrationMode) {
 // detach hardware
 void detachServo(void) {
   if (attached) {
-    servo_fl_1.detach();
-    servo_fr_1.detach();
-    servo_rl_1.detach();
-    servo_rr_1.detach();
-    servo_fl_2.detach();
-    servo_fr_2.detach();
-    servo_rl_2.detach();
-    servo_rr_2.detach();
+    if (frontLegsEnable) {
+      servo_fl_1.detach();
+      servo_fr_1.detach();
+      servo_fl_2.detach();
+      servo_fr_2.detach();
+    }
+    if (rearLegsEnable) {
+      servo_rl_1.detach();
+      servo_rr_1.detach();
+      servo_rl_2.detach();
+      servo_rr_2.detach();
+    }
   }
   attached = false;
   _doPWMServo();

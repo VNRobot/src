@@ -6,7 +6,7 @@ Robot center motors motion patterns
 */
 
 // center motor limit
-#define CENTER_ANGLE_MAX     20
+#define CENTER_ANGLE_MAX     10
 // direction sensitivity
 #define TURNING_SENSITIVITY 2
 // turning mutiplier
@@ -49,8 +49,9 @@ center centerValue = {0, 0};
 short directionFront = 0;
 // direction to turn rear
 short directionRear = 0;
-// enable rear motor
-bool rearEnabled = false;
+// enable center motors
+bool frontCenterEnabled = false;
+bool rearCenterEnabled = false;
 
 /*
 uses
@@ -70,26 +71,29 @@ short _limitCenterMotorValue(short mAngle) {
 
 // do servo pwm cycle 500, 2500
 void _doPWMCenter(void) {
-  servo_ct_1.write(centerMotorAngleValue[0]);
-  if (rearEnabled) {
+  if (frontCenterEnabled) {
+    servo_ct_1.write(centerMotorAngleValue[0]);
+  }
+  if (rearCenterEnabled) {
     servo_ct_2.write(centerMotorAngleValue[1]);
   }
 }
 
 // init servo motors
-void attachCenter(bool rear) {
-  if (rear) {
-    rearEnabled = true;
-  }
+void attachCenter(bool frontE, bool rearE) {
+  frontCenterEnabled = frontE;
+  rearCenterEnabled = rearE;
   if (!centerAttached) {
     // set motors value
     centerMotorAngleValue[0] = _limitCenterMotorValue(90); 
     centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
     // init motors one by one
-    servo_ct_1.attach(CT1_MOTOR, 500, 2500);
-    servo_ct_1.write(centerMotorAngleValue[0]);
-    delay(100);
-    if (rearEnabled) {
+    if (frontCenterEnabled) {
+      servo_ct_1.attach(CT1_MOTOR, 500, 2500);
+      servo_ct_1.write(centerMotorAngleValue[0]);
+      delay(100);
+    }
+    if (rearCenterEnabled) {
       servo_ct_2.attach(CT2_MOTOR, 500, 2500);
       servo_ct_2.write(centerMotorAngleValue[1]);
       delay(100);
@@ -123,15 +127,19 @@ void initCenter(bool calibrationMode) {
           break;
           case 1:
           {
-            centerCalibrationData.front ++;
-            if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
-              centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
+            if (frontCenterEnabled) {
+              centerCalibrationData.front ++;
+              if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
+                centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
             }
           }
           break;
           case 2:
           {
-            if (rearEnabled) {
+            if (rearCenterEnabled) {
               centerCalibrationData.rear ++;
               if (centerCalibrationData.rear > CALIBRATION_ANGLE_MAX) {
                 centerCalibrationData.rear = CALIBRATION_ANGLE_MIN;
@@ -167,8 +175,10 @@ void initCenter(bool calibrationMode) {
 // detach hardware
 void detachCenter(void) {
   if (centerAttached) {
-    servo_ct_1.detach();
-    if (rearEnabled) {
+    if (frontCenterEnabled) {
+      servo_ct_1.detach();
+    }
+    if (rearCenterEnabled) {
       servo_ct_2.detach();
     }
     centerAttached = false;
