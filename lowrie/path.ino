@@ -24,143 +24,102 @@ typedef struct pathParameters {
 
 // robot state
 pathParameters pathParams = {
-  120,                    // short maximalStep;
+  100,                    // short maximalStep;
   false,                  // bool stepTurningEnabled;
   false                   // bool stepsDistanceCountEnabled
 };
 
 // speed relative value from 0 to 2
-char speedMultiplierAbsolute = 0;
-// walking direction
-bool walkFrward = true;
+char speedNow = 0;
 // distance to the target mm
 short distanceToTarget = 0;
 // on the path flag
 bool onThePath = false;
 // speed multiplier
-char speedMultiplierParam = 0;
+const char speedMax = 2;
 
 // calculate absolute speed
 void _setAbsoluteSpeed(short direction) {
-  if (speedMultiplierAbsolute < -speedMultiplierParam) {
-    speedMultiplierAbsolute ++;
-  }
-  if (speedMultiplierAbsolute > speedMultiplierParam) {
-    speedMultiplierAbsolute --;
-  }
   // walking mode
   if (distanceToTarget > 0) {
     // plan to go
-    if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
+    if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
       // go forward
-      if (speedMultiplierAbsolute < speedMultiplierParam) {
-        speedMultiplierAbsolute ++;
+      if (speedNow < speedMax) {
+        speedNow ++;
       }
-      walkFrward = true;
+    } else if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
+      // go forward slow
+      if (speedNow < speedMax - 1) {
+        speedNow ++;
+      }
+      if (speedNow > speedMax - 1) {
+        speedNow --;
+      }
     } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
       // stand and turn
-      if (speedMultiplierAbsolute > 0) {
-        speedMultiplierAbsolute --;
+      if (speedNow > 0) {
+        speedNow --;
       }
-      walkFrward = true;
+      if (speedNow < 0) {
+        speedNow ++;
+      }
     } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
-      // stand and turn
-      speedMultiplierAbsolute = 0;
-      walkFrward = false;
+      // go back slow
+      if (speedNow > -speedMax + 1) {
+        speedNow --;
+      }
+      if (speedNow < -speedMax + 1) {
+        speedNow ++;
+      }
     } else {
       // go back
-      if (speedMultiplierAbsolute < speedMultiplierParam) {
-        speedMultiplierAbsolute ++;
+      if (speedNow > -speedMax) {
+        speedNow --;
       }
-      walkFrward = false;
     }
   } else {
     // arrived to the destnation
-    if (speedMultiplierAbsolute > 0) {
-      speedMultiplierAbsolute --;
+    if (speedNow > 0) {
+      speedNow --;
     }
-    walkFrward = true;
+    if (speedNow < 0) {
+      speedNow ++;
+    }
   }
 }
 
 // calculate side speed
 char _sideSpeed(short direction, char speed) {
-  if (walkFrward) {
-    // forward
-    if (direction >= DI_FORWARD_OK) {
-      if (speed < speedMultiplierParam) {
-        speed ++;
-      }
-      //if (speed < speedMultiplierParam) {
-      //  speed ++;
-      //}
+  // forward
+  if (direction >= DI_FORWARD_OK) {
+    if (speed < speedMax) {
+      speed ++;
     }
-    if (direction <= - DI_FORWARD_OK) {
-      if (speed > 0) {
-        speed --;
-      }
-      //if (speed > 0) {
-      //  speed --;
-      //}
-    }
-  } else {
-    // backward
-    if (direction <= - DI_FORWARD_OK) {
-      if (speed < speedMultiplierParam) {
-        speed ++;
-      }
-      //if (speed < speedMultiplierParam) {
-      //  speed ++;
-      //}
-    }
-    if (direction >= DI_FORWARD_OK) {
-      if (speed > 0) {
-        speed --;
-      }
-      //if (speed > 0) {
-      //  speed --;
-      //}
+  }
+  if (direction <= - DI_FORWARD_OK) {
+    if (speed > -speedMax) {
+      speed --;
     }
   }
   return speed;
-}
-
-// init path
-void initPath(short stepSize, short speed, bool turning, bool counting) {
-  pathParams.maximalStep = stepSize;
-  speedMultiplierParam = speed;
-  pathParams.stepTurningEnabled = turning;
-  pathParams.stepsDistanceCountEnabled = counting;
 }
 
 // get speed
 void updatePath(short direction) {
   // calculate speed
   _setAbsoluteSpeed(direction);
-  // step turning
-  m_legsValue.fl.speed = _sideSpeed(-direction, speedMultiplierAbsolute);
-  m_legsValue.fr.speed = _sideSpeed(direction, speedMultiplierAbsolute);
-  // disable step turning
-  if (!pathParams.stepTurningEnabled) {
-    if (m_legsValue.fl.speed < m_legsValue.fr.speed) {
-      m_legsValue.fl.speed = m_legsValue.fr.speed;
-    } else if (m_legsValue.fr.speed < m_legsValue.fl.speed) {
-      m_legsValue.fr.speed = m_legsValue.fl.speed;
-    }
-  }
-  // set lift point
-  m_legsValue.fl.liftPoint = m_legsValue.fl.speed + LIFT_POINT_MIN;
-  m_legsValue.fr.liftPoint = m_legsValue.fr.speed + LIFT_POINT_MIN;
-  // apply direction
-  if (!walkFrward) {
-    m_legsValue.fl.speed = -m_legsValue.fl.speed;
-    m_legsValue.fr.speed = -m_legsValue.fr.speed;
+  if (pathParams.stepTurningEnabled) {
+    // step turning
+    m_legsValue.fl.speed = _sideSpeed(-direction, speedNow);
+    m_legsValue.fr.speed = _sideSpeed(direction, speedNow);
+  } else {
+    m_legsValue.fl.speed = speedNow;
+    m_legsValue.fr.speed = speedNow;
   }
   // set rear legs speed and lift point
   m_legsValue.rl.speed = m_legsValue.fl.speed;
   m_legsValue.rr.speed = m_legsValue.fr.speed;
-  m_legsValue.rl.liftPoint = m_legsValue.fl.liftPoint;
-  m_legsValue.rr.liftPoint = m_legsValue.fr.liftPoint;
   // calculated distance to target
   if (pathParams.stepsDistanceCountEnabled) {
     // step size
@@ -174,19 +133,8 @@ void updatePath(short direction) {
   }
 }
 
-/*
-// update distance to target in cm
-void updateDistancePath(short distance) {
-  distanceToTarget += distance * 10;
-}
-
-// get distance to target in cm
-short getDistancePath(void) {
-  return distanceToTarget / 10;
-}
-*/
 // calculate new direction
-short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short direction) {
+short calculateNewDirectionPath(char inputState, short wallAngle, short direction) {
   if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
     // direction is close to the target
     onThePath = true;
@@ -258,7 +206,6 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
         }
       break;
       default:
-        Serial.print(F(" Wrong input path state "));
       break;
     }
   } else {
@@ -313,7 +260,6 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
         }
       break;
       default:
-        Serial.print(F(" Wrong input path state "));
       break;
     }
   }
@@ -324,4 +270,19 @@ short calculateNewDirectionPath(unsigned char inputState, short wallAngle, short
 void setDistancePath(short distance) {
   // convert to mm
   distanceToTarget = distance * 10;
+}
+
+// init path
+void initPath(short stepSize, bool turning, bool counting) {
+  pathParams.maximalStep = stepSize;
+  pathParams.stepTurningEnabled = turning;
+  pathParams.stepsDistanceCountEnabled = counting;
+}
+
+// set side speed
+void setSideSpeed(char speedLeft, char speedRight) {
+  m_legsValue.fl.speed = speedLeft;
+  m_legsValue.fr.speed = speedRight;
+  m_legsValue.rl.speed = speedLeft;
+  m_legsValue.rr.speed = speedRight;
 }
