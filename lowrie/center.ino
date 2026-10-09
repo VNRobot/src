@@ -151,8 +151,9 @@ void initCenter(bool calibrationMode) {
           break;
           case 3:
           {
-            EEPROM.update(9, (unsigned char)(centerCalibrationData.front + 128));
-            EEPROM.update(10, (unsigned char)(centerCalibrationData.rear + 128));
+            EEPROM.write(9, (unsigned char)(centerCalibrationData.front + 128));
+            EEPROM.write(10, (unsigned char)(centerCalibrationData.rear + 128));
+            EEPROM.commit();
             calibrationStage ++;
             calibrationMode = false;
           }

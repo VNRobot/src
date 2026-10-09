@@ -1,3 +1,5 @@
+#include <dummy.h>
+
 /*
 Walking Robot Lowrie
 Licensed GNU GPLv3 by VN ROBOT INC 2023
@@ -6,7 +8,8 @@ Main file
 */
 
 #include <EEPROM.h>
-#include <Servo.h>
+#include <Wire.h>
+#include <ESP32Servo.h>
 
 // input grounded 0 - 1023
 #define INPUT_GROUNDED          400
@@ -337,6 +340,19 @@ void _doCycle(void) {
   updateCenterCount();
 }
 
+// write software version to eeprom
+void _writeSoftwareVersionEeprom(char version) {
+  // software version address is 0
+  EEPROM.write(0, version);
+  EEPROM.commit();
+}
+
+// read software version from eeprom
+char _readSoftwareVersionEeprom() {
+  // software version address is 0
+  return (char)EEPROM.read(0);
+}
+
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
@@ -351,7 +367,7 @@ void setup() {
   initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
   // check button press
   bool calibrationMode = m_getButtonPressed();
-  char version = EEPROM.read(0);
+  char version = _readSoftwareVersionEeprom();
   if (version != m_mainData.robotVersion) {
     calibrationMode = true;
   }
@@ -401,12 +417,7 @@ void setup() {
   // === sets m_gyroState
   if (calibrationMode) {
     // write software version
-    #ifdef BOARD_ESP32
-      EEPROM.write(0, m_mainData.robotVersion);
-      EEPROM.commit();
-    #else
-      EEPROM.update(0, m_mainData.robotVersion);
-    #endif
+    _writeSoftwareVersionEeprom(m_mainData.robotVersion);
     // disable motors
     detachServo();
     detachCenter();

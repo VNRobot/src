@@ -25,6 +25,19 @@ enum swState {
 // switches data
 quad swStateNow = {1, 1, 1, 1, false, false};
 
+// read switches
+quad readSwitchesCount(void) {
+  if (swStateNow.enabledF) {
+    swStateNow.fl = digitalRead(FL_SWITCH);
+    swStateNow.fr = digitalRead(FR_SWITCH);
+  }
+  if (swStateNow.enabledR) {
+    swStateNow.rl = digitalRead(RL_SWITCH);
+    swStateNow.rr = digitalRead(RR_SWITCH);
+  }
+  return swStateNow;
+}
+
 // init Switches
 void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
   swStateNow.enabledF = swFrontEnable;
@@ -49,18 +62,6 @@ void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
   }
 }
 
-// read switches
-quad readSwitchesCount(void) {
-  if (swStateNow.enabledF) {
-    swStateNow.fl = digitalRead(FL_SWITCH);
-    swStateNow.fr = digitalRead(FR_SWITCH);
-  }
-  if (swStateNow.enabledR) {
-    swStateNow.rl = digitalRead(RL_SWITCH);
-    swStateNow.rr = digitalRead(RR_SWITCH);
-  }
-  return swStateNow;
-}
 /*
 // print switches state
 void _printSwitchesState(void) {

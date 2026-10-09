@@ -333,14 +333,15 @@ void initServo(bool calibrationMode) {
         break;
         case 9:
         {
-          EEPROM.update(1, (unsigned char)(servoCalibrationData.fl.motor1 + 128));
-          EEPROM.update(2, (unsigned char)(servoCalibrationData.fl.motor2 + 128));
-          EEPROM.update(3, (unsigned char)(servoCalibrationData.fr.motor1 + 128));
-          EEPROM.update(4, (unsigned char)(servoCalibrationData.fr.motor2 + 128));
-          EEPROM.update(5, (unsigned char)(servoCalibrationData.rl.motor1 + 128));
-          EEPROM.update(6, (unsigned char)(servoCalibrationData.rl.motor2 + 128));
-          EEPROM.update(7, (unsigned char)(servoCalibrationData.rr.motor1 + 128));
-          EEPROM.update(8, (unsigned char)(servoCalibrationData.rr.motor2 + 128));
+          EEPROM.write(1, (unsigned char)(servoCalibrationData.fl.motor1 + 128));
+          EEPROM.write(2, (unsigned char)(servoCalibrationData.fl.motor2 + 128));
+          EEPROM.write(3, (unsigned char)(servoCalibrationData.fr.motor1 + 128));
+          EEPROM.write(4, (unsigned char)(servoCalibrationData.fr.motor2 + 128));
+          EEPROM.write(5, (unsigned char)(servoCalibrationData.rl.motor1 + 128));
+          EEPROM.write(6, (unsigned char)(servoCalibrationData.rl.motor2 + 128));
+          EEPROM.write(7, (unsigned char)(servoCalibrationData.rr.motor1 + 128));
+          EEPROM.write(8, (unsigned char)(servoCalibrationData.rr.motor2 + 128));
+          EEPROM.commit();
           calibrationStage ++;
           calibrationMode = false;
         }
