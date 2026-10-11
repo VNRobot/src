@@ -187,9 +187,18 @@ void initGyro(bool calibrationMode) {
   gyroErrors.GyroErrorZ /= 200;
   // write gyro calibration when button pressed
   if (calibrationMode) {
-    EEPROM.put(16, gyroErrors);
+    EEPROM.writeFloat(22, gyroErrors.AccErrorX);
+    EEPROM.writeFloat(26, gyroErrors.AccErrorY);
+    EEPROM.writeFloat(30, gyroErrors.GyroErrorX);
+    EEPROM.writeFloat(34, gyroErrors.GyroErrorY);
+    EEPROM.writeFloat(38, gyroErrors.GyroErrorZ);
+    EEPROM.commit();
   } else {
-    EEPROM.get(16, gyroErrors);
+    gyroErrors.AccErrorX = EEPROM.readFloat(22);
+    gyroErrors.AccErrorY = EEPROM.readFloat(26);
+    gyroErrors.GyroErrorX = EEPROM.readFloat(30);
+    gyroErrors.GyroErrorY = EEPROM.readFloat(34);
+    gyroErrors.GyroErrorZ = EEPROM.readFloat(38);
   }
 }
 

@@ -127,6 +127,7 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
 
 // init pattern
 void initLifts(short legHight, short legLift, bool sideBallance) {
+  Serial.println(F(" initLifts "));
   patParam.legHightNow = legHight;
   patParam.legLiftNow = legLift;
   patParam.sideBallanceEnabled = sideBallance;

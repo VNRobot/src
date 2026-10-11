@@ -156,6 +156,7 @@ char _getInputState(char left, char right) {
 
 // init inputs
 void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled) {
+  Serial.println(F(" initInputs "));
   inputParams.legHightNow = legHight;
   inputParams.sensorsEnabled = sensorsEnabled;
   inputParams.extraInputsEnabled = extraInputsEnabled;
@@ -175,11 +176,10 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
     }
     updateInputsCount(counter);
     if (counter == 0) {
-      //_printSensorState(sensorStateLeft);
-      //_printSensorState(sensorStateRight);
-      //_printInputState();
+      _printSensorState(sensorStateLeft);
+      _printSensorState(sensorStateRight);
+      _printInputState();
       if (inputParams.extraInputsEnabled) {
-        /*
         Serial.print(F(" Average left "));
         Serial.print((int)leftExtraSensorAverage);
         Serial.print(F(" Average Right "));
@@ -188,7 +188,6 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
         Serial.print((int)getExtraInputLeft());
         Serial.print(F(" Extra Right "));
         Serial.println((int)getExtraInputRight());
-        */
       }
     }
   }
@@ -329,7 +328,7 @@ void enableEdgeInputs(bool edge) {
 void enableObstacleInputs(bool obstacle) {
   inputParams.obstacleEnabled = obstacle;
 }
-/*
+
 // print input state
 void _printInputState(void) {
   switch (inputStateNow) {
@@ -390,4 +389,3 @@ void _printSensorState(char senState) {
       Serial.print(F(" Wrong sensor state "));
   }
 }
-*/

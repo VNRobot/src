@@ -114,6 +114,7 @@ void setWalkShiftCount(bool walkingModeNow) {
 
 // init shift 
 void initShift(short shiftForward, bool walk, bool ballance) {
+  Serial.println(F(" initShift "));
   shParam.shiftForward = shiftForward;
   shParam.walkEnabled = walk;
   shParam.ballanceEnabled = ballance;

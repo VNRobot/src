@@ -15,21 +15,11 @@ Robot center motors motion patterns
 #define LEG_EXTRA_SIDE          18
 #define LEG_EXTRA_HIGHT         20
 
-// pin numbers for servo motors
-enum cPinsServo {
-  CT1_MOTOR = 4,
-  CT2_MOTOR = 5
-};
-
 // structure for center motors
 struct center {
   char front;
   char rear;
 };
-
-// init servo library
-Servo servo_ct_1;
-Servo servo_ct_2;
 
 // motors attached flag
 bool centerAttached = false;
@@ -52,6 +42,8 @@ short directionRear = 0;
 // enable center motors
 bool frontCenterEnabled = false;
 bool rearCenterEnabled = false;
+// Create object to represent PCA9685 at default I2C address
+Adafruit_PWMServoDriver pca9685_1 = Adafruit_PWMServoDriver(0x41);
 
 /*
 uses
@@ -69,33 +61,40 @@ short _limitCenterMotorValue(short mAngle) {
   return mAngle;
 }
 
+// set motor angle
+void _setMotorCenter(int location, short motorAngle) {
+  int angleValue = _limitCenterMotorValue(motorAngle);
+  pca9685_1.setPWM(location, 0, map(angleValue, 0, 180, SERVOMIN, SERVOMAX));
+}
+
 // do servo pwm cycle 500, 2500
 void _doPWMCenter(void) {
-  if (frontCenterEnabled) {
-    servo_ct_1.write(centerMotorAngleValue[0]);
-  }
-  if (rearCenterEnabled) {
-    servo_ct_2.write(centerMotorAngleValue[1]);
+  if (centerAttached) {
+    if (frontCenterEnabled) {
+      _setMotorCenter(0, (centerMotorAngleValue[0]));
+    }
+    if (rearCenterEnabled) {
+      _setMotorCenter(1, (centerMotorAngleValue[1]));
+    }
   }
 }
 
 // init servo motors
 void attachCenter(bool frontE, bool rearE) {
+  Serial.println(F(" attachCenter "));
   frontCenterEnabled = frontE;
   rearCenterEnabled = rearE;
   if (!centerAttached) {
     // set motors value
-    centerMotorAngleValue[0] = _limitCenterMotorValue(90); 
-    centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
+    centerMotorAngleValue[0] = 90; 
+    centerMotorAngleValue[1] = 90; 
     // init motors one by one
     if (frontCenterEnabled) {
-      servo_ct_1.attach(CT1_MOTOR, 500, 2500);
-      servo_ct_1.write(centerMotorAngleValue[0]);
+      _setMotorCenter(0, (centerMotorAngleValue[0]));
       delay(100);
     }
     if (rearCenterEnabled) {
-      servo_ct_2.attach(CT2_MOTOR, 500, 2500);
-      servo_ct_2.write(centerMotorAngleValue[1]);
+      _setMotorCenter(1, (centerMotorAngleValue[1]));
       delay(100);
     }
     centerAttached = true;
@@ -105,6 +104,7 @@ void attachCenter(bool frontE, bool rearE) {
 // init servo motors
 void initCenter(bool calibrationMode) {
   if (centerAttached) {
+    Serial.println(F(" initCenter "));
     // check for calibration mode
     if (calibrationMode) {
       // do calibration
@@ -151,8 +151,8 @@ void initCenter(bool calibrationMode) {
           break;
           case 3:
           {
-            EEPROM.write(9, (unsigned char)(centerCalibrationData.front + 128));
-            EEPROM.write(10, (unsigned char)(centerCalibrationData.rear + 128));
+            EEPROM.write(17, (unsigned char)(centerCalibrationData.front + 128));
+            EEPROM.write(18, (unsigned char)(centerCalibrationData.rear + 128));
             EEPROM.commit();
             calibrationStage ++;
             calibrationMode = false;
@@ -164,10 +164,10 @@ void initCenter(bool calibrationMode) {
       }
     }
     // read calibration
-    centerCalibrationData.front = (char)(EEPROM.read(9) - 128);
-    centerCalibrationData.rear = (char)(EEPROM.read(10) - 128);
-    centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
-    centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
+    centerCalibrationData.front = (char)(EEPROM.read(17) - 128);
+    centerCalibrationData.rear = (char)(EEPROM.read(18) - 128);
+    centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front);
+    centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear);
     _doPWMCenter();
     delay(100);
   }
@@ -176,12 +176,6 @@ void initCenter(bool calibrationMode) {
 // detach hardware
 void detachCenter(void) {
   if (centerAttached) {
-    if (frontCenterEnabled) {
-      servo_ct_1.detach();
-    }
-    if (rearCenterEnabled) {
-      servo_ct_2.detach();
-    }
     centerAttached = false;
     _doPWMCenter();
     delay(100);

@@ -161,13 +161,7 @@ void _setNextPatternInTask(void) {
   //_printPatternNameDebug(patternNow); // DEBUG
 }
 
-char _getHighPriorityTask(char currentState, char gyroState) {
-  if (currentState == C_DEAD_BATTERY) {
-    return DOWN_TASK;
-  }
-  if (currentState == C_HIGH_CURRENT) {
-    return STAND_TASK;
-  }
+char _getHighPriorityTask(char gyroState) {
   switch (gyroState) {
     case GYRO_UPSIDEDOWN:
       return FLIP_TASK;
@@ -249,7 +243,7 @@ char getTask(void) {
 }
 
 // set new task and new pattern
-void setPatternAndTask(char currentState, char gyroState) {
+void setPatternAndTask(char gyroState) {
   if (patternNow == Q_END) {
     // this is the end. do nothing
     delay(1000);
@@ -258,7 +252,7 @@ void setPatternAndTask(char currentState, char gyroState) {
   // not high priority or end of high priority task
   if ((taskPriority != PRIORITY_HIGH) || (patternNow == Q_DONE)) {
     // override with high priority task
-    char taskNext = _getHighPriorityTask(currentState, gyroState);
+    char taskNext = _getHighPriorityTask(gyroState);
     if (taskNext != DEFAULT_TASK) {
       applyTask(taskNext);
       return;

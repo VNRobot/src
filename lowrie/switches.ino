@@ -4,7 +4,7 @@ Licensed GNU GPLv3 by VN ROBOT INC 2023
 Arduino nano
 Robot sensor switches
 */
-
+/*
 // pin numbers for switch
 enum swPins {
   FL_SWITCH = 2,
@@ -61,7 +61,7 @@ void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
     }
   }
 }
-
+*/
 /*
 // print switches state
 void _printSwitchesState(void) {
