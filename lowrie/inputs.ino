@@ -51,11 +51,11 @@ inputParameters inputParams = {
 // assume wall angle
 short wallAngle = 0;
 // sensors state
-unsigned char sensorStateLeft = SEN_NORMAL;
-unsigned char sensorStateRight = SEN_NORMAL;
+char sensorStateLeft = SEN_NORMAL;
+char sensorStateRight = SEN_NORMAL;
 // inputs state
-unsigned char inputStateNow = IN_NORMAL;
-unsigned char extraStateNow = EX_NORMAL;
+char inputStateNow = IN_NORMAL;
+char extraStateNow = EX_NORMAL;
 // sensors values
 short leftSensorValue = SENSOR_DISTANCE_NORM;
 short rightSensorValue = SENSOR_DISTANCE_NORM;
@@ -88,7 +88,7 @@ m_getButtonPressed()
 */
 
 // process data distance
-unsigned char _getStateFromRaw(unsigned short inputValue) {
+char _getStateFromRaw(unsigned short inputValue) {
   if (inputValue > SENSOR_DISTANCE_BLOCK) {
     return SEN_BLOCK;
   }
@@ -109,7 +109,7 @@ unsigned char _getStateFromRaw(unsigned short inputValue) {
 }
 
 // status of inputs
-unsigned char _getInputState(unsigned char left, unsigned char right) {
+char _getInputState(char left, char right) {
   // bits  fl    fr
   //       8  4  2  1 
   char bits = left * 4 + right;
@@ -159,12 +159,11 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
   inputParams.legHightNow = legHight;
   inputParams.sensorsEnabled = sensorsEnabled;
   inputParams.extraInputsEnabled = extraInputsEnabled;
-  Serial.println(F("initInputs"));
   for (i = 0; i < 16; i ++) {
     updateInputsCount(0);
     delay(10);
   }
-  unsigned char counter = 0;
+  char counter = 0;
   while (calibrationMode) {
     counter ++;
     if (counter >= 32) {
@@ -176,10 +175,11 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
     }
     updateInputsCount(counter);
     if (counter == 0) {
-      _printSensorState(sensorStateLeft);
-      _printSensorState(sensorStateRight);
-      _printInputState();
+      //_printSensorState(sensorStateLeft);
+      //_printSensorState(sensorStateRight);
+      //_printInputState();
       if (inputParams.extraInputsEnabled) {
+        /*
         Serial.print(F(" Average left "));
         Serial.print((int)leftExtraSensorAverage);
         Serial.print(F(" Average Right "));
@@ -188,13 +188,14 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
         Serial.print((int)getExtraInputLeft());
         Serial.print(F(" Extra Right "));
         Serial.println((int)getExtraInputRight());
+        */
       }
     }
   }
 }
 
 // update sensor readings
-void updateInputsCount(unsigned char counter) {
+void updateInputsCount(char counter) {
   //
   if (inputParams.extraInputsEnabled) {
     //
@@ -310,12 +311,12 @@ short getWallAngleInputs(void) {
 }
 
 // get inputs state
-unsigned char getInputState(void) {
+char getInputState(void) {
   return inputStateNow;
 }
 
 // get extra inputs state
-unsigned char getExtraInputState(void) {
+char getExtraInputState(void) {
   return extraStateNow;
 }
 
@@ -328,7 +329,7 @@ void enableEdgeInputs(bool edge) {
 void enableObstacleInputs(bool obstacle) {
   inputParams.obstacleEnabled = obstacle;
 }
-
+/*
 // print input state
 void _printInputState(void) {
   switch (inputStateNow) {
@@ -371,7 +372,7 @@ void _printInputState(void) {
 }
 
 // print input state
-void _printSensorState(unsigned char senState) {
+void _printSensorState(char senState) {
   switch (senState) {
     case SEN_BLOCK:
       Serial.print(F(" SEN_BLOCK "));
@@ -389,3 +390,4 @@ void _printSensorState(unsigned char senState) {
       Serial.print(F(" Wrong sensor state "));
   }
 }
+*/

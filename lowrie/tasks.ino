@@ -27,19 +27,19 @@ enum tPriority {
 };
 
 // Array to store currently executed task. contains list of patterns
-unsigned char currentTask[16] = {Q_DOSTAND, Q_DONE};
+char currentTask[16] = {Q_DOSTAND, Q_DONE};
 // pattern counter points to currentTask
-unsigned char currentTaskPoint = 0;
+char currentTaskPoint = 0;
 // repeat counter
-unsigned char repeatCounter = 0;
+char repeatCounter = 0;
 // current pattern
-unsigned char patternNow = Q_DOSTAND;
+char patternNow = Q_DOSTAND;
 // current task
-unsigned char taskNow = BEGIN_TASK;
+char taskNow = BEGIN_TASK;
 // task priority
-unsigned char taskPriority = PRIORITY_LOW;
+char taskPriority = PRIORITY_LOW;
 // default task from rTasks
-unsigned char defaultTask = STANDGO_TASK;
+char defaultTask = STANDGO_TASK;
 
 // set down task
 void _setDownTask(void) {
@@ -112,7 +112,7 @@ void _setStandWalkTask(void) {
 }
 
 // set pattern now
-void _setPatternNow(unsigned char taskPointValue) {
+void _setPatternNow(char taskPointValue) {
   patternNow = taskPointValue;
   switch (patternNow) {
     case Q_SETPRIORITY_HIGH:
@@ -161,7 +161,7 @@ void _setNextPatternInTask(void) {
   //_printPatternNameDebug(patternNow); // DEBUG
 }
 
-unsigned char _getHighPriorityTask(unsigned char currentState, unsigned char gyroState) {
+char _getHighPriorityTask(char currentState, char gyroState) {
   if (currentState == C_DEAD_BATTERY) {
     return DOWN_TASK;
   }
@@ -189,7 +189,7 @@ unsigned char _getHighPriorityTask(unsigned char currentState, unsigned char gyr
 
 // process sensors return next task name
 // could be more complex if remembers previos states
-unsigned char _getNormalTask(void) {
+char _getNormalTask(void) {
   return DEFAULT_TASK;
 }
 
@@ -199,7 +199,7 @@ void initTasks(void) {
 }
 
 // set task by name
-void applyTask(unsigned char task) {
+void applyTask(char task) {
   taskNow = task;
   switch (taskNow) {
     case BEGIN_TASK:
@@ -233,28 +233,32 @@ void applyTask(unsigned char task) {
   //_printPatternNameDebug(patternNow); // DEBUG
 }
 
+// set pattern
+void setPatternOfTask(char patternNew) {
+  patternNow = patternNew;
+}
+
 // get pattern
-unsigned char getPatternOfTask(void) {
+char getPatternOfTask(void) {
   return patternNow;
 }
 
 // get task
-unsigned char getTask(void) {
+char getTask(void) {
   return taskNow;
 }
 
 // set new task and new pattern
-void setPatternAndTask(unsigned char currentState, unsigned char gyroState) {
+void setPatternAndTask(char currentState, char gyroState) {
   if (patternNow == Q_END) {
     // this is the end. do nothing
-    //Serial.println(F(" Q_END "));
     delay(1000);
     return;
   }
   // not high priority or end of high priority task
   if ((taskPriority != PRIORITY_HIGH) || (patternNow == Q_DONE)) {
     // override with high priority task
-    unsigned char taskNext = _getHighPriorityTask(currentState, gyroState);
+    char taskNext = _getHighPriorityTask(currentState, gyroState);
     if (taskNext != DEFAULT_TASK) {
       applyTask(taskNext);
       return;
@@ -263,7 +267,7 @@ void setPatternAndTask(unsigned char currentState, unsigned char gyroState) {
   // any priority end of task
   if (patternNow == Q_DONE) {
     // check for normal priority
-    unsigned char taskNext = _getNormalTask();
+    char taskNext = _getNormalTask();
     if (taskNext == DEFAULT_TASK) {
       taskNext = defaultTask;
     }
@@ -282,9 +286,9 @@ bool getWalkingModeInTask(void) {
   }
   return false;
 }
-
+/*
 // print task  name
-void _printTaskNameDebug(unsigned char taskName) {
+void _printTaskNameDebug(char taskName) {
   Serial.println(F(" "));
   switch (taskName) {
     case BEGIN_TASK:
@@ -317,7 +321,7 @@ void _printTaskNameDebug(unsigned char taskName) {
 }
 
 // print task  name
-void _printPatternNameDebug(unsigned char patternNow) {
+void _printPatternNameDebug(char patternNow) {
   switch (patternNow) {
     case Q_DOSTAND:
       Serial.print(F(" Q_DOSTAND "));
@@ -360,3 +364,4 @@ void _printPatternNameDebug(unsigned char patternNow) {
     break;
   }
 }
+*/
