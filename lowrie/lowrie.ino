@@ -25,6 +25,8 @@ Main file
 #define CALIBRATION_ANGLE_MAX   15
 // robot size devider
 #define ROBOT_SIZE_DEVIDER      2
+// counter to keep state the same
+#define STATE_COUNTER           2
 // leg lift point
 #define LIFT_POINT              7
 // main counter
@@ -89,6 +91,12 @@ enum gState {
   GYRO_FELL_FRONT,
   GYRO_FELL_BACK
 };
+// robot state
+enum rState {
+  ROBOT_NORM,
+  ROBOT_INO,
+  ROBOT_CRAWL
+};
 // leg state
 enum lState {
   LEG_LINEAR,
@@ -150,7 +158,7 @@ typedef struct masterData {
   char speedRight;             // right side speed
   char currentState;           // current received from other device
   char shiftForward;           // shift forward ballance
-  char directionCenter;        // direction correction
+  char directionCorrection;        // direction correction
 } masterData;
 
 //---------------global variables---------------------------
@@ -164,10 +172,12 @@ allLegs m_legsValue = {125, 0, LEG_LINEAR, 0,
                        125, 0, LEG_LINEAR, 0,
                        125, 0, LEG_LINEAR, 0};
 // master data
-masterData m_mainData {25, true, true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
+masterData m_mainData {25, false, true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
 //----------------------------------------------------------
+// state counter
+char stateCounter = 0;
 // variable for temporary use
-unsigned char i;
+int i;
 
 // check button pressed
 bool m_getButtonPressed(void) {
@@ -204,19 +214,19 @@ void _doQuickAndOther(char patternNow) {
     {
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
-        setFlippedServo(1, -1);
+        //setFlippedServo(1, -1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(-1, 1);
+        //setFlippedServo(-1, 1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       } else {
-        setFlippedServo(-1, 1);
+        //setFlippedServo(-1, 1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(1, -1);
+        //setFlippedServo(1, -1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       }
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       setFlippedGyro(false);
-      setFlippedServo(1, 1);
+      //setFlippedServo(1, 1);
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
     }
     break;
@@ -226,10 +236,10 @@ void _doQuickAndOther(char patternNow) {
     {
       if (m_gyroState.aUpsideAverage < 0) {
         setFlippedGyro(true);
-        setFlippedServo(-1, -1);
+        //setFlippedServo(-1, -1);
       } else {
         setFlippedGyro(false);
-        setFlippedServo(1, 1);
+        //setFlippedServo(1, 1);
       }
     }
     break;
@@ -245,7 +255,8 @@ void _doQuickAndOther(char patternNow) {
       // disable motors
       setServo(HIGHT_LOW, HIGHT_LOW, 20);
       detachServo();
-      detachCenter();
+      //detachCenter();
+      //detachWheels();
     }
     break;
     default:
@@ -262,7 +273,7 @@ void _doQuickAndOther(char patternNow) {
       Serial.print(m_mainData.speedLeft);
       Serial.print(m_mainData.speedRight);
       Serial.print(m_mainData.shiftForward);
-      Serial.print(m_mainData.directionCenter);
+      Serial.print(m_mainData.directionCorrection);
     } else {
       // send m_mainData.currentState
       Serial.print(m_mainData.currentState);
@@ -286,7 +297,7 @@ void _doQuickAndOther(char patternNow) {
           m_mainData.speedLeft = Serial.read();
           m_mainData.speedRight = Serial.read();
           m_mainData.shiftForward = Serial.read();
-          m_mainData.directionCenter = Serial.read();
+          m_mainData.directionCorrection = Serial.read();
           // set counter
           setPatternOfTask(m_mainData.patternNow);
           setHalfCounter(getWalkingModeInTask());
@@ -334,7 +345,34 @@ void _doCycle(void) {
   // update sensor readings
   updateInputsCount(m_mainData.mainCounter);
   // update center motors
-  updateCenterCount();
+  //updateCenterCount();
+}
+
+// set robot state
+void _setState(unsigned char newState) {
+  //Serial.print(F(" State "));
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+      // drive
+      //Serial.println("ROBOT_NORM");
+    }
+    break;
+    case ROBOT_INO:
+    {
+      // walk
+      //Serial.println("ROBOT_INO");
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+      // walk
+      //Serial.println("ROBOT_CRAWL");
+    }
+    break;
+    default:
+    break;
+  }
 }
 
 // runs once on boot or reset
@@ -369,8 +407,11 @@ void setup() {
   // -------attach center servo-------
   // bool frontE, bool rearE
   if (!m_mainData.masterDevice) {
-    attachCenter(true, true);
+    //attachCenter(true, true);
   }
+  // -------attach Wheels servo-------
+  // bool frontE, bool rearE
+  //attachWheels();
   // -------attach legs servo-------
   // bool frontE, bool rearE
   attachServo(true, true);
@@ -378,16 +419,18 @@ void setup() {
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode, true);
   // init center servo motors
-  initCenter(calibrationMode);
+  //initCenter(calibrationMode);
+  // init Wheels servo motors
+  //initWheels(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
     setFlippedGyro(true);
-    setFlippedServo(-1, -1);
-    setCenter(0);
-    setServo(HIGHT_MAX, HIGHT_MAX, 20);
+    //setFlippedServo(-1, -1);
+    //setCenter(0);
+    setServo(HIGHT_LOW, HIGHT_LOW, 20);
   }
   // -------init gyro-------
   initGyro(calibrationMode);
@@ -401,20 +444,16 @@ void setup() {
   // === sets m_gyroState
   if (calibrationMode) {
     // write software version
-    #ifdef BOARD_ESP32
-      EEPROM.write(0, m_mainData.robotVersion);
-      EEPROM.commit();
-    #else
-      EEPROM.update(0, m_mainData.robotVersion);
-    #endif
+    EEPROM.update(0, m_mainData.robotVersion);
     // disable motors
     detachServo();
-    detachCenter();
+    //detachCenter();
+    //detachWheels();
     delay(20000);
   }
   delay(200);
-  setCenter(0);
-  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  //setCenter(0);
+  setServo(HIGHT_LOW, HIGHT_LOW, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
@@ -436,6 +475,12 @@ void setup() {
   m_mainData.mainCounter = updateCounter(true, m_mainData.masterDevice);
   // === sets m_legsValue.xx.count
   // === sets m_legsValue.xx.state
+  //setDirectionWheels(2, 2);
+  //delay(8000);
+  //setDirectionWheels(1, 1);
+  //delay(1000);
+  //setDirectionWheels(0, 0);
+  //setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
 }
 
 // the loop function runs over and over again forever
@@ -452,14 +497,35 @@ void loop() {
         // normal walking to avoid obstacles
         // get and set new direction
         setDirectionGyro(calculateNewDirectionPath(getInputState(), getWallAngleInputs(), getDirectionGyro()));
-        m_mainData.directionCenter = getDirectionCharGyro();
+        m_mainData.directionCorrection = getDirectionCharGyro();
         // update path
         updatePath(getDirectionGyro());
-        setDirectionCenter(-m_mainData.directionCenter);
+        //setDirectionCenter(-m_mainData.directionCenter);
+        //setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
       } else {
         // set speed
         setSideSpeed(m_mainData.speedLeft, m_mainData.speedRight);
-        setDirectionCenter(m_mainData.directionCenter);
+        //setDirectionCenter(m_mainData.directionCenter);
+        //setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
+      }
+      // check for robot state
+      if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
+        stateCounter = STATE_COUNTER * 2;
+      } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
+        if (stateCounter < STATE_COUNTER) {
+          stateCounter = STATE_COUNTER;
+        }
+      }
+      // set state
+      if (stateCounter == 0) {
+        _setState(ROBOT_NORM);
+      } else {
+        if (stateCounter > STATE_COUNTER) {
+          _setState(ROBOT_CRAWL);
+        } else {
+          _setState(ROBOT_INO);
+        }
+        stateCounter --;
       }
       _doCycle();
     } else {
