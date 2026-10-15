@@ -59,6 +59,8 @@ char flippedR = 1;
 // enable motors
 bool frontLegsEnable = false;
 bool rearLegsEnable = false;
+// ride mode
+bool rideEnabled = false;
 
 /*
 uses
@@ -76,7 +78,7 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 12; // nalf distance between motors in mm
+  Sval -= 24; // nalf distance between motors in mm
   Lval = sqrt(Hval * Hval + Sval * Sval);
   AngleC = (acos(Hval / Lval) * 180) / 3.14;
   if (Sval < 0) {
@@ -410,13 +412,27 @@ void setServoQuick(short hightL, short hightR, short timeDelay) {
 
 // move leg motors.
 void updateLegsServoCount(void) {
-  servoMotorAngleValue[0] = flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
-  servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
-  servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
-  servoMotorAngleValue[3] = flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
-  servoMotorAngleValue[4] = flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
-  servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
-  servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
-  servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
+  if (!rideEnabled) {
+    servoMotorAngleValue[0] = flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
+    servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
+    servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
+    servoMotorAngleValue[3] = flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
+    servoMotorAngleValue[4] = flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
+    servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
+    servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
+    servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
+  }
   _doPWMServo();
+}
+
+// enable ride
+void rideModeServo(bool doRide) {
+  if (doRide) {
+    if (!rideEnabled) {
+      rideEnabled = true;
+      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+    }
+  } else {
+    rideEnabled = false;
+  }
 }

@@ -13,11 +13,11 @@ Main file
 // main half time delay in ms. bigger the number slower the robot
 #define TIME_DELAY              12
 // low hight in mm. upper arm is horizontal
-#define HIGHT_LOW               80
+#define HIGHT_LOW               50
 // normal hight
-#define HIGHT_DEFAULT           120
+#define HIGHT_DEFAULT           85
 // maximal hight
-#define HIGHT_MAX               160
+#define HIGHT_MAX               150
 // lift value
 #define LIFT_DEFAULT            50
 // calibration angle
@@ -28,11 +28,11 @@ Main file
 // counter to keep state the same
 #define STATE_COUNTER           2
 // leg lift point
-#define LIFT_POINT              7
+#define LIFT_POINT              4
 // main counter
 #define MAIN_COUNTER_END        44
 // linear leg speed
-#define LINEAR_SPEED            3
+#define LINEAR_SPEED            2
 // step size mm
 #define STEP_SIZE               90
 
@@ -207,19 +207,19 @@ void _doQuickAndOther(char patternNow) {
     {
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
-        setFlippedServo(1, -1);
+        //setFlippedServo(1, -1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(-1, 1);
+        //setFlippedServo(-1, 1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       } else {
-        setFlippedServo(-1, 1);
+        //setFlippedServo(-1, 1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
-        setFlippedServo(1, -1);
+        //setFlippedServo(1, -1);
         setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
       }
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
       setFlippedGyro(false);
-      setFlippedServo(1, 1);
+      //setFlippedServo(1, 1);
       setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
     }
     break;
@@ -229,10 +229,10 @@ void _doQuickAndOther(char patternNow) {
     {
       if (m_gyroState.aUpsideAverage < 0) {
         setFlippedGyro(true);
-        setFlippedServo(-1, -1);
+        //setFlippedServo(-1, -1);
       } else {
         setFlippedGyro(false);
-        setFlippedServo(1, 1);
+        //setFlippedServo(1, 1);
       }
     }
     break;
@@ -344,16 +344,19 @@ void _setState(unsigned char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
+      // drive
       //Serial.println("ROBOT_NORM");
     }
     break;
     case ROBOT_INO:
     {
+      // walk
       //Serial.println("ROBOT_INO");
     }
     break;
     case ROBOT_CRAWL:
     {
+      // walk
       //Serial.println("ROBOT_CRAWL");
     }
     break;
@@ -361,6 +364,7 @@ void _setState(unsigned char newState) {
     break;
   }
 }
+
 // runs once on boot or reset
 void setup() {
   // Start serial for debugging
@@ -407,8 +411,8 @@ void setup() {
     delay(1000);
     // lift legs for gyro calibration
     setFlippedGyro(true);
-    setFlippedServo(-1, -1);
-    setServo(HIGHT_MAX, HIGHT_MAX, 20);
+    //setFlippedServo(-1, -1);
+    setServo(HIGHT_LOW, HIGHT_LOW, 20);
   }
   // -------init gyro-------
   initGyro(calibrationMode);
@@ -422,19 +426,14 @@ void setup() {
   // === sets m_gyroState
   if (calibrationMode) {
     // write software version
-    #ifdef BOARD_ESP32
-      EEPROM.write(0, m_mainData.robotVersion);
-      EEPROM.commit();
-    #else
-      EEPROM.update(0, m_mainData.robotVersion);
-    #endif
+    EEPROM.update(0, m_mainData.robotVersion);
     // disable motors
     detachServo();
     detachWheels();
     delay(20000);
   }
   delay(200);
-  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  setServo(HIGHT_LOW, HIGHT_LOW, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
@@ -456,6 +455,12 @@ void setup() {
   m_mainData.mainCounter = updateCounter(true, m_mainData.masterDevice);
   // === sets m_legsValue.xx.count
   // === sets m_legsValue.xx.state
+  setDirectionWheels(2, 2);
+  delay(8000);
+  setDirectionWheels(1, 1);
+  delay(1000);
+  setDirectionWheels(0, 0);
+  setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
 }
 
 // the loop function runs over and over again forever

@@ -5,12 +5,15 @@ Arduino nanos
 Robot wheels motors motion patterns
 */
 
+// wheel speed
+#define WHEEL_SPEED           6
+
 // pin numbers for servo motors
 enum cPinsWheels {
-  FL_WHEEL = 4,
-  FR_WHEEL = 5,
-  RL_WHEEL = 6,
-  RR_WHEEL = 7
+  FL_WHEEL = 2,
+  FR_WHEEL = 3,
+  RL_WHEEL = 4,
+  RR_WHEEL = 5
 };
 // legs motors structure
 struct allWheels {
@@ -186,9 +189,9 @@ void detachWheels(void) {
 
 // set direction. 20 deg max
 void setDirectionWheels(char sleft, char sright) {
-  wheelsMotorSpeedValue[0] = _limitMotorValue(90 + sleft - wheelsCalibrationData.fl);
-  wheelsMotorSpeedValue[1] = _limitMotorValue(90 + sright - wheelsCalibrationData.fr);
-  wheelsMotorSpeedValue[2] = _limitMotorValue(90 + sleft - wheelsCalibrationData.rl);
-  wheelsMotorSpeedValue[3] = _limitMotorValue(90 + sright - wheelsCalibrationData.rr);
+  wheelsMotorSpeedValue[0] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.fl);
+  wheelsMotorSpeedValue[1] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.fr);
+  wheelsMotorSpeedValue[2] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.rl);
+  wheelsMotorSpeedValue[3] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.rr);
   _doPWMWheels();
 }
