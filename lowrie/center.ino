@@ -79,7 +79,7 @@ void _doPWMCenter(void) {
   }
 }
 
-// init servo motors
+// attach center motors
 void attachCenter(bool frontE, bool rearE) {
   frontCenterEnabled = frontE;
   rearCenterEnabled = rearE;

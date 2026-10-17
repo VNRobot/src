@@ -47,7 +47,7 @@ short servoMotorAngleValue[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor center point
 short servoMotorCenterPoint[8] = {60, 120, 120, 60, 60, 120, 120, 60};
 // motors attached flag
-bool attached = false;
+bool servoAttached = false;
 // motors init values
 short hightSetValueL = HIGHT_LOW;
 short hightSetValueR = HIGHT_LOW;
@@ -101,17 +101,19 @@ short _limitMotorValue(short mAngle) {
 
 // do servo pwm cycle 500, 2500
 void _doPWMServo(void) {
-  if (frontLegsEnable) {
-    servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
-    servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
-    servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
-    servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
-  }
-  if (rearLegsEnable) {
-    servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
-    servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
-    servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
-    servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
+  if (servoAttached) {
+    if (frontLegsEnable) {
+      servo_fl_1.write(_limitMotorValue(servoCalibrationData.fl.motor1 + servoMotorAngleValue[0] + servoMotorCenterPoint[0])); // fl 1
+      servo_fl_2.write(_limitMotorValue(servoCalibrationData.fl.motor2 + servoMotorAngleValue[1] + servoMotorCenterPoint[1])); // fl 2
+      servo_fr_1.write(_limitMotorValue(servoCalibrationData.fr.motor1 + servoMotorAngleValue[2] + servoMotorCenterPoint[2])); // fr 1
+      servo_fr_2.write(_limitMotorValue(servoCalibrationData.fr.motor2 + servoMotorAngleValue[3] + servoMotorCenterPoint[3])); // fr 2
+    }
+    if (rearLegsEnable) {
+      servo_rl_1.write(_limitMotorValue(servoCalibrationData.rl.motor1 + servoMotorAngleValue[4] + servoMotorCenterPoint[4])); // rl 1
+      servo_rl_2.write(_limitMotorValue(servoCalibrationData.rl.motor2 + servoMotorAngleValue[5] + servoMotorCenterPoint[5])); // rl 2
+      servo_rr_1.write(_limitMotorValue(servoCalibrationData.rr.motor1 + servoMotorAngleValue[6] + servoMotorCenterPoint[6])); // rr 1
+      servo_rr_2.write(_limitMotorValue(servoCalibrationData.rr.motor2 + servoMotorAngleValue[7] + servoMotorCenterPoint[7])); // rr 2
+    }
   }
 }
 
@@ -138,15 +140,17 @@ void _moveServosQuick(short hightL, short shiftL, short hightR, short shiftR) {
 
 // set flipped state
 void setFlippedServo(char flipL, char flipR) {
-  flippedL = flipL;
-  flippedR = flipR;
+  if (servoAttached) {
+    flippedL = flipL;
+    flippedR = flipR;
+  }
 }
 
 // init servo motors
 void attachServo(bool frontE, bool rearE) {
   frontLegsEnable = frontE;
   rearLegsEnable = rearE;
-  if (!attached) {
+  if (!servoAttached) {
     // init motors one by one
     if (frontLegsEnable) {
       servo_fl_1.attach(FL1_MOTOR, 500, 2500);
@@ -176,175 +180,177 @@ void attachServo(bool frontE, bool rearE) {
       servo_rr_2.write(servoMotorCenterPoint[7]);
       delay(100);
     }
-    attached = true;
+    servoAttached = true;
   }
 }
 
 // init servo motors
 void initServo(bool calibrationMode) {
-  // check for calibration mode
-  if (calibrationMode) {
-    // do calibration
-    char calibrationStage = 0;
-    servoCalibrationData.fl.motor1 = 0;
-    servoCalibrationData.fl.motor2 = 0;
-    servoCalibrationData.fr.motor1 = 0;
-    servoCalibrationData.fr.motor2 = 0;
-    servoCalibrationData.rl.motor1 = 0;
-    servoCalibrationData.rl.motor2 = 0;
-    servoCalibrationData.rr.motor1 = 0;
-    servoCalibrationData.rr.motor2 = 0;
-    servoMotorAngleValue[0] = 0;
-    servoMotorAngleValue[1] = 0;
-    servoMotorAngleValue[2] = 0;
-    servoMotorAngleValue[3] = 0;
-    servoMotorAngleValue[4] = 0;
-    servoMotorAngleValue[5] = 0;
-    servoMotorAngleValue[6] = 0;
-    servoMotorAngleValue[7] = 0;
-    // motors one by one
-    while (calibrationMode) {
-      _doPWMServo();
-      delay(200);
-      // check button press
-      if (m_getButtonPressed()) {
-        calibrationStage ++;
-      }
-      switch (calibrationStage) {
-        case 0:
-          // assembly stage. do nothing
-        break;
-        case 1:
-        {
-          if (frontLegsEnable) {
-            servoCalibrationData.fl.motor1 ++;
-            if (servoCalibrationData.fl.motor1 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.fl.motor1 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 2:
-        {
-          if (frontLegsEnable) {
-            servoCalibrationData.fl.motor2 ++;
-            if (servoCalibrationData.fl.motor2 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.fl.motor2 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 5:
-        {
-          if (frontLegsEnable) {
-            servoCalibrationData.fr.motor1 ++;
-            if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.fr.motor1 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 6:
-        {
-          if (frontLegsEnable) {
-            servoCalibrationData.fr.motor2 ++;
-            if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.fr.motor2 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 3:
-        {
-          if (rearLegsEnable) {
-            servoCalibrationData.rl.motor1 ++;
-            if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.rl.motor1 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 4:
-        {
-          if (rearLegsEnable) {
-            servoCalibrationData.rl.motor2 ++;
-            if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.rl.motor2 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 7:
-        {
-          if (rearLegsEnable) {
-            servoCalibrationData.rr.motor1 ++;
-            if (servoCalibrationData.rr.motor1 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.rr.motor1 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 8:
-        {
-          if (rearLegsEnable) {
-            servoCalibrationData.rr.motor2 ++;
-            if (servoCalibrationData.rr.motor2 > CALIBRATION_ANGLE_MAX) {
-              servoCalibrationData.rr.motor2 = CALIBRATION_ANGLE_MIN;
-            }
-          } else {
-            calibrationStage ++;
-          }
-        }
-        break;
-        case 9:
-        {
-          EEPROM.update(1, (unsigned char)(servoCalibrationData.fl.motor1 + 128));
-          EEPROM.update(2, (unsigned char)(servoCalibrationData.fl.motor2 + 128));
-          EEPROM.update(3, (unsigned char)(servoCalibrationData.fr.motor1 + 128));
-          EEPROM.update(4, (unsigned char)(servoCalibrationData.fr.motor2 + 128));
-          EEPROM.update(5, (unsigned char)(servoCalibrationData.rl.motor1 + 128));
-          EEPROM.update(6, (unsigned char)(servoCalibrationData.rl.motor2 + 128));
-          EEPROM.update(7, (unsigned char)(servoCalibrationData.rr.motor1 + 128));
-          EEPROM.update(8, (unsigned char)(servoCalibrationData.rr.motor2 + 128));
+  if (servoAttached) {
+    // check for calibration mode
+    if (calibrationMode) {
+      // do calibration
+      char calibrationStage = 0;
+      servoCalibrationData.fl.motor1 = 0;
+      servoCalibrationData.fl.motor2 = 0;
+      servoCalibrationData.fr.motor1 = 0;
+      servoCalibrationData.fr.motor2 = 0;
+      servoCalibrationData.rl.motor1 = 0;
+      servoCalibrationData.rl.motor2 = 0;
+      servoCalibrationData.rr.motor1 = 0;
+      servoCalibrationData.rr.motor2 = 0;
+      servoMotorAngleValue[0] = 0;
+      servoMotorAngleValue[1] = 0;
+      servoMotorAngleValue[2] = 0;
+      servoMotorAngleValue[3] = 0;
+      servoMotorAngleValue[4] = 0;
+      servoMotorAngleValue[5] = 0;
+      servoMotorAngleValue[6] = 0;
+      servoMotorAngleValue[7] = 0;
+      // motors one by one
+      while (calibrationMode) {
+        _doPWMServo();
+        delay(200);
+        // check button press
+        if (m_getButtonPressed()) {
           calibrationStage ++;
-          calibrationMode = false;
         }
-        break;
-        default:
-        break;
+        switch (calibrationStage) {
+          case 0:
+            // assembly stage. do nothing
+          break;
+          case 1:
+          {
+            if (frontLegsEnable) {
+              servoCalibrationData.fl.motor1 ++;
+              if (servoCalibrationData.fl.motor1 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.fl.motor1 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 2:
+          {
+            if (frontLegsEnable) {
+              servoCalibrationData.fl.motor2 ++;
+              if (servoCalibrationData.fl.motor2 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.fl.motor2 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 5:
+          {
+            if (frontLegsEnable) {
+              servoCalibrationData.fr.motor1 ++;
+              if (servoCalibrationData.fr.motor1 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.fr.motor1 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 6:
+          {
+            if (frontLegsEnable) {
+              servoCalibrationData.fr.motor2 ++;
+              if (servoCalibrationData.fr.motor2 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.fr.motor2 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 3:
+          {
+            if (rearLegsEnable) {
+              servoCalibrationData.rl.motor1 ++;
+              if (servoCalibrationData.rl.motor1 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.rl.motor1 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 4:
+          {
+            if (rearLegsEnable) {
+              servoCalibrationData.rl.motor2 ++;
+              if (servoCalibrationData.rl.motor2 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.rl.motor2 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 7:
+          {
+            if (rearLegsEnable) {
+              servoCalibrationData.rr.motor1 ++;
+              if (servoCalibrationData.rr.motor1 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.rr.motor1 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 8:
+          {
+            if (rearLegsEnable) {
+              servoCalibrationData.rr.motor2 ++;
+              if (servoCalibrationData.rr.motor2 > CALIBRATION_ANGLE_MAX) {
+                servoCalibrationData.rr.motor2 = CALIBRATION_ANGLE_MIN;
+              }
+            } else {
+              calibrationStage ++;
+            }
+          }
+          break;
+          case 9:
+          {
+            EEPROM.update(1, (unsigned char)(servoCalibrationData.fl.motor1 + 128));
+            EEPROM.update(2, (unsigned char)(servoCalibrationData.fl.motor2 + 128));
+            EEPROM.update(3, (unsigned char)(servoCalibrationData.fr.motor1 + 128));
+            EEPROM.update(4, (unsigned char)(servoCalibrationData.fr.motor2 + 128));
+            EEPROM.update(5, (unsigned char)(servoCalibrationData.rl.motor1 + 128));
+            EEPROM.update(6, (unsigned char)(servoCalibrationData.rl.motor2 + 128));
+            EEPROM.update(7, (unsigned char)(servoCalibrationData.rr.motor1 + 128));
+            EEPROM.update(8, (unsigned char)(servoCalibrationData.rr.motor2 + 128));
+            calibrationStage ++;
+            calibrationMode = false;
+          }
+          break;
+          default:
+          break;
+        }
       }
     }
+    // read calibration
+    servoCalibrationData.fl.motor1 = (char)(EEPROM.read(1) - 128);
+    servoCalibrationData.fl.motor2 = (char)(EEPROM.read(2) - 128);
+    servoCalibrationData.fr.motor1 = (char)(EEPROM.read(3) - 128);
+    servoCalibrationData.fr.motor2 = (char)(EEPROM.read(4) - 128);
+    servoCalibrationData.rl.motor1 = (char)(EEPROM.read(5) - 128);
+    servoCalibrationData.rl.motor2 = (char)(EEPROM.read(6) - 128);
+    servoCalibrationData.rr.motor1 = (char)(EEPROM.read(7) - 128);
+    servoCalibrationData.rr.motor2 = (char)(EEPROM.read(8) - 128);
+    _doPWMServo();
+    delay(100);
   }
-  // read calibration
-  servoCalibrationData.fl.motor1 = (char)(EEPROM.read(1) - 128);
-  servoCalibrationData.fl.motor2 = (char)(EEPROM.read(2) - 128);
-  servoCalibrationData.fr.motor1 = (char)(EEPROM.read(3) - 128);
-  servoCalibrationData.fr.motor2 = (char)(EEPROM.read(4) - 128);
-  servoCalibrationData.rl.motor1 = (char)(EEPROM.read(5) - 128);
-  servoCalibrationData.rl.motor2 = (char)(EEPROM.read(6) - 128);
-  servoCalibrationData.rr.motor1 = (char)(EEPROM.read(7) - 128);
-  servoCalibrationData.rr.motor2 = (char)(EEPROM.read(8) - 128);
-  _doPWMServo();
-  delay(100);
 }
 
 // detach hardware
 void detachServo(void) {
-  if (attached) {
+  if (servoAttached) {
     if (frontLegsEnable) {
       servo_fl_1.detach();
       servo_fr_1.detach();
@@ -358,48 +364,49 @@ void detachServo(void) {
       servo_rr_2.detach();
     }
   }
-  attached = false;
-  _doPWMServo();
+  servoAttached = false;
   delay(1000);
 }
 
 // linear motor move
 void setServo(short hi1, short hi2, short timeDelay) {
-  bool doLoop = true;
-  while (doLoop) {
-    //
-    if (hightSetValueL > hi1) {
-      hightSetValueL --;
-    } else if (hightSetValueL < hi1) {
-      hightSetValueL ++;
+  if (servoAttached) {
+    bool doLoop = true;
+    while (doLoop) {
+      //
+      if (hightSetValueL > hi1) {
+        hightSetValueL --;
+      } else if (hightSetValueL < hi1) {
+        hightSetValueL ++;
+      }
+      if (hightSetValueR > hi2) {
+        hightSetValueR --;
+      } else if (hightSetValueR < hi2) {
+        hightSetValueR ++;
+      }
+      //
+      if (forwardSetValueL > 0) {
+        forwardSetValueL --;
+      } else if (forwardSetValueL < 0) {
+        forwardSetValueL ++;
+      }
+      if (forwardSetValueR > 0) {
+        forwardSetValueR --;
+      } else if (forwardSetValueR < 0) {
+        forwardSetValueR ++;
+      }
+      if ((forwardSetValueL == 0) && (hightSetValueL == hi1) && (forwardSetValueR == 0) && (hightSetValueR == hi2)) {
+        doLoop = false;
+      }
+      _moveServosQuick(hightSetValueL, forwardSetValueL, hightSetValueR, forwardSetValueR);
+      delay(timeDelay);
     }
-    if (hightSetValueR > hi2) {
-      hightSetValueR --;
-    } else if (hightSetValueR < hi2) {
-      hightSetValueR ++;
-    }
-    //
-    if (forwardSetValueL > 0) {
-      forwardSetValueL --;
-    } else if (forwardSetValueL < 0) {
-      forwardSetValueL ++;
-    }
-    if (forwardSetValueR > 0) {
-      forwardSetValueR --;
-    } else if (forwardSetValueR < 0) {
-      forwardSetValueR ++;
-    }
-    if ((forwardSetValueL == 0) && (hightSetValueL == hi1) && (forwardSetValueR == 0) && (hightSetValueR == hi2)) {
-      doLoop = false;
-    }
-    _moveServosQuick(hightSetValueL, forwardSetValueL, hightSetValueR, forwardSetValueR);
-    delay(timeDelay);
   }
 }
 
 // set servo motors
 void setServoQuick(short hightL, short hightR, short timeDelay) {
-  if (attached) {
+  if (servoAttached) {
     // set motors values fast
     forwardSetValueL = 0;
     hightSetValueL = hightL;
@@ -412,27 +419,31 @@ void setServoQuick(short hightL, short hightR, short timeDelay) {
 
 // move leg motors.
 void updateLegsServoCount(void) {
-  if (!rideEnabled) {
-    servoMotorAngleValue[0] = flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
-    servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
-    servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
-    servoMotorAngleValue[3] = flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
-    servoMotorAngleValue[4] = flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
-    servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
-    servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
-    servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
+  if (servoAttached) {
+    if (!rideEnabled) {
+      servoMotorAngleValue[0] = flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 1));
+      servoMotorAngleValue[1] = - flippedL * (_calculateMotorAngle(m_legsValue.fl.hight, m_legsValue.fl.shift, 2));
+      servoMotorAngleValue[2] = - flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 1));
+      servoMotorAngleValue[3] = flippedR * (_calculateMotorAngle(m_legsValue.fr.hight, m_legsValue.fr.shift, 2));
+      servoMotorAngleValue[4] = flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 1));
+      servoMotorAngleValue[5] = - flippedL * (_calculateMotorAngle(m_legsValue.rl.hight, m_legsValue.rl.shift, 2));
+      servoMotorAngleValue[6] = - flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 1));
+      servoMotorAngleValue[7] = flippedR * (_calculateMotorAngle(m_legsValue.rr.hight, m_legsValue.rr.shift, 2));
+    }
+    _doPWMServo();
   }
-  _doPWMServo();
 }
 
 // enable ride
 void rideModeServo(bool doRide) {
-  if (doRide) {
-    if (!rideEnabled) {
-      rideEnabled = true;
-      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+  if (servoAttached) {
+    if (doRide) {
+      if (!rideEnabled) {
+        rideEnabled = true;
+        setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+      }
+    } else {
+      rideEnabled = false;
     }
-  } else {
-    rideEnabled = false;
   }
 }

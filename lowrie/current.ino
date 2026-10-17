@@ -35,100 +35,111 @@ unsigned long currentSum3 = 0;
 char currentStateNow = C_NORMAL;
 // current counter
 char currentCounter = 1;
+// current attached flag
+bool currentAttached = false;
 
 /*
 uses
 m_getButtonPressed()
 */
 
-// init current inputs
-void initCurrent(bool calibrationMode, bool extraEnabled) {
+// attach current
+void attachCurrent(bool extraEnabled) {
   extraCurrentEnabled = extraEnabled;
-  char counter = 0;
-  while (calibrationMode) {
-    counter ++;
-    if (counter >= 32) {
-      counter = 0;
-    }
-    delay(20);
-    if (m_getButtonPressed()) {
-      calibrationMode = false;
-    }
-    updateCurrentCount(counter);
-    if (counter == 0) {
-      //_printCurrentStateDebug();
-      //_printLineCurrent();
+  currentAttached = true;
+}
+
+// init current inputs
+void initCurrent(bool calibrationMode) {
+  if (currentAttached) {
+    char counter = 0;
+    while (calibrationMode) {
+      counter ++;
+      if (counter >= 32) {
+        counter = 0;
+      }
+      delay(20);
+      if (m_getButtonPressed()) {
+        calibrationMode = false;
+      }
+      updateCurrentCount(counter);
+      if (counter == 0) {
+        //_printCurrentStateDebug();
+        //_printLineCurrent();
+      }
     }
   }
 }
 
 // read and remember analog current sensors readings
 void updateCurrentCount(char counter) {
-  // end of previous cycle
-  if (counter == 0) {
-    // average
-    batteryV /= currentCounter;
-    currentSum1 /= currentCounter;
-    if (extraCurrentEnabled) {
-      currentSum2 /= currentCounter;
-      currentSum3 /= currentCounter;
-    }
-    // to ma
-    // current 1
-    if (batteryV > currentSum1) {
-      analogValueCurrent.current1 = (batteryV - currentSum1) * 8;
-    } else {
-      analogValueCurrent.current1 = 0;
-    }
-    if (extraCurrentEnabled) {
-      // current 2
-      if (batteryV > currentSum2) {
-        analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
-      } else {
-        analogValueCurrent.current2 = 0;
+  if (currentAttached) {
+    // end of previous cycle
+    if (counter == 0) {
+      // average
+      batteryV /= currentCounter;
+      currentSum1 /= currentCounter;
+      if (extraCurrentEnabled) {
+        currentSum2 /= currentCounter;
+        currentSum3 /= currentCounter;
       }
-      // current 3
-      if (batteryV > currentSum3) {
-        analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
+      // to ma
+      // current 1
+      if (batteryV > currentSum1) {
+        analogValueCurrent.current1 = (batteryV - currentSum1) * 8;
       } else {
-        analogValueCurrent.current3 = 0;
+        analogValueCurrent.current1 = 0;
       }
-    }
-    analogValueCurrent.battery = (batteryV * 25) / 3;
-    // check voltage measuring is functional
-    if (analogValueCurrent.battery < 4000) {
-      analogValueCurrent.battery = 8000;
-    }
-    // get current state
-    if (analogValueCurrent.battery < DEAD_BATTERY) {
-      // battery dead
-      currentStateNow = C_DEAD_BATTERY;
-    } else if ((analogValueCurrent.current1 > MAX_CURRENT) || (analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
-      // current too high
-      currentStateNow = C_HIGH_CURRENT;
-    } else if (analogValueCurrent.battery < LOW_BATTERY) {
-      // battery low
-      currentStateNow = C_LOW_BATTERY;
+      if (extraCurrentEnabled) {
+        // current 2
+        if (batteryV > currentSum2) {
+          analogValueCurrent.current2 = (batteryV - currentSum2) * 8;
+        } else {
+          analogValueCurrent.current2 = 0;
+        }
+        // current 3
+        if (batteryV > currentSum3) {
+          analogValueCurrent.current3 = (batteryV - currentSum3) * 8;
+        } else {
+          analogValueCurrent.current3 = 0;
+        }
+      }
+      analogValueCurrent.battery = (batteryV * 25) / 3;
+      // check voltage measuring is functional
+      if (analogValueCurrent.battery < 4000) {
+        analogValueCurrent.battery = 8000;
+      }
+      // get current state
+      if (analogValueCurrent.battery < DEAD_BATTERY) {
+        // battery dead
+        currentStateNow = C_DEAD_BATTERY;
+      } else if ((analogValueCurrent.current1 > MAX_CURRENT) || (analogValueCurrent.current2 > MAX_CURRENT) || (analogValueCurrent.current3 > MAX_CURRENT)) {
+        // current too high
+        currentStateNow = C_HIGH_CURRENT;
+      } else if (analogValueCurrent.battery < LOW_BATTERY) {
+        // battery low
+        currentStateNow = C_LOW_BATTERY;
+      } else {
+        currentStateNow = C_NORMAL;
+      }
+      // new value
+      batteryV = (unsigned short)analogRead(A6);
+      currentSum1 = (unsigned short)analogRead(A7);
+      if (extraCurrentEnabled) {
+        currentSum2 = (unsigned short)analogRead(A3);
+        currentSum3 = (unsigned short)analogRead(A2);
+      }
+      currentCounter = 1;
     } else {
-      currentStateNow = C_NORMAL;
+      // add to value
+      batteryV += (unsigned short)analogRead(A6);
+      currentSum1 += (unsigned short)analogRead(A7);
+      if (extraCurrentEnabled) {
+        currentSum2 += (unsigned short)analogRead(A3);
+        currentSum3 += (unsigned short)analogRead(A2);
+      }
+      currentCounter ++;
     }
-    // new value
-    batteryV = (unsigned short)analogRead(A6);
-    currentSum1 = (unsigned short)analogRead(A7);
-    if (extraCurrentEnabled) {
-      currentSum2 = (unsigned short)analogRead(A3);
-      currentSum3 = (unsigned short)analogRead(A2);
-    }
-    currentCounter = 1;
-  } else {
-    // add to value
-    batteryV += (unsigned short)analogRead(A6);
-    currentSum1 += (unsigned short)analogRead(A7);
-    if (extraCurrentEnabled) {
-      currentSum2 += (unsigned short)analogRead(A3);
-      currentSum3 += (unsigned short)analogRead(A2);
-    }
-    currentCounter ++;
   }
 }
 

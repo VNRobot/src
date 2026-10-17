@@ -62,7 +62,7 @@ void _doPWMWheels(void) {
   }
 }
 
-// init servo motors
+// attach wheels motors
 void attachWheels(void) {
   if (!wheelsAttached) {
     // set motors value
@@ -189,9 +189,11 @@ void detachWheels(void) {
 
 // set direction. 20 deg max
 void setDirectionWheels(char sleft, char sright) {
-  wheelsMotorSpeedValue[0] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.fl);
-  wheelsMotorSpeedValue[1] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.fr);
-  wheelsMotorSpeedValue[2] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.rl);
-  wheelsMotorSpeedValue[3] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.rr);
-  _doPWMWheels();
+  if (wheelsAttached) {
+    wheelsMotorSpeedValue[0] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.fl);
+    wheelsMotorSpeedValue[1] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.fr);
+    wheelsMotorSpeedValue[2] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.rl);
+    wheelsMotorSpeedValue[3] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.rr);
+    _doPWMWheels();
+  }
 }

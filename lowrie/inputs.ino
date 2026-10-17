@@ -81,6 +81,8 @@ short leftExtraSensorAverage = 10;
 short rightExtraSensorAverage = 10;
 short leftExtraSensorBallanced = 0;
 short rightExtraSensorBallanced = 0;
+// inputs attached flag
+bool inputsAttached = false;
 
 /*
 uses
@@ -154,41 +156,48 @@ char _getInputState(char left, char right) {
   return IN_NORMAL;
 }
 
-// init inputs
-void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled) {
+// attach inputs
+void attachInputs(short legHight, bool sensorsEnabled, bool extraInputsEnabled) {
   inputParams.legHightNow = legHight;
   inputParams.sensorsEnabled = sensorsEnabled;
   inputParams.extraInputsEnabled = extraInputsEnabled;
-  for (i = 0; i < 16; i ++) {
-    updateInputsCount(0);
-    delay(10);
-  }
-  char counter = 0;
-  while (calibrationMode) {
-    counter ++;
-    if (counter >= 32) {
-      counter = 0;
+  inputsAttached = true;
+}
+
+// init inputs
+void initInputs(bool calibrationMode) {
+  if (inputsAttached) {
+    for (i = 0; i < 16; i ++) {
+      updateInputsCount(0);
+      delay(10);
     }
-    delay(20);
-    if (m_getButtonPressed()) {
-      calibrationMode = false;
-    }
-    updateInputsCount(counter);
-    if (counter == 0) {
-      //_printSensorState(sensorStateLeft);
-      //_printSensorState(sensorStateRight);
-      //_printInputState();
-      if (inputParams.extraInputsEnabled) {
-        /*
-        Serial.print(F(" Average left "));
-        Serial.print((int)leftExtraSensorAverage);
-        Serial.print(F(" Average Right "));
-        Serial.print((int)rightExtraSensorAverage);
-        Serial.print(F(" Extra left "));
-        Serial.print((int)getExtraInputLeft());
-        Serial.print(F(" Extra Right "));
-        Serial.println((int)getExtraInputRight());
-        */
+    char counter = 0;
+    while (calibrationMode) {
+      counter ++;
+      if (counter >= 32) {
+        counter = 0;
+      }
+      delay(20);
+      if (m_getButtonPressed()) {
+        calibrationMode = false;
+      }
+      updateInputsCount(counter);
+      if (counter == 0) {
+        //_printSensorState(sensorStateLeft);
+        //_printSensorState(sensorStateRight);
+        //_printInputState();
+        if (inputParams.extraInputsEnabled) {
+          /*
+          Serial.print(F(" Average left "));
+          Serial.print((int)leftExtraSensorAverage);
+          Serial.print(F(" Average Right "));
+          Serial.print((int)rightExtraSensorAverage);
+          Serial.print(F(" Extra left "));
+          Serial.print((int)getExtraInputLeft());
+          Serial.print(F(" Extra Right "));
+          Serial.println((int)getExtraInputRight());
+          */
+        }
       }
     }
   }
@@ -196,102 +205,104 @@ void initInputs(bool calibrationMode, short legHight, bool sensorsEnabled, bool 
 
 // update sensor readings
 void updateInputsCount(char counter) {
-  //
-  if (inputParams.extraInputsEnabled) {
+  if (inputsAttached) {
     //
-    leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
-    leftExtraSensorBallanced = (leftExtraSensorValue + leftExtraSensorBuffer0 + leftExtraSensorBuffer1 + leftExtraSensorBuffer2) / 4;
-    leftExtraSensorBuffer2 = leftExtraSensorBuffer1;
-    leftExtraSensorBuffer1 = leftExtraSensorBuffer0;
-    leftExtraSensorBuffer0 = leftExtraSensorValue;
-    //
-    rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
-    rightExtraSensorBallanced = (rightExtraSensorValue + rightExtraSensorBuffer0 + rightExtraSensorBuffer1 + rightExtraSensorBuffer2) / 4;
-    rightExtraSensorBuffer2 = rightExtraSensorBuffer1;
-    rightExtraSensorBuffer1 = rightExtraSensorBuffer0;
-    rightExtraSensorBuffer0 = rightExtraSensorValue;
-    //
-    if (counter == 1) {
-      // extra left
-      if (leftExtraSensorAverage < leftExtraSensorValue) {
-        leftExtraSensorAverage ++;
-      } else if (leftExtraSensorAverage > leftExtraSensorValue) {
-        leftExtraSensorAverage --;
-      }
-      // extra right
-      if (rightExtraSensorAverage < rightExtraSensorValue) {
-        rightExtraSensorAverage ++;
-      } else if (rightExtraSensorAverage > rightExtraSensorValue) {
-        rightExtraSensorAverage --;
-      }
-    }
-  }
-  //
-  leftSensorBuffer2 = leftSensorBuffer1;
-  leftSensorBuffer1 = leftSensorBuffer0;
-  leftSensorBuffer0 = leftSensorValue;
-  leftSensorValue = analogRead(A0);
-  //
-  rightSensorBuffer2 = rightSensorBuffer1;
-  rightSensorBuffer1 = rightSensorBuffer0;
-  rightSensorBuffer0 = rightSensorValue;
-  rightSensorValue = analogRead(A1);
-  //
-  if (counter == 0) {
-    // process analog sensors
-    if (inputParams.sensorsEnabled) {
-      leftSensorAverage = (leftSensorValue + leftSensorBuffer0 + leftSensorBuffer1 + leftSensorBuffer2) / 4;
-      rightSensorAverage = (rightSensorValue + rightSensorBuffer0 + rightSensorBuffer1 + rightSensorBuffer2) / 4;
-      if ((rightSensorAverage > SENSOR_NO_DATA) || (leftSensorAverage > SENSOR_NO_DATA)) {
-        // data received
-        wallAngle = - rightSensorAverage + leftSensorAverage;
-        if (wallAngle > 80) {
-          wallAngle = 80;
-        } else if (wallAngle < -80) {
-          wallAngle = -80;
-        }
-        //
-        sensorStateRight = _getStateFromRaw(rightSensorAverage); // right
-        sensorStateLeft = _getStateFromRaw(leftSensorAverage); // left
-        //if (inputParams.extraInputsEnabled) {
-        //  if (getExtraInputLeft() > 40) {
-        //    sensorStateRight = SEN_BLOCK;
-        //  }
-        //  if (getExtraInputRight() > 40) {
-        //    sensorStateLeft = SEN_BLOCK;
-        //  }
-        //}
-        // get input state
-        inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
-      } else {
-        // no data
-        wallAngle = 0;
-        if (inputParams.edgeEnabled) {
-          inputStateNow = IN_OBSTACLE_FRONT;
-        } else {
-          inputStateNow = IN_NORMAL;
-        }
-      }
-    } else {
-      inputStateNow = IN_NORMAL;
-    }
-    // process extras
     if (inputParams.extraInputsEnabled) {
-      if ((getExtraInputLeft() < -20) || (getExtraInputRight() < -20)) {
-        extraStateNow = EX_STEP_UP_BIG;
-      } else if ((getExtraInputLeft() < -10) || (getExtraInputRight() < -10)) {
-        extraStateNow = EX_STEP_UP_SMALL;
-      } else if ((getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
-        extraStateNow = EX_STEP_DOWN_BIG;
-      } else if ((getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
-        extraStateNow = EX_STEP_DOWN_SMALL;
-      } else {
-        extraStateNow = EX_NORMAL;
+      //
+      leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
+      leftExtraSensorBallanced = (leftExtraSensorValue + leftExtraSensorBuffer0 + leftExtraSensorBuffer1 + leftExtraSensorBuffer2) / 4;
+      leftExtraSensorBuffer2 = leftExtraSensorBuffer1;
+      leftExtraSensorBuffer1 = leftExtraSensorBuffer0;
+      leftExtraSensorBuffer0 = leftExtraSensorValue;
+      //
+      rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
+      rightExtraSensorBallanced = (rightExtraSensorValue + rightExtraSensorBuffer0 + rightExtraSensorBuffer1 + rightExtraSensorBuffer2) / 4;
+      rightExtraSensorBuffer2 = rightExtraSensorBuffer1;
+      rightExtraSensorBuffer1 = rightExtraSensorBuffer0;
+      rightExtraSensorBuffer0 = rightExtraSensorValue;
+      //
+      if (counter == 1) {
+        // extra left
+        if (leftExtraSensorAverage < leftExtraSensorValue) {
+          leftExtraSensorAverage ++;
+        } else if (leftExtraSensorAverage > leftExtraSensorValue) {
+          leftExtraSensorAverage --;
+        }
+        // extra right
+        if (rightExtraSensorAverage < rightExtraSensorValue) {
+          rightExtraSensorAverage ++;
+        } else if (rightExtraSensorAverage > rightExtraSensorValue) {
+          rightExtraSensorAverage --;
+        }
       }
     }
-    //_printSensorState(sensorStateLeft);
-    //_printSensorState(sensorStateRight);
-    //_printInputState();
+    //
+    leftSensorBuffer2 = leftSensorBuffer1;
+    leftSensorBuffer1 = leftSensorBuffer0;
+    leftSensorBuffer0 = leftSensorValue;
+    leftSensorValue = analogRead(A0);
+    //
+    rightSensorBuffer2 = rightSensorBuffer1;
+    rightSensorBuffer1 = rightSensorBuffer0;
+    rightSensorBuffer0 = rightSensorValue;
+    rightSensorValue = analogRead(A1);
+    //
+    if (counter == 0) {
+      // process analog sensors
+      if (inputParams.sensorsEnabled) {
+        leftSensorAverage = (leftSensorValue + leftSensorBuffer0 + leftSensorBuffer1 + leftSensorBuffer2) / 4;
+        rightSensorAverage = (rightSensorValue + rightSensorBuffer0 + rightSensorBuffer1 + rightSensorBuffer2) / 4;
+        if ((rightSensorAverage > SENSOR_NO_DATA) || (leftSensorAverage > SENSOR_NO_DATA)) {
+          // data received
+          wallAngle = - rightSensorAverage + leftSensorAverage;
+          if (wallAngle > 80) {
+            wallAngle = 80;
+          } else if (wallAngle < -80) {
+            wallAngle = -80;
+          }
+          //
+          sensorStateRight = _getStateFromRaw(rightSensorAverage); // right
+          sensorStateLeft = _getStateFromRaw(leftSensorAverage); // left
+          //if (inputParams.extraInputsEnabled) {
+          //  if (getExtraInputLeft() > 40) {
+          //    sensorStateRight = SEN_BLOCK;
+          //  }
+          //  if (getExtraInputRight() > 40) {
+          //    sensorStateLeft = SEN_BLOCK;
+          //  }
+          //}
+          // get input state
+          inputStateNow = _getInputState(sensorStateLeft, sensorStateRight);
+        } else {
+          // no data
+          wallAngle = 0;
+          if (inputParams.edgeEnabled) {
+            inputStateNow = IN_OBSTACLE_FRONT;
+          } else {
+            inputStateNow = IN_NORMAL;
+          }
+        }
+      } else {
+        inputStateNow = IN_NORMAL;
+      }
+      // process extras
+      if (inputParams.extraInputsEnabled) {
+        if ((getExtraInputLeft() < -20) || (getExtraInputRight() < -20)) {
+          extraStateNow = EX_STEP_UP_BIG;
+        } else if ((getExtraInputLeft() < -10) || (getExtraInputRight() < -10)) {
+          extraStateNow = EX_STEP_UP_SMALL;
+        } else if ((getExtraInputLeft() > 20) || (getExtraInputRight() > 20)) {
+          extraStateNow = EX_STEP_DOWN_BIG;
+        } else if ((getExtraInputLeft() > 10) || (getExtraInputRight() > 10)) {
+          extraStateNow = EX_STEP_DOWN_SMALL;
+        } else {
+          extraStateNow = EX_NORMAL;
+        }
+      }
+      //_printSensorState(sensorStateLeft);
+      //_printSensorState(sensorStateRight);
+      //_printInputState();
+    }
   }
 }
 

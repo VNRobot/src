@@ -35,6 +35,8 @@ short legLiftingFL = 0;
 short legLiftingFR = 0;
 short legLiftingRL = 0;
 short legLiftingRR = 0;
+// lifts attached flag
+bool liftsAttached = false;
 
 /*
 uses
@@ -81,47 +83,54 @@ short _setlegLifting(short legLift, char legState) {
   return legLift;
 }
 
+// attach lifts
+void attachLifts(void) {
+  liftsAttached = true;
+}
+
 // get servo motor steps for speed 3 to - 3
 void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
-  angleCenter -= angleCenter / 3;
-  if (patParam.sideBallanceEnabled) {
-    //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
-    if (m_gyroState.aRollNow > 1) {
-      if (sideBallance < SIDE_BALLANCE_MAX) {
-        sideBallance ++;
+  if (liftsAttached) {
+    angleCenter -= angleCenter / 3;
+    if (patParam.sideBallanceEnabled) {
+      //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
+      if (m_gyroState.aRollNow > 1) {
+        if (sideBallance < SIDE_BALLANCE_MAX) {
+          sideBallance ++;
+        }
+      } else if (m_gyroState.aRollNow < -1) {
+        if (sideBallance > -SIDE_BALLANCE_MAX) {
+          sideBallance --;
+        }
       }
-    } else if (m_gyroState.aRollNow < -1) {
-      if (sideBallance > -SIDE_BALLANCE_MAX) {
-        sideBallance --;
+      //}
+    }
+    if (walkingModeNow) {
+      // side ballance compensation
+      short sideHightL = 0;
+      short sideHightR = 0;
+      // side ballance
+      if (sideBallance > 0) {
+        sideHightL -= sideBallance;
+      } else if (sideBallance < 0) {
+        sideHightR += sideBallance;
       }
+      // leg lifting
+      legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state);
+      legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state);
+      legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state);
+      legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state);
+      // final
+      m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL - angleCenter;
+      m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR - angleCenter;
+      m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + angleCenter;
+      m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + angleCenter;
+    } else {
+      m_legsValue.fl.hight = patParam.legHightNow - angleCenter;
+      m_legsValue.fr.hight = patParam.legHightNow - angleCenter;
+      m_legsValue.rl.hight = patParam.legHightNow + angleCenter;
+      m_legsValue.rr.hight = patParam.legHightNow + angleCenter;
     }
-    //}
-  }
-  if (walkingModeNow) {
-    // side ballance compensation
-    short sideHightL = 0;
-    short sideHightR = 0;
-    // side ballance
-    if (sideBallance > 0) {
-      sideHightL -= sideBallance;
-    } else if (sideBallance < 0) {
-      sideHightR += sideBallance;
-    }
-    // leg lifting
-    legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state);
-    legLiftingFR = _setlegLifting(legLiftingFR, m_legsValue.fr.state);
-    legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state);
-    legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state);
-    // final
-    m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL - angleCenter;
-    m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR - angleCenter;
-    m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + angleCenter;
-    m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + angleCenter;
-  } else {
-    m_legsValue.fl.hight = patParam.legHightNow - angleCenter;
-    m_legsValue.fr.hight = patParam.legHightNow - angleCenter;
-    m_legsValue.rl.hight = patParam.legHightNow + angleCenter;
-    m_legsValue.rr.hight = patParam.legHightNow + angleCenter;
   }
 }
 

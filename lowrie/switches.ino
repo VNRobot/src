@@ -24,40 +24,56 @@ enum swState {
 
 // switches data
 quad swStateNow = {1, 1, 1, 1, false, false};
+// switches attached flag
+bool switchesAttached = false;
 
-// init Switches
-void initSwitches(bool calibrationMode, bool swFrontEnable, bool swRearEnable) {
+/*
+uses
+m_getButtonPressed
+*/
+
+// attach switches
+void attachSwitches(bool swFrontEnable, bool swRearEnable) {
   swStateNow.enabledF = swFrontEnable;
   swStateNow.enabledR = swRearEnable;
-  if (swStateNow.enabledF) {
-    pinMode(FL_SWITCH, INPUT_PULLUP);
-    pinMode(FR_SWITCH, INPUT_PULLUP);
-  }
-  if (swStateNow.enabledR) {
-    pinMode(RL_SWITCH, INPUT_PULLUP);
-    pinMode(RR_SWITCH, INPUT_PULLUP);
-  }
-  if (swStateNow.enabledF || swStateNow.enabledR) {
-    while (calibrationMode) {
-      delay(200);
-      readSwitchesCount();
-      if (m_getButtonPressed()) {
-        calibrationMode = false;
+  switchesAttached = true;
+}
+
+// init Switches
+void initSwitches(bool calibrationMode) {
+  if (switchesAttached) {
+    if (swStateNow.enabledF) {
+      pinMode(FL_SWITCH, INPUT_PULLUP);
+      pinMode(FR_SWITCH, INPUT_PULLUP);
+    }
+    if (swStateNow.enabledR) {
+      pinMode(RL_SWITCH, INPUT_PULLUP);
+      pinMode(RR_SWITCH, INPUT_PULLUP);
+    }
+    if (swStateNow.enabledF || swStateNow.enabledR) {
+      while (calibrationMode) {
+        delay(200);
+        readSwitchesCount();
+        if (m_getButtonPressed()) {
+          calibrationMode = false;
+        }
+        //_printSwitchesState();
       }
-      //_printSwitchesState();
     }
   }
 }
 
 // read switches
 quad readSwitchesCount(void) {
-  if (swStateNow.enabledF) {
-    swStateNow.fl = digitalRead(FL_SWITCH);
-    swStateNow.fr = digitalRead(FR_SWITCH);
-  }
-  if (swStateNow.enabledR) {
-    swStateNow.rl = digitalRead(RL_SWITCH);
-    swStateNow.rr = digitalRead(RR_SWITCH);
+  if (switchesAttached) {
+    if (swStateNow.enabledF) {
+      swStateNow.fl = digitalRead(FL_SWITCH);
+      swStateNow.fr = digitalRead(FR_SWITCH);
+    }
+    if (swStateNow.enabledR) {
+      swStateNow.rl = digitalRead(RL_SWITCH);
+      swStateNow.rr = digitalRead(RR_SWITCH);
+    }
   }
   return swStateNow;
 }

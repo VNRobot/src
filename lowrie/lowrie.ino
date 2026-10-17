@@ -150,7 +150,6 @@ typedef struct accRoll {
 // main data structure
 typedef struct masterData {
   char robotVersion;           // software version
-  bool multiBoard;             // multi/single board flag
   bool masterDevice;           // master device flag
   char mainCounter;            // main counter
   char patternNow;             // current pattern
@@ -160,6 +159,18 @@ typedef struct masterData {
   char shiftForward;           // shift forward ballance
   char directionCorrection;        // direction correction
 } masterData;
+
+// software components
+typedef struct softwareComponents {
+  bool center;
+  bool current;
+  bool gyro;
+  bool inputs;
+  bool serial;
+  bool servo;
+  bool switches;
+  bool wheels;
+} softwareComponents;
 
 //---------------global variables---------------------------
 // center motor angle
@@ -172,8 +183,29 @@ allLegs m_legsValue = {125, 0, LEG_LINEAR, 0,
                        125, 0, LEG_LINEAR, 0,
                        125, 0, LEG_LINEAR, 0};
 // master data
-masterData m_mainData {25, false, true, 0, P_STANDGO, 0, 0, C_NORMAL, 0, 0};
+masterData m_mainData {
+  25,                 //char robotVersion;           // software version
+  true,               //bool masterDevice;           // master device flag
+  0,                  //char mainCounter;            // main counter
+  P_STANDGO,          //char patternNow;             // current pattern
+  0,                  //char speedLeft;              // left side speed
+  0,                  //char speedRight;             // right side speed
+  C_NORMAL,           //char currentState;           // current received from other device
+  0,                  //char shiftForward;           // shift forward ballance
+  0                   //char directionCorrection;    // direction correction
+};
 //----------------------------------------------------------
+// components
+softwareComponents component {
+  false,              //bool center;
+  true,               //bool current;
+  true,               //bool gyro;
+  true,               //bool inputs;
+  false,              //bool serial;
+  true,               //bool servo;
+  false,              //bool switches;
+  false               //bool wheels;
+};
 // state counter
 char stateCounter = 0;
 // variable for temporary use
@@ -255,57 +287,14 @@ void _doQuickAndOther(char patternNow) {
       // disable motors
       setServo(HIGHT_LOW, HIGHT_LOW, 20);
       detachServo();
-      //detachCenter();
-      //detachWheels();
+      detachCenter();
+      detachWheels();
     }
     break;
     default:
     break;
   }
 }
-
-  // send data
-  void _sendData() {
-    if (m_mainData.masterDevice) {
-      // send m_mainData.robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
-      Serial.print(m_mainData.robotVersion);
-      Serial.print(m_mainData.patternNow);
-      Serial.print(m_mainData.speedLeft);
-      Serial.print(m_mainData.speedRight);
-      Serial.print(m_mainData.shiftForward);
-      Serial.print(m_mainData.directionCorrection);
-    } else {
-      // send m_mainData.currentState
-      Serial.print(m_mainData.currentState);
-    }
-  }
-
-  // receive data
-  int _receiveData() {
-    int counter = Serial.available();
-    if (m_mainData.masterDevice) {
-      // receive m_mainData.currentState
-      if (counter > 0) {
-          m_mainData.currentState = Serial.read();
-      }
-    } else {
-      // receive m_mainData.robotVersion, m_mainData.patternNow, m_mainData.speedLeft, m_mainData.speedRight, m_mainData.shiftForward
-      if (counter > 5) {
-        char version = Serial.read();
-        if (version == m_mainData.robotVersion) {
-          m_mainData.patternNow = Serial.read();
-          m_mainData.speedLeft = Serial.read();
-          m_mainData.speedRight = Serial.read();
-          m_mainData.shiftForward = Serial.read();
-          m_mainData.directionCorrection = Serial.read();
-          // set counter
-          setPatternOfTask(m_mainData.patternNow);
-          setHalfCounter(getWalkingModeInTask());
-        }
-      }
-    }
-    return Serial.available();
-  }
 
 // set motors and read sensors
 void _doCycle(void) {
@@ -322,15 +311,11 @@ void _doCycle(void) {
   // do communication
   if (m_mainData.mainCounter == 0) {
     // send once at the beginning of the pattern
-    if (m_mainData.multiBoard) {
-      _sendData();
-    }
+    sendSerial();
   }
   delay(TIME_DELAY);
   // try to receive in every count
-  if (m_mainData.multiBoard) {
-    _receiveData();
-  }
+  receiveSerial();
   delay(TIME_DELAY);
   // runs only after delay
   // update motor pattern point
@@ -345,33 +330,64 @@ void _doCycle(void) {
   // update sensor readings
   updateInputsCount(m_mainData.mainCounter);
   // update center motors
-  //updateCenterCount();
+  updateCenterCount();
 }
 
 // set robot state
 void _setState(unsigned char newState) {
-  //Serial.print(F(" State "));
   switch (newState) {
     case ROBOT_NORM:
     {
       // drive
-      //Serial.println("ROBOT_NORM");
     }
     break;
     case ROBOT_INO:
     {
       // walk
-      //Serial.println("ROBOT_INO");
     }
     break;
     case ROBOT_CRAWL:
     {
-      // walk
-      //Serial.println("ROBOT_CRAWL");
+      // crawl
     }
     break;
     default:
     break;
+  }
+}
+
+// attach components
+void _attachComponents(void) {
+  if (component.center) {
+    // bool frontE, bool rearE
+    attachCenter(true, true);
+  }
+  if (component.current) {
+    // bool extraEnabled
+    attachCurrent(true);
+  }
+  if (component.gyro) {
+    attachGyro();
+  }
+  if (component.inputs) {
+    // short legHight, bool sensorsEnabled, bool extraInputsEnabled
+    attachInputs(HIGHT_DEFAULT, true, false);
+  }
+  if (component.serial) {
+    attachSerial();
+  }
+  if (component.servo) {
+    attachLifts();
+    attachShift();
+    // bool frontE, bool rearE
+    attachServo(true, true);
+  }
+  if (component.switches) {
+    // bool swFrontEnable, bool swRearEnable
+    attachSwitches(true, true);
+  }
+  if (component.wheels) {
+    attachWheels();
   }
 }
 
@@ -381,10 +397,12 @@ void setup() {
   delay(200);
   Serial.begin(9600);
   delay(500);
-  // -------init shift------- 
+  // attach software components
+  _attachComponents();
+  // init shift 
   // short shiftForward, bool walk, bool ballance
   initShift(0, true, false);
-  // -------init lifts------- 
+  // init lifts
   // short legHight, short legLift, bool sideBallance
   initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
   // check button press
@@ -393,35 +411,18 @@ void setup() {
   if (version != m_mainData.robotVersion) {
     calibrationMode = true;
   }
-  // -------init sensors inputs-------
-  // bool calibrationMode, short legHight, bool sensorsEnabled, bool extraInputsEnabled
-  if (m_mainData.masterDevice) {
-    initInputs(calibrationMode, HIGHT_DEFAULT, true, false);
-    enableObstacleInputs(true);
-    enableEdgeInputs(false);
-  } else {
-    initInputs(calibrationMode, HIGHT_DEFAULT, false, false);
-    enableObstacleInputs(false);
-    enableEdgeInputs(false);
-  }
-  // -------attach center servo-------
-  // bool frontE, bool rearE
-  if (!m_mainData.masterDevice) {
-    //attachCenter(true, true);
-  }
-  // -------attach Wheels servo-------
-  // bool frontE, bool rearE
-  //attachWheels();
-  // -------attach legs servo-------
-  // bool frontE, bool rearE
-  attachServo(true, true);
-  // -------init current readings-------
+  // init sensors inputs
+  initInputs(calibrationMode);
+  enableObstacleInputs(true);
+  enableEdgeInputs(false);
+  // init switches inputs
+  initSwitches(calibrationMode);
   // bool calibrationMode, bool extraEnabled
-  initCurrent(calibrationMode, true);
+  initCurrent(calibrationMode);
   // init center servo motors
-  //initCenter(calibrationMode);
+  initCenter(calibrationMode);
   // init Wheels servo motors
-  //initWheels(calibrationMode);
+  initWheels(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -429,10 +430,10 @@ void setup() {
     // lift legs for gyro calibration
     setFlippedGyro(true);
     //setFlippedServo(-1, -1);
-    //setCenter(0);
+    setCenter(0);
     setServo(HIGHT_LOW, HIGHT_LOW, 20);
   }
-  // -------init gyro-------
+  // init gyro
   initGyro(calibrationMode);
   delay(200);
   updateGyroCount(0);
@@ -447,40 +448,33 @@ void setup() {
     EEPROM.update(0, m_mainData.robotVersion);
     // disable motors
     detachServo();
-    //detachCenter();
-    //detachWheels();
+    detachCenter();
+    detachWheels();
     delay(20000);
   }
   delay(200);
-  //setCenter(0);
+  setCenter(0);
   setServo(HIGHT_LOW, HIGHT_LOW, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
   updateInputsCount(0);
   // explore mode
-  // -------init tasks-------
+  // init tasks
   initTasks();
-  // load task and pattern. direction is 0
-  // -------init path-------
+  // init path
   // short stepSize, bool turning, bool counting
   initPath(STEP_SIZE, true, false);
   setDistancePath(100); // cm
   updatePath(0);
   // === sets m_legsValue.xx.speed
-  // -------init counter-------
+  // init counter
   // short mainCycle
   initCounter(MAIN_COUNTER_END);
   // bool walkingModeNow
   m_mainData.mainCounter = updateCounter(true, m_mainData.masterDevice);
   // === sets m_legsValue.xx.count
   // === sets m_legsValue.xx.state
-  //setDirectionWheels(2, 2);
-  //delay(8000);
-  //setDirectionWheels(1, 1);
-  //delay(1000);
-  //setDirectionWheels(0, 0);
-  //setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
 }
 
 // the loop function runs over and over again forever
@@ -500,13 +494,13 @@ void loop() {
         m_mainData.directionCorrection = getDirectionCharGyro();
         // update path
         updatePath(getDirectionGyro());
-        //setDirectionCenter(-m_mainData.directionCenter);
-        //setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
+        setDirectionCenter(-m_mainData.directionCorrection);
+        setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
       } else {
         // set speed
         setSideSpeed(m_mainData.speedLeft, m_mainData.speedRight);
-        //setDirectionCenter(m_mainData.directionCenter);
-        //setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
+        setDirectionCenter(m_mainData.directionCorrection);
+        setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
       }
       // check for robot state
       if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
