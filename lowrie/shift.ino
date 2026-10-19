@@ -6,7 +6,6 @@ Robot legs shift forward motion patterns
 */
 
 // walking compensation parameters
-#define STATIC_BALLANCE_MULIPLIER   4
 #define STATIC_BALLANCE_MAX         20
 
 // pattern state structure
@@ -69,8 +68,11 @@ short _getLegShiftForward(char counter, char state, unsigned char quickShiftMult
 }
 
 // attach shift
-void attachShift(void) {
+void attachShift(short shiftForward, bool walk, bool ballance) {
   shiftAttached = true;
+  shParam.shiftForward = shiftForward;
+  shParam.walkEnabled = walk;
+  shParam.ballanceEnabled = ballance;
 }
 
 // set forward ballance
@@ -79,7 +81,7 @@ char setBallanceShiftCount(bool master, char staticBallance) {
     // ballance
     if (master) {
       if (shParam.ballanceEnabled) {
-        short staticForwardTemp = (short)(m_gyroState.aPitchNow * STATIC_BALLANCE_MULIPLIER);
+        short staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // STATIC_BALLANCE_MULIPLIER
         if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
           staticForward --;
         } else if ((staticForward < staticForwardTemp) && (staticForward < STATIC_BALLANCE_MAX)) {
@@ -124,8 +126,5 @@ void setWalkShiftCount(bool walkingModeNow) {
 }
 
 // init shift 
-void initShift(short shiftForward, bool walk, bool ballance) {
-  shParam.shiftForward = shiftForward;
-  shParam.walkEnabled = walk;
-  shParam.ballanceEnabled = ballance;
+void initShift(void) {
 }

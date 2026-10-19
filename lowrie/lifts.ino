@@ -84,8 +84,11 @@ short _setlegLifting(short legLift, char legState) {
 }
 
 // attach lifts
-void attachLifts(void) {
+void attachLifts(short legHight, short legLift, bool sideBallance) {
   liftsAttached = true;
+  patParam.legHightNow = legHight;
+  patParam.legLiftNow = legLift;
+  patParam.sideBallanceEnabled = sideBallance;
 }
 
 // get servo motor steps for speed 3 to - 3
@@ -135,8 +138,5 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
 }
 
 // init pattern
-void initLifts(short legHight, short legLift, bool sideBallance) {
-  patParam.legHightNow = legHight;
-  patParam.legLiftNow = legLift;
-  patParam.sideBallanceEnabled = sideBallance;
+void initLifts(void) {
 }

@@ -5,9 +5,6 @@ Arduino nano
 List of tasks. Every task contains movement patterns.
 */
 
-// pattern repeat counter
-#define REPEAT_COUNTER_END      8
-
 // tasks
 enum rTasks {
   BEGIN_TASK = 0,
@@ -40,6 +37,8 @@ char taskNow = BEGIN_TASK;
 char taskPriority = PRIORITY_LOW;
 // default task from rTasks
 char defaultTask = STANDGO_TASK;
+// task attached flag
+bool taskAttached = false;
 
 // set down task
 void _setDownTask(void) {
@@ -147,7 +146,7 @@ void _setNextPatternInTask(void) {
     _setPatternNow(Q_DONE);
     return;
   }
-  if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < REPEAT_COUNTER_END)) {
+  if ((currentTask[currentTaskPoint] == Q_REPEAT) && (repeatCounter < 8)) { // REPEAT_COUNTER_END
     // update repeat counter
     repeatCounter ++;
     return;
@@ -193,9 +192,16 @@ char _getNormalTask(void) {
   return DEFAULT_TASK;
 }
 
+// attach tasks
+void attachTasks(void) {
+  taskAttached = true;
+}
+
 // init tasks
 void initTasks(void) {
-  applyTask(BEGIN_TASK);
+  if (taskAttached) {
+    applyTask(BEGIN_TASK);
+  }
 }
 
 // set task by name

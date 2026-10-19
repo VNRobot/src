@@ -5,9 +5,6 @@ Arduino nanos
 Robot wheels motors motion patterns
 */
 
-// wheel speed
-#define WHEEL_SPEED           6
-
 // pin numbers for servo motors
 enum cPinsWheels {
   FL_WHEEL = 2,
@@ -35,6 +32,8 @@ bool wheelsAttached = false;
 allWheels wheelsCalibrationData = {0, 0, 0, 0};
 // servo motor value
 short wheelsMotorSpeedValue[4] = {0, 0, 0, 0};
+// wheel speed multiplier
+char wheelSpeed = 5;
 
 /*
 uses
@@ -63,7 +62,8 @@ void _doPWMWheels(void) {
 }
 
 // attach wheels motors
-void attachWheels(void) {
+void attachWheels(char wSpeed) {
+  wheelSpeed = wSpeed;
   if (!wheelsAttached) {
     // set motors value
     wheelsMotorSpeedValue[0] = _limitWheelSpeedValue(90); 
@@ -190,10 +190,10 @@ void detachWheels(void) {
 // set direction. 20 deg max
 void setDirectionWheels(char sleft, char sright) {
   if (wheelsAttached) {
-    wheelsMotorSpeedValue[0] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.fl);
-    wheelsMotorSpeedValue[1] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.fr);
-    wheelsMotorSpeedValue[2] = _limitMotorValue(90 + (sleft * WHEEL_SPEED) - wheelsCalibrationData.rl);
-    wheelsMotorSpeedValue[3] = _limitMotorValue(90 - (sright * WHEEL_SPEED) - wheelsCalibrationData.rr);
+    wheelsMotorSpeedValue[0] = _limitMotorValue(90 + (sleft * wheelSpeed) - wheelsCalibrationData.fl);
+    wheelsMotorSpeedValue[1] = _limitMotorValue(90 - (sright * wheelSpeed) - wheelsCalibrationData.fr);
+    wheelsMotorSpeedValue[2] = _limitMotorValue(90 + (sleft * wheelSpeed) - wheelsCalibrationData.rl);
+    wheelsMotorSpeedValue[3] = _limitMotorValue(90 - (sright * wheelSpeed) - wheelsCalibrationData.rr);
     _doPWMWheels();
   }
 }

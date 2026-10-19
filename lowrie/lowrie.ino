@@ -170,6 +170,7 @@ typedef struct softwareComponents {
   bool servo;
   bool switches;
   bool wheels;
+  bool generic;
 } softwareComponents;
 
 //---------------global variables---------------------------
@@ -204,7 +205,8 @@ softwareComponents component {
   false,              //bool serial;
   true,               //bool servo;
   false,              //bool switches;
-  false               //bool wheels;
+  false,              //bool wheels;
+  true                //bool generic;
 };
 // state counter
 char stateCounter = 0;
@@ -377,8 +379,10 @@ void _attachComponents(void) {
     attachSerial();
   }
   if (component.servo) {
-    attachLifts();
-    attachShift();
+    // short legHight, short legLift, bool sideBallance
+    attachLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
+    // short shiftForward, bool walk, bool ballance
+    attachShift(0, true, false);
     // bool frontE, bool rearE
     attachServo(true, true);
   }
@@ -387,30 +391,22 @@ void _attachComponents(void) {
     attachSwitches(true, true);
   }
   if (component.wheels) {
-    attachWheels();
+    //char wSpeed
+    attachWheels(6);
+  }
+  if (component.generic) {
+    attachTasks();
+    // short stepSize, bool turning, bool counting
+    attachPath(STEP_SIZE, true, false);
   }
 }
 
-// runs once on boot or reset
-void setup() {
-  // Start serial for debugging
-  delay(200);
-  Serial.begin(9600);
-  delay(500);
-  // attach software components
-  _attachComponents();
+// init components
+void _initComponents(bool calibrationMode) {
   // init shift 
-  // short shiftForward, bool walk, bool ballance
-  initShift(0, true, false);
+  initShift();
   // init lifts
-  // short legHight, short legLift, bool sideBallance
-  initLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
-  // check button press
-  bool calibrationMode = m_getButtonPressed();
-  char version = EEPROM.read(0);
-  if (version != m_mainData.robotVersion) {
-    calibrationMode = true;
-  }
+  initLifts();
   // init sensors inputs
   initInputs(calibrationMode);
   enableObstacleInputs(true);
@@ -435,13 +431,6 @@ void setup() {
   }
   // init gyro
   initGyro(calibrationMode);
-  delay(200);
-  updateGyroCount(0);
-  // === sets m_gyroState
-  delay(20);
-  resetGyro();
-  delay(20);
-  updateGyroCount(0);
   // === sets m_gyroState
   if (calibrationMode) {
     // write software version
@@ -451,7 +440,43 @@ void setup() {
     detachCenter();
     detachWheels();
     delay(20000);
+  } else {
+    // explore mode
+    // init tasks
+    initTasks();
+    // init path
+    initPath();
+    setDistancePath(100); // cm
+    updatePath(0);
+    // === sets m_legsValue.xx.speed
+    // init counter
+    // short mainCycle
+    initCounter(MAIN_COUNTER_END);
   }
+}
+
+// runs once on boot or reset
+void setup() {
+  // Start serial for debugging
+  delay(200);
+  Serial.begin(9600);
+  delay(500);
+  // attach software components
+  _attachComponents();
+  // check button press
+  bool calibrationMode = m_getButtonPressed();
+  char version = EEPROM.read(0);
+  if (version != m_mainData.robotVersion) {
+    calibrationMode = true;
+  }
+  _initComponents(calibrationMode);
+  delay(200);
+  updateGyroCount(0);
+  // === sets m_gyroState
+  delay(20);
+  resetGyro();
+  delay(20);
+  updateGyroCount(0);
   delay(200);
   setCenter(0);
   setServo(HIGHT_LOW, HIGHT_LOW, 20);
@@ -459,18 +484,6 @@ void setup() {
   updateCurrentCount(0);
   // read proximity sensors
   updateInputsCount(0);
-  // explore mode
-  // init tasks
-  initTasks();
-  // init path
-  // short stepSize, bool turning, bool counting
-  initPath(STEP_SIZE, true, false);
-  setDistancePath(100); // cm
-  updatePath(0);
-  // === sets m_legsValue.xx.speed
-  // init counter
-  // short mainCycle
-  initCounter(MAIN_COUNTER_END);
   // bool walkingModeNow
   m_mainData.mainCounter = updateCounter(true, m_mainData.masterDevice);
   // === sets m_legsValue.xx.count

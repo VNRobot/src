@@ -32,11 +32,13 @@ pathParameters pathParams = {
 // speed relative value from 0 to 2
 char speedNow = 0;
 // distance to the target mm
-short distanceToTarget = 0;
+short distanceToTarget = 100;
 // on the path flag
 bool onThePath = false;
 // speed multiplier
 const char speedMax = 2;
+// path attached flag
+bool pathAttached = false;
 
 // calculate absolute speed
 void _setAbsoluteSpeed(short direction) {
@@ -105,162 +107,175 @@ char _sideSpeed(short direction, char speed) {
   return speed;
 }
 
+// attach path
+void attachPath(short stepSize, bool turning, bool counting) {
+  pathAttached = true;
+  pathParams.maximalStep = stepSize;
+  pathParams.stepTurningEnabled = turning;
+  pathParams.stepsDistanceCountEnabled = counting;
+}
+
 // get speed
 void updatePath(short direction) {
-  // calculate speed
-  _setAbsoluteSpeed(direction);
-  if (pathParams.stepTurningEnabled) {
-    // step turning
-    m_mainData.speedLeft = _sideSpeed(-direction, speedNow);
-    m_mainData.speedRight = _sideSpeed(direction, speedNow);
-  } else {
-    m_mainData.speedLeft = speedNow;
-    m_mainData.speedRight = speedNow;
-  }
-  // calculated distance to target
-  if (pathParams.stepsDistanceCountEnabled) {
-    // step size
-    short stepSize = pathParams.maximalStep / ROBOT_SIZE_DEVIDER;
-    // update distance to target
-    if (distanceToTarget > stepSize) {
-      distanceToTarget -= stepSize;
+  if (pathAttached) {
+    // calculate speed
+    _setAbsoluteSpeed(direction);
+    if (pathParams.stepTurningEnabled) {
+      // step turning
+      m_mainData.speedLeft = _sideSpeed(-direction, speedNow);
+      m_mainData.speedRight = _sideSpeed(direction, speedNow);
     } else {
-      distanceToTarget = 0;
+      m_mainData.speedLeft = speedNow;
+      m_mainData.speedRight = speedNow;
+    }
+    // calculated distance to target
+    if (pathParams.stepsDistanceCountEnabled) {
+      // step size
+      short stepSize = pathParams.maximalStep / ROBOT_SIZE_DEVIDER;
+      // update distance to target
+      if (distanceToTarget > stepSize) {
+        distanceToTarget -= stepSize;
+      } else {
+        distanceToTarget = 0;
+      }
     }
   }
 }
 
 // calculate new direction
 short calculateNewDirectionPath(char inputState, short wallAngle, short direction) {
-  if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
-    // direction is close to the target
-    onThePath = true;
-  }
-  if (inputState == IN_NORMAL) {
-    // no obstacle
-    if (!onThePath) {
-      // stop turning
-      if (direction > DI_FORWARD_OK) {
-        direction = DI_FORWARD_OK;
-      } else if (direction < - DI_FORWARD_OK) {
-        direction = - DI_FORWARD_OK;
+  if (pathAttached) {
+    if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
+      // direction is close to the target
+      onThePath = true;
+    }
+    if (inputState == IN_NORMAL) {
+      // no obstacle
+      if (!onThePath) {
+        // stop turning
+        if (direction > DI_FORWARD_OK) {
+          direction = DI_FORWARD_OK;
+        } else if (direction < - DI_FORWARD_OK) {
+          direction = - DI_FORWARD_OK;
+        }
+        return direction;
       }
-      return direction;
+      return 0;
     }
-    return 0;
-  }
-  // surface is flat
-  // obstacle present
-  if (onThePath) {
-    onThePath = false;
-    switch (inputState) {
-      case IN_OBSTACLE_FRONT:
-        {
-          if (wallAngle > 0) {
-            direction = DI_BACKWARD_TURN;
-          } else {
-            direction = - DI_BACKWARD_TURN;
+    // surface is flat
+    // obstacle present
+    if (onThePath) {
+      onThePath = false;
+      switch (inputState) {
+        case IN_OBSTACLE_FRONT:
+          {
+            if (wallAngle > 0) {
+              direction = DI_BACKWARD_TURN;
+            } else {
+              direction = - DI_BACKWARD_TURN;
+            }
           }
-        }
-      break;
-      case IN_OBSTACLE_FRONTLEFT:
-        {
-          direction = DI_BACKWARD_STAND;
-        }
-      break;
-      case IN_OBSTACLE_FRONTRIGHT:
-        {
-          direction = - DI_BACKWARD_STAND;
-        }
-      break;
-      case IN_OBSTACLE_LEFT:
-        {
-          direction = DI_FORWARD_STAND;
-        }
-      break;
-      case IN_OBSTACLE_RIGHT:
-        {
-          direction = - DI_FORWARD_STAND;
-        }
-      break;
-      case IN_FAR_OBSTACLE_FRONT:
-        {
-          if (wallAngle > 0) {
-            direction = DI_FORWARD_TURN;
-          } else {
-            direction = - DI_FORWARD_TURN;
-          }
-        }
-      break;
-      case IN_FAR_OBSTACLE_LEFT:
-        {
-          direction = DI_FORWARD_FAR_TURN;
-        }
-      break;
-      case IN_FAR_OBSTACLE_RIGHT:
-        {
-          direction = - DI_FORWARD_FAR_TURN;
-        }
-      break;
-      default:
-      break;
-    }
-  } else {
-    // keep turning
-    switch (inputState) {
-      case IN_OBSTACLE_FRONT:
-        {
-          if (direction > 0) {
-            direction = DI_BACKWARD_TURN;
-          } else {
-            direction = - DI_BACKWARD_TURN;
-          }
-        }
-      break;
-      case IN_OBSTACLE_FRONTLEFT:
-      case IN_OBSTACLE_FRONTRIGHT:
-        {
-          if (direction > 0) {
+        break;
+        case IN_OBSTACLE_FRONTLEFT:
+          {
             direction = DI_BACKWARD_STAND;
-          } else {
+          }
+        break;
+        case IN_OBSTACLE_FRONTRIGHT:
+          {
             direction = - DI_BACKWARD_STAND;
           }
-        }
-      break;
-      case IN_OBSTACLE_LEFT:
-      case IN_OBSTACLE_RIGHT:
-        {
-          if (direction > 0) {
+        break;
+        case IN_OBSTACLE_LEFT:
+          {
             direction = DI_FORWARD_STAND;
-          } else {
+          }
+        break;
+        case IN_OBSTACLE_RIGHT:
+          {
             direction = - DI_FORWARD_STAND;
           }
-        }
-      break;
-      case IN_FAR_OBSTACLE_FRONT:
-        {
-          if (direction > 0) {
-            direction = DI_FORWARD_TURN;
-          } else {
-            direction = - DI_FORWARD_TURN;
+        break;
+        case IN_FAR_OBSTACLE_FRONT:
+          {
+            if (wallAngle > 0) {
+              direction = DI_FORWARD_TURN;
+            } else {
+              direction = - DI_FORWARD_TURN;
+            }
           }
-        }
-      break;
-      case IN_FAR_OBSTACLE_LEFT:
-        {
-          direction = DI_FORWARD_FAR_TURN;
-        }
-      break;
-      case IN_FAR_OBSTACLE_RIGHT:
-        {
-          direction = - DI_FORWARD_FAR_TURN;
-        }
-      break;
-      default:
-      break;
+        break;
+        case IN_FAR_OBSTACLE_LEFT:
+          {
+            direction = DI_FORWARD_FAR_TURN;
+          }
+        break;
+        case IN_FAR_OBSTACLE_RIGHT:
+          {
+            direction = - DI_FORWARD_FAR_TURN;
+          }
+        break;
+        default:
+        break;
+      }
+    } else {
+      // keep turning
+      switch (inputState) {
+        case IN_OBSTACLE_FRONT:
+          {
+            if (direction > 0) {
+              direction = DI_BACKWARD_TURN;
+            } else {
+              direction = - DI_BACKWARD_TURN;
+            }
+          }
+        break;
+        case IN_OBSTACLE_FRONTLEFT:
+        case IN_OBSTACLE_FRONTRIGHT:
+          {
+            if (direction > 0) {
+              direction = DI_BACKWARD_STAND;
+            } else {
+              direction = - DI_BACKWARD_STAND;
+            }
+          }
+        break;
+        case IN_OBSTACLE_LEFT:
+        case IN_OBSTACLE_RIGHT:
+          {
+            if (direction > 0) {
+              direction = DI_FORWARD_STAND;
+            } else {
+              direction = - DI_FORWARD_STAND;
+            }
+          }
+        break;
+        case IN_FAR_OBSTACLE_FRONT:
+          {
+            if (direction > 0) {
+              direction = DI_FORWARD_TURN;
+            } else {
+              direction = - DI_FORWARD_TURN;
+            }
+          }
+        break;
+        case IN_FAR_OBSTACLE_LEFT:
+          {
+            direction = DI_FORWARD_FAR_TURN;
+          }
+        break;
+        case IN_FAR_OBSTACLE_RIGHT:
+          {
+            direction = - DI_FORWARD_FAR_TURN;
+          }
+        break;
+        default:
+        break;
+      }
     }
+    return direction;
   }
-  return direction;
+  return 0;
 }
 
 // set distance to target in cm
@@ -270,10 +285,7 @@ void setDistancePath(short distance) {
 }
 
 // init path
-void initPath(short stepSize, bool turning, bool counting) {
-  pathParams.maximalStep = stepSize;
-  pathParams.stepTurningEnabled = turning;
-  pathParams.stepsDistanceCountEnabled = counting;
+void initPath(void) {
 }
 
 // set side speed
