@@ -33,6 +33,7 @@ enum senState {
 // input parameters structure
 typedef struct inputParameters {
   short legHightNow;
+  short sizeDevider;
   bool sensorsEnabled;
   bool edgeEnabled;
   bool extraInputsEnabled;
@@ -41,11 +42,12 @@ typedef struct inputParameters {
 
 // input parameters
 inputParameters inputParams = {
-  HIGHT_DEFAULT,           // short legHightNow;
-  false,                   // bool sensorsEnabled;
-  false,                   // bool edgeEnabled;
-  false,                   // bool extraInputsEnabled;
-  false                    // bool obstacleEnabled;
+  120,                            // short legHightNow;
+  2,                              // short sizeDevider;
+  false,                          // bool sensorsEnabled;
+  false,                          // bool edgeEnabled;
+  false,                          // bool extraInputsEnabled;
+  false                           // bool obstacleEnabled;
 };
 
 // assume wall angle
@@ -157,8 +159,9 @@ char _getInputState(char left, char right) {
 }
 
 // attach inputs
-void attachInputs(short legHight, bool sensorsEnabled, bool extraInputsEnabled) {
+void attachInputs(short legHight, short sizeDevider, bool sensorsEnabled, bool extraInputsEnabled) {
   inputParams.legHightNow = legHight;
+  inputParams.sizeDevider = sizeDevider;
   inputParams.sensorsEnabled = sensorsEnabled;
   inputParams.extraInputsEnabled = extraInputsEnabled;
   inputsAttached = true;
@@ -209,13 +212,13 @@ void updateInputsCount(char counter) {
     //
     if (inputParams.extraInputsEnabled) {
       //
-      leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
+      leftExtraSensorValue = (950 - analogRead(A3)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / inputParams.sizeDevider;
       leftExtraSensorBallanced = (leftExtraSensorValue + leftExtraSensorBuffer0 + leftExtraSensorBuffer1 + leftExtraSensorBuffer2) / 4;
       leftExtraSensorBuffer2 = leftExtraSensorBuffer1;
       leftExtraSensorBuffer1 = leftExtraSensorBuffer0;
       leftExtraSensorBuffer0 = leftExtraSensorValue;
       //
-      rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / ROBOT_SIZE_DEVIDER;
+      rightExtraSensorValue = (950 - analogRead(A2)) / 4 - EXTRA_DISTANCE_NORM - inputParams.legHightNow / inputParams.sizeDevider;
       rightExtraSensorBallanced = (rightExtraSensorValue + rightExtraSensorBuffer0 + rightExtraSensorBuffer1 + rightExtraSensorBuffer2) / 4;
       rightExtraSensorBuffer2 = rightExtraSensorBuffer1;
       rightExtraSensorBuffer1 = rightExtraSensorBuffer0;

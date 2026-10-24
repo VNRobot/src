@@ -10,8 +10,6 @@ use MPU6050 to read gyroscope and accelerometer
 #define SLOP_ANGLE              12
 #define FALLING_ANGLE           45
 
-#include <Wire.h>
-
 // gyro errors structure
 typedef struct errors {
 float AccErrorX;
@@ -67,8 +65,6 @@ m_getButtonPressed()
 
 // init gyroscope wire
 void _initWire(void) {
-  Wire.begin();                      
-  delay(100);
   Wire.beginTransmission(0x68);
   Wire.write(0x6B);
   Wire.write(0b10001000); // DEVICE_RESET, TEMP_DIS.

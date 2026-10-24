@@ -13,9 +13,13 @@ uses
 m_mainData
 */
 
-// attach current
+// attach serial
 void attachSerial(void) {
   serialAttached = true;
+}
+
+// init serial
+void initSerial(void) {
 }
 
 // send data

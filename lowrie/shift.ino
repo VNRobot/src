@@ -5,19 +5,29 @@ Arduino nano
 Robot legs shift forward motion patterns
 */
 
+// shift forward mm
+#define SHIFT_FORWARD                 16
+// linear leg speed mm per count
+#define SHIFT_LINEAR_SPEED            2
 // walking compensation parameters
-#define STATIC_BALLANCE_MAX         20
+#define STATIC_BALLANCE_MAX           20
+// static ballance multiplier
+#define STATIC_BALLANCE_MULIPLIER     4
 
 // pattern state structure
 typedef struct shiftParam {
   short shiftForward;
+  short linearSpeed;
+  short quickShiftMultiplier;
   bool walkEnabled;
   bool ballanceEnabled;
 } shiftParam;
 
 // robot parameters
 shiftParam shParam = {
-  0,                        // short shiftForward;
+  SHIFT_FORWARD,            // short shiftForward;
+  SHIFT_LINEAR_SPEED,       // short linearSpeed;
+  5,                        // short quickShiftMultiplier;
   false,                    // bool walkEnabled;
   false                     // bool ballanceEnabled;
 };
@@ -39,26 +49,26 @@ m_gyroState
 */
 
 // get leg shift forward
-short _getLegShiftForward(char counter, char state, unsigned char quickShiftMultiplier, short sideSpeed, short shiftForward) {
+short _getLegShiftForward(char counter, char state, short sideSpeed, short shiftForward) {
   // linear  walking shift
-  shiftForward += sideSpeed * LINEAR_SPEED;
+  shiftForward += sideSpeed * shParam.linearSpeed;
   switch (state) {
     case LEG_LIFTED_AFTER:
     {
       // quick forward
-      shiftForward = -counter * quickShiftMultiplier * sideSpeed * LINEAR_SPEED;
+      shiftForward = -counter * shParam.quickShiftMultiplier * sideSpeed * shParam.linearSpeed;
     }
     break;
     case LEG_LIFTED_BEFORE:
     {
       // quick forward
-      shiftForward = (mainTiming.fullCycle - counter) * quickShiftMultiplier * sideSpeed * LINEAR_SPEED;
+      shiftForward = (mainTiming.fullCycle - counter) * shParam.quickShiftMultiplier * sideSpeed * shParam.linearSpeed;
     }
     break;
     case LEG_LOWERING:
     {
       // start point
-      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed * LINEAR_SPEED;
+      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed * shParam.linearSpeed;
     }
     break;
     default:
@@ -68,11 +78,15 @@ short _getLegShiftForward(char counter, char state, unsigned char quickShiftMult
 }
 
 // attach shift
-void attachShift(short shiftForward, bool walk, bool ballance) {
+void attachShift(short quickShiftMultiplier, bool walk, bool ballance) {
   shiftAttached = true;
-  shParam.shiftForward = shiftForward;
+  shParam.quickShiftMultiplier = quickShiftMultiplier;
   shParam.walkEnabled = walk;
   shParam.ballanceEnabled = ballance;
+}
+
+// init shift 
+void initShift(void) {
 }
 
 // set forward ballance
@@ -81,7 +95,7 @@ char setBallanceShiftCount(bool master, char staticBallance) {
     // ballance
     if (master) {
       if (shParam.ballanceEnabled) {
-        short staticForwardTemp = (short)(m_gyroState.aPitchNow * 4); // STATIC_BALLANCE_MULIPLIER
+        short staticForwardTemp = (short)(m_gyroState.aPitchNow * STATIC_BALLANCE_MULIPLIER);
         if ((staticForward > staticForwardTemp) && (staticForward > -STATIC_BALLANCE_MAX)) {
           staticForward --;
         } else if ((staticForward < staticForwardTemp) && (staticForward < STATIC_BALLANCE_MAX)) {
@@ -98,8 +112,6 @@ char setBallanceShiftCount(bool master, char staticBallance) {
 // get servo motor steps for speed 2 to - 2
 void setWalkShiftCount(bool walkingModeNow) {
   if (shiftAttached) {
-    // quick shift lifted leg forward speed multiplier
-    unsigned char quickShiftMultiplier = (mainTiming.halfCycle - LIFT_POINT) / LIFT_POINT;
     // disable walking
     if (! shParam.walkEnabled) {
       m_mainData.speedLeft = 0;
@@ -107,10 +119,10 @@ void setWalkShiftCount(bool walkingModeNow) {
     }
     if (walkingModeNow) {
       // set forward shift
-      shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, quickShiftMultiplier, m_mainData.speedLeft, shiftBufferFL);
-      shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, quickShiftMultiplier, m_mainData.speedRight, shiftBufferFR);
-      shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, quickShiftMultiplier, m_mainData.speedLeft, shiftBufferRL);
-      shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, quickShiftMultiplier, m_mainData.speedRight, shiftBufferRR);
+      shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, m_mainData.speedLeft, shiftBufferFL);
+      shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, m_mainData.speedRight, shiftBufferFR);
+      shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, m_mainData.speedLeft, shiftBufferRL);
+      shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, m_mainData.speedRight, shiftBufferRR);
       // final shift
       m_legsValue.fl.shift = staticForward + shiftBufferFL + shParam.shiftForward;
       m_legsValue.fr.shift = staticForward + shiftBufferFR + shParam.shiftForward;
@@ -123,8 +135,4 @@ void setWalkShiftCount(bool walkingModeNow) {
       m_legsValue.rr.shift = 0;
     }
   }
-}
-
-// init shift 
-void initShift(void) {
 }

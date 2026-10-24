@@ -5,8 +5,11 @@ Arduino nano
 Robot legs hight motion patterns
 */
 
+// lift value mm
+#define LIFT_DEFAULT                50
 // walking compensation parameters
 #define LEG_LIFTING_SPEED           10
+#define LEG_LOWERING_SPEED          20
 #define SIDE_BALLANCE_MAX           20
 
 // pattern state structure
@@ -18,8 +21,8 @@ typedef struct patternParam {
 
 // robot parameters
 patternParam patParam = {
-  HIGHT_DEFAULT,            // short legHightNow;
-  50,                       // short legLiftNow;
+  120,                      // short legHightNow;
+  LIFT_DEFAULT,             // short legLiftNow;
   false                     // bool sideBallanceEnabled;
 };
 
@@ -72,9 +75,11 @@ short _setlegLifting(short legLift, char legState) {
       legLift = _lowerLeg(legLift, -patParam.legLiftNow, LEG_LIFTING_SPEED);
     }
     break;
+    case LEG_LINEAR:
     case LEG_LOWERING:
+    case LEG_AFTER_LOWERING:
     {
-      legLift = 0;
+      legLift = _lowerLeg(legLift, 0, LEG_LOWERING_SPEED);
     }
     break;
     default:
@@ -84,11 +89,14 @@ short _setlegLifting(short legLift, char legState) {
 }
 
 // attach lifts
-void attachLifts(short legHight, short legLift, bool sideBallance) {
+void attachLifts(short legHight, bool sideBallance) {
   liftsAttached = true;
   patParam.legHightNow = legHight;
-  patParam.legLiftNow = legLift;
   patParam.sideBallanceEnabled = sideBallance;
+}
+
+// init lifts
+void initLifts(void) {
 }
 
 // get servo motor steps for speed 3 to - 3
@@ -96,7 +104,6 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
   if (liftsAttached) {
     angleCenter -= angleCenter / 3;
     if (patParam.sideBallanceEnabled) {
-      //if ((m_legsValue.fl.state == LEG_LINEAR) && (m_legsValue.fr.state == LEG_LINEAR) && (m_legsValue.rl.state == LEG_LINEAR) && (m_legsValue.rr.state == LEG_LINEAR)) {
       if (m_gyroState.aRollNow > 1) {
         if (sideBallance < SIDE_BALLANCE_MAX) {
           sideBallance ++;
@@ -114,9 +121,9 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
       short sideHightR = 0;
       // side ballance
       if (sideBallance > 0) {
-        sideHightL -= sideBallance;
+        sideHightL = -sideBallance;
       } else if (sideBallance < 0) {
-        sideHightR += sideBallance;
+        sideHightR = sideBallance;
       }
       // leg lifting
       legLiftingFL = _setlegLifting(legLiftingFL, m_legsValue.fl.state);
@@ -135,8 +142,4 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
       m_legsValue.rr.hight = patParam.legHightNow + angleCenter;
     }
   }
-}
-
-// init pattern
-void initLifts(void) {
 }

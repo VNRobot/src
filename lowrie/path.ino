@@ -5,6 +5,11 @@ Arduino nano
 Robot walking path
 */
 
+// maximal speed
+#define PATH_MAX_SPEED                2
+// step size mm
+#define PATH_STEP_SIZE                90
+
 // direction state
 enum diState {
   DI_FORWARD_OK = 10,
@@ -18,13 +23,15 @@ enum diState {
 // path parameters structure
 typedef struct pathParameters {
   short maximalStep;
+  short sizeDevider;
   bool stepTurningEnabled;
   bool stepsDistanceCountEnabled;
 } pathParameters;
 
 // robot state
 pathParameters pathParams = {
-  100,                    // short maximalStep;
+  PATH_STEP_SIZE,         // short maximalStep;
+  2,                      // short sizeDevider;
   false,                  // bool stepTurningEnabled;
   false                   // bool stepsDistanceCountEnabled
 };
@@ -35,8 +42,6 @@ char speedNow = 0;
 short distanceToTarget = 100;
 // on the path flag
 bool onThePath = false;
-// speed multiplier
-const char speedMax = 2;
 // path attached flag
 bool pathAttached = false;
 
@@ -47,15 +52,15 @@ void _setAbsoluteSpeed(short direction) {
     // plan to go
     if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
       // go forward
-      if (speedNow < speedMax) {
+      if (speedNow < PATH_MAX_SPEED) {
         speedNow ++;
       }
     } else if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward slow
-      if (speedNow < speedMax - 1) {
+      if (speedNow < PATH_MAX_SPEED - 1) {
         speedNow ++;
       }
-      if (speedNow > speedMax - 1) {
+      if (speedNow > PATH_MAX_SPEED - 1) {
         speedNow --;
       }
     } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
@@ -68,15 +73,15 @@ void _setAbsoluteSpeed(short direction) {
       }
     } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
       // go back slow
-      if (speedNow > -speedMax + 1) {
+      if (speedNow > -PATH_MAX_SPEED + 1) {
         speedNow --;
       }
-      if (speedNow < -speedMax + 1) {
+      if (speedNow < -PATH_MAX_SPEED + 1) {
         speedNow ++;
       }
     } else {
       // go back
-      if (speedNow > -speedMax) {
+      if (speedNow > -PATH_MAX_SPEED) {
         speedNow --;
       }
     }
@@ -95,12 +100,12 @@ void _setAbsoluteSpeed(short direction) {
 char _sideSpeed(short direction, char speed) {
   // forward
   if (direction >= DI_FORWARD_OK) {
-    if (speed < speedMax) {
+    if (speed < PATH_MAX_SPEED) {
       speed ++;
     }
   }
   if (direction <= - DI_FORWARD_OK) {
-    if (speed > -speedMax) {
+    if (speed > -PATH_MAX_SPEED) {
       speed --;
     }
   }
@@ -108,9 +113,9 @@ char _sideSpeed(short direction, char speed) {
 }
 
 // attach path
-void attachPath(short stepSize, bool turning, bool counting) {
+void attachPath(short sizeDevider, bool turning, bool counting) {
   pathAttached = true;
-  pathParams.maximalStep = stepSize;
+  pathParams.sizeDevider = sizeDevider;
   pathParams.stepTurningEnabled = turning;
   pathParams.stepsDistanceCountEnabled = counting;
 }
@@ -131,7 +136,7 @@ void updatePath(short direction) {
     // calculated distance to target
     if (pathParams.stepsDistanceCountEnabled) {
       // step size
-      short stepSize = pathParams.maximalStep / ROBOT_SIZE_DEVIDER;
+      short stepSize = pathParams.maximalStep / pathParams.sizeDevider;
       // update distance to target
       if (distanceToTarget > stepSize) {
         distanceToTarget -= stepSize;

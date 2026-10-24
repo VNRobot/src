@@ -7,35 +7,32 @@ Main file
 
 #include <EEPROM.h>
 #include <Servo.h>
+#include <Wire.h>
 
-// input grounded 0 - 1023
-#define INPUT_GROUNDED          400
-// main half time delay in ms. bigger the number slower the robot
-#define TIME_DELAY              12
 // low hight in mm. upper arm is horizontal
-#define HIGHT_LOW               80
+#define SERVO_HIGHT_LOW               80
 // normal hight
-#define HIGHT_DEFAULT           120
+#define SERVO_HIGHT_DEFAULT           120
 // maximal hight
-#define HIGHT_MAX               160
-// lift value
-#define LIFT_DEFAULT            50
-// calibration angle
-#define CALIBRATION_ANGLE_MIN   -15
-#define CALIBRATION_ANGLE_MAX   15
+#define SERVO_HIGHT_MAX               160
 // robot size devider
-#define ROBOT_SIZE_DEVIDER      2
-// counter to keep state the same
-#define STATE_COUNTER           2
-// leg lift point
-#define LIFT_POINT              7
-// main counter
-#define MAIN_COUNTER_END        44
-// linear leg speed
-#define LINEAR_SPEED            3
-// step size mm
-#define STEP_SIZE               90
+#define MAIN_ROBOT_SIZE_DEVIDER       2
 
+// pin numbers for servo motors
+enum dPinsServo {
+  EX1_MOTOR = 2,
+  EX2_MOTOR = 3,
+  EX3_MOTOR = 4,
+  EX4_MOTOR = 5,
+  FL1_MOTOR = 6,
+  FL2_MOTOR = 7,
+  FR1_MOTOR = 8,
+  FR2_MOTOR = 9,
+  RL1_MOTOR = 10,
+  RL2_MOTOR = 11,
+  RR1_MOTOR = 12,
+  RR2_MOTOR = 13
+};
 // input state
 enum inState {
   IN_OBSTACLE_FRONT,
@@ -173,16 +170,32 @@ typedef struct softwareComponents {
   bool generic;
 } softwareComponents;
 
+//---------------servo motors-------------------------------
+
+// init servo library
+Servo servo_ex_1;
+Servo servo_ex_2;
+Servo servo_ex_3;
+Servo servo_ex_4;
+Servo servo_fl_1;
+Servo servo_fl_2;
+Servo servo_fr_1;
+Servo servo_fr_2;
+Servo servo_rl_1;
+Servo servo_rl_2;
+Servo servo_rr_1;
+Servo servo_rr_2;
+
 //---------------global variables---------------------------
 // center motor angle
 centers m_centerAngle = {0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {125, 0, LEG_LINEAR, 0,
-                       125, 0, LEG_LINEAR, 0,
-                       125, 0, LEG_LINEAR, 0,
-                       125, 0, LEG_LINEAR, 0};
+allLegs m_legsValue = {SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0};
 // master data
 masterData m_mainData {
   25,                 //char robotVersion;           // software version
@@ -208,18 +221,16 @@ softwareComponents component {
   false,              //bool wheels;
   true                //bool generic;
 };
-// state counter
-char stateCounter = 0;
 // variable for temporary use
 int i;
 
 // check button pressed
 bool m_getButtonPressed(void) {
     bool modeButtonPressed = false;
-    if (analogRead(A6) < INPUT_GROUNDED) {
+    if (analogRead(A6) < 400) {
     modeButtonPressed = true;
     // block until button released
-    while (analogRead(A6) < INPUT_GROUNDED) {
+    while (analogRead(A6) < 400) {
       delay(100);
     }
   }
@@ -236,32 +247,32 @@ void _doQuickAndOther(char patternNow) {
     break;
     case Q_DOLOW:
     {
-      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+      setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
     }
     break;
     case Q_DOSTAND:
     {
-      setServo(HIGHT_DEFAULT, HIGHT_DEFAULT, 20);
+      setServo(SERVO_HIGHT_DEFAULT, SERVO_HIGHT_DEFAULT, 20);
     }
     break;
     case Q_DORECOVER:
     {
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
         //setFlippedServo(1, -1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
         //setFlippedServo(-1, 1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
       } else {
         //setFlippedServo(-1, 1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
         //setFlippedServo(1, -1);
-        setServoQuick(HIGHT_MAX, HIGHT_MAX, 500);
+        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
       }
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
       setFlippedGyro(false);
       //setFlippedServo(1, 1);
-      setServoQuick(HIGHT_LOW, HIGHT_LOW, 500);
+      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
     }
     break;
     case Q_DOFLIP:
@@ -287,7 +298,7 @@ void _doQuickAndOther(char patternNow) {
     case Q_DODOWN:
     {
       // disable motors
-      setServo(HIGHT_LOW, HIGHT_LOW, 20);
+      setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
       detachServo();
       detachCenter();
       detachWheels();
@@ -315,10 +326,10 @@ void _doCycle(void) {
     // send once at the beginning of the pattern
     sendSerial();
   }
-  delay(TIME_DELAY);
+  doSleepHalfTime();
   // try to receive in every count
   receiveSerial();
-  delay(TIME_DELAY);
+  doSleepHalfTime();
   // runs only after delay
   // update motor pattern point
   m_mainData.mainCounter = updateCounter(getWalkingModeInTask(), m_mainData.masterDevice);
@@ -335,31 +346,15 @@ void _doCycle(void) {
   updateCenterCount();
 }
 
-// set robot state
-void _setState(unsigned char newState) {
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      // drive
-    }
-    break;
-    case ROBOT_INO:
-    {
-      // walk
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      // crawl
-    }
-    break;
-    default:
-    break;
-  }
-}
-
 // attach components
 void _attachComponents(void) {
+  // short liftPoint
+  attachCounter();
+  if (component.generic) {
+    attachTasks();
+    // short sizeDevider, bool turning, bool counting
+    attachPath(MAIN_ROBOT_SIZE_DEVIDER, true, false);
+  }
   if (component.center) {
     // bool frontE, bool rearE
     attachCenter(true, true);
@@ -372,19 +367,19 @@ void _attachComponents(void) {
     attachGyro();
   }
   if (component.inputs) {
-    // short legHight, bool sensorsEnabled, bool extraInputsEnabled
-    attachInputs(HIGHT_DEFAULT, true, false);
+    // short legHight, short sizeDevider, bool sensorsEnabled, bool extraInputsEnabled
+    attachInputs(SERVO_HIGHT_DEFAULT, MAIN_ROBOT_SIZE_DEVIDER, true, false);
   }
   if (component.serial) {
     attachSerial();
   }
   if (component.servo) {
-    // short legHight, short legLift, bool sideBallance
-    attachLifts(HIGHT_DEFAULT, LIFT_DEFAULT, false);
-    // short shiftForward, bool walk, bool ballance
-    attachShift(0, true, false);
-    // bool frontE, bool rearE
-    attachServo(true, true);
+    // short legHight, bool sideBallance
+    attachLifts(SERVO_HIGHT_DEFAULT, true);
+    // short quickShiftMultiplier, bool walk, bool ballance
+    attachShift(getQuickShiftMuliplierCounter(), true, true);
+    // bool frontE, bool rearE, bool extraE
+    attachServo(true, true, true);
   }
   if (component.switches) {
     // bool swFrontEnable, bool swRearEnable
@@ -394,15 +389,12 @@ void _attachComponents(void) {
     //char wSpeed
     attachWheels(6);
   }
-  if (component.generic) {
-    attachTasks();
-    // short stepSize, bool turning, bool counting
-    attachPath(STEP_SIZE, true, false);
-  }
 }
 
 // init components
 void _initComponents(bool calibrationMode) {
+  // init counter
+  initCounter();
   // init shift 
   initShift();
   // init lifts
@@ -427,7 +419,7 @@ void _initComponents(bool calibrationMode) {
     setFlippedGyro(true);
     //setFlippedServo(-1, -1);
     setCenter(0);
-    setServo(HIGHT_LOW, HIGHT_LOW, 20);
+    setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
   }
   // init gyro
   initGyro(calibrationMode);
@@ -449,9 +441,7 @@ void _initComponents(bool calibrationMode) {
     setDistancePath(100); // cm
     updatePath(0);
     // === sets m_legsValue.xx.speed
-    // init counter
-    // short mainCycle
-    initCounter(MAIN_COUNTER_END);
+    initSerial();
   }
 }
 
@@ -461,6 +451,9 @@ void setup() {
   delay(200);
   Serial.begin(9600);
   delay(500);
+  // Start wire
+  Wire.begin();                      
+  delay(100);
   // attach software components
   _attachComponents();
   // check button press
@@ -479,7 +472,7 @@ void setup() {
   updateGyroCount(0);
   delay(200);
   setCenter(0);
-  setServo(HIGHT_LOW, HIGHT_LOW, 20);
+  setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
@@ -516,24 +509,7 @@ void loop() {
         setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
       }
       // check for robot state
-      if (!getSurfaceFlatGyro() || (getExtraInputState() == EX_STEP_UP_BIG) || (getExtraInputState() == EX_STEP_DOWN_BIG)) {
-        stateCounter = STATE_COUNTER * 2;
-      } else if (getSurfaceBumpyGyro() || (getExtraInputState() == EX_STEP_UP_SMALL) || (getExtraInputState() == EX_STEP_DOWN_SMALL)) {
-        if (stateCounter < STATE_COUNTER) {
-          stateCounter = STATE_COUNTER;
-        }
-      }
-      // set state
-      if (stateCounter == 0) {
-        _setState(ROBOT_NORM);
-      } else {
-        if (stateCounter > STATE_COUNTER) {
-          _setState(ROBOT_CRAWL);
-        } else {
-          _setState(ROBOT_INO);
-        }
-        stateCounter --;
-      }
+      stateUpdate(getSurfaceBumpyGyro(), getSurfaceFlatGyro(), getExtraInputState());
       _doCycle();
     } else {
       // quick and non walking patterns

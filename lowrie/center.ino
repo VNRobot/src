@@ -6,30 +6,21 @@ Robot center motors motion patterns
 */
 
 // center motor limit
-#define CENTER_ANGLE_MAX     10
+#define CENTER_ANGLE_MAX              10
 // direction sensitivity
-#define TURNING_SENSITIVITY 2
+#define CENTER_TURNING_SENSITIVITY    2
 // turning mutiplier
-#define TURNING_MULIPLIER    6
-// legs geometry in mm to compensate hight when turning
-#define LEG_EXTRA_SIDE          18
-#define LEG_EXTRA_HIGHT         20
+#define CENTER_TURNING_MULIPLIER      6
+// calibration angle
+#define CENTER_CALIBRATION_ANGLE_MIN   -15
+#define CENTER_CALIBRATION_ANGLE_MAX   15
 
-// pin numbers for servo motors
-enum cPinsServo {
-  CT1_MOTOR = 4,
-  CT2_MOTOR = 5
-};
 
 // structure for center motors
 struct center {
   char front;
   char rear;
 };
-
-// init servo library
-Servo servo_ct_1;
-Servo servo_ct_2;
 
 // motors attached flag
 bool centerAttached = false;
@@ -39,12 +30,8 @@ centers centerSetValue = {0, 0};
 center centerCalibrationData = {0, 0};
 // servo motor value
 short centerMotorAngleValue[2] = {0, 0};
-// dynamic ballance
-//center dynamicCenterBallance = {0, 0};
 // center motor value for turning/shifting positive - outside
 center centerValue = {0, 0};
-// ballance correction
-//center centerCorrect = {0, 0};
 // direction to turn front
 short directionFront = 0;
 // direction to turn rear
@@ -72,10 +59,10 @@ short _limitCenterMotorValue(short mAngle) {
 // do servo pwm cycle 500, 2500
 void _doPWMCenter(void) {
   if (frontCenterEnabled) {
-    servo_ct_1.write(centerMotorAngleValue[0]);
+    servo_ex_3.write(centerMotorAngleValue[0]);
   }
   if (rearCenterEnabled) {
-    servo_ct_2.write(centerMotorAngleValue[1]);
+    servo_ex_4.write(centerMotorAngleValue[1]);
   }
 }
 
@@ -89,13 +76,13 @@ void attachCenter(bool frontE, bool rearE) {
     centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
     // init motors one by one
     if (frontCenterEnabled) {
-      servo_ct_1.attach(CT1_MOTOR, 500, 2500);
-      servo_ct_1.write(centerMotorAngleValue[0]);
+      servo_ex_3.attach(EX3_MOTOR, 500, 2500);
+      servo_ex_3.write(centerMotorAngleValue[0]);
       delay(100);
     }
     if (rearCenterEnabled) {
-      servo_ct_2.attach(CT2_MOTOR, 500, 2500);
-      servo_ct_2.write(centerMotorAngleValue[1]);
+      servo_ex_4.attach(EX4_MOTOR, 500, 2500);
+      servo_ex_4.write(centerMotorAngleValue[1]);
       delay(100);
     }
     centerAttached = true;
@@ -129,8 +116,8 @@ void initCenter(bool calibrationMode) {
           {
             if (frontCenterEnabled) {
               centerCalibrationData.front ++;
-              if (centerCalibrationData.front > CALIBRATION_ANGLE_MAX) {
-                centerCalibrationData.front = CALIBRATION_ANGLE_MIN;
+              if (centerCalibrationData.front > CENTER_CALIBRATION_ANGLE_MAX) {
+                centerCalibrationData.front = CENTER_CALIBRATION_ANGLE_MIN;
               }
             } else {
               calibrationStage ++;
@@ -141,8 +128,8 @@ void initCenter(bool calibrationMode) {
           {
             if (rearCenterEnabled) {
               centerCalibrationData.rear ++;
-              if (centerCalibrationData.rear > CALIBRATION_ANGLE_MAX) {
-                centerCalibrationData.rear = CALIBRATION_ANGLE_MIN;
+              if (centerCalibrationData.rear > CENTER_CALIBRATION_ANGLE_MAX) {
+                centerCalibrationData.rear = CENTER_CALIBRATION_ANGLE_MIN;
               }
             } else {
               calibrationStage ++;
@@ -176,10 +163,10 @@ void initCenter(bool calibrationMode) {
 void detachCenter(void) {
   if (centerAttached) {
     if (frontCenterEnabled) {
-      servo_ct_1.detach();
+      servo_ex_3.detach();
     }
     if (rearCenterEnabled) {
-      servo_ct_2.detach();
+      servo_ex_4.detach();
     }
     centerAttached = false;
     _doPWMCenter();
@@ -217,7 +204,6 @@ void setDirectionCenter(char direction) {
   }
 }
 
-// set side shift // 0.42 servo reduction // ((HIGHT_DEFAULT / 2) + 18) * 2 * 3.14    l=502
 // approx 1 mm shift for 1 deg
 // set side shift. in mm
 void setSideShiftCenter(short direction) {
@@ -236,7 +222,7 @@ void setSideShiftCenter(short direction) {
 // move center motors.
 void updateCenterCount(void) {
   if (centerAttached) {
-    if (directionFront > TURNING_SENSITIVITY) {
+    if (directionFront > CENTER_TURNING_SENSITIVITY) {
       // turn front right
       if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
         // move leg to the side
@@ -249,7 +235,7 @@ void updateCenterCount(void) {
           centerValue.front --;
         }
       }
-    } else if (directionFront < -TURNING_SENSITIVITY) {
+    } else if (directionFront < -CENTER_TURNING_SENSITIVITY) {
       // turn front left
       if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
         // move leg to the side
@@ -277,7 +263,7 @@ void updateCenterCount(void) {
         }
       }
     }
-    if (directionRear > TURNING_SENSITIVITY) {
+    if (directionRear > CENTER_TURNING_SENSITIVITY) {
       // turn rear right
       if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
         // move leg to the side
@@ -290,7 +276,7 @@ void updateCenterCount(void) {
           centerValue.rear --;
         }
       }
-    } else if (directionRear < -TURNING_SENSITIVITY) {
+    } else if (directionRear < -CENTER_TURNING_SENSITIVITY) {
       // turn rear left
       if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
         // move leg to the side
@@ -319,36 +305,12 @@ void updateCenterCount(void) {
       }
     }
     // real angle
-    m_centerAngle.front = ((centerSetValue.front + centerValue.front * TURNING_MULIPLIER) * 10) / 24;
-    m_centerAngle.rear = ((centerSetValue.rear + centerValue.rear * TURNING_MULIPLIER) * 10) / 24;
+    m_centerAngle.front = ((centerSetValue.front + centerValue.front * CENTER_TURNING_MULIPLIER) * 10) / 24;
+    m_centerAngle.rear = ((centerSetValue.rear + centerValue.rear * CENTER_TURNING_MULIPLIER) * 10) / 24;
     // set motor angle
     centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - m_centerAngle.front);
     centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - m_centerAngle.rear);
     // move motors
     _doPWMCenter();
   }
-}
-
-// get leg angle compensation in mm
-short getCenterCompensationFront(void) {
-  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
-  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
-  return (short)(HIGHT_DEFAULT - (cos(((m_centerAngle.front + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
-}
-
-// get leg angle compensation in mm
-short getCenterCompensationRear(void) {
-  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
-  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
-  return -(short)(HIGHT_DEFAULT - (cos(((m_centerAngle.rear + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
-}
-
-// get leg angle compensation in mm
-centers getCenterCompensation(void) {
-  centers compensation = {0, 0};
-  float hight = HIGHT_DEFAULT + LEG_EXTRA_HIGHT;
-  float defaultAngle = (asin(LEG_EXTRA_SIDE / hight) * 180.0) / 3.14;
-  compensation.front = (short)(HIGHT_DEFAULT - (cos(((m_centerAngle.front + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
-  compensation.rear = (short)(HIGHT_DEFAULT - (cos(((m_centerAngle.rear + defaultAngle) * 3.14) / 180.0)) * HIGHT_DEFAULT);
-  return compensation;
 }

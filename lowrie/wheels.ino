@@ -5,13 +5,10 @@ Arduino nanos
 Robot wheels motors motion patterns
 */
 
-// pin numbers for servo motors
-enum cPinsWheels {
-  FL_WHEEL = 2,
-  FR_WHEEL = 3,
-  RL_WHEEL = 4,
-  RR_WHEEL = 5
-};
+// calibration angle
+#define WHEELS_CALIBRATION_ANGLE_MIN   -15
+#define WHEELS_CALIBRATION_ANGLE_MAX   15
+
 // legs motors structure
 struct allWheels {
   char fl;
@@ -19,12 +16,6 @@ struct allWheels {
   char rl;
   char rr;
 };
-
-// init servo library
-Servo servo_w_fl;
-Servo servo_w_fr;
-Servo servo_w_rl;
-Servo servo_w_rr;
 
 // motors attached flag
 bool wheelsAttached = false;
@@ -54,10 +45,10 @@ short _limitWheelSpeedValue(short mSpeed) {
 // do servo pwm cycle 500, 2500
 void _doPWMWheels(void) {
   if (wheelsAttached) {
-    servo_w_fl.write(wheelsMotorSpeedValue[0]);
-    servo_w_fr.write(wheelsMotorSpeedValue[1]);
-    servo_w_rl.write(wheelsMotorSpeedValue[2]);
-    servo_w_rr.write(wheelsMotorSpeedValue[3]);
+    servo_ex_1.write(wheelsMotorSpeedValue[0]);
+    servo_ex_2.write(wheelsMotorSpeedValue[1]);
+    servo_ex_3.write(wheelsMotorSpeedValue[2]);
+    servo_ex_4.write(wheelsMotorSpeedValue[3]);
   }
 }
 
@@ -71,17 +62,17 @@ void attachWheels(char wSpeed) {
     wheelsMotorSpeedValue[2] = _limitWheelSpeedValue(90); 
     wheelsMotorSpeedValue[3] = _limitWheelSpeedValue(90); 
     // init motors one by one
-    servo_w_fl.attach(FL_WHEEL, 500, 2500);
-    servo_w_fl.write(wheelsMotorSpeedValue[0]);
+    servo_ex_1.attach(EX1_MOTOR, 500, 2500);
+    servo_ex_1.write(wheelsMotorSpeedValue[0]);
     delay(100);
-    servo_w_fr.attach(FR_WHEEL, 500, 2500);
-    servo_w_fr.write(wheelsMotorSpeedValue[1]);
+    servo_ex_2.attach(EX2_MOTOR, 500, 2500);
+    servo_ex_2.write(wheelsMotorSpeedValue[1]);
     delay(100);
-    servo_w_rl.attach(RL_WHEEL, 500, 2500);
-    servo_w_rl.write(wheelsMotorSpeedValue[2]);
+    servo_ex_3.attach(EX3_MOTOR, 500, 2500);
+    servo_ex_3.write(wheelsMotorSpeedValue[2]);
     delay(100);
-    servo_w_rr.attach(RR_WHEEL, 500, 2500);
-    servo_w_rr.write(wheelsMotorSpeedValue[3]);
+    servo_ex_4.attach(EX4_MOTOR, 500, 2500);
+    servo_ex_4.write(wheelsMotorSpeedValue[3]);
     delay(100);
     wheelsAttached = true;
   }
@@ -117,32 +108,32 @@ void initWheels(bool calibrationMode) {
           case 1:
           {
             wheelsCalibrationData.fl ++;
-            if (wheelsCalibrationData.fl > CALIBRATION_ANGLE_MAX) {
-              wheelsCalibrationData.fl = CALIBRATION_ANGLE_MIN;
+            if (wheelsCalibrationData.fl > WHEELS_CALIBRATION_ANGLE_MAX) {
+              wheelsCalibrationData.fl = WHEELS_CALIBRATION_ANGLE_MIN;
             }
           }
           break;
           case 2:
           {
             wheelsCalibrationData.fr ++;
-            if (wheelsCalibrationData.fr > CALIBRATION_ANGLE_MAX) {
-              wheelsCalibrationData.fr = CALIBRATION_ANGLE_MIN;
+            if (wheelsCalibrationData.fr > WHEELS_CALIBRATION_ANGLE_MAX) {
+              wheelsCalibrationData.fr = WHEELS_CALIBRATION_ANGLE_MIN;
             }
           }
           break;
           case 3:
           {
             wheelsCalibrationData.rl ++;
-            if (wheelsCalibrationData.rl > CALIBRATION_ANGLE_MAX) {
-              wheelsCalibrationData.rl = CALIBRATION_ANGLE_MIN;
+            if (wheelsCalibrationData.rl > WHEELS_CALIBRATION_ANGLE_MAX) {
+              wheelsCalibrationData.rl = WHEELS_CALIBRATION_ANGLE_MIN;
             }
           }
           break;
           case 4:
           {
             wheelsCalibrationData.rr ++;
-            if (wheelsCalibrationData.rr > CALIBRATION_ANGLE_MAX) {
-              wheelsCalibrationData.rr = CALIBRATION_ANGLE_MIN;
+            if (wheelsCalibrationData.rr > WHEELS_CALIBRATION_ANGLE_MAX) {
+              wheelsCalibrationData.rr = WHEELS_CALIBRATION_ANGLE_MIN;
             }
           }
           break;
@@ -178,10 +169,10 @@ void initWheels(bool calibrationMode) {
 // detach hardware
 void detachWheels(void) {
   if (wheelsAttached) {
-    servo_w_fl.detach();
-    servo_w_fr.detach();
-    servo_w_rl.detach();
-    servo_w_rr.detach();
+    servo_ex_1.detach();
+    servo_ex_2.detach();
+    servo_ex_3.detach();
+    servo_ex_4.detach();
     wheelsAttached = false;
     delay(100);
   }
