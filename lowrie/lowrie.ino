@@ -257,22 +257,22 @@ void _doQuickAndOther(char patternNow) {
     break;
     case Q_DORECOVER:
     {
-      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
+      //setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
       if (m_gyroState.aRollAverage < 0) {
         //setFlippedServo(1, -1);
-        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
         //setFlippedServo(-1, 1);
-        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
       } else {
         //setFlippedServo(-1, 1);
-        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
         //setFlippedServo(1, -1);
-        setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
       }
-      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
+      //setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
       setFlippedGyro(false);
       //setFlippedServo(1, 1);
-      setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
+      setServo(SERVO_HIGHT_DEFAULT, SERVO_HIGHT_DEFAULT, 20);
     }
     break;
     case Q_DOFLIP:
@@ -375,9 +375,9 @@ void _attachComponents(void) {
   }
   if (component.servo) {
     // short legHight, bool sideBallance
-    attachLifts(SERVO_HIGHT_DEFAULT, true);
+    attachLifts(SERVO_HIGHT_DEFAULT, false);
     // short quickShiftMultiplier, bool walk, bool ballance
-    attachShift(getQuickShiftMuliplierCounter(), true, true);
+    attachShift(getQuickShiftMuliplierCounter(), true, false);
     // bool frontE, bool rearE, bool extraE
     attachServo(true, true, true);
   }
@@ -416,10 +416,11 @@ void _initComponents(bool calibrationMode) {
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
-    setFlippedGyro(true);
+    //setFlippedGyro(true);
     //setFlippedServo(-1, -1);
     setCenter(0);
     setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
+    delay(1000);
   }
   // init gyro
   initGyro(calibrationMode);
@@ -442,6 +443,27 @@ void _initComponents(bool calibrationMode) {
     updatePath(0);
     // === sets m_legsValue.xx.speed
     initSerial();
+  }
+}
+
+// set robot state
+void _setState(char newState) {
+  setServoState(newState);
+  switch (newState) {
+    case ROBOT_NORM:
+    {
+    }
+    break;
+    case ROBOT_INO:
+    {
+    }
+    break;
+    case ROBOT_CRAWL:
+    {
+    }
+    break;
+    default:
+    break;
   }
 }
 
@@ -509,7 +531,7 @@ void loop() {
         setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
       }
       // check for robot state
-      stateUpdate(getSurfaceBumpyGyro(), getSurfaceFlatGyro(), getExtraInputState());
+      _setState(stateUpdate(getSurfaceBumpyGyro(), getSurfaceFlatGyro(), getExtraInputState()));
       _doCycle();
     } else {
       // quick and non walking patterns

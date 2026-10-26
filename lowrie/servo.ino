@@ -46,7 +46,8 @@ bool rearLegsEnable = false;
 bool extraLegsEnable = false;
 // ride mode
 bool rideEnabled = false;
-
+// servo state
+char servoState = ROBOT_NORM;
 /*
 uses
 m_legsValue
@@ -191,16 +192,16 @@ void attachServo(bool frontE, bool rearE, bool extraE) {
     }
     if (extraLegsEnable) {
       servo_ex_1.attach(EX1_MOTOR, 500, 2500);
-      servo_ex_1.write(servoMotorCenterPoint[0]);
+      servo_ex_1.write(servoMotorCenterPoint[8]);
       delay(100);
       servo_ex_2.attach(EX2_MOTOR, 500, 2500);
-      servo_ex_2.write(servoMotorCenterPoint[2]);
+      servo_ex_2.write(servoMotorCenterPoint[9]);
       delay(100);
       servo_ex_3.attach(EX3_MOTOR, 500, 2500);
-      servo_ex_3.write(servoMotorCenterPoint[1]);
+      servo_ex_3.write(servoMotorCenterPoint[10]);
       delay(100);
       servo_ex_4.attach(EX4_MOTOR, 500, 2500);
-      servo_ex_4.write(servoMotorCenterPoint[3]);
+      servo_ex_4.write(servoMotorCenterPoint[11]);
       delay(100);
     }
     servoAttached = true;
@@ -550,4 +551,9 @@ void rideModeServo(bool doRide) {
       rideEnabled = false;
     }
   }
+}
+
+// set servo state
+void setServoState(char state) {
+  servoState = state;
 }

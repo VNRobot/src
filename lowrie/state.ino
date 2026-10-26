@@ -9,33 +9,12 @@ state file
 #define STATE_COUNTER                 2
 
 // state counter
-char stateCounter = 0;
-
-// set robot state
-void _setState(unsigned char newState) {
-  switch (newState) {
-    case ROBOT_NORM:
-    {
-      // drive
-    }
-    break;
-    case ROBOT_INO:
-    {
-      // walk
-    }
-    break;
-    case ROBOT_CRAWL:
-    {
-      // crawl
-    }
-    break;
-    default:
-    break;
-  }
-}
+char stateCounter = STATE_COUNTER * 2;
 
 // update state
-void stateUpdate(bool surfaceBumpy, bool surfaceFlat, char extraInputState) {
+char  stateUpdate(bool surfaceBumpy, bool surfaceFlat, char extraInputState) {
+  // state value
+  char stateValue = ROBOT_NORM;
   // check for robot state
   if (!surfaceFlat || (extraInputState == EX_STEP_UP_BIG) || (extraInputState == EX_STEP_DOWN_BIG)) {
     stateCounter = STATE_COUNTER * 2;
@@ -46,13 +25,14 @@ void stateUpdate(bool surfaceBumpy, bool surfaceFlat, char extraInputState) {
   }
   // set state
   if (stateCounter == 0) {
-    _setState(ROBOT_NORM);
+    stateValue = ROBOT_NORM;
   } else {
     if (stateCounter > STATE_COUNTER) {
-      _setState(ROBOT_CRAWL);
+      stateValue = ROBOT_CRAWL;
     } else {
-      _setState(ROBOT_INO);
+      stateValue = ROBOT_INO;
     }
     stateCounter --;
   }
+  return stateValue;
 }

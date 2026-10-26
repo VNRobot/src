@@ -136,3 +136,8 @@ void setWalkShiftCount(bool walkingModeNow) {
     }
   }
 }
+
+// set shift forward
+void setShiftForward(short shiftForwrd) {
+  shParam.shiftForward = SHIFT_FORWARD + shiftForwrd;
+}
