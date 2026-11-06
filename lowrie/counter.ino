@@ -10,17 +10,25 @@ Robot legs phase counters
 // main counter
 #define MAIN_COUNTER_END              44
 // leg lift time point
-#define LIFT_TIME_POINT               5
+#define LIFT_TIME_POINT               3
 
 // structure for timing
 typedef struct timing {
   short fullCycle;
   short halfCycle;
   short liftPoint;
+  short extraShift;
+  short extraShiftNow;
 } timing;
 
 // main timing 44 22
-timing mainTiming = {MAIN_COUNTER_END, MAIN_COUNTER_END / 2, LIFT_TIME_POINT};
+timing mainTiming = {
+  MAIN_COUNTER_END,         // short fullCycle;
+  MAIN_COUNTER_END / 2,     // short halfCycle;
+  LIFT_TIME_POINT,          // short liftPoint;
+  0,                        // short extraShift;
+  0                         // short extraShiftNow;
+};
 
 /*
 uses
@@ -86,12 +94,26 @@ char updateCounter(bool walkingModeNow, bool masterCounter) {
   }
   m_legsValue.rr.count = m_legsValue.fl.count;
   m_legsValue.rl.count = m_legsValue.fr.count;
-  // set legs state
+  // extra time shift
+  if (mainTiming.extraShiftNow > mainTiming.extraShift) {
+    mainTiming.extraShiftNow --;
+  } else if (mainTiming.extraShiftNow < mainTiming.extraShift) {
+    mainTiming.extraShiftNow ++;
+  }
+  // set legs state using count value
   _setlegsState(walkingModeNow);
   if (masterCounter) {
-    return (char)m_legsValue.fl.count;
+    short extraCount = m_legsValue.fl.count - mainTiming.extraShiftNow;
+    if (extraCount < 0) {
+      extraCount += mainTiming.fullCycle;
+    }
+    return extraCount;
   } else {
-    return (char)m_legsValue.fr.count;
+    short extraCount = m_legsValue.fr.count - mainTiming.extraShiftNow;
+    if (extraCount < 0) {
+      extraCount += mainTiming.fullCycle;
+    }
+    return extraCount;
   }
 }
 
@@ -113,4 +135,9 @@ void doSleepHalfTime(void) {
 // get leg lifted speed
 short getQuickShiftMuliplierCounter(void) {
   return (mainTiming.halfCycle - mainTiming.liftPoint) / mainTiming.liftPoint;
+}
+
+// set extra legs time shift
+void setExtraCounter(short eShift) {
+  mainTiming.extraShift = eShift;
 }

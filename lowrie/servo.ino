@@ -5,6 +5,10 @@ Arduino nano
 Operates servo motors
 */
 
+// nalf distance between motors in mm
+#define SERVO_SPACE_L                     17
+// extra hight for rear motors
+#define SERVO_SPACE_H                     22
 // calibration angle
 #define SERVO_CALIBRATION_ANGLE_MIN   -15
 #define SERVO_CALIBRATION_ANGLE_MAX   15
@@ -29,7 +33,7 @@ allCalMotors servoCalibrationData = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor value
 short servoMotorAngleValue[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 // servo motor center point
-short servoMotorCenterPoint[12] = {60, 120, 120, 60, 60, 120, 120, 60, 60, 120, 60, 120};
+short servoMotorCenterPoint[12] = {60, 120, 120, 60, 60, 120, 120, 60, 60, 120, 120, 60};
 // motors attached flag
 bool servoAttached = false;
 // motors init values
@@ -56,44 +60,40 @@ m_getButtonPressed()
 
 // calculate motor 1 and motor 2 angles
 short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
-  float Lval = (float)Hval;
-  float AngleB = 0;
-  float AngleC = 0;
   // for first motor mirror shift
   if (motorNum == 1) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval -= 12; // nalf distance between motors in mm
-  Lval = sqrt(Hval * Hval + Sval * Sval);
-  AngleC = (acos(Hval / Lval) * 180) / 3.14;
+  Sval -= SERVO_SPACE_L; // nalf distance between motors in mm
+  float Lval = (float)sqrt(Hval * Hval + Sval * Sval);
+  float AngleC = (float)((acos(Hval / Lval) * 180) / 3.14);
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 105 * 105) / (2 * Lval * 70)) * 180) / 3.14;    6125
-  AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
-  return (short)(90 - AngleB - AngleC);
+  float AngleB = (float)((acos((Lval * Lval + 70.0 * 70.0 - 105.0 * 105.0) / (2 * Lval * 70.0)) * 180) / 3.14);
+  //AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
+  return (int)(90 - AngleB - AngleC);
 }
 
 // calculate motor 1 and motor 2 angles
 short _calculateMotorAngleExtra(int Hval, int Sval, char motorNum) {
-  float Lval = (float)Hval;
-  float AngleB = 0;
-  float AngleC = 0;
+  // extra hight for rear motors
+  Hval += SERVO_SPACE_H;
   // for first motor mirror shift
   if (motorNum == 1) {
     Sval = -Sval;
   }
   // calculate Lvalue and angles
-  Sval += 6; // nalf distance between motors in mm
-  Lval = sqrt(Hval * Hval + Sval * Sval);
-  AngleC = (acos(Hval / Lval) * 180) / 3.14;
+  Sval -= SERVO_SPACE_L; // nalf distance between motors in mm
+  float Lval = (float)sqrt(Hval * Hval + Sval * Sval);
+  float AngleC = (float)((acos(Hval / Lval) * 180) / 3.14);
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  //AngleB = (acos((Lval * Lval + 70 * 70 - 105 * 105) / (2 * Lval * 70)) * 180) / 3.14;    6125
-  AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
-  return (short)(90 - AngleB - AngleC);
+  float AngleB = (float)((acos((Lval * Lval + 70.0 * 70.0 - 105.0 * 105.0) / (2 * Lval * 70.0)) * 180) / 3.14);
+  //AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
+  return (int)(90 - AngleB - AngleC);
 }
 
 // limit angle value
@@ -141,7 +141,7 @@ void _moveServosQuick(short hightL, short shiftL, short hightR, short shiftR) {
   mValue1 = _calculateMotorAngleExtra((int)hightL, (int)(shiftL), 1);
   mValue2 = _calculateMotorAngleExtra((int)hightL, (int)(shiftL), 2);
   servoMotorAngleValue[8] = flippedL * mValue1;
-  servoMotorAngleValue[10] = flippedL * mValue1;
+  servoMotorAngleValue[9] = - flippedL * mValue2;
   mValue1 = _calculateMotorAngle((int)hightR, (int)(shiftR), 1);
   mValue2 = _calculateMotorAngle((int)hightR, (int)(shiftR), 2);
   servoMotorAngleValue[2] = - flippedR * mValue1;
@@ -151,7 +151,7 @@ void _moveServosQuick(short hightL, short shiftL, short hightR, short shiftR) {
   mValue1 = _calculateMotorAngleExtra((int)hightR, (int)(shiftR), 1);
   mValue2 = _calculateMotorAngleExtra((int)hightR, (int)(shiftR), 2);
   servoMotorAngleValue[9] = - flippedR * mValue1;
-  servoMotorAngleValue[11] = - flippedR * mValue1;
+  servoMotorAngleValue[11] = flippedR * mValue2;
   _doPWMServo();
 }
 

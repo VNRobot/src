@@ -118,15 +118,6 @@ typedef struct allLegs {
   leg rl;
   leg rr;
 } allLegs;
-// structure for four legs
-typedef struct quad {
-  short fl;
-  short fr;
-  short rl;
-  short rr;
-  bool enabledF;
-  bool enabledR;
-} quad;
 // structure for center motor
 typedef struct centers {
   short front;
@@ -165,8 +156,6 @@ typedef struct softwareComponents {
   bool inputs;
   bool serial;
   bool servo;
-  bool switches;
-  bool wheels;
   bool generic;
 } softwareComponents;
 
@@ -211,14 +200,12 @@ masterData m_mainData {
 //----------------------------------------------------------
 // components
 softwareComponents component {
-  false,              //bool center;
+  true,               //bool center;
   true,               //bool current;
   true,               //bool gyro;
   true,               //bool inputs;
   false,              //bool serial;
   true,               //bool servo;
-  false,              //bool switches;
-  false,              //bool wheels;
   true                //bool generic;
 };
 // variable for temporary use
@@ -301,7 +288,6 @@ void _doQuickAndOther(char patternNow) {
       setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
       detachServo();
       detachCenter();
-      detachWheels();
     }
     break;
     default:
@@ -353,7 +339,7 @@ void _attachComponents(void) {
   if (component.generic) {
     attachTasks();
     // short sizeDevider, bool turning, bool counting
-    attachPath(MAIN_ROBOT_SIZE_DEVIDER, true, false);
+    attachPath(MAIN_ROBOT_SIZE_DEVIDER, false, false);
   }
   if (component.center) {
     // bool frontE, bool rearE
@@ -368,7 +354,7 @@ void _attachComponents(void) {
   }
   if (component.inputs) {
     // short legHight, short sizeDevider, bool sensorsEnabled, bool extraInputsEnabled
-    attachInputs(SERVO_HIGHT_DEFAULT, MAIN_ROBOT_SIZE_DEVIDER, true, false);
+    attachInputs(SERVO_HIGHT_DEFAULT, MAIN_ROBOT_SIZE_DEVIDER, false, false);
   }
   if (component.serial) {
     attachSerial();
@@ -379,15 +365,7 @@ void _attachComponents(void) {
     // short quickShiftMultiplier, bool walk, bool ballance
     attachShift(getQuickShiftMuliplierCounter(), true, false);
     // bool frontE, bool rearE, bool extraE
-    attachServo(true, true, true);
-  }
-  if (component.switches) {
-    // bool swFrontEnable, bool swRearEnable
-    attachSwitches(true, true);
-  }
-  if (component.wheels) {
-    //char wSpeed
-    attachWheels(6);
+    attachServo(true, true, false);
   }
 }
 
@@ -403,14 +381,10 @@ void _initComponents(bool calibrationMode) {
   initInputs(calibrationMode);
   enableObstacleInputs(true);
   enableEdgeInputs(false);
-  // init switches inputs
-  initSwitches(calibrationMode);
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode);
   // init center servo motors
   initCenter(calibrationMode);
-  // init Wheels servo motors
-  initWheels(calibrationMode);
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -427,11 +401,15 @@ void _initComponents(bool calibrationMode) {
   // === sets m_gyroState
   if (calibrationMode) {
     // write software version
+#ifdef ESP32
+    EEPROM.write(0, m_mainData.robotVersion);
+    EEPROM.commit();
+#else
     EEPROM.update(0, m_mainData.robotVersion);
+#endif
     // disable motors
     detachServo();
     detachCenter();
-    detachWheels();
     delay(20000);
   } else {
     // explore mode
@@ -474,7 +452,7 @@ void setup() {
   Serial.begin(9600);
   delay(500);
   // Start wire
-  Wire.begin();                      
+  Wire.begin(); 
   delay(100);
   // attach software components
   _attachComponents();
@@ -522,13 +500,11 @@ void loop() {
         m_mainData.directionCorrection = getDirectionCharGyro();
         // update path
         updatePath(getDirectionGyro());
-        setDirectionCenter(-m_mainData.directionCorrection);
-        setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
+        setDirectionCenter(m_mainData.directionCorrection);
       } else {
         // set speed
         setSideSpeed(m_mainData.speedLeft, m_mainData.speedRight);
-        setDirectionCenter(m_mainData.directionCorrection);
-        setDirectionWheels(m_mainData.speedLeft, m_mainData.speedRight);
+        setDirectionCenter(-m_mainData.directionCorrection);
       }
       // check for robot state
       _setState(stateUpdate(getSurfaceBumpyGyro(), getSurfaceFlatGyro(), getExtraInputState()));
