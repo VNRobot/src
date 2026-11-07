@@ -59,10 +59,10 @@ short _limitCenterMotorValue(short mAngle) {
 // do servo pwm cycle 500, 2500
 void _doPWMCenter(void) {
   if (frontCenterEnabled) {
-    servo_ex_3.write(centerMotorAngleValue[0]);
+    servo_er_1.write(centerMotorAngleValue[0]);
   }
   if (rearCenterEnabled) {
-    servo_ex_4.write(centerMotorAngleValue[1]);
+    servo_er_2.write(centerMotorAngleValue[1]);
   }
 }
 
@@ -76,13 +76,13 @@ void attachCenter(bool frontE, bool rearE) {
     centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
     // init motors one by one
     if (frontCenterEnabled) {
-      servo_ex_3.attach(EX3_MOTOR, 500, 2500);
-      servo_ex_3.write(centerMotorAngleValue[0]);
+      servo_er_1.attach(ER1_MOTOR, 500, 2500);
+      servo_er_1.write(centerMotorAngleValue[0]);
       delay(100);
     }
     if (rearCenterEnabled) {
-      servo_ex_4.attach(EX4_MOTOR, 500, 2500);
-      servo_ex_4.write(centerMotorAngleValue[1]);
+      servo_er_2.attach(ER2_MOTOR, 500, 2500);
+      servo_er_2.write(centerMotorAngleValue[1]);
       delay(100);
     }
     centerAttached = true;
@@ -163,10 +163,10 @@ void initCenter(bool calibrationMode) {
 void detachCenter(void) {
   if (centerAttached) {
     if (frontCenterEnabled) {
-      servo_ex_3.detach();
+      servo_er_1.detach();
     }
     if (rearCenterEnabled) {
-      servo_ex_4.detach();
+      servo_er_2.detach();
     }
     centerAttached = false;
     _doPWMCenter();

@@ -20,10 +20,10 @@ Main file
 
 // pin numbers for servo motors
 enum dPinsServo {
-  EX1_MOTOR = 2,
-  EX2_MOTOR = 3,
-  EX3_MOTOR = 4,
-  EX4_MOTOR = 5,
+  EL1_MOTOR = 2,
+  EL2_MOTOR = 3,
+  ER1_MOTOR = 4,
+  ER2_MOTOR = 5,
   FL1_MOTOR = 6,
   FL2_MOTOR = 7,
   FR1_MOTOR = 8,
@@ -110,6 +110,12 @@ typedef struct leg {
   short shift;
   char state;
   char count;
+  char angle1;
+  char angle2;
+  char calibration1;
+  char calibration2;
+  char center1;
+  char center2;
 } leg;
 // legs motors structure
 typedef struct allLegs {
@@ -117,6 +123,8 @@ typedef struct allLegs {
   leg fr;
   leg rl;
   leg rr;
+  leg el;
+  leg er;
 } allLegs;
 // structure for center motor
 typedef struct centers {
@@ -162,10 +170,10 @@ typedef struct softwareComponents {
 //---------------servo motors-------------------------------
 
 // init servo library
-Servo servo_ex_1;
-Servo servo_ex_2;
-Servo servo_ex_3;
-Servo servo_ex_4;
+Servo servo_el_1;
+Servo servo_el_2;
+Servo servo_er_1;
+Servo servo_er_2;
 Servo servo_fl_1;
 Servo servo_fl_2;
 Servo servo_fr_1;
@@ -181,10 +189,12 @@ centers m_centerAngle = {0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0};
+allLegs m_legsValue = {SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60};
 // master data
 masterData m_mainData {
   25,                 //char robotVersion;           // software version
@@ -234,32 +244,26 @@ void _doQuickAndOther(char patternNow) {
     break;
     case Q_DOLOW:
     {
-      setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
+      setServo(0, 0, 20);
     }
     break;
     case Q_DOSTAND:
     {
-      setServo(SERVO_HIGHT_DEFAULT, SERVO_HIGHT_DEFAULT, 20);
+      setServo(45, 45, 20);
     }
     break;
     case Q_DORECOVER:
     {
-      //setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
+      //setServoQuick(0, 0, 500);
       if (m_gyroState.aRollAverage < 0) {
-        //setFlippedServo(1, -1);
-        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
-        //setFlippedServo(-1, 1);
-        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(0, 80, 500);
       } else {
-        //setFlippedServo(-1, 1);
-        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
-        //setFlippedServo(1, -1);
-        //setServoQuick(SERVO_HIGHT_MAX, SERVO_HIGHT_MAX, 500);
+        //setServoQuick(80, 0, 500);
       }
-      //setServoQuick(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 500);
+      //setServoQuick(0, 0, 500);
       setFlippedGyro(false);
-      //setFlippedServo(1, 1);
-      setServo(SERVO_HIGHT_DEFAULT, SERVO_HIGHT_DEFAULT, 20);
+      //setFlippedGeometry(1, 1);
+      setServo(45, 45, 20);
     }
     break;
     case Q_DOFLIP:
@@ -268,10 +272,10 @@ void _doQuickAndOther(char patternNow) {
     {
       if (m_gyroState.aUpsideAverage < 0) {
         setFlippedGyro(true);
-        //setFlippedServo(-1, -1);
+        //setFlippedGeometry(-1, -1);
       } else {
         setFlippedGyro(false);
-        //setFlippedServo(1, 1);
+        //setFlippedGeometry(1, 1);
       }
     }
     break;
@@ -285,7 +289,7 @@ void _doQuickAndOther(char patternNow) {
     case Q_DODOWN:
     {
       // disable motors
-      setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
+      setServo(-10, -10, 20);
       detachServo();
       detachCenter();
     }
@@ -305,6 +309,9 @@ void _doCycle(void) {
   // set legs lift
   setWalkLiftsCount(getWalkingModeInTask(), m_centerAngle.front);
   // === sets m_legsValue.xx.hight
+  // calculate motor angle
+  updateLegsGeometry();
+  // === sets m_legsValue.xx.anglex
   updateLegsServoCount();
   // === motors set ===
   // do communication
@@ -364,6 +371,8 @@ void _attachComponents(void) {
     attachLifts(SERVO_HIGHT_DEFAULT, false);
     // short quickShiftMultiplier, bool walk, bool ballance
     attachShift(getQuickShiftMuliplierCounter(), true, false);
+    // bool extraF, bool extraR, bool extraE
+    attachGeometry(false, false, false);
     // bool frontE, bool rearE, bool extraE
     attachServo(true, true, false);
   }
@@ -377,6 +386,8 @@ void _initComponents(bool calibrationMode) {
   initShift();
   // init lifts
   initLifts();
+  // init geometry
+  initGeometry();
   // init sensors inputs
   initInputs(calibrationMode);
   enableObstacleInputs(true);
@@ -390,10 +401,8 @@ void _initComponents(bool calibrationMode) {
   if (calibrationMode) {
     delay(1000);
     // lift legs for gyro calibration
-    //setFlippedGyro(true);
-    //setFlippedServo(-1, -1);
     setCenter(0);
-    setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
+    setServo(-10, -10, 20);
     delay(1000);
   }
   // init gyro
@@ -426,7 +435,6 @@ void _initComponents(bool calibrationMode) {
 
 // set robot state
 void _setState(char newState) {
-  setServoState(newState);
   switch (newState) {
     case ROBOT_NORM:
     {
@@ -472,7 +480,7 @@ void setup() {
   updateGyroCount(0);
   delay(200);
   setCenter(0);
-  setServo(SERVO_HIGHT_LOW, SERVO_HIGHT_LOW, 20);
+  setServo(45, 45, 20);
   // update current readings
   updateCurrentCount(0);
   // read proximity sensors
