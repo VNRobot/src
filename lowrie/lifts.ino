@@ -100,9 +100,8 @@ void initLifts(void) {
 }
 
 // get servo motor steps for speed 3 to - 3
-void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
+void setWalkLiftsCount(bool walkingModeNow) {
   if (liftsAttached) {
-    angleCenter -= angleCenter / 3;
     if (patParam.sideBallanceEnabled) {
       if (m_gyroState.aRollNow > 1) {
         if (sideBallance < SIDE_BALLANCE_MAX) {
@@ -131,15 +130,15 @@ void setWalkLiftsCount(bool walkingModeNow, short angleCenter) {
       legLiftingRL = _setlegLifting(legLiftingRL, m_legsValue.rl.state);
       legLiftingRR = _setlegLifting(legLiftingRR, m_legsValue.rr.state);
       // final
-      m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL - angleCenter;
-      m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR - angleCenter;
-      m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL + angleCenter;
-      m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR + angleCenter;
+      m_legsValue.fl.hight = patParam.legHightNow + legLiftingFL + sideHightL;
+      m_legsValue.fr.hight = patParam.legHightNow + legLiftingFR + sideHightR;
+      m_legsValue.rl.hight = patParam.legHightNow + legLiftingRL + sideHightL;
+      m_legsValue.rr.hight = patParam.legHightNow + legLiftingRR + sideHightR;
     } else {
-      m_legsValue.fl.hight = patParam.legHightNow - angleCenter;
-      m_legsValue.fr.hight = patParam.legHightNow - angleCenter;
-      m_legsValue.rl.hight = patParam.legHightNow + angleCenter;
-      m_legsValue.rr.hight = patParam.legHightNow + angleCenter;
+      m_legsValue.fl.hight = patParam.legHightNow;
+      m_legsValue.fr.hight = patParam.legHightNow;
+      m_legsValue.rl.hight = patParam.legHightNow;
+      m_legsValue.rr.hight = patParam.legHightNow;
     }
   }
 }

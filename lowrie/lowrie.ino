@@ -126,11 +126,6 @@ typedef struct allLegs {
   leg el;
   leg er;
 } allLegs;
-// structure for center motor
-typedef struct centers {
-  short front;
-  short rear;
-} centers;
 // acc and gyro data structure
 typedef struct accRoll {
   short aRollNow;              // relative roll  now    
@@ -184,8 +179,6 @@ Servo servo_rr_1;
 Servo servo_rr_2;
 
 //---------------global variables---------------------------
-// center motor angle
-centers m_centerAngle = {0, 0};
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
@@ -291,7 +284,6 @@ void _doQuickAndOther(char patternNow) {
       // disable motors
       setServo(-10, -10, 20);
       detachServo();
-      detachCenter();
     }
     break;
     default:
@@ -307,11 +299,14 @@ void _doCycle(void) {
   setWalkShiftCount(getWalkingModeInTask());
   // === sets m_legsValue.xx.shift
   // set legs lift
-  setWalkLiftsCount(getWalkingModeInTask(), m_centerAngle.front);
+  setWalkLiftsCount(getWalkingModeInTask());
   // === sets m_legsValue.xx.hight
   // calculate motor angle
   updateLegsGeometry();
   // === sets m_legsValue.xx.anglex
+  // update center motors
+  updateCenterCount();
+  // === sets m_legsValue.er.anglex
   updateLegsServoCount();
   // === motors set ===
   // do communication
@@ -335,8 +330,6 @@ void _doCycle(void) {
   // === sets m_gyroState
   // update sensor readings
   updateInputsCount(m_mainData.mainCounter);
-  // update center motors
-  updateCenterCount();
 }
 
 // attach components
@@ -350,7 +343,7 @@ void _attachComponents(void) {
   }
   if (component.center) {
     // bool frontE, bool rearE
-    attachCenter(true, true);
+    attachCenter();
   }
   if (component.current) {
     // bool extraEnabled
@@ -371,10 +364,10 @@ void _attachComponents(void) {
     attachLifts(SERVO_HIGHT_DEFAULT, false);
     // short quickShiftMultiplier, bool walk, bool ballance
     attachShift(getQuickShiftMuliplierCounter(), true, false);
-    // bool extraF, bool extraR, bool extraE
-    attachGeometry(false, false, false);
-    // bool frontE, bool rearE, bool extraE
-    attachServo(true, true, false);
+    // bool frontE, bool rearE, bool extraE, bool extraF, bool extraR, bool extraEx
+    attachGeometry(true, true, false, false, false, false);
+    // bool frontE, bool rearE, bool extraE, bool centerE
+    attachServo(true, true, false, true);
   }
 }
 
@@ -395,7 +388,7 @@ void _initComponents(bool calibrationMode) {
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode);
   // init center servo motors
-  initCenter(calibrationMode);
+  initCenter();
   // init legs servo motors
   initServo(calibrationMode);
   if (calibrationMode) {
@@ -418,7 +411,6 @@ void _initComponents(bool calibrationMode) {
 #endif
     // disable motors
     detachServo();
-    detachCenter();
     delay(20000);
   } else {
     // explore mode

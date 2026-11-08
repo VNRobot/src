@@ -10,10 +10,7 @@ Robot center motors motion patterns
 // direction sensitivity
 #define CENTER_TURNING_SENSITIVITY    2
 // turning mutiplier
-#define CENTER_TURNING_MULIPLIER      6
-// calibration angle
-#define CENTER_CALIBRATION_ANGLE_MIN   -15
-#define CENTER_CALIBRATION_ANGLE_MAX   15
+#define CENTER_TURNING_MULIPLIER      2
 
 
 // structure for center motors
@@ -24,21 +21,12 @@ struct center {
 
 // motors attached flag
 bool centerAttached = false;
-// motors set value values
-centers centerSetValue = {0, 0};
-// calibration data
-center centerCalibrationData = {0, 0};
-// servo motor value
-short centerMotorAngleValue[2] = {0, 0};
 // center motor value for turning/shifting positive - outside
 center centerValue = {0, 0};
 // direction to turn front
 short directionFront = 0;
 // direction to turn rear
 short directionRear = 0;
-// enable center motors
-bool frontCenterEnabled = false;
-bool rearCenterEnabled = false;
 
 /*
 uses
@@ -56,137 +44,21 @@ short _limitCenterMotorValue(short mAngle) {
   return mAngle;
 }
 
-// do servo pwm cycle 500, 2500
-void _doPWMCenter(void) {
-  if (frontCenterEnabled) {
-    servo_er_1.write(centerMotorAngleValue[0]);
-  }
-  if (rearCenterEnabled) {
-    servo_er_2.write(centerMotorAngleValue[1]);
-  }
-}
-
 // attach center motors
-void attachCenter(bool frontE, bool rearE) {
-  frontCenterEnabled = frontE;
-  rearCenterEnabled = rearE;
-  if (!centerAttached) {
-    // set motors value
-    centerMotorAngleValue[0] = _limitCenterMotorValue(90); 
-    centerMotorAngleValue[1] = _limitCenterMotorValue(90); 
-    // init motors one by one
-    if (frontCenterEnabled) {
-      servo_er_1.attach(ER1_MOTOR, 500, 2500);
-      servo_er_1.write(centerMotorAngleValue[0]);
-      delay(100);
-    }
-    if (rearCenterEnabled) {
-      servo_er_2.attach(ER2_MOTOR, 500, 2500);
-      servo_er_2.write(centerMotorAngleValue[1]);
-      delay(100);
-    }
-    centerAttached = true;
-  }
+void attachCenter(void) {
+  centerAttached = true;
 }
 
 // init servo motors
-void initCenter(bool calibrationMode) {
-  if (centerAttached) {
-    // check for calibration mode
-    if (calibrationMode) {
-      // do calibration
-      char calibrationStage = 0;
-      centerCalibrationData.front = 0;
-      centerCalibrationData.rear = 0;
-      // motors one by one
-      while (calibrationMode) {
-        centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
-        centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
-        _doPWMCenter();
-        delay(200);
-        // check button press
-        if (m_getButtonPressed()) {
-          calibrationStage ++;
-        }
-        switch (calibrationStage) {
-          case 0:
-            // assembly stage. do nothing
-          break;
-          case 1:
-          {
-            if (frontCenterEnabled) {
-              centerCalibrationData.front ++;
-              if (centerCalibrationData.front > CENTER_CALIBRATION_ANGLE_MAX) {
-                centerCalibrationData.front = CENTER_CALIBRATION_ANGLE_MIN;
-              }
-            } else {
-              calibrationStage ++;
-            }
-          }
-          break;
-          case 2:
-          {
-            if (rearCenterEnabled) {
-              centerCalibrationData.rear ++;
-              if (centerCalibrationData.rear > CENTER_CALIBRATION_ANGLE_MAX) {
-                centerCalibrationData.rear = CENTER_CALIBRATION_ANGLE_MIN;
-              }
-            } else {
-              calibrationStage ++;
-            }
-          }
-          break;
-          case 3:
-          {
-            EEPROM.update(9, (unsigned char)(centerCalibrationData.front + 128));
-            EEPROM.update(10, (unsigned char)(centerCalibrationData.rear + 128));
-            calibrationStage ++;
-            calibrationMode = false;
-          }
-          break;
-          default:
-          break;
-        }
-      }
-    }
-    // read calibration
-    centerCalibrationData.front = (char)(EEPROM.read(9) - 128);
-    centerCalibrationData.rear = (char)(EEPROM.read(10) - 128);
-    centerMotorAngleValue[0] = _limitMotorValue(90 - centerCalibrationData.front);
-    centerMotorAngleValue[1] = _limitMotorValue(90 - centerCalibrationData.rear);
-    _doPWMCenter();
-    delay(100);
-  }
+void initCenter(void) {
 }
 
-// detach hardware
-void detachCenter(void) {
-  if (centerAttached) {
-    if (frontCenterEnabled) {
-      servo_er_1.detach();
-    }
-    if (rearCenterEnabled) {
-      servo_er_2.detach();
-    }
-    centerAttached = false;
-    _doPWMCenter();
-    delay(100);
-  }
-}
 
 // set servo motors
 void setCenter(char angle) {
   if (centerAttached) {
-    centerSetValue.front = angle;
-    centerSetValue.rear = angle;
-    // real angle
-    m_centerAngle.front = (centerSetValue.front * 10) / 24;
-    m_centerAngle.rear = (centerSetValue.rear * 10) / 24;
-    // set motor angle
-    centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - m_centerAngle.front);
-    centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - m_centerAngle.rear);
-    // move motors
-    _doPWMCenter();
+    m_legsValue.er.center1 = 90 + angle;
+    m_legsValue.er.center2 = 90 + angle;
   }
 }
 
@@ -305,12 +177,9 @@ void updateCenterCount(void) {
       }
     }
     // real angle
-    m_centerAngle.front = ((centerSetValue.front + centerValue.front * CENTER_TURNING_MULIPLIER) * 10) / 24;
-    m_centerAngle.rear = ((centerSetValue.rear + centerValue.rear * CENTER_TURNING_MULIPLIER) * 10) / 24;
-    // set motor angle
-    centerMotorAngleValue[0] = _limitCenterMotorValue(90 - centerCalibrationData.front - m_centerAngle.front);
-    centerMotorAngleValue[1] = _limitCenterMotorValue(90 - centerCalibrationData.rear - m_centerAngle.rear);
-    // move motors
-    _doPWMCenter();
+    m_legsValue.er.angle1 = - centerValue.front * CENTER_TURNING_MULIPLIER;
+    m_legsValue.er.angle2 = - centerValue.rear * CENTER_TURNING_MULIPLIER;
+    // 
+    // can set leg hight compensation for all legs
   }
 }

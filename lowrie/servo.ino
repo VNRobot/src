@@ -14,13 +14,15 @@ typedef struct servos {
   bool frontLegsEnable;
   bool rearLegsEnable;
   bool extraLegsEnable;
+  bool centerEnable;
 } servos;
 
 // servo flags
 servos servoFlag = {
   false,    // bool frontLegsEnable;
   false,    // bool rearLegsEnable;
-  false     // bool extraLegsEnable;
+  false,    // bool extraLegsEnable;
+  false     // bool centerEnable;
 };
 // motors attached flag
 bool servoAttached = false;
@@ -59,6 +61,8 @@ void _doPWMServo(void) {
     if (servoFlag.extraLegsEnable) {
       servo_el_1.write(_limitMotorValue((short)(m_legsValue.el.calibration1 + m_legsValue.el.angle1 + m_legsValue.el.center1)));
       servo_el_2.write(_limitMotorValue((short)(m_legsValue.el.calibration2 + m_legsValue.el.angle2 + m_legsValue.el.center2)));
+    }
+    if ((servoFlag.extraLegsEnable) || (servoFlag.centerEnable)) {
       servo_er_1.write(_limitMotorValue((short)(m_legsValue.er.calibration1 + m_legsValue.er.angle1 + m_legsValue.er.center1)));
       servo_er_2.write(_limitMotorValue((short)(m_legsValue.er.calibration2 + m_legsValue.er.angle2 + m_legsValue.er.center2)));
     }
@@ -67,26 +71,40 @@ void _doPWMServo(void) {
 
 // fast motor move
 void _moveServosQuick(char mValue1, char mValue2) {
-  m_legsValue.fl.angle1 = mValue1;
-  m_legsValue.fl.angle2 = - mValue1;
-  m_legsValue.fr.angle1 = - mValue2;
-  m_legsValue.fr.angle2 = mValue2;
-  m_legsValue.rl.angle1 = mValue1;
-  m_legsValue.rl.angle2 = - mValue1;
-  m_legsValue.rr.angle1 = - mValue2;
-  m_legsValue.rr.angle2 = mValue2;
-  m_legsValue.el.angle1 = mValue1;
-  m_legsValue.el.angle2 = - mValue1;
-  m_legsValue.er.angle1 = - mValue2;
-  m_legsValue.er.angle2 = mValue2;
+  if (servoAttached) {
+    if (servoFlag.frontLegsEnable) {
+      m_legsValue.fl.angle1 = mValue1;
+      m_legsValue.fl.angle2 = - mValue1;
+      m_legsValue.fr.angle1 = - mValue2;
+      m_legsValue.fr.angle2 = mValue2;
+    }
+    if (servoFlag.rearLegsEnable) {
+      m_legsValue.rl.angle1 = mValue1;
+      m_legsValue.rl.angle2 = - mValue1;
+      m_legsValue.rr.angle1 = - mValue2;
+      m_legsValue.rr.angle2 = mValue2;
+    }
+    if (servoFlag.extraLegsEnable) {
+      m_legsValue.el.angle1 = mValue1;
+      m_legsValue.el.angle2 = - mValue1;
+      m_legsValue.er.angle1 = - mValue2;
+      m_legsValue.er.angle2 = mValue2;
+    }
+  }
   _doPWMServo();
 }
 
 // attach servo motors
-void attachServo(bool frontE, bool rearE, bool extraE) {
+void attachServo(bool frontE, bool rearE, bool extraE, bool centerE) {
   servoFlag.frontLegsEnable = frontE;
   servoFlag.rearLegsEnable = rearE;
   servoFlag.extraLegsEnable = extraE;
+  servoFlag.centerEnable = centerE;
+  // correct center value for center motor
+  if (servoFlag.centerEnable) {
+    m_legsValue.er.center1 = 90;
+    m_legsValue.er.center2 = 90;
+  }
   if (!servoAttached) {
     // init motors one by one
     if (servoFlag.frontLegsEnable) {
@@ -124,6 +142,8 @@ void attachServo(bool frontE, bool rearE, bool extraE) {
       servo_el_2.attach(EL2_MOTOR, 500, 2500);
       servo_el_2.write(m_legsValue.el.center2);
       delay(100);
+    }
+    if ((servoFlag.extraLegsEnable) || (servoFlag.centerEnable)) {
       servo_er_1.attach(ER1_MOTOR, 500, 2500);
       servo_er_1.write(m_legsValue.er.center1);
       delay(100);
@@ -300,7 +320,7 @@ void initServo(bool calibrationMode) {
           break;
           case 11:
           {
-            if (servoFlag.extraLegsEnable) {
+            if ((servoFlag.extraLegsEnable) || (servoFlag.centerEnable)) {
               m_legsValue.er.calibration1 ++;
               if (m_legsValue.er.calibration1 > SERVO_CALIBRATION_ANGLE_MAX) {
                 m_legsValue.er.calibration1 = SERVO_CALIBRATION_ANGLE_MIN;
@@ -312,7 +332,7 @@ void initServo(bool calibrationMode) {
           break;
           case 12:
           {
-            if (servoFlag.extraLegsEnable) {
+            if ((servoFlag.extraLegsEnable) || (servoFlag.centerEnable)) {
               m_legsValue.er.calibration2 ++;
               if (m_legsValue.er.calibration2 > SERVO_CALIBRATION_ANGLE_MAX) {
                 m_legsValue.er.calibration2 = SERVO_CALIBRATION_ANGLE_MIN;
@@ -381,6 +401,8 @@ void detachServo(void) {
     if (servoFlag.extraLegsEnable) {
       servo_el_1.detach();
       servo_el_2.detach();
+    }
+    if ((servoFlag.extraLegsEnable) || (servoFlag.centerEnable)) {
       servo_er_1.detach();
       servo_er_2.detach();
     }
@@ -430,13 +452,5 @@ void setServoQuick(char angleL, char angleR, short timeDelay) {
 void updateLegsServoCount(void) {
   if (servoAttached) {
     _doPWMServo();
-  }
-}
-
-// set flipped state
-void setFlippedServo(char flipL, char flipR) {
-  if (servoAttached) {
-    flippedL = flipL;
-    flippedR = flipR;
   }
 }
