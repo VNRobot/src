@@ -21,6 +21,8 @@ struct center {
 
 // motors attached flag
 bool centerAttached = false;
+// motors enabled flag
+bool centerEnabled = false;
 // center motor value for turning/shifting positive - outside
 center centerValue = {0, 0};
 // direction to turn front
@@ -45,7 +47,8 @@ short _limitCenterMotorValue(short mAngle) {
 }
 
 // attach center motors
-void attachCenter(void) {
+void attachCenter(bool cEnabled) {
+  centerEnabled = cEnabled;
   centerAttached = true;
 }
 
@@ -65,14 +68,16 @@ void setCenter(char angle) {
 // set direction. 20 deg max
 void setDirectionCenter(char direction) {
   if (centerAttached) {
-    if (direction > CENTER_ANGLE_MAX) {
-      direction = CENTER_ANGLE_MAX;
+    if (centerEnabled) {
+      if (direction > CENTER_ANGLE_MAX) {
+        direction = CENTER_ANGLE_MAX;
+      }
+      if (direction < -CENTER_ANGLE_MAX) {
+        direction = -CENTER_ANGLE_MAX;
+      }
+      directionFront = -(short)direction;
+      directionRear = (short)direction;
     }
-    if (direction < -CENTER_ANGLE_MAX) {
-      direction = -CENTER_ANGLE_MAX;
-    }
-    directionFront = -(short)direction;
-    directionRear = (short)direction;
   }
 }
 
@@ -80,96 +85,122 @@ void setDirectionCenter(char direction) {
 // set side shift. in mm
 void setSideShiftCenter(short direction) {
   if (centerAttached) {
-    if (direction > CENTER_ANGLE_MAX) {
-      direction = CENTER_ANGLE_MAX;
+    if (centerEnabled) {
+      if (direction > CENTER_ANGLE_MAX) {
+        direction = CENTER_ANGLE_MAX;
+      }
+      if (direction < -CENTER_ANGLE_MAX) {
+        direction = -CENTER_ANGLE_MAX;
+      }
+      directionFront = -direction;
+      directionRear = -direction;
     }
-    if (direction < -CENTER_ANGLE_MAX) {
-      direction = -CENTER_ANGLE_MAX;
-    }
-    directionFront = -direction;
-    directionRear = -direction;
   }
 }
       
 // move center motors.
 void updateCenterCount(void) {
   if (centerAttached) {
+    bool liftedFL = false;
+    bool liftedFR = false;
+    bool liftedRL = false;
+    bool liftedRR = false;
+    bool turnRight = false;
+    bool turnLeft = false;
+    if (m_legsValue.fl.state == LEG_LIFTED) {
+      liftedFL = true;
+    }
+    if (m_legsValue.fr.state == LEG_LIFTED) {
+      liftedFR = true;
+    }
+    if (m_legsValue.rl.state == LEG_LIFTED) {
+      liftedRL = true;
+    }
+    if (m_legsValue.rr.state == LEG_LIFTED) {
+      liftedRR = true;
+    }
     if (directionFront > CENTER_TURNING_SENSITIVITY) {
+      turnRight = true;
+    }
+    if (directionRear < -CENTER_TURNING_SENSITIVITY) {
+      turnLeft = true;
+    }
+    if (turnRight) {
       // turn front right
-      if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+      if (liftedFR) {
         // move leg to the side
         if (centerValue.front < directionFront) {
           centerValue.front ++;
         }
-      } else if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+      } else if (liftedFL) {
         // move leg back to normal
         if (centerValue.front > 0) {
           centerValue.front --;
         }
       }
-    } else if (directionFront < -CENTER_TURNING_SENSITIVITY) {
+    } else if (turnLeft) {
       // turn front left
-      if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+      if (liftedFL) {
         // move leg to the side
         if (centerValue.front < -directionFront) {
           centerValue.front ++;
         }
-      } else if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+      } else if (liftedFR) {
         // move leg back to normal
         if (centerValue.front > 0) {
           centerValue.front --;
         }
       }
     } else if (directionFront > 0) {
-      if ((m_legsValue.fl.state == LEG_LIFTED_BEFORE) || (m_legsValue.fl.state == LEG_LIFTED_AFTER)) {
+      if (liftedFL) {
         // move leg back to normal
         if (centerValue.front > 0) {
           centerValue.front --;
         }
       }
     } else {
-      if ((m_legsValue.fr.state == LEG_LIFTED_BEFORE) || (m_legsValue.fr.state == LEG_LIFTED_AFTER)) {
+      if (liftedFR) {
         // move leg back to normal
         if (centerValue.front > 0) {
           centerValue.front --;
         }
       }
     }
-    if (directionRear > CENTER_TURNING_SENSITIVITY) {
+    if (turnRight) {
       // turn rear right
-      if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+      if (liftedRR) {
         // move leg to the side
         if (centerValue.rear < directionRear) {
           centerValue.rear ++;
         }
-      } else if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+      } else if (liftedRL) {
         // move leg back to normal
         if (centerValue.rear > 0) {
           centerValue.rear --;
         }
       }
-    } else if (directionRear < -CENTER_TURNING_SENSITIVITY) {
+    } else if (turnLeft) {
       // turn rear left
-      if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+      if (liftedRL) {
         // move leg to the side
         if (centerValue.rear < -directionRear) {
           centerValue.rear ++;
         }
-      } else if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+      } else if (liftedRR) {
         // move leg back to normal
         if (centerValue.rear > 0) {
           centerValue.rear --;
         }
       }
     } else if (directionRear > 0) {
-      if ((m_legsValue.rl.state == LEG_LIFTED_BEFORE) || (m_legsValue.rl.state == LEG_LIFTED_AFTER)) {
+      if (liftedRL) {
         // move leg back to normal
         if (centerValue.rear > 0) {
           centerValue.rear --;
         }
       }
     } else {
-      if ((m_legsValue.rr.state == LEG_LIFTED_BEFORE) || (m_legsValue.rr.state == LEG_LIFTED_AFTER)) {
+      if (liftedRR) {
         // move leg back to normal
         if (centerValue.rear > 0) {
           centerValue.rear --;

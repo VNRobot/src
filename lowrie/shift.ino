@@ -7,8 +7,6 @@ Robot legs shift forward motion patterns
 
 // shift forward mm
 #define SHIFT_FORWARD                 16
-// linear leg speed mm per count
-#define SHIFT_LINEAR_SPEED            2
 // walking compensation parameters
 #define STATIC_BALLANCE_MAX           20
 // static ballance multiplier
@@ -17,7 +15,6 @@ Robot legs shift forward motion patterns
 // pattern state structure
 typedef struct shiftParam {
   short shiftForward;
-  short linearSpeed;
   short quickShiftMultiplier;
   bool walkEnabled;
   bool ballanceEnabled;
@@ -26,7 +23,6 @@ typedef struct shiftParam {
 // robot parameters
 shiftParam shParam = {
   SHIFT_FORWARD,            // short shiftForward;
-  SHIFT_LINEAR_SPEED,       // short linearSpeed;
   5,                        // short quickShiftMultiplier;
   false,                    // bool walkEnabled;
   false                     // bool ballanceEnabled;
@@ -50,25 +46,30 @@ m_gyroState
 
 // get leg shift forward
 short _getLegShiftForward(char counter, char state, short sideSpeed, short shiftForward) {
-  // linear  walking shift
-  shiftForward += sideSpeed * shParam.linearSpeed;
   switch (state) {
-    case LEG_LIFTED_AFTER:
+    case LEG_LINEAR:
+    case LEG_BEFORE_LIFTING:
+    case LEG_LIFTING:
+    case LEG_AFTER_LOWERING:
     {
-      // quick forward
-      shiftForward = -counter * shParam.quickShiftMultiplier * sideSpeed * shParam.linearSpeed;
+      // linear  walking shift
+      shiftForward += sideSpeed;
     }
     break;
-    case LEG_LIFTED_BEFORE:
+    case LEG_LIFTED:
     {
       // quick forward
-      shiftForward = (mainTiming.fullCycle - counter) * shParam.quickShiftMultiplier * sideSpeed * shParam.linearSpeed;
+      if (counter < mainTiming.halfCycle) {
+        shiftForward = -counter * shParam.quickShiftMultiplier * sideSpeed;
+      } else {
+        shiftForward = (mainTiming.fullCycle - counter) * shParam.quickShiftMultiplier * sideSpeed;
+      }
     }
     break;
     case LEG_LOWERING:
     {
       // start point
-      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed * shParam.linearSpeed;
+      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed;
     }
     break;
     default:
@@ -76,6 +77,7 @@ short _getLegShiftForward(char counter, char state, short sideSpeed, short shift
   }
   return shiftForward;
 }
+
 
 // attach shift
 void attachShift(short quickShiftMultiplier, bool walk, bool ballance) {

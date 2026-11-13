@@ -6,7 +6,7 @@ Robot walking path
 */
 
 // maximal speed
-#define PATH_MAX_SPEED                2
+#define PATH_MAX_SPEED                4
 // step size mm
 #define PATH_STEP_SIZE                90
 
@@ -57,10 +57,10 @@ void _setAbsoluteSpeed(short direction) {
       }
     } else if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward slow
-      if (speedNow < PATH_MAX_SPEED - 1) {
+      if (speedNow < PATH_MAX_SPEED / 2) {
         speedNow ++;
       }
-      if (speedNow > PATH_MAX_SPEED - 1) {
+      if (speedNow > PATH_MAX_SPEED / 2) {
         speedNow --;
       }
     } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
@@ -73,10 +73,10 @@ void _setAbsoluteSpeed(short direction) {
       }
     } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
       // go back slow
-      if (speedNow > -PATH_MAX_SPEED + 1) {
+      if (speedNow > -PATH_MAX_SPEED / 2) {
         speedNow --;
       }
-      if (speedNow < -PATH_MAX_SPEED + 1) {
+      if (speedNow < -PATH_MAX_SPEED / 2) {
         speedNow ++;
       }
     } else {
@@ -104,7 +104,17 @@ char _sideSpeed(short direction, char speed) {
       speed ++;
     }
   }
+  if (direction >= DI_FORWARD_FAR_TURN) {
+    if (speed < PATH_MAX_SPEED) {
+      speed ++;
+    }
+  }
   if (direction <= - DI_FORWARD_OK) {
+    if (speed > -PATH_MAX_SPEED) {
+      speed --;
+    }
+  }
+  if (direction <= - DI_FORWARD_FAR_TURN) {
     if (speed > -PATH_MAX_SPEED) {
       speed --;
     }

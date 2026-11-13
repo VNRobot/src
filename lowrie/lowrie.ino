@@ -99,8 +99,7 @@ enum lState {
   LEG_LINEAR,
   LEG_BEFORE_LIFTING,
   LEG_LIFTING,
-  LEG_LIFTED_BEFORE,
-  LEG_LIFTED_AFTER,
+  LEG_LIFTED,
   LEG_LOWERING,
   LEG_AFTER_LOWERING
 };
@@ -151,17 +150,6 @@ typedef struct masterData {
   char directionCorrection;        // direction correction
 } masterData;
 
-// software components
-typedef struct softwareComponents {
-  bool center;
-  bool current;
-  bool gyro;
-  bool inputs;
-  bool serial;
-  bool servo;
-  bool generic;
-} softwareComponents;
-
 //---------------servo motors-------------------------------
 
 // init servo library
@@ -201,16 +189,6 @@ masterData m_mainData {
   0                   //char directionCorrection;    // direction correction
 };
 //----------------------------------------------------------
-// components
-softwareComponents component {
-  true,               //bool center;
-  true,               //bool current;
-  true,               //bool gyro;
-  true,               //bool inputs;
-  false,              //bool serial;
-  true,               //bool servo;
-  true                //bool generic;
-};
 // variable for temporary use
 int i;
 
@@ -225,6 +203,17 @@ bool m_getButtonPressed(void) {
     }
   }
   return modeButtonPressed;
+}
+
+// check master device flag
+bool _getMasterFlag(void) {
+  // use pin 2
+  pinMode(2, INPUT_PULLUP);
+  delay(100);
+  if (digitalRead(2) == 0) {
+    return false;
+  }
+  return true;
 }
 
 // quick and other patterns
@@ -333,41 +322,39 @@ void _doCycle(void) {
 }
 
 // attach components
-void _attachComponents(void) {
-  // short liftPoint
+void _attachComponents(bool master) {
   attachCounter();
-  if (component.generic) {
+  if (master) {
     attachTasks();
     // short sizeDevider, bool turning, bool counting
-    attachPath(MAIN_ROBOT_SIZE_DEVIDER, false, false);
+    attachPath(MAIN_ROBOT_SIZE_DEVIDER, true, false);
   }
-  if (component.center) {
-    // bool frontE, bool rearE
-    attachCenter();
+  if (master) {
+    // bool cEnabled
+    attachCenter(false);
   }
-  if (component.current) {
-    // bool extraEnabled
-    attachCurrent(true);
-  }
-  if (component.gyro) {
+  // bool extraEnabled
+  attachCurrent(true);
+  if (master) {
     attachGyro();
   }
-  if (component.inputs) {
+  if (master) {
     // short legHight, short sizeDevider, bool sensorsEnabled, bool extraInputsEnabled
     attachInputs(SERVO_HIGHT_DEFAULT, MAIN_ROBOT_SIZE_DEVIDER, false, false);
   }
-  if (component.serial) {
-    attachSerial();
-  }
-  if (component.servo) {
-    // short legHight, bool sideBallance
-    attachLifts(SERVO_HIGHT_DEFAULT, false);
-    // short quickShiftMultiplier, bool walk, bool ballance
-    attachShift(getQuickShiftMuliplierCounter(), true, false);
-    // bool frontE, bool rearE, bool extraE, bool extraF, bool extraR, bool extraEx
-    attachGeometry(true, true, false, false, false, false);
+  attachSerial();
+  // short legHight, bool sideBallance
+  attachLifts(SERVO_HIGHT_DEFAULT, false);
+  // short quickShiftMultiplier, bool walk, bool ballance
+  attachShift(getQuickShiftMuliplierCounter(), true, false);
+  // bool frontE, bool rearE, bool extraE, bool extraF, bool extraR, bool extraEx
+  attachGeometry(true, true, false, false, true, false);
+  if (master) {
     // bool frontE, bool rearE, bool extraE, bool centerE
     attachServo(true, true, false, true);
+  } else {
+    // bool frontE, bool rearE, bool extraE, bool centerE
+    attachServo(true, true, false, false);
   }
 }
 
@@ -383,8 +370,6 @@ void _initComponents(bool calibrationMode) {
   initGeometry();
   // init sensors inputs
   initInputs(calibrationMode);
-  enableObstacleInputs(true);
-  enableEdgeInputs(false);
   // bool calibrationMode, bool extraEnabled
   initCurrent(calibrationMode);
   // init center servo motors
@@ -430,14 +415,20 @@ void _setState(char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
+      enableObstacleInputs(true);
+      enableEdgeInputs(false);
     }
     break;
     case ROBOT_INO:
     {
+      enableObstacleInputs(true);
+      enableEdgeInputs(false);
     }
     break;
     case ROBOT_CRAWL:
     {
+      enableObstacleInputs(true);
+      enableEdgeInputs(false);
     }
     break;
     default:
@@ -454,8 +445,10 @@ void setup() {
   // Start wire
   Wire.begin(); 
   delay(100);
+  // check master flag
+  m_mainData.masterDevice = _getMasterFlag();
   // attach software components
-  _attachComponents();
+  _attachComponents(m_mainData.masterDevice);
   // check button press
   bool calibrationMode = m_getButtonPressed();
   char version = EEPROM.read(0);

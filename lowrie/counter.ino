@@ -10,7 +10,7 @@ Robot legs phase counters
 // main counter
 #define MAIN_COUNTER_END              44
 // leg lift time point
-#define LIFT_TIME_POINT               3
+#define LIFT_TIME_POINT               5
 
 // structure for timing
 typedef struct timing {
@@ -40,10 +40,10 @@ char _getLegState(char counter) {
   char state = LEG_LINEAR;
   if (counter < mainTiming.liftPoint) {
     // start of cycle
-    state = LEG_LIFTED_AFTER;
+    state = LEG_LIFTED;
   } else if (counter > mainTiming.fullCycle - mainTiming.liftPoint) {
     // end of cycle
-    state = LEG_LIFTED_BEFORE;
+    state = LEG_LIFTED;
   } else if (counter == mainTiming.liftPoint) {
     state = LEG_LOWERING;
   } else if (counter == mainTiming.fullCycle - mainTiming.liftPoint) {

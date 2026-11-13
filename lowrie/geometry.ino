@@ -9,6 +9,11 @@ calculates servo motor angle
 #define GEOMETRY_SPACE_L                     17
 // extra hight for rear motors
 #define GEOMETRY_SPACE_H                     22
+// lower leg length
+#define LOWER_LEG_NORM                       105
+#define LOWER_LEG_LONG                       125
+// upper leg length
+#define UPPER_LEG_NORM                       70
 
 // structure for extra geometry
 typedef struct geometries {
@@ -55,7 +60,7 @@ short _calculateMotorAngle(int Hval, int Sval, char motorNum) {
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  float AngleB = (float)((acos((Lval * Lval + 70.0 * 70.0 - 105.0 * 105.0) / (2 * Lval * 70.0)) * 180) / 3.14);
+  float AngleB = (float)((acos((Lval * Lval + UPPER_LEG_NORM * UPPER_LEG_NORM - LOWER_LEG_NORM * LOWER_LEG_NORM) / (2 * Lval * UPPER_LEG_NORM)) * 180) / 3.14);
   //AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
   return (int)(90 - AngleB - AngleC);
 }
@@ -75,7 +80,7 @@ short _calculateMotorAngleExtra(int Hval, int Sval, char motorNum) {
   if (Sval < 0) {
     AngleC = -AngleC;
   }
-  float AngleB = (float)((acos((Lval * Lval + 70.0 * 70.0 - 105.0 * 105.0) / (2 * Lval * 70.0)) * 180) / 3.14);
+  float AngleB = (float)((acos((Lval * Lval + UPPER_LEG_NORM * UPPER_LEG_NORM - LOWER_LEG_LONG * LOWER_LEG_LONG) / (2 * Lval * UPPER_LEG_NORM)) * 180) / 3.14);
   //AngleB = (acos((Lval * Lval - 6125) / (Lval * 140)) * 180) / 3.14;
   return (int)(90 - AngleB - AngleC);
 }
