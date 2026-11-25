@@ -11,6 +11,10 @@ Robot legs shift forward motion patterns
 #define STATIC_BALLANCE_MAX           20
 // static ballance multiplier
 #define STATIC_BALLANCE_MULIPLIER     4
+// lifted leg speed
+#define LIFTED_SPEED_MAX              16
+// maximal shift
+#define WALK_SHIFT_MAX                90
 
 // pattern state structure
 typedef struct shiftParam {
@@ -28,11 +32,6 @@ shiftParam shParam = {
   false                     // bool ballanceEnabled;
 };
 
-// legs shift buffers
-short shiftBufferFL = 0;
-short shiftBufferFR = 0;
-short shiftBufferRL = 0;
-short shiftBufferRR = 0;
 // static ballance
 short staticForward = 0;
 // shift attached flag
@@ -44,38 +43,63 @@ m_legsValue
 m_gyroState
 */
 
+// shift the leg
+short _shiftLeg(short legS, short target, short step) {
+  if (legS < target) {
+    if (legS < (target - step)) {
+      legS += step;
+    } else {
+      legS = target;
+    }
+  } else {
+    if (legS > (target + step)) {
+      legS -= step;
+    } else {
+      legS = target;
+    }
+  }
+  return legS;
+}
+
 // get leg shift forward
-short _getLegShiftForward(char counter, char state, short sideSpeed, short shiftForward) {
-  switch (state) {
+short _getLegShiftForward(leg legData, short sideSpeed) {
+  switch (legData.state) {
     case LEG_LINEAR:
     case LEG_BEFORE_LIFTING:
     case LEG_LIFTING:
     case LEG_AFTER_LOWERING:
     {
       // linear  walking shift
-      shiftForward += sideSpeed;
+      legData.shifBuffer += sideSpeed;
+      if (legData.shifBuffer > WALK_SHIFT_MAX) {
+        legData.shifBuffer = WALK_SHIFT_MAX;
+      } else if (legData.shifBuffer < - WALK_SHIFT_MAX) {
+        legData.shifBuffer = - WALK_SHIFT_MAX;
+      }
     }
     break;
     case LEG_LIFTED:
     {
       // quick forward
-      if (counter < mainTiming.halfCycle) {
-        shiftForward = -counter * shParam.quickShiftMultiplier * sideSpeed;
-      } else {
-        shiftForward = (mainTiming.fullCycle - counter) * shParam.quickShiftMultiplier * sideSpeed;
-      }
+      //if (legData.count < mainTiming.halfCycle) {
+      //  legData.shifBuffer = -legData.count * shParam.quickShiftMultiplier * sideSpeed;
+      //} else {
+      //  legData.shifBuffer = (mainTiming.fullCycle - legData.count) * shParam.quickShiftMultiplier * sideSpeed;
+      //}
+      legData.shifBuffer = _shiftLeg(legData.shifBuffer, legData.shifTarget, LIFTED_SPEED_MAX);
     }
     break;
     case LEG_LOWERING:
     {
       // start point
-      shiftForward = (counter - mainTiming.halfCycle) * sideSpeed;
+      //legData.shifBuffer = (legData.count - mainTiming.halfCycle) * sideSpeed;
+      legData.shifBuffer = _shiftLeg(legData.shifBuffer, legData.shifTarget, LIFTED_SPEED_MAX);
     }
     break;
     default:
     break;
   }
-  return shiftForward;
+  return legData.shifBuffer;
 }
 
 
@@ -121,15 +145,15 @@ void setWalkShiftCount(bool walkingModeNow) {
     }
     if (walkingModeNow) {
       // set forward shift
-      shiftBufferFL = _getLegShiftForward(m_legsValue.fl.count, m_legsValue.fl.state, m_mainData.speedLeft, shiftBufferFL);
-      shiftBufferFR = _getLegShiftForward(m_legsValue.fr.count, m_legsValue.fr.state, m_mainData.speedRight, shiftBufferFR);
-      shiftBufferRL = _getLegShiftForward(m_legsValue.rl.count, m_legsValue.rl.state, m_mainData.speedLeft, shiftBufferRL);
-      shiftBufferRR = _getLegShiftForward(m_legsValue.rr.count, m_legsValue.rr.state, m_mainData.speedRight, shiftBufferRR);
+      m_legsValue.fl.shifBuffer = _getLegShiftForward(m_legsValue.fl, m_mainData.speedLeft);
+      m_legsValue.fr.shifBuffer = _getLegShiftForward(m_legsValue.fr, m_mainData.speedRight);
+      m_legsValue.rl.shifBuffer = _getLegShiftForward(m_legsValue.rl, m_mainData.speedLeft);
+      m_legsValue.rr.shifBuffer = _getLegShiftForward(m_legsValue.rr, m_mainData.speedRight);
       // final shift
-      m_legsValue.fl.shift = staticForward + shiftBufferFL + shParam.shiftForward;
-      m_legsValue.fr.shift = staticForward + shiftBufferFR + shParam.shiftForward;
-      m_legsValue.rl.shift = staticForward + shiftBufferRL + shParam.shiftForward;
-      m_legsValue.rr.shift = staticForward + shiftBufferRR + shParam.shiftForward;
+      m_legsValue.fl.shift = staticForward + m_legsValue.fl.shifBuffer + shParam.shiftForward;
+      m_legsValue.fr.shift = staticForward + m_legsValue.fr.shifBuffer + shParam.shiftForward;
+      m_legsValue.rl.shift = staticForward + m_legsValue.rl.shifBuffer + shParam.shiftForward;
+      m_legsValue.rr.shift = staticForward + m_legsValue.rr.shifBuffer + shParam.shiftForward;
     } else {
       m_legsValue.fl.shift = 0;
       m_legsValue.fr.shift = 0;
@@ -142,4 +166,9 @@ void setWalkShiftCount(bool walkingModeNow) {
 // set shift forward
 void setShiftForward(short shiftForwrd) {
   shParam.shiftForward = SHIFT_FORWARD + shiftForwrd;
+}
+
+// quick shift
+void setQuickShift(short quickShiftMultiplier) {
+  shParam.quickShiftMultiplier = quickShiftMultiplier;
 }

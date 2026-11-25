@@ -17,17 +17,17 @@ typedef struct timing {
   short fullCycle;
   short halfCycle;
   short liftPoint;
-  short extraShift;
-  short extraShiftNow;
+  short rearShift;
+  short rearShiftNow;
 } timing;
 
 // main timing 44 22
 timing mainTiming = {
-  MAIN_COUNTER_END,         // short fullCycle;
-  MAIN_COUNTER_END / 2,     // short halfCycle;
+  MAIN_COUNTER_END * 2,     // short fullCycle;
+  MAIN_COUNTER_END,         // short halfCycle;
   LIFT_TIME_POINT,          // short liftPoint;
-  0,                        // short extraShift;
-  0                         // short extraShiftNow;
+  MAIN_COUNTER_END / 2,     // short rearShift;
+  0                         // short rearShiftNow;
 };
 
 /*
@@ -36,34 +36,36 @@ m_legsValue
 */
 
 // get leg state
-char _getLegState(char counter) {
-  char state = LEG_LINEAR;
-  if (counter < mainTiming.liftPoint) {
-    // start of cycle
-    state = LEG_LIFTED;
-  } else if (counter > mainTiming.fullCycle - mainTiming.liftPoint) {
-    // end of cycle
-    state = LEG_LIFTED;
-  } else if (counter == mainTiming.liftPoint) {
-    state = LEG_LOWERING;
-  } else if (counter == mainTiming.fullCycle - mainTiming.liftPoint) {
-    state = LEG_LIFTING;
-  } else if (counter == mainTiming.liftPoint + 1) {
-    state = LEG_AFTER_LOWERING;
-  } else if (counter == mainTiming.fullCycle - mainTiming.liftPoint - 1) {
-    state = LEG_BEFORE_LIFTING;
+char _getLegState(leg legData) {
+  if (legData.count == mainTiming.fullCycle - mainTiming.liftPoint - 1) {
+    return LEG_BEFORE_LIFTING;
   }
-  return state;
+  if (legData.count == mainTiming.liftPoint) {
+    return LEG_LOWERING;
+  }
+  if (legData.state == LEG_BEFORE_LIFTING) {
+    return LEG_LIFTING;
+  }
+  if (legData.state == LEG_LIFTING) {
+    return LEG_LIFTED;
+  }
+  if (legData.state == LEG_LOWERING) {
+    return LEG_AFTER_LOWERING;
+  }
+  if (legData.state == LEG_AFTER_LOWERING) {
+    return LEG_LINEAR;
+  }
+  return legData.state;
 }
 
 // set legs state
 void _setlegsState(bool walkingModeNow) {
   if (walkingModeNow) {
     // set legs in walking state
-    m_legsValue.fl.state = _getLegState(m_legsValue.fl.count);
-    m_legsValue.fr.state = _getLegState(m_legsValue.fr.count);
-    m_legsValue.rl.state = _getLegState(m_legsValue.rl.count);
-    m_legsValue.rr.state = _getLegState(m_legsValue.rr.count);
+    m_legsValue.fl.state = _getLegState(m_legsValue.fl);
+    m_legsValue.fr.state = _getLegState(m_legsValue.fr);
+    m_legsValue.rl.state = _getLegState(m_legsValue.rl);
+    m_legsValue.rr.state = _getLegState(m_legsValue.rr);
   } else {
     // not walking always linear
     m_legsValue.fl.state = LEG_LINEAR;
@@ -92,29 +94,23 @@ char updateCounter(bool walkingModeNow, bool masterCounter) {
   if (m_legsValue.fr.count >= mainTiming.fullCycle) {
     m_legsValue.fr.count -= mainTiming.fullCycle;
   }
-  m_legsValue.rr.count = m_legsValue.fl.count;
-  m_legsValue.rl.count = m_legsValue.fr.count;
-  // extra time shift
-  if (mainTiming.extraShiftNow > mainTiming.extraShift) {
-    mainTiming.extraShiftNow --;
-  } else if (mainTiming.extraShiftNow < mainTiming.extraShift) {
-    mainTiming.extraShiftNow ++;
+  // rear time shift
+  if (mainTiming.rearShiftNow > mainTiming.rearShift) {
+    mainTiming.rearShiftNow --;
+  } else if (mainTiming.rearShiftNow < mainTiming.rearShift) {
+    mainTiming.rearShiftNow ++;
+  }
+  m_legsValue.rr.count = m_legsValue.fl.count - mainTiming.rearShiftNow;
+  if (m_legsValue.rr.count < 0) {
+    m_legsValue.rr.count += mainTiming.fullCycle;
+  }
+  m_legsValue.rl.count = m_legsValue.fr.count - mainTiming.rearShiftNow;
+  if (m_legsValue.rl.count < 0) {
+    m_legsValue.rl.count += mainTiming.fullCycle;
   }
   // set legs state using count value
   _setlegsState(walkingModeNow);
-  if (masterCounter) {
-    short extraCount = m_legsValue.fl.count - mainTiming.extraShiftNow;
-    if (extraCount < 0) {
-      extraCount += mainTiming.fullCycle;
-    }
-    return extraCount;
-  } else {
-    short extraCount = m_legsValue.fr.count - mainTiming.extraShiftNow;
-    if (extraCount < 0) {
-      extraCount += mainTiming.fullCycle;
-    }
-    return extraCount;
-  }
+  return m_legsValue.fl.count;
 }
 
 // sync from master
@@ -137,7 +133,15 @@ short getQuickShiftMuliplierCounter(void) {
   return (mainTiming.halfCycle - mainTiming.liftPoint) / mainTiming.liftPoint;
 }
 
-// set extra legs time shift
-void setExtraCounter(short eShift) {
-  mainTiming.extraShift = eShift;
+// set mode sync or async
+void setSyncModeCounter(bool syncMode) {
+  if (syncMode) {
+    mainTiming.fullCycle = MAIN_COUNTER_END;
+    mainTiming.halfCycle = MAIN_COUNTER_END / 2;
+    mainTiming.rearShift = 0;
+  } else {
+    mainTiming.fullCycle = MAIN_COUNTER_END * 2;
+    mainTiming.halfCycle = MAIN_COUNTER_END;
+    mainTiming.rearShift = MAIN_COUNTER_END / 2;
+  }
 }

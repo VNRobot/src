@@ -22,6 +22,7 @@ enum diState {
 
 // path parameters structure
 typedef struct pathParameters {
+  short maximalSpeed;
   short maximalStep;
   short sizeDevider;
   bool stepTurningEnabled;
@@ -30,6 +31,7 @@ typedef struct pathParameters {
 
 // robot state
 pathParameters pathParams = {
+  PATH_MAX_SPEED,         // short maximalSpeed;
   PATH_STEP_SIZE,         // short maximalStep;
   2,                      // short sizeDevider;
   false,                  // bool stepTurningEnabled;
@@ -45,6 +47,12 @@ bool onThePath = false;
 // path attached flag
 bool pathAttached = false;
 
+/*
+uses
+m_mainData
+m_legsValue
+*/
+
 // calculate absolute speed
 void _setAbsoluteSpeed(short direction) {
   // walking mode
@@ -52,15 +60,15 @@ void _setAbsoluteSpeed(short direction) {
     // plan to go
     if ((direction < DI_FORWARD_FAR_TURN) && (direction > - DI_FORWARD_FAR_TURN)) {
       // go forward
-      if (speedNow < PATH_MAX_SPEED) {
+      if (speedNow < pathParams.maximalSpeed) {
         speedNow ++;
       }
     } else if ((direction < DI_FORWARD_TURN) && (direction > - DI_FORWARD_TURN)) {
       // go forward slow
-      if (speedNow < PATH_MAX_SPEED / 2) {
+      if (speedNow < pathParams.maximalSpeed / 2) {
         speedNow ++;
       }
-      if (speedNow > PATH_MAX_SPEED / 2) {
+      if (speedNow > pathParams.maximalSpeed / 2) {
         speedNow --;
       }
     } else if ((direction < DI_FORWARD_STAND) && (direction > - DI_FORWARD_STAND)) {
@@ -73,15 +81,15 @@ void _setAbsoluteSpeed(short direction) {
       }
     } else if ((direction < DI_BACKWARD_STAND) && (direction > - DI_BACKWARD_STAND)) {
       // go back slow
-      if (speedNow > -PATH_MAX_SPEED / 2) {
+      if (speedNow > -pathParams.maximalSpeed / 2) {
         speedNow --;
       }
-      if (speedNow < -PATH_MAX_SPEED / 2) {
+      if (speedNow < -pathParams.maximalSpeed / 2) {
         speedNow ++;
       }
     } else {
       // go back
-      if (speedNow > -PATH_MAX_SPEED) {
+      if (speedNow > -pathParams.maximalSpeed) {
         speedNow --;
       }
     }
@@ -100,22 +108,22 @@ void _setAbsoluteSpeed(short direction) {
 char _sideSpeed(short direction, char speed) {
   // forward
   if (direction >= DI_FORWARD_OK) {
-    if (speed < PATH_MAX_SPEED) {
+    if (speed < pathParams.maximalSpeed) {
       speed ++;
     }
   }
   if (direction >= DI_FORWARD_FAR_TURN) {
-    if (speed < PATH_MAX_SPEED) {
+    if (speed < pathParams.maximalSpeed) {
       speed ++;
     }
   }
   if (direction <= - DI_FORWARD_OK) {
-    if (speed > -PATH_MAX_SPEED) {
+    if (speed > -pathParams.maximalSpeed) {
       speed --;
     }
   }
   if (direction <= - DI_FORWARD_FAR_TURN) {
-    if (speed > -PATH_MAX_SPEED) {
+    if (speed > -pathParams.maximalSpeed) {
       speed --;
     }
   }
@@ -143,6 +151,15 @@ void updatePath(short direction) {
       m_mainData.speedLeft = speedNow;
       m_mainData.speedRight = speedNow;
     }
+    // target shift
+    short targetL = - (pathParams.maximalStep * m_mainData.speedLeft) / pathParams.maximalSpeed;
+    short targetR = - (pathParams.maximalStep * m_mainData.speedRight) / pathParams.maximalSpeed;
+    m_legsValue.fl.shifTarget = targetL;
+    m_legsValue.fr.shifTarget = targetR;
+    m_legsValue.rl.shifTarget = targetL;
+    m_legsValue.rr.shifTarget = targetR;
+    m_legsValue.el.shifTarget = targetL;
+    m_legsValue.er.shifTarget = targetR;
     // calculated distance to target
     if (pathParams.stepsDistanceCountEnabled) {
       // step size
@@ -307,4 +324,13 @@ void initPath(void) {
 void setSideSpeed(char speedLeft, char speedRight) {
   m_mainData.speedLeft = speedLeft;
   m_mainData.speedRight = speedRight;
+}
+
+// set mode sync or async
+void setSyncModePath(bool syncMode) {
+  if (syncMode) {
+    pathParams.maximalSpeed = PATH_MAX_SPEED;
+  } else {
+    pathParams.maximalSpeed = PATH_MAX_SPEED / 2;
+  }
 }

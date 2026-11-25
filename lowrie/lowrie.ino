@@ -107,6 +107,9 @@ enum lState {
 typedef struct leg {
   short hight;
   short shift;
+  short shifTarget;
+  //short shifTargetPending;
+  short shifBuffer;
   char state;
   char count;
   char angle1;
@@ -147,7 +150,8 @@ typedef struct masterData {
   char speedRight;             // right side speed
   char currentState;           // current received from other device
   char shiftForward;           // shift forward ballance
-  char directionCorrection;        // direction correction
+  char directionCorrection;    // direction correction
+  bool syncMode;               // legs sync mode
 } masterData;
 
 //---------------servo motors-------------------------------
@@ -170,12 +174,12 @@ Servo servo_rr_2;
 // gyro state
 accRoll m_gyroState = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 // leg values for 4 legs
-allLegs m_legsValue = {SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
-                       SERVO_HIGHT_LOW, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60};
+allLegs m_legsValue = {SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
+                       SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60,
+                       SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 60, 120,
+                       SERVO_HIGHT_LOW, 0, 0, 0, LEG_LINEAR, 0, 0, 0, 0, 0, 120, 60};
 // master data
 masterData m_mainData {
   25,                 //char robotVersion;           // software version
@@ -186,7 +190,8 @@ masterData m_mainData {
   0,                  //char speedRight;             // right side speed
   C_NORMAL,           //char currentState;           // current received from other device
   0,                  //char shiftForward;           // shift forward ballance
-  0                   //char directionCorrection;    // direction correction
+  0,                  //char directionCorrection;    // direction correction
+  true                //bool syncMode;               // legs sync mode 
 };
 //----------------------------------------------------------
 // variable for temporary use
@@ -415,20 +420,32 @@ void _setState(char newState) {
   switch (newState) {
     case ROBOT_NORM:
     {
+      m_mainData.syncMode = true;
       enableObstacleInputs(true);
       enableEdgeInputs(false);
+      setSyncModeCounter(m_mainData.syncMode);
+      setSyncModePath(m_mainData.syncMode);
+      setQuickShift(getQuickShiftMuliplierCounter());
     }
     break;
     case ROBOT_INO:
     {
+      m_mainData.syncMode = false;
       enableObstacleInputs(true);
       enableEdgeInputs(false);
+      setSyncModeCounter(m_mainData.syncMode);
+      setSyncModePath(m_mainData.syncMode);
+      setQuickShift(getQuickShiftMuliplierCounter());
     }
     break;
     case ROBOT_CRAWL:
     {
+      m_mainData.syncMode = false;
       enableObstacleInputs(true);
       enableEdgeInputs(false);
+      setSyncModeCounter(m_mainData.syncMode);
+      setSyncModePath(m_mainData.syncMode);
+      setQuickShift(getQuickShiftMuliplierCounter());
     }
     break;
     default:
